@@ -3,6 +3,10 @@
 
 # Dependencies
 node_modules
+deno.lock
+
+# Build
+dist
 
 # Agents
 .claude

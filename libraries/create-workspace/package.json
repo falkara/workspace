@@ -1,0 +1,28 @@
+{
+  "name": "@falkara/create-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Zero-install entry point for scaffolding a Falkara workspace.",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": {
+    "name": "Falkara s. r. o.",
+    "url": "https://falkara.com"
+  },
+  "bin": {
+    "create-workspace": "./dist/index.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "vp pack src/index.ts --clean"
+  },
+  "dependencies": {
+    "@effect/platform-node": "4.0.0-beta.99",
+    "effect": "4.0.0-beta.99"
+  },
+  "devDependencies": {
+    "@falkara/workspace": "workspace:*"
+  }
+}
