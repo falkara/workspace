@@ -1,0 +1,24 @@
+{
+  "name": "@falkara/cli-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The workspace commands, consumed as TypeScript source and bundled into the Falkara binaries.",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": {
+    "name": "Falkara s. r. o.",
+    "url": "https://falkara.com"
+  },
+  "type": "module",
+  "imports": {
+    "#*": "./*"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "effect": "4.0.0-beta.102"
+  },
+  "devDependencies": {
+    "@falkara/cli-kernel": "workspace:*"
+  }
+}

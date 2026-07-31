@@ -1,0 +1,22 @@
+{
+  "name": "@falkara/cli-kernel",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The services every Falkara binary runs on, consumed as TypeScript source and bundled into the Falkara binaries.",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": {
+    "name": "Falkara s. r. o.",
+    "url": "https://falkara.com"
+  },
+  "type": "module",
+  "imports": {
+    "#*": "./*"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@effect/platform-node": "4.0.0-beta.102",
+    "effect": "4.0.0-beta.102"
+  }
+}

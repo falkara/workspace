@@ -1,0 +1,24 @@
+{
+  "name": "@falkara/cli-consent",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The command that shows and changes whether anonymous usage data is sent.",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": {
+    "name": "Falkara s. r. o.",
+    "url": "https://falkara.com"
+  },
+  "type": "module",
+  "imports": {
+    "#*": "./*"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "effect": "4.0.0-beta.102"
+  },
+  "devDependencies": {
+    "@falkara/cli-kernel": "workspace:*"
+  }
+}

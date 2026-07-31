@@ -1,0 +1,63 @@
+© Falkara s. r. o. All rights reserved.
+
+Unless otherwise noted, all copyright and other intellectual property
+rights in and to this package and its contents are owned by or
+licensed to Falkara s. r. o. This notice governs the published
+package; the source it is built from is governed separately by the
+LICENSE file in the repository that holds it.
+
+Except for the limited rights granted to any registry to which
+Falkara s. r. o. publishes this package, as needed to host and
+distribute it under their terms of service, and except as expressly
+granted below, Falkara s. r. o. grants no other license or right,
+whether express or implied, and none may be inferred from the
+availability of this package on a public registry.
+
+1. Falkara s. r. o. grants you a limited, non-exclusive,
+   non-transferable license to install and run this package, in
+   unmodified form, to generate projects. Except to the extent
+   permitted by applicable law, no part of the package may otherwise
+   be used, reproduced, modified, distributed, or otherwise exploited
+   without the prior written authorization of Falkara s. r. o.
+
+2. Every file this package writes into a project it generates is
+   licensed under the MIT No Attribution License (MIT-0), reproduced
+   in the appendix below. Falkara s. r. o. claims no rights in
+   projects generated with this package: you may use, modify,
+   distribute, and relicense them for any purpose, with or without
+   attribution.
+
+3. Third-party components included in this package are listed in
+   THIRD-PARTY-NOTICES. Nothing in this notice restricts the rights
+   granted to you under their respective licenses.
+
+4. THE PACKAGE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE
+   LAW, FALKARA S. R. O. SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES,
+   OR OTHER LIABILITY ARISING FROM OR IN CONNECTION WITH THE PACKAGE
+   OR ITS USE.
+
+Appendix: MIT No Attribution License (MIT-0)
+
+In this appendix, "the Software" means the files described in clause
+2, and nothing else in this package.
+
+Copyright © Falkara s. r. o.
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+All licensing inquiries should be directed to legal@falkara.com.
