@@ -1,0 +1,25 @@
+{
+  "name": "@falkara/cli-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Commands that scaffold Falkara Workspace projects.",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": {
+    "name": "Falkara s. r. o.",
+    "url": "https://falkara.com"
+  },
+  "type": "module",
+  "imports": {
+    "#package.json": "./package.json",
+    "#src/*": "./src/*"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "effect": "4.0.0-beta.107"
+  },
+  "devDependencies": {
+    "@falkara/cli-core": "workspace:*"
+  }
+}

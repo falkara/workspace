@@ -3,6 +3,13 @@
 
 # Dependencies
 node_modules
+deno.lock
+
+# Build
+dist
 
 # Agents
-.claude
+.claude/worktrees
+
+# Generated
+THIRD-PARTY-NOTICES

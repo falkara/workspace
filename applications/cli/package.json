@@ -1,0 +1,34 @@
+{
+  "name": "@falkara/cli",
+  "version": "1.0.0",
+  "description": "Command line access to everything Falkara Workspace.",
+  "homepage": "https://workspace.falkara.com",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": {
+    "name": "Falkara s. r. o.",
+    "url": "https://falkara.com"
+  },
+  "bin": {
+    "falkara": "./dist/Entrypoint.mjs"
+  },
+  "files": [
+    "LICENSE",
+    "THIRD-PARTY-NOTICES",
+    "dist"
+  ],
+  "type": "module",
+  "imports": {
+    "#package.json": "./package.json",
+    "#src/*": "./src/*"
+  },
+  "scripts": {
+    "build": "vp pack ./src/Entrypoint.ts --clean && bun ../../scripts/generate-notices.ts ."
+  },
+  "devDependencies": {
+    "@effect/platform-node": "4.0.0-beta.107",
+    "@falkara/cli-core": "workspace:*",
+    "@falkara/cli-telemetry": "workspace:*",
+    "@falkara/cli-workspace": "workspace:*",
+    "effect": "4.0.0-beta.107"
+  }
+}
