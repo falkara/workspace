@@ -1,0 +1,30 @@
+{
+  "name": "@falkara/cli",
+  "version": "1.0.0",
+  "description": "Command line access to everything Falkara Workspace.",
+  "homepage": "https://workspace.falkara.com",
+  "license": "UNLICENSED",
+  "author": {
+    "name": "Falkara s. r. o.",
+    "url": "https://falkara.com"
+  },
+  "bin": {
+    "falkara": "./dist/Entrypoint.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "imports": {
+    "#package.json": "./package.json",
+    "#src/*": "./src/*"
+  },
+  "scripts": {
+    "build": "vp pack --clean",
+    "prepack": "bun run build"
+  },
+  "devDependencies": {
+    "@effect/platform-node": "4.0.0-rc.109",
+    "effect": "4.0.0-rc.109"
+  }
+}

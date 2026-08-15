@@ -1,0 +1,30 @@
+{
+  "name": "@falkara/create-workspace",
+  "version": "1.0.0",
+  "description": "Standalone scaffolder for new Falkara Workspace projects.",
+  "homepage": "https://workspace.falkara.com",
+  "license": "UNLICENSED",
+  "author": {
+    "name": "Falkara s. r. o.",
+    "url": "https://falkara.com"
+  },
+  "bin": {
+    "create-workspace": "./dist/Entrypoint.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "imports": {
+    "#package.json": "./package.json",
+    "#src/*": "./src/*"
+  },
+  "scripts": {
+    "build": "vp pack --clean",
+    "prepack": "bun run build"
+  },
+  "devDependencies": {
+    "@effect/platform-node": "4.0.0-rc.109",
+    "effect": "4.0.0-rc.109"
+  }
+}
