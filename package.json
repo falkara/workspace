@@ -22,7 +22,7 @@
   "devDependencies": {
     "@commitlint/cli": "21.0.2",
     "@commitlint/config-conventional": "21.0.2",
-    "vite-plus": "0.2.5"
+    "vite-plus": "0.2.9"
   },
   "commitlint": {
     "extends": [
