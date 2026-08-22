@@ -24,7 +24,7 @@
     "prepack": "bun run build"
   },
   "devDependencies": {
-    "@effect/platform-node": "4.0.0-rc.109",
+    "@effect/platform-node": "4.0.0-rc.110",
     "effect": "4.0.0-rc.109"
   }
 }
