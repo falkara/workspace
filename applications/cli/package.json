@@ -25,6 +25,6 @@
   },
   "devDependencies": {
     "@effect/platform-node": "4.0.0-rc.109",
-    "effect": "4.0.0-rc.109"
+    "effect": "4.0.0-rc.110"
   }
 }
