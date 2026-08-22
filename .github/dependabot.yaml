@@ -9,6 +9,8 @@ updates:
       timezone: 'Europe/Prague'
     commit-message:
       prefix: 'chore'
+    labels:
+      - 'Dependencies | Queued'
 
   - package-ecosystem: 'github-actions'
     directory: '/'
@@ -19,3 +21,5 @@ updates:
       timezone: 'Europe/Prague'
     commit-message:
       prefix: 'chore'
+    labels:
+      - 'Dependencies | Queued'
