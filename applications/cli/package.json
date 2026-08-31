@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Command line access to everything Falkara Workspace.",
   "homepage": "https://workspace.falkara.com",
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE",
   "author": {
     "name": "Falkara s. r. o.",
     "url": "https://falkara.com"
@@ -12,6 +12,8 @@
     "falkara": "./dist/Entrypoint.mjs"
   },
   "files": [
+    "LICENSE",
+    "THIRD-PARTY-NOTICES",
     "dist"
   ],
   "type": "module",
@@ -21,10 +23,10 @@
   },
   "scripts": {
     "build": "vp pack --clean",
-    "prepack": "bun run build"
+    "prepack": "npm run build"
   },
   "devDependencies": {
-    "@effect/platform-node": "4.0.0-rc.109",
-    "effect": "4.0.0-rc.109"
+    "@effect/platform-node": "4.0.0-rc.112",
+    "effect": "4.0.0-rc.112"
   }
 }
