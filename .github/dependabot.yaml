@@ -1,6 +1,6 @@
 version: 2
 updates:
-  - package-ecosystem: 'bun'
+  - package-ecosystem: 'npm'
     directory: '/'
     schedule:
       interval: 'weekly'
@@ -11,7 +11,6 @@ updates:
       prefix: 'chore'
     labels:
       - 'Dependencies | Queued'
-
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:

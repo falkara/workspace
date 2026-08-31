@@ -1,0 +1,22 @@
+{
+  "name": "@falkara/cli-telemetry",
+  "private": true,
+  "description": "Commands that show and change whether usage data is sent.",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": {
+    "name": "Falkara s. r. o.",
+    "url": "https://falkara.com"
+  },
+  "type": "module",
+  "imports": {
+    "#package.json": "./package.json",
+    "#src/*": "./src/*"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@falkara/cli-core": "*",
+    "effect": "4.0.0-rc.112"
+  }
+}

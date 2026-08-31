@@ -20,15 +20,15 @@ Do not infer the contents of a release from its version number, its changelog,
 or prior knowledge of the package. Read the diff:
 
 ```
-bun pm diff <package>@<from> <to>
+npm diff --diff=<package>@<from> --diff=<package>@<to>
 ```
 
-Start with `--stat` to see the shape of the release, then read the files that
-matter in full. Scope to a path when a package is large:
+Start with `--diff-name-only` to see the shape of the release, then read the
+files that matter in full. Scope to a path when a package is large:
 
 ```
-bun pm diff <package>@<from> <to> --stat
-bun pm diff <package>@<from> <to> src/
+npm diff --diff=<package>@<from> --diff=<package>@<to> --diff-name-only
+npm diff --diff=<package>@<from> --diff=<package>@<to> src/
 ```
 
 Pay attention to what the summary flags — changed entry points, new or removed
@@ -65,8 +65,8 @@ compensated for is fixed.
 Run the checks and report their real output:
 
 ```
-bun run check
-bun run test
+npm run check
+npm run test
 ```
 
 Extend tests to cover behaviour that changed. If a test only passed because of a
@@ -74,19 +74,55 @@ bug that this release fixes, correct the test rather than preserving it.
 
 ## Report
 
-Structure the summary under these headings.
+Open with the package and the version delta as the heading, then a verdict and
+the intent, then the three sections. Every section renders even when it has
+nothing in it — write `None.` rather than dropping the heading, so a silent
+omission is never mistaken for a clean result.
 
-**Changelog** — what changed and why, grouped by the domain it touches rather
-than by file. One or two lines per group. State the intent of the release at the
-top, so the reasoning behind the edits is visible.
+```markdown
+## `<package>` <from> → <to>
 
-**Upstream opportunities** — every place the package's API forced something
-awkward: a limitation worked around, an ergonomic gap, a type that could be
-tighter, a capability that would have made the integration cleaner. These are
-candidates to raise with the maintainers, so describe each concretely enough to
-open an issue from.
+**Verdict.** One line: whether this is ready to merge, or what blocks it.
 
-**Open questions** — anything non-trivial where the right direction is genuinely
-unclear, or where the change would reach further than the evidence supports. Ask
-rather than guess. Leave that work undone, state plainly what is blocked and
-why, and complete everything that does not depend on the answer.
+**Intent.** One or two sentences on what the release is for. Reasoning, not a
+transcript of the diff.
+
+### Changelog
+
+What changed and why, grouped by the domain it touches rather than by file. One
+or two lines per group.
+
+### Upstream opportunities
+
+Every place the package's API forced something awkward: a limitation worked
+around, an ergonomic gap, a type that could be tighter, a capability that would
+have made the integration cleaner. Describe each concretely enough to open an
+issue from.
+
+### Open questions
+
+Anything non-trivial where the right direction is genuinely unclear, or where
+the change would reach further than the evidence supports. Ask rather than
+guess. Leave that work undone, state plainly what is blocked and why, and
+complete everything that does not depend on the answer.
+```
+
+## Status
+
+Finish by recording the outcome on the pull request. Apply exactly one status,
+clearing the others so the labels never contradict each other.
+
+Use `Dependencies | Adopted` when the adoption is complete and nothing is waiting
+on an answer, or `Dependencies | Blocked` when the open questions have to be
+resolved before the work can finish.
+
+```
+gh pr edit <number> \
+  --remove-label "Dependencies | Queued" \
+  --remove-label "Dependencies | Dispatched" \
+  --remove-label "Dependencies | Blocked" \
+  --add-label "Dependencies | Adopted"
+```
+
+Status reflects this work only. Continuous integration reports on the code
+separately, so do not wait on checks or fold their result into the label.
