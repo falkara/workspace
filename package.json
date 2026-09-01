@@ -14,6 +14,7 @@
   ],
   "type": "module",
   "scripts": {
+    "prepare": "effect-tsgo patch --oxlint",
     "check": "vp check",
     "check:fix": "vp check --fix",
     "test": "vp test"
@@ -22,16 +23,18 @@
     "@commitlint/cli": "21.0.2",
     "@commitlint/config-conventional": "21.0.2",
     "@effect/platform-node": "4.0.0-rc.112",
+    "@effect/tsgo": "0.39.0",
     "@effect/vitest": "4.0.0-rc.112",
     "ajv": "8.20.0",
     "effect": "4.0.0-rc.112",
-    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.5",
-    "vite-plus": "0.2.5",
-    "vitest": "4.1.10"
+    "typescript": "7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.3.0",
+    "vite-plus": "0.3.0",
+    "vitest": "4.1.11"
   },
   "overrides": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.5",
-    "vitest": "4.1.10"
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.3.0",
+    "vitest": "4.1.11"
   },
   "commitlint": {
     "extends": [
