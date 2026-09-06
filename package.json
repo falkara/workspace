@@ -23,7 +23,7 @@
     "@commitlint/cli": "21.0.2",
     "@commitlint/config-conventional": "21.0.2",
     "@effect/platform-node": "4.0.0-rc.112",
-    "@effect/tsgo": "0.39.0",
+    "@effect/tsgo": "0.40.0",
     "@effect/vitest": "4.0.0-rc.112",
     "ajv": "8.20.0",
     "effect": "4.0.0-rc.112",
