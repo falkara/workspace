@@ -26,7 +26,7 @@
     "@effect/tsgo": "0.39.0",
     "@effect/vitest": "4.0.0-rc.112",
     "ajv": "8.20.0",
-    "effect": "4.0.0-rc.112",
+    "effect": "4.0.0-rc.113",
     "typescript": "7.0.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@0.3.0",
     "vite-plus": "0.3.0",
