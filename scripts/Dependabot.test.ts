@@ -2,7 +2,7 @@ import { NodeServices } from '@effect/platform-node';
 import { expect, layer } from '@effect/vitest';
 import Ajv from 'ajv';
 import { Context, Effect, FileSystem, Layer, Path, Schema } from 'effect';
-import { Yaml } from 'effect/unstable/encoding';
+import { Yaml } from 'effect/encoding';
 import ConventionalCommits from '@commitlint/config-conventional';
 import DependabotSchema from './schemas/dependabot-2.0.json' with { type: 'json' };
 

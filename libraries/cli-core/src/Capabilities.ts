@@ -1,5 +1,4 @@
-import { Context, Effect, Layer, Option, Stdio } from 'effect';
-import * as Env from '#src/Env.ts';
+import { Config, Context, Effect, Layer, Option, Stdio } from 'effect';
 
 /**
  * What the surrounding terminal permits.
@@ -39,12 +38,17 @@ const forcesColour = (value: Option.Option<string>): boolean =>
     },
   });
 
+// An empty variable reads as unset, which is how a shell clears what it cannot delete. A provider fault is not something a CLI can recover from, so it dies.
+const environment = Config.all({
+  noColour: Config.option(Config.String('NO_COLOR')),
+  forceColour: Config.option(Config.String('FORCE_COLOR')),
+  term: Config.option(Config.String('TERM')),
+});
+
 // `NO_COLOR` beats `FORCE_COLOR`: the conventions do not say which wins, so the tie goes to the one asking for less.
 // `TERM=dumb` disables all three, not merely colour: a terminal that cannot move the cursor can neither animate nor redraw a prompt.
 const resolve: Effect.Effect<Permissions, never, Stdio.Stdio> = Effect.gen(function* () {
-  const noColour = yield* Env.optional('NO_COLOR');
-  const forceColour = yield* Env.optional('FORCE_COLOR');
-  const term = yield* Env.optional('TERM');
+  const { noColour, forceColour, term } = yield* Effect.orDie(environment);
   const stdio = yield* Stdio.Stdio;
 
   const dumb = Option.match(term, { onNone: () => false, onSome: (value) => value === 'dumb' });

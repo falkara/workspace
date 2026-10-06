@@ -3,7 +3,9 @@
     "plugins": [
       {
         // Diagnostics stay on in the editor as well as in `vp check`: nothing else surfaces Oxlint results in the IDE, so there is no double reporting to avoid.
-        "name": "@effect/language-service"
+        "name": "@effect/language-service",
+        // The modules Effect still marks unstable that this repository builds on by choice: the CLI framework every binary is made of, and the YAML codec the configuration tests read with.
+        "allowedUnstableApis": ["effect/cli", "effect/encoding"]
       }
     ],
     "target": "esnext",

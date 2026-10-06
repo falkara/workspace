@@ -2,7 +2,7 @@ import { NodeServices } from '@effect/platform-node';
 import { expect, layer } from '@effect/vitest';
 import Ajv from 'ajv';
 import { Context, Effect, FileSystem, Layer, Path, Schema } from 'effect';
-import { Yaml } from 'effect/unstable/encoding';
+import { Yaml } from 'effect/encoding';
 import PackageManifest from '../package.json' with { type: 'json' };
 import WorkflowSchema from './schemas/github-workflow.json' with { type: 'json' };
 

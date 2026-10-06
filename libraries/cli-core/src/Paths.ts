@@ -1,5 +1,4 @@
-import { Context, Effect, Layer, Option, Path } from 'effect';
-import * as Env from '#src/Env.ts';
+import { Config, Context, Effect, Layer, Option, Path } from 'effect';
 import * as Host from '#src/Host.ts';
 
 /**
@@ -30,7 +29,7 @@ export const layerOf = (directory: string): Layer.Layer<ConfigDirectory> =>
 // The XDG specification requires an absolute path and has a relative one ignored: honoring it would resolve against the working directory, so a decision recorded under one directory would be unreadable from the next.
 const absolute = Effect.fnUntraced(function* (name: string) {
   const path = yield* Path.Path;
-  const configured = yield* Env.optional(name);
+  const configured = yield* Effect.orDie(Config.option(Config.String(name)));
   return Option.filter(configured, (value) => path.isAbsolute(value));
 });
 

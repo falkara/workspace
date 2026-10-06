@@ -1,5 +1,5 @@
 import { Console, Effect, Predicate } from 'effect';
-import { CliError, CliOutput } from 'effect/unstable/cli';
+import { CliError, CliOutput } from 'effect/cli';
 
 /**
  * Marks a failure as one the user can act on.
