@@ -23,7 +23,7 @@
     "@commitlint/cli": "21.2.3",
     "@effect/platform-node": "4.0.3",
     "@effect/tsgo": "0.51.1",
-    "@effect/vitest": "4.0.3",
+    "@effect/vitest": "4.0.5",
     "ajv": "8.20.0",
     "effect": "4.0.3",
     "typescript": "7.0.2",
