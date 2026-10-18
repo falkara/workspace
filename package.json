@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.3",
-    "@effect/platform-node": "4.0.3",
+    "@effect/platform-node": "4.0.5",
     "@effect/tsgo": "0.51.1",
     "@effect/vitest": "4.0.3",
     "ajv": "8.20.0",
