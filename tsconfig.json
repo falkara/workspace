@@ -4,13 +4,8 @@
       {
         // Diagnostics stay on in the editor as well as in `vp check`: nothing else surfaces Oxlint results in the IDE, so there is no double reporting to avoid.
         "name": "@effect/language-service",
-        // The modules Effect still marks unstable that this repository builds on by choice: the CLI framework every binary is made of, and the platform services it runs on and their Node implementation.
-        "allowedUnstableApis": [
-          "effect/cli",
-          "effect/Path",
-          "effect/Stdio",
-          "@effect/platform-node"
-        ]
+        // The modules Effect still marks unstable that this repository builds on by choice: the CLI framework every binary is made of, and the Node runtime it runs on.
+        "allowedUnstableApis": ["effect/cli", "@effect/platform-node"]
       }
     ],
     "target": "esnext",
