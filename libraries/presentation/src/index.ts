@@ -7,3 +7,4 @@
  * such as StyleX through `stylex.env`.
  */
 export * as Viewport from '#src/Viewport';
+export * as Typography from '#src/Typography';

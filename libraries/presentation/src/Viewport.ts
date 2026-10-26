@@ -16,13 +16,6 @@ export const viewportWidthFactor = 4;
 export const maximumViewportWidth = minimumViewportWidth * viewportWidthFactor;
 
 /**
- * The text scale factor that WCAG 2.2 requires content to support.
- *
- * @see https://www.w3.org/TR/WCAG22/#resize-text
- */
-export const textScaleFactor = 2;
-
-/**
  * The maximum page zoom factor that Safari implements, the lowest among the major browsers.
  *
  * @see https://github.com/WebKit/WebKit/blob/9ae3af91a3db5245146bc662834f5f018cba1275/Source/WebKitLegacy/mac/WebView/WebView.mm#L6090
@@ -30,8 +23,3 @@ export const textScaleFactor = 2;
  * @see https://github.com/mozilla-firefox/firefox/blob/f4970b3baab87e71af27f3f919abe49c86cfb83c/modules/libpref/init/StaticPrefList.yaml#L21886
  */
 export const maximumPageZoomFactor = 3;
-
-/** The maximum text growth factor from the minimum to the maximum viewport width that keeps text resizable by the text scale factor within the maximum page zoom factor. */
-export const maximumTextGrowthFactor =
-  (viewportWidthFactor * (maximumPageZoomFactor - 1)) /
-  (viewportWidthFactor * (textScaleFactor - 1) + maximumPageZoomFactor - textScaleFactor);
