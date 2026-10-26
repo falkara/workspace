@@ -8,3 +8,4 @@
  */
 export * as Viewport from '#src/Viewport';
 export * as Typography from '#src/Typography';
+export * as Fraction from '#src/Fraction';
