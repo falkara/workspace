@@ -6,4 +6,4 @@
  * Values only: this package knows no styling system. An application brings the values into its own,
  * such as StyleX through `stylex.env`.
  */
-export * as Scale from '#src/Scale';
+export * as Viewport from '#src/Viewport';
