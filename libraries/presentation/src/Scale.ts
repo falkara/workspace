@@ -30,3 +30,8 @@ export const textScaleFactor = 2;
  * @see https://github.com/mozilla-firefox/firefox/blob/f4970b3baab87e71af27f3f919abe49c86cfb83c/modules/libpref/init/StaticPrefList.yaml#L21886
  */
 export const maximumPageZoomFactor = 3;
+
+/** The maximum text growth factor from the minimum to the maximum viewport width that keeps text resizable by the text scale factor within the maximum page zoom factor. */
+export const maximumTextGrowthFactor =
+  (viewportWidthFactor * (maximumPageZoomFactor - 1)) /
+  (viewportWidthFactor * (textScaleFactor - 1) + maximumPageZoomFactor - textScaleFactor);
