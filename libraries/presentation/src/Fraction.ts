@@ -21,6 +21,12 @@ export const make = (numerator: number, denominator: number): Fraction => {
   });
 };
 
+/** The fraction of a number over 1. */
+export const fromNumber = (value: number): Fraction => make(value, 1);
+
+/** The fraction 1. */
+export const one = fromNumber(1);
+
 /** The product of two fractions. */
 export const multiply = (self: Fraction, that: Fraction): Fraction =>
   make(self.numerator * that.numerator, self.denominator * that.denominator);
@@ -39,6 +45,21 @@ export const pow = (self: Fraction, exponent: number): Fraction =>
 export const order: Order.Order<Fraction> = Order.make((self, that) =>
   Order.Number(self.numerator * that.denominator, that.numerator * self.denominator),
 );
+
+/** Whether the first fraction is greater than the second. */
+export const isGreaterThan = Order.isGreaterThan(order);
+
+/** Whether the first fraction is greater than or equal to the second. */
+export const isGreaterThanOrEqualTo = Order.isGreaterThanOrEqualTo(order);
+
+/** Whether the first fraction is less than or equal to the second. */
+export const isLessThanOrEqualTo = Order.isLessThanOrEqualTo(order);
+
+/** The fraction written as its numerator over its denominator, such as 6/5. */
+export const format = (self: Fraction): string => `${self.numerator}/${self.denominator}`;
+
+/** A schema check that a fraction is greater than the given one. */
+export const isGreaterThanFraction = Schema.makeIsGreaterThan({ order, formatter: format });
 
 /** The value of the fraction as a number, rounded to the nearest one that JavaScript can hold. */
 export const toNumber = (self: Fraction): number => self.numerator / self.denominator;
