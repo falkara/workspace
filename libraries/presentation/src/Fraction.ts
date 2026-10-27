@@ -21,6 +21,20 @@ export const make = (numerator: number, denominator: number): Fraction => {
   });
 };
 
+/** The product of two fractions. */
+export const multiply = (self: Fraction, that: Fraction): Fraction =>
+  make(self.numerator * that.numerator, self.denominator * that.denominator);
+
+/** The quotient of two fractions, which throws when the divisor is zero. */
+export const divide = (self: Fraction, that: Fraction): Fraction =>
+  make(self.numerator * that.denominator, self.denominator * that.numerator);
+
+/** The fraction raised to a whole exponent, negative exponents inverting it. */
+export const pow = (self: Fraction, exponent: number): Fraction =>
+  exponent < 0
+    ? make(self.denominator ** -exponent, self.numerator ** -exponent)
+    : make(self.numerator ** exponent, self.denominator ** exponent);
+
 /** The order of fractions by value, compared through cross products, so that no division rounds them. */
 export const order: Order.Order<Fraction> = Order.make((self, that) =>
   Order.Number(self.numerator * that.denominator, that.numerator * self.denominator),
