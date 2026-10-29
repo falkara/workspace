@@ -14,7 +14,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      # Packages are published through npm trusted publishing, with no npm token in the repository.
+      # Packages are published through npm trusted publishing and JSR's GitHub link, with no token in the repository.
       id-token: write
     steps:
       - name: Check out the repository
@@ -32,6 +32,7 @@ jobs:
       - name: Install the dependencies
         run: npm ci
       - name: Open the Version Packages pull request or publish the packages
+        id: changesets
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           # The action runs the script without a shell, so the shell joins the versioning and the lockfile update.
@@ -41,3 +42,10 @@ jobs:
           pr-title: 'chore: version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the presentation library to JSR
+        # Only the version npm has just received, which package.json holds alone.
+        if: steps.changesets.outputs.published == 'true' && contains(fromJSON(steps.changesets.outputs.publishedPackages).*.name, '@falkara/presentation')
+        working-directory: libraries/presentation
+        run: |
+          npx vp pack
+          npx jsr@0.14.3 publish --provenance --set-version "$(node --print "require('./package.json').version")"

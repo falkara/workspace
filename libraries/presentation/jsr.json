@@ -1,0 +1,9 @@
+{
+  "$schema": "https://jsr.io/schema/config-file.v1.json",
+  "name": "@falkara/presentation",
+  "license": "MIT",
+  "exports": "./dist/index.mjs",
+  "publish": {
+    "include": ["dist", "README.md", "LICENSE"]
+  }
+}
