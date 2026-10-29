@@ -109,31 +109,34 @@ export const luminanceWeights: readonly [number, number, number] = [0.2126, 0.71
  */
 export const contrastFlare = 1 / 20;
 
-/** The floating-point operations on the longest path from an oklch() color to a contrast ratio, rounded up to a power of two: reading the color, three matrices, the cube, the weighting and the ratio, each of which rounds its result by at most the machine epsilon of JavaScript numbers. */
-export const conversionOperations = 32;
+/**
+ * The unit roundoff of JavaScript numbers, half their machine epsilon: the largest relative error of an arithmetic operation, which ECMAScript rounds to the nearest number as IEEE 754 does. The engines of the Baseline core browsers compute the cosine, the sine and powers within one unit in the last place, twice the unit roundoff.
+ *
+ * @see https://tc39.es/ecma262/#sec-ecmascript-language-types-number-type
+ */
+export const unitRoundoff = Number.EPSILON / 2;
 
-/** The relative error that rounding may leave in a computed contrast ratio, so that a pair exactly at a threshold is not refused for an error of the computation. */
-export const contrastTolerance = conversionOperations * Number.EPSILON;
-
-/** The lightness, chroma and hue in degrees of an oklch() color as CSS Color 4 writes it, or none when it is written otherwise. */
-const components = (color: string): readonly [number, number, number] | undefined => {
-  const match = /^oklch\(\s*(\d*\.?\d+)(%?)\s+(\d*\.?\d+)(%?)\s+(-?\d*\.?\d+)(?:deg)?\s*\)$/.exec(
-    color,
-  );
+/** The lightness, chroma, hue in degrees and alpha of an oklch() color as CSS Color 4 writes it, the lightness and the alpha clamped to their range as CSS Color 4 clamps them, or none when it is written otherwise. */
+const components = (color: string): readonly [number, number, number, number] | undefined => {
+  const match =
+    /^oklch\(\s*(\d*\.?\d+)(%?)\s+(\d*\.?\d+)(%?)\s+(-?\d*\.?\d+)(?:deg)?\s*(?:\/\s*(\d*\.?\d+)(%?)\s*)?\)$/.exec(
+      color,
+    );
   if (match === null) {
     return undefined;
   }
-  const [, lightness, lightnessPercent, chroma, chromaPercent, hue] = match;
+  const [, lightness, lightnessPercent, chroma, chromaPercent, hue, alpha, alphaPercent] = match;
   return [
-    Number(lightness) / (lightnessPercent === '%' ? 100 : 1),
+    Math.min(Number(lightness) / (lightnessPercent === '%' ? 100 : 1), 1),
     (Number(chroma) * (chromaPercent === '%' ? fullChroma : 1)) / (chromaPercent === '%' ? 100 : 1),
     Number(hue),
+    alpha === undefined ? 1 : Math.min(Number(alpha) / (alphaPercent === '%' ? 100 : 1), 1),
   ];
 };
 
-/** The linear sRGB channels of a color of the given lightness, chroma and hue in degrees, converted as CSS Color 4 does. */
+/** The linear sRGB channels of a color of the given lightness, chroma and hue in degrees, converted as CSS Color 4 does, the hue first reduced to one turn exactly so that no large hue loses precision in radians. */
 const linearSrgbOf = (lightness: number, chroma: number, hue: number): ReadonlyArray<number> => {
-  const h = (hue * Math.PI) / 180;
+  const h = ((hue % 360) * Math.PI) / 180;
   const lab = [lightness, chroma * Math.cos(h), chroma * Math.sin(h)];
   const lms = oklabToLms.map(
     (row) => (row[0] * lab[0]! + row[1] * lab[1]! + row[2] * lab[2]!) ** 3,
@@ -145,7 +148,79 @@ const linearSrgbOf = (lightness: number, chroma: number, hue: number): ReadonlyA
 /** The linear sRGB channels of an oklch() color as CSS Color 4 writes it, or none when it is written otherwise. */
 const linearSrgb = (color: string): ReadonlyArray<number> | undefined => {
   const parts = components(color);
-  return parts === undefined ? undefined : linearSrgbOf(...parts);
+  return parts === undefined ? undefined : linearSrgbOf(parts[0], parts[1], parts[2]);
+};
+
+/** A bound on the absolute rounding error in the relative luminance of a valid color, carried through every step of its conversion by the rounding error analysis of Higham: each sum of products by the unit roundoff over the absolute values of its terms, each cosine, sine and power by one unit in the last place, and every error already made through the coefficients it meets. Doubled, so that rounding while computing the bound, a relative error of tens of unit roundoffs, cannot leave it below the error it bounds. */
+const luminanceError = (color: string): number => {
+  const [lightness, chroma, hue] = components(color) ?? [0, 0, 0];
+  // The relative error left by n roundings, as Higham bounds it.
+  const gamma = (n: number): number => (n * unitRoundoff) / (1 - n * unitRoundoff);
+  const angle = ((hue % 360) * Math.PI) / 180;
+  const angleError = (unitRoundoff * Math.abs(hue) * Math.PI) / 180 + gamma(3) * Math.abs(angle);
+  const lightnessError = gamma(2) * lightness;
+  const chromaError = gamma(4) * chroma;
+  const trigonometry = [Math.cos(angle), Math.sin(angle)];
+  const lab = [lightness, chroma * trigonometry[0]!, chroma * trigonometry[1]!];
+  const labError = [
+    lightnessError,
+    ...trigonometry.map(
+      (value, index) =>
+        chroma * (angleError + 2 * unitRoundoff) +
+        (Math.abs(value) + angleError + 2 * unitRoundoff) * chromaError +
+        unitRoundoff * Math.abs(lab[index + 1]!),
+    ),
+  ];
+  const cubeRoots = oklabToLms.map((row) => row[0] * lab[0]! + row[1] * lab[1]! + row[2] * lab[2]!);
+  const cubeRootErrors = oklabToLms.map(
+    (row) =>
+      row.reduce(
+        (error, coefficient, index) => error + Math.abs(coefficient) * labError[index]!,
+        0,
+      ) +
+      gamma(4) *
+        row.reduce((sum, coefficient, index) => sum + Math.abs(coefficient * lab[index]!), 0),
+  );
+  const lms = cubeRoots.map((value) => value ** 3);
+  const lmsError = cubeRoots.map(
+    (value, index) =>
+      (Math.abs(value) + cubeRootErrors[index]!) ** 3 -
+      Math.abs(value) ** 3 +
+      2 * unitRoundoff * Math.abs(value) ** 3,
+  );
+  const xyz = lmsToXyz.map((row) => row[0] * lms[0]! + row[1] * lms[1]! + row[2] * lms[2]!);
+  const xyzError = lmsToXyz.map(
+    (row) =>
+      row.reduce(
+        (error, coefficient, index) => error + Math.abs(coefficient) * lmsError[index]!,
+        0,
+      ) +
+      gamma(4) *
+        row.reduce((sum, coefficient, index) => sum + Math.abs(coefficient * lms[index]!), 0),
+  );
+  const channels = xyzToLinearSrgb.map(
+    (row) => row[0] * xyz[0]! + row[1] * xyz[1]! + row[2] * xyz[2]!,
+  );
+  const channelError = xyzToLinearSrgb.map(
+    (row) =>
+      row.reduce(
+        (error, coefficient, index) => error + Math.abs(coefficient) * xyzError[index]!,
+        0,
+      ) +
+      gamma(4) *
+        row.reduce((sum, coefficient, index) => sum + Math.abs(coefficient * xyz[index]!), 0),
+  );
+  // Holding a channel within its range moves it no further than its error.
+  return (
+    2 *
+    luminanceWeights.reduce(
+      (error, weight, index) =>
+        error +
+        weight * channelError[index]! +
+        gamma(4) * weight * Math.min(Math.max(channels[index]!, 0), 1),
+      0,
+    )
+  );
 };
 
 /**
@@ -191,15 +266,15 @@ const isInGamut = (channels: ReadonlyArray<number>, tolerance: number): boolean 
 export const Color = Schema.String.pipe(
   Schema.check(
     Schema.makeFilter((color) => {
-      if (color.includes('/')) {
-        return 'Expected an opaque color, as WCAG 2.2 defines no contrast for a translucent one';
-      }
-      const channels = linearSrgb(color);
-      if (channels === undefined) {
+      const parts = components(color);
+      if (parts === undefined) {
         return 'Expected a color written in oklch() as CSS Color 4 writes it, such as oklch(64% 0.17 147)';
       }
+      if (parts[3] < 1) {
+        return 'Expected an opaque color, as WCAG 2.2 defines no contrast for a translucent one';
+      }
       return (
-        isInGamut(channels, gamutTolerance) ||
+        isInGamut(linearSrgbOf(parts[0], parts[1], parts[2]), gamutTolerance) ||
         'Expected a color within sRGB, as WCAG 2.2 defines contrast only there'
       );
     }),
@@ -280,7 +355,22 @@ export const verify = (pair: Pair): Exit.Exit<number, Schema.SchemaError> =>
             }
             const target = colors.minimumContrast ?? required;
             return (
-              contrastRatio(colors.text, colors.background) >= target * (1 - contrastTolerance) || {
+              // The largest contrast the exact colors may have, so that a pair is refused only when rounding cannot account for its shortfall. Raised by sixteen unit roundoffs, more than the flare and the six roundings of this quotient can take from it.
+              ((Math.max(
+                relativeLuminance(colors.text) + luminanceError(colors.text),
+                relativeLuminance(colors.background) + luminanceError(colors.background),
+              ) +
+                contrastFlare) /
+                (Math.max(
+                  Math.min(
+                    relativeLuminance(colors.text) - luminanceError(colors.text),
+                    relativeLuminance(colors.background) - luminanceError(colors.background),
+                  ),
+                  0,
+                ) +
+                  contrastFlare)) *
+                (1 + 16 * unitRoundoff) >=
+                target || {
                 path: ['text'],
                 issue:
                   colors.minimumContrast === undefined

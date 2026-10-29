@@ -112,17 +112,14 @@ describe('oklabToLms, lmsToXyz and xyzToLinearSrgb', () => {
   });
 });
 
-describe('contrastTolerance', () => {
-  it('is the machine epsilon over every operation of the conversion', () => {
-    expect(Color.contrastTolerance).toBe(Color.conversionOperations * Number.EPSILON);
+describe('unitRoundoff', () => {
+  it('is half the machine epsilon', () => {
+    expect(Color.unitRoundoff).toBe(2 ** -53);
   });
 
-  it('covers the rounding left in a contrast of exactly 7:1', () => {
-    const exit = Color.contrast(`oklch(${Math.cbrt(1 / 10)} 0 0)`, 'oklch(100% 0 0)');
-    const contrast = Exit.isSuccess(exit) ? exit.value : 0;
-
-    expect(contrast).toBeLessThanOrEqual(7);
-    expect(contrast).toBeGreaterThanOrEqual(7 * (1 - Color.contrastTolerance));
+  it('is the largest relative error of rounding to the nearest number', () => {
+    expect(1 + Color.unitRoundoff).toBe(1);
+    expect(1 + Color.unitRoundoff * (1 + Number.EPSILON)).toBeGreaterThan(1);
   });
 });
 
@@ -153,6 +150,12 @@ describe('Color', () => {
           'Expected a color written in oklch() as CSS Color 4 writes it, such as oklch(64% 0.17 147)',
       },
     ]);
+  });
+
+  it('accepts an opaque alpha', () => {
+    for (const color of ['oklch(50% 0 0 / 1)', 'oklch(50% 0 0 / 100%)', 'oklch(50% 0 0 / 1.5)']) {
+      expect(Exit.isSuccess(Schema.decodeExit(Color.Color)(color))).toBe(true);
+    }
   });
 
   it('rejects a translucent color', () => {
@@ -187,6 +190,18 @@ describe('Color', () => {
 });
 
 describe('contrast', () => {
+  it('clamps a lightness above 100 % to white, as CSS Color 4 does', () => {
+    expect(Color.contrast('oklch(120% 0 0)', 'oklch(0% 0 0)')).toEqual(
+      Color.contrast('oklch(100% 0 0)', 'oklch(0% 0 0)'),
+    );
+  });
+
+  it('reduces the hue to one turn, so that a large hue keeps its precision', () => {
+    expect(Color.contrast('oklch(50% 0.1 360000000000030)', 'oklch(100% 0 0)')).toEqual(
+      Color.contrast('oklch(50% 0.1 30)', 'oklch(100% 0 0)'),
+    );
+  });
+
   it('is 21 for black on white', () => {
     const exit = Color.contrast('oklch(0% 0 0)', 'oklch(100% 0 0)');
 
@@ -384,6 +399,39 @@ describe('verify', () => {
     });
 
     expect(Exit.isSuccess(exit)).toBe(true);
+  });
+
+  it('accepts a pair at the contrast its exact colors have, whatever rounding takes from it', () => {
+    // 20.22204598486041814… at 60 significant digits from the matrices of CSS Color 4, where JavaScript computes 20.222045984860415.
+    const exit = Color.verify({
+      text: 'oklch(0.132707 0.067688 288.9246)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        position: 0,
+        minimumSize: Fraction.make(16n, 1n),
+        maximumSize: Fraction.make(20n, 1n),
+      },
+      fontWeight: 400,
+      minimumContrast: 20.22204598486042,
+    });
+
+    expect(Exit.isSuccess(exit)).toBe(true);
+  });
+
+  it('rejects a pair that falls short by more than rounding can account for', () => {
+    const exit = Color.verify({
+      text: 'oklch(0.132707 0.067688 288.9246)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        position: 0,
+        minimumSize: Fraction.make(16n, 1n),
+        maximumSize: Fraction.make(20n, 1n),
+      },
+      fontWeight: 400,
+      minimumContrast: 20.2220459849,
+    });
+
+    expect(Exit.isFailure(exit)).toBe(true);
   });
 
   it('rejects a pair just below 7:1', () => {
