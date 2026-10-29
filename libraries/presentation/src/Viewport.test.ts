@@ -19,9 +19,9 @@ describe('maximumViewportWidth', () => {
     expect(Viewport.maximumViewportWidth).toBe(1280);
   });
 
-  it('is the minimum viewport width scaled by the viewport width factor', () => {
-    expect(Viewport.maximumViewportWidth).toBe(
-      Viewport.minimumViewportWidth * Viewport.viewportWidthFactor,
+  it('narrows to the minimum viewport width at the page zoom WCAG 2.2 pairs them with', () => {
+    expect(Viewport.maximumViewportWidth / Viewport.viewportWidthFactor).toBe(
+      Viewport.minimumViewportWidth,
     );
   });
 });
@@ -29,5 +29,11 @@ describe('maximumViewportWidth', () => {
 describe('maximumPageZoomFactor', () => {
   it('is the maximum page zoom of Safari, the lowest among the Baseline core browsers', () => {
     expect(Viewport.maximumPageZoomFactor).toBe(3);
+  });
+
+  it('keeps the maximum viewport width within the viewport range at full zoom', () => {
+    expect(Viewport.maximumViewportWidth / Viewport.maximumPageZoomFactor).toBeGreaterThanOrEqual(
+      Viewport.minimumViewportWidth,
+    );
   });
 });
