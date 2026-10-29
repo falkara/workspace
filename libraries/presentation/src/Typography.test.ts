@@ -63,6 +63,36 @@ describe('paragraphSpacingFactor', () => {
   });
 });
 
+describe('textAlignment', () => {
+  it('is start, which keeps text unjustified as WCAG 2.2 Visual Presentation requires', () => {
+    expect(Typography.textAlignment).toBe('start');
+  });
+});
+
+describe('textSpacingLineHeightFactor', () => {
+  it('is the line height WCAG 2.2 Text Spacing lets a reader set', () => {
+    expect(Typography.textSpacingLineHeightFactor).toBe(3 / 2);
+  });
+});
+
+describe('textSpacingParagraphSpacingFactor', () => {
+  it('is the spacing following paragraphs WCAG 2.2 Text Spacing lets a reader set', () => {
+    expect(Typography.textSpacingParagraphSpacingFactor).toBe(2);
+  });
+});
+
+describe('textSpacingLetterSpacingFactor', () => {
+  it('is the letter spacing WCAG 2.2 Text Spacing lets a reader set', () => {
+    expect(Typography.textSpacingLetterSpacingFactor).toBe(3 / 25);
+  });
+});
+
+describe('textSpacingWordSpacingFactor', () => {
+  it('is the word spacing WCAG 2.2 Text Spacing lets a reader set', () => {
+    expect(Typography.textSpacingWordSpacingFactor).toBe(4 / 25);
+  });
+});
+
 describe('maximumTextGrowthFactor', () => {
   it('is 8/5 for the viewport range, the page zoom and the text scale it follows from', () => {
     expect(Typography.maximumTextGrowthFactor).toEqual({ numerator: 8n, denominator: 5n });

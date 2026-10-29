@@ -50,6 +50,14 @@ export const boldFontWeight = 700;
 export const lineHeightFactor = 3 / 2;
 
 /**
+ * The text alignment that keeps text unjustified, as WCAG 2.2 Visual Presentation requires, aligned to the start of each line in every writing direction.
+ *
+ * @see https://www.w3.org/TR/WCAG22/#visual-presentation
+ * @see https://www.w3.org/TR/css-text-3/#text-align-property
+ */
+export const textAlignment = 'start';
+
+/**
  * The factor by which WCAG 2.2 Visual Presentation requires the space between paragraphs to be larger than the line spacing.
  *
  * @see https://www.w3.org/TR/WCAG22/#visual-presentation
@@ -58,6 +66,34 @@ export const paragraphSpacingLineFactor = 3 / 2;
 
 /** The space between paragraphs, the line height grown by the paragraph spacing line factor, as a factor of the font size. Applied in `lh` instead, the paragraph spacing line factor keeps paragraphs apart by the line spacing a reader sets. */
 export const paragraphSpacingFactor = lineHeightFactor * paragraphSpacingLineFactor;
+
+/**
+ * The line height, as a factor of the font size, that WCAG 2.2 Text Spacing lets a reader set without loss of content or function.
+ *
+ * @see https://www.w3.org/TR/WCAG22/#text-spacing
+ */
+export const textSpacingLineHeightFactor = 3 / 2;
+
+/**
+ * The spacing following paragraphs, as a factor of the font size, that WCAG 2.2 Text Spacing lets a reader set without loss of content or function.
+ *
+ * @see https://www.w3.org/TR/WCAG22/#text-spacing
+ */
+export const textSpacingParagraphSpacingFactor = 2;
+
+/**
+ * The letter spacing, as a factor of the font size, that WCAG 2.2 Text Spacing lets a reader set without loss of content or function.
+ *
+ * @see https://www.w3.org/TR/WCAG22/#text-spacing
+ */
+export const textSpacingLetterSpacingFactor = 3 / 25;
+
+/**
+ * The word spacing, as a factor of the font size, that WCAG 2.2 Text Spacing lets a reader set without loss of content or function.
+ *
+ * @see https://www.w3.org/TR/WCAG22/#text-spacing
+ */
+export const textSpacingWordSpacingFactor = 4 / 25;
 
 /** The maximum text growth factor from the minimum to the maximum viewport width that keeps text resizable by the text scale factor within the maximum page zoom factor, whether a reader zooms the page or sets a larger font size, as both act alike on fluid text. */
 export const maximumTextGrowthFactor = Fraction.make(
