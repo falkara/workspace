@@ -12,7 +12,9 @@ Nothing shows the idea better than a fluid type scale. Three choices go in and o
 
 ```ts
 import { Effect } from 'effect';
-import { Fluid, Fraction, Typography } from '@falkara/presentation';
+import * as Fluid from '@falkara/presentation/Fluid';
+import * as Fraction from '@falkara/presentation/Fraction';
+import * as Typography from '@falkara/presentation/Typography';
 
 // Intent: how sharply headings rise on narrow and wide screens, and how large body text gets.
 const intent = {

@@ -13,14 +13,43 @@
     "dist"
   ],
   "type": "module",
+  "sideEffects": false,
   "imports": {
     "#package.json": "./package.json",
     "#src/*": "./src/*.ts"
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.mts",
-      "default": "./dist/index.mjs"
+    "./Color": {
+      "types": "./dist/Color.d.mts",
+      "default": "./dist/Color.mjs"
+    },
+    "./Fluid": {
+      "types": "./dist/Fluid.d.mts",
+      "default": "./dist/Fluid.mjs"
+    },
+    "./Fraction": {
+      "types": "./dist/Fraction.d.mts",
+      "default": "./dist/Fraction.mjs"
+    },
+    "./Layout": {
+      "types": "./dist/Layout.d.mts",
+      "default": "./dist/Layout.mjs"
+    },
+    "./Length": {
+      "types": "./dist/Length.d.mts",
+      "default": "./dist/Length.mjs"
+    },
+    "./Space": {
+      "types": "./dist/Space.d.mts",
+      "default": "./dist/Space.mjs"
+    },
+    "./Typography": {
+      "types": "./dist/Typography.d.mts",
+      "default": "./dist/Typography.mjs"
+    },
+    "./Viewport": {
+      "types": "./dist/Viewport.d.mts",
+      "default": "./dist/Viewport.mjs"
     }
   },
   "publishConfig": {

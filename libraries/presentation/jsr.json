@@ -2,7 +2,16 @@
   "$schema": "https://jsr.io/schema/config-file.v1.json",
   "name": "@falkara/presentation",
   "license": "MIT",
-  "exports": "./dist/index.mjs",
+  "exports": {
+    "./Color": "./dist/Color.mjs",
+    "./Fluid": "./dist/Fluid.mjs",
+    "./Fraction": "./dist/Fraction.mjs",
+    "./Layout": "./dist/Layout.mjs",
+    "./Length": "./dist/Length.mjs",
+    "./Space": "./dist/Space.mjs",
+    "./Typography": "./dist/Typography.mjs",
+    "./Viewport": "./dist/Viewport.mjs"
+  },
   "publish": {
     "include": ["dist", "README.md", "LICENSE"]
   }
