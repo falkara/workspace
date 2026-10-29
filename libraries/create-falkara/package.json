@@ -1,6 +1,6 @@
 {
   "name": "create-falkara",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Falkara builds how brands show up, online and in the room. The create-falkara package powers npm create falkara, the starting point for new projects on Falkara products.",
   "keywords": [
     "cli",

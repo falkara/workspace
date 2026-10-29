@@ -1,6 +1,6 @@
 {
   "name": "falkara",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Falkara builds how brands show up, online and in the room. The falkara command is the command line for every Falkara product.",
   "keywords": [
     "cli",
