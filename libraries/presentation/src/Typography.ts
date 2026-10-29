@@ -21,6 +21,27 @@ export const minimumFontSize = 12;
 export const textScaleFactor = 2;
 
 /**
+ * The lightest font weight that CSS Fonts allows.
+ *
+ * @see https://www.w3.org/TR/css-fonts-4/#font-weight-prop
+ */
+export const minimumFontWeight = 1;
+
+/**
+ * The heaviest font weight that CSS Fonts allows.
+ *
+ * @see https://www.w3.org/TR/css-fonts-4/#font-weight-prop
+ */
+export const maximumFontWeight = 1000;
+
+/**
+ * The font weight that CSS Fonts gives the bold keyword.
+ *
+ * @see https://www.w3.org/TR/css-fonts-4/#font-weight-prop
+ */
+export const boldFontWeight = 700;
+
+/**
  * The line height that WCAG 2.2 Visual Presentation requires within paragraphs, space-and-a-half, as a factor of the font size, the measure its sufficient technique C21 and Text Spacing take.
  *
  * @see https://www.w3.org/TR/WCAG22/#visual-presentation

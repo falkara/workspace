@@ -23,6 +23,24 @@ describe('textScaleFactor', () => {
   });
 });
 
+describe('minimumFontWeight', () => {
+  it('is the lightest font weight CSS Fonts allows', () => {
+    expect(Typography.minimumFontWeight).toBe(1);
+  });
+});
+
+describe('maximumFontWeight', () => {
+  it('is the heaviest font weight CSS Fonts allows', () => {
+    expect(Typography.maximumFontWeight).toBe(1000);
+  });
+});
+
+describe('boldFontWeight', () => {
+  it('is the font weight CSS Fonts gives the bold keyword', () => {
+    expect(Typography.boldFontWeight).toBe(700);
+  });
+});
+
 describe('lineHeightFactor', () => {
   it('is the space-and-a-half WCAG 2.2 Visual Presentation requires within paragraphs', () => {
     expect(Typography.lineHeightFactor).toBe(3 / 2);
