@@ -1,6 +1,6 @@
 {
   "name": "@falkara/presentation",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Presentation of web content, every value following from a few axioms that cite their sources.",
   "license": "MIT",
   "author": "Filip Falcon",
@@ -9,16 +9,25 @@
     "url": "git+https://github.com/falkara/workspace.git",
     "directory": "libraries/presentation"
   },
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "imports": {
     "#package.json": "./package.json",
     "#src/*": "./src/*.ts"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
   },
   "publishConfig": {
     "access": "public"
+  },
+  "scripts": {
+    "prepack": "vp pack"
   },
   "peerDependencies": {
     "effect": "^4.0.7"
