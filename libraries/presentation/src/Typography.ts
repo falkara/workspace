@@ -20,7 +20,7 @@ export const minimumFontSize = 12;
  */
 export const textScaleFactor = 2;
 
-/** The maximum text growth factor from the minimum to the maximum viewport width that keeps text resizable by the text scale factor within the maximum page zoom factor. */
+/** The maximum text growth factor from the minimum to the maximum viewport width that keeps text resizable by the text scale factor within the maximum page zoom factor, whether a reader zooms the page or sets a larger font size, as both act alike on fluid text. */
 export const maximumTextGrowthFactor = Fraction.make(
   BigInt(Viewport.viewportWidthFactor * (Viewport.maximumPageZoomFactor - 1)),
   BigInt(

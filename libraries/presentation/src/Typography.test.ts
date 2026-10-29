@@ -51,6 +51,28 @@ describe('maximumTextGrowthFactor', () => {
       Fraction.multiply(Fraction.make(BigInt(Viewport.maximumPageZoomFactor), 1n), zoomedSize),
     ).toEqual(Fraction.multiply(Fraction.make(BigInt(Typography.textScaleFactor), 1n), growth));
   });
+
+  it('lets text that grows by it reach the text scale factor at a font size of the maximum page zoom', () => {
+    const growth = Typography.maximumTextGrowthFactor;
+    const viewportRange = BigInt(Viewport.maximumViewportWidth - Viewport.minimumViewportWidth);
+    const slope = Fraction.make(
+      growth.numerator - growth.denominator,
+      growth.denominator * viewportRange,
+    );
+    const intercept = Fraction.make(
+      BigInt(Viewport.maximumViewportWidth) * growth.denominator -
+        growth.numerator * BigInt(Viewport.minimumViewportWidth),
+      viewportRange * growth.denominator,
+    );
+    const resizedSize = Fraction.sum(
+      Fraction.multiply(Fraction.make(BigInt(Viewport.maximumPageZoomFactor), 1n), intercept),
+      Fraction.multiply(slope, Fraction.make(BigInt(Viewport.maximumViewportWidth), 1n)),
+    );
+
+    expect(resizedSize).toEqual(
+      Fraction.multiply(Fraction.make(BigInt(Typography.textScaleFactor), 1n), growth),
+    );
+  });
 });
 
 describe('ScaleOptions', () => {
