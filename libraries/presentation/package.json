@@ -2,6 +2,21 @@
   "name": "@falkara/presentation",
   "version": "0.5.0",
   "description": "An Effect-based TypeScript library for interface design that derives each value from established standards.",
+  "keywords": [
+    "accessibility",
+    "color-contrast",
+    "design-tokens",
+    "effect",
+    "fluid-typography",
+    "oklch",
+    "type-scale",
+    "typography",
+    "wcag"
+  ],
+  "homepage": "https://github.com/falkara/workspace/tree/main/libraries/presentation#readme",
+  "bugs": {
+    "url": "https://github.com/falkara/workspace/issues"
+  },
   "license": "MIT",
   "author": "Filip Falcon",
   "repository": {
@@ -57,6 +72,10 @@
   },
   "scripts": {
     "prepack": "vp pack"
+  },
+  "devDependencies": {
+    "@effect/vitest": "4.1.0",
+    "effect": "4.1.0"
   },
   "peerDependencies": {
     "effect": "~4.1.0"
