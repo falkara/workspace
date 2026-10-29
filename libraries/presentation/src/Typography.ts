@@ -1,13 +1,13 @@
-import { Array, Result, Schema } from 'effect';
+import { Array, Exit, Schema } from 'effect';
 
 import * as Fraction from '#src/Fraction';
 import * as Viewport from '#src/Viewport';
 
-/** The default font size that the major browsers implement for the root element. Measured in CSS pixels. */
+/** The default font size that the Baseline core browsers implement for the root element until a reader sets their own. Measured in CSS pixels. */
 export const defaultFontSize = 16;
 
 /**
- * The minimum font size that the major design systems implement. Measured in CSS pixels.
+ * The smallest font size of the USWDS theme type scale. Measured in CSS pixels.
  *
  * @see https://designsystem.digital.gov/design-tokens/typesetting/font/#theme-typescale
  */
@@ -22,32 +22,32 @@ export const textScaleFactor = 2;
 
 /** The maximum text growth factor from the minimum to the maximum viewport width that keeps text resizable by the text scale factor within the maximum page zoom factor. */
 export const maximumTextGrowthFactor = Fraction.make(
-  Viewport.viewportWidthFactor * (Viewport.maximumPageZoomFactor - 1),
-  Viewport.viewportWidthFactor * (textScaleFactor - 1) +
-    Viewport.maximumPageZoomFactor -
-    textScaleFactor,
-);
-
-/** A ratio between consecutive steps of a type scale, greater than 1 so that every step is larger than the one below. */
-const ScaleFactor = Fraction.Fraction.pipe(
-  Schema.check(Fraction.isGreaterThanFraction(Fraction.one)),
+  BigInt(Viewport.viewportWidthFactor * (Viewport.maximumPageZoomFactor - 1)),
+  BigInt(
+    Viewport.viewportWidthFactor * (textScaleFactor - 1) +
+      Viewport.maximumPageZoomFactor -
+      textScaleFactor,
+  ),
 );
 
 /** A schema of the ratios of a type scale and the size its body text reaches at the maximum viewport width. */
 export const ScaleOptions = Schema.Struct({
-  /** The ratio between consecutive steps at the minimum viewport width. */
-  minimumFactor: ScaleFactor,
-  /** The ratio between consecutive steps at the maximum viewport width, greater than the minimum factor so that growth rises with the step. */
-  maximumFactor: ScaleFactor,
+  /** The ratio between consecutive steps at the minimum viewport width, greater than 1 so that every step is larger than the one below. */
+  minimumFactor: Fraction.Fraction.pipe(Schema.check(Fraction.isGreaterThanFraction(Fraction.one))),
+  /** The ratio between consecutive steps at the maximum viewport width, greater than 1 so that every step is larger than the one below. */
+  maximumFactor: Fraction.Fraction.pipe(Schema.check(Fraction.isGreaterThanFraction(Fraction.one))),
   /** The font size of body text at the maximum viewport width, from the default font size, so that body text never shrinks, to the size the maximum text growth factor allows. Measured in CSS pixels. */
-  maximumBodyFontSize: Schema.Finite.pipe(
+  maximumBodyFontSize: Fraction.Fraction.pipe(
     Schema.check(
-      Schema.isGreaterThanOrEqualTo(defaultFontSize),
-      Schema.isLessThanOrEqualTo(defaultFontSize * Fraction.toNumber(maximumTextGrowthFactor)),
+      Fraction.isGreaterThanOrEqualToFraction(Fraction.make(BigInt(defaultFontSize), 1n)),
+      Fraction.isLessThanOrEqualToFraction(
+        Fraction.multiply(Fraction.make(BigInt(defaultFontSize), 1n), maximumTextGrowthFactor),
+      ),
     ),
   ),
 }).pipe(
   Schema.check(
+    /** The maximum factor greater than the minimum factor, so that growth rises with the step and the scale ends. */
     Schema.makeFilter(
       (options) =>
         Fraction.isGreaterThan(options.maximumFactor, options.minimumFactor) || {
@@ -61,47 +61,47 @@ export const ScaleOptions = Schema.Struct({
 /** The ratios of a type scale and the size its body text reaches at the maximum viewport width. */
 export type ScaleOptions = typeof ScaleOptions.Type;
 
-/** A step of a type scale, with its font size at the minimum and at the maximum viewport width. */
+/** A step of the type scale, with its size at the minimum and at the maximum viewport width. */
 export interface Step {
   /** The position of the step, 0 for body text, positive above it and negative below. */
   readonly position: number;
-  /** The font size at the minimum viewport width. Measured in CSS pixels. */
+  /** The size at the minimum viewport width. Measured in CSS pixels. */
   readonly minimumSize: number;
-  /** The font size at the maximum viewport width. Measured in CSS pixels. */
+  /** The size at the maximum viewport width. Measured in CSS pixels. */
   readonly maximumSize: number;
 }
 
 /** The type scale from its lowest to its highest step: every step whose growth from the minimum to the maximum viewport width lies between 1 and the maximum text growth factor, and whose size stays at or above the minimum font size. */
-export const scale = (
-  options: ScaleOptions,
-): Result.Result<ReadonlyArray<Step>, Schema.SchemaError> =>
-  Result.map(Schema.decodeResult(ScaleOptions)(options), steps);
-
-const steps = (options: ScaleOptions): ReadonlyArray<Step> => {
-  const sizeAt = (base: Fraction.Fraction, factor: Fraction.Fraction, position: number) =>
-    Fraction.multiply(base, Fraction.pow(factor, position));
-  const minimumSize = (position: number) =>
-    sizeAt(Fraction.fromNumber(defaultFontSize), options.minimumFactor, position);
-  const maximumSize = (position: number) =>
-    sizeAt(Fraction.fromNumber(options.maximumBodyFontSize), options.maximumFactor, position);
-  const growth = (position: number) =>
-    Fraction.divide(maximumSize(position), minimumSize(position));
-  // A step that never shrinks is at its smallest at the minimum viewport width.
-  const isLegible = (position: number) =>
-    Fraction.isGreaterThanOrEqualTo(minimumSize(position), Fraction.fromNumber(minimumFontSize));
-  const isGrowing = (position: number) =>
-    Fraction.isGreaterThanOrEqualTo(growth(position), Fraction.one);
-  const isResizable = (position: number) =>
-    Fraction.isLessThanOrEqualTo(growth(position), maximumTextGrowthFactor);
-  const lowestFrom = (position: number): number =>
-    isGrowing(position - 1) && isLegible(position - 1) ? lowestFrom(position - 1) : position;
-  const highestFrom = (position: number): number =>
-    isResizable(position + 1) ? highestFrom(position + 1) : position;
-
-  const lowest = lowestFrom(0);
-  return Array.makeBy(highestFrom(0) - lowest + 1, (index) => ({
-    position: lowest + index,
-    minimumSize: Fraction.toNumber(minimumSize(lowest + index)),
-    maximumSize: Fraction.toNumber(maximumSize(lowest + index)),
-  }));
-};
+export const scale = (options: ScaleOptions): Exit.Exit<ReadonlyArray<Step>, Schema.SchemaError> =>
+  Exit.map(Schema.decodeExit(ScaleOptions)(options, { errors: 'all' }), (options) => {
+    const minimumSize = (position: bigint) =>
+      Fraction.multiply(
+        Fraction.make(BigInt(defaultFontSize), 1n),
+        Fraction.pow(options.minimumFactor, position),
+      );
+    const maximumSize = (position: bigint) =>
+      Fraction.multiply(options.maximumBodyFontSize, Fraction.pow(options.maximumFactor, position));
+    const isAdmitted = (position: bigint) => {
+      const growth = Fraction.divide(maximumSize(position), minimumSize(position));
+      // A step that never shrinks is at its smallest at the minimum viewport width.
+      return (
+        Fraction.isGreaterThanOrEqualTo(growth, Fraction.one) &&
+        Fraction.isLessThanOrEqualTo(growth, maximumTextGrowthFactor) &&
+        Fraction.isGreaterThanOrEqualTo(
+          minimumSize(position),
+          Fraction.make(BigInt(minimumFontSize), 1n),
+        )
+      );
+    };
+    // Growth and size both rise with the position, so the admitted steps run unbroken from the lowest to the highest.
+    const lowestFrom = (position: bigint): bigint =>
+      isAdmitted(position - 1n) ? lowestFrom(position - 1n) : position;
+    const highestFrom = (position: bigint): bigint =>
+      isAdmitted(position + 1n) ? highestFrom(position + 1n) : position;
+    const lowest = lowestFrom(0n);
+    return Array.makeBy(Number(highestFrom(0n) - lowest) + 1, (index) => ({
+      position: Number(lowest) + index,
+      minimumSize: Fraction.toNumber(minimumSize(lowest + BigInt(index))),
+      maximumSize: Fraction.toNumber(maximumSize(lowest + BigInt(index))),
+    }));
+  });
