@@ -50,6 +50,15 @@ if (scale._tag === 'Success') {
 }
 ```
 
+## Modules
+
+- **Typography** turns three choices into a fluid type scale where every step stays resizable.
+- **Space** grows every gap with body text from that same intent.
+- **Color** measures each pair against the size of the text it carries and finds the closest legible shade of a brand color.
+- **Layout** holds lines to lengths that follow the font.
+
+Viewport, Length, Fluid and Fraction hold the facts and the exact arithmetic the rest stands on.
+
 ## Groundwork
 
 We build only on what the industry already agrees on and let a handful of them settle every decision that is not a matter of taste.
