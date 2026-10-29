@@ -20,6 +20,24 @@ export const minimumFontSize = 12;
  */
 export const textScaleFactor = 2;
 
+/**
+ * The line height that WCAG 2.2 Visual Presentation requires within paragraphs, space-and-a-half, as a factor of the font size, the measure its sufficient technique C21 and Text Spacing take.
+ *
+ * @see https://www.w3.org/TR/WCAG22/#visual-presentation
+ * @see https://www.w3.org/WAI/WCAG22/Techniques/css/C21
+ */
+export const lineHeightFactor = 3 / 2;
+
+/**
+ * The factor by which WCAG 2.2 Visual Presentation requires the space between paragraphs to be larger than the line spacing.
+ *
+ * @see https://www.w3.org/TR/WCAG22/#visual-presentation
+ */
+export const paragraphSpacingLineFactor = 3 / 2;
+
+/** The space between paragraphs, the line height grown by the paragraph spacing line factor, as a factor of the font size. */
+export const paragraphSpacingFactor = lineHeightFactor * paragraphSpacingLineFactor;
+
 /** The maximum text growth factor from the minimum to the maximum viewport width that keeps text resizable by the text scale factor within the maximum page zoom factor, whether a reader zooms the page or sets a larger font size, as both act alike on fluid text. */
 export const maximumTextGrowthFactor = Fraction.make(
   BigInt(Viewport.viewportWidthFactor * (Viewport.maximumPageZoomFactor - 1)),

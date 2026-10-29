@@ -23,6 +23,28 @@ describe('textScaleFactor', () => {
   });
 });
 
+describe('lineHeightFactor', () => {
+  it('is the space-and-a-half WCAG 2.2 Visual Presentation requires within paragraphs', () => {
+    expect(Typography.lineHeightFactor).toBe(3 / 2);
+  });
+});
+
+describe('paragraphSpacingLineFactor', () => {
+  it('is how much larger than the line spacing WCAG 2.2 Visual Presentation requires paragraph spacing to be', () => {
+    expect(Typography.paragraphSpacingLineFactor).toBe(3 / 2);
+  });
+});
+
+describe('paragraphSpacingFactor', () => {
+  it('is 9/4', () => {
+    expect(Typography.paragraphSpacingFactor).toBe(9 / 4);
+  });
+
+  it('is at least the paragraph spacing a reader may set under WCAG 2.2 Text Spacing', () => {
+    expect(Typography.paragraphSpacingFactor).toBeGreaterThanOrEqual(2);
+  });
+});
+
 describe('maximumTextGrowthFactor', () => {
   it('is 8/5 for the viewport range, the page zoom and the text scale it follows from', () => {
     expect(Typography.maximumTextGrowthFactor).toEqual({ numerator: 8n, denominator: 5n });
