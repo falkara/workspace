@@ -7,11 +7,11 @@ import * as Viewport from '#src/Viewport';
 export const defaultFontSize = 16;
 
 /**
- * The smallest font size of the USWDS theme type scale. Measured in CSS pixels.
+ * The smallest font size of the USWDS theme type scale in its default settings. Measured in CSS pixels.
  *
- * @see https://designsystem.digital.gov/design-tokens/typesetting/font/#theme-typescale
+ * @see https://designsystem.digital.gov/design-tokens/typesetting/font-size/#theme-tokens
  */
-export const minimumFontSize = 12;
+export const minimumFontSize = 13;
 
 /**
  * The text scale factor that WCAG 2.2 requires content to support.

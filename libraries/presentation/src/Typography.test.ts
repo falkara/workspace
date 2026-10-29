@@ -12,8 +12,8 @@ describe('defaultFontSize', () => {
 });
 
 describe('minimumFontSize', () => {
-  it('is the smallest size of the USWDS theme type scale', () => {
-    expect(Typography.minimumFontSize).toBe(12);
+  it('is the smallest size of the USWDS theme type scale in its default settings', () => {
+    expect(Typography.minimumFontSize).toBe(13);
   });
 });
 
@@ -364,7 +364,7 @@ describe('scale', () => {
     const nextMinimumSize = 16 * (5 / 6) ** 2;
 
     expect(lowest?.position).toBe(-1);
-    expect(nextMinimumSize).toBeLessThan(12);
+    expect(nextMinimumSize).toBeLessThan(Typography.minimumFontSize);
   });
 
   it('reports every invalid option at once', () => {
