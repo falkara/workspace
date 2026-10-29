@@ -35,7 +35,7 @@ export const lineHeightFactor = 3 / 2;
  */
 export const paragraphSpacingLineFactor = 3 / 2;
 
-/** The space between paragraphs, the line height grown by the paragraph spacing line factor, as a factor of the font size. */
+/** The space between paragraphs, the line height grown by the paragraph spacing line factor, as a factor of the font size. Applied in `lh` instead, the paragraph spacing line factor keeps paragraphs apart by the line spacing a reader sets. */
 export const paragraphSpacingFactor = lineHeightFactor * paragraphSpacingLineFactor;
 
 /** The maximum text growth factor from the minimum to the maximum viewport width that keeps text resizable by the text scale factor within the maximum page zoom factor, whether a reader zooms the page or sets a larger font size, as both act alike on fluid text. */
