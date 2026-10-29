@@ -1,0 +1,7 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@4.0.0/schema.json",
+  "changelog": ["@changesets/changelog-github", { "repo": "falkara/workspace" }],
+  "access": "public",
+  "privatePackages": false,
+  "ignore": ["@falkara/cli", "@falkara/create-workspace"]
+}

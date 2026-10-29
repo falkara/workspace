@@ -1,0 +1,38 @@
+name: Release
+on:
+  push:
+    branches: [main]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # A newer push waits instead of interrupting a release under way.
+  cancel-in-progress: false
+permissions: {}
+jobs:
+  Release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+      # Packages are published through npm trusted publishing, with no npm token in the repository.
+      id-token: write
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '^24.15.0'
+      - name: Set up npm
+        run: npm install --global npm@12
+      - name: Install the dependencies
+        run: npm ci
+      - name: Open the Version Packages pull request or publish the packages
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        with:
+          version-script: npx changeset version && npm install --package-lock-only
+          publish-script: npx changeset publish
+          commit-message: 'chore: version packages'
+          pr-title: 'chore: version packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

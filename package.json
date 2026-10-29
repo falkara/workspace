@@ -20,6 +20,8 @@
     "test": "vp test"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "1.0.1",
+    "@changesets/cli": "3.0.3",
     "@commitlint/cli": "21.2.3",
     "@effect/platform-node": "4.0.7",
     "@effect/tsgo": "0.51.1",
