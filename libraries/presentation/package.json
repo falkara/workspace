@@ -1,6 +1,6 @@
 {
   "name": "@falkara/presentation",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Presentation of web content, every value following from a few axioms that cite their sources.",
   "license": "MIT",
   "author": "Filip Falcon",
