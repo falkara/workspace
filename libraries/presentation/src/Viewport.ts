@@ -6,14 +6,14 @@
 export const minimumViewportWidth = 320;
 
 /**
- * The viewport width factor that WCAG 2.2 pairs with the minimum viewport width as a page zoom.
+ * The ratio of the maximum to the minimum viewport width, the page zoom factor at which WCAG 2.2 equates a desktop viewport with the minimum viewport width.
  *
  * @see https://www.w3.org/TR/WCAG22/#reflow
  */
 export const viewportWidthFactor = 4;
 
-/** The maximum viewport width that the viewport width factor scales the minimum viewport width to. Measured in CSS pixels. */
+/** The maximum viewport width, at and beyond which fluid values hold their largest size. Measured in CSS pixels. */
 export const maximumViewportWidth = minimumViewportWidth * viewportWidthFactor;
 
-/** The maximum page zoom factor that Safari implements, the lowest among the major browsers. */
+/** The maximum page zoom factor that Safari implements, the lowest among the Baseline core browsers. */
 export const maximumPageZoomFactor = 3;
