@@ -291,6 +291,31 @@ describe('verify', () => {
     expect(Exit.isSuccess(exit)).toBe(true);
   });
 
+  it('rejects a step that shrinks, which would earn its text the ratio of large text', () => {
+    const exit = Color.verify({
+      text: 'oklch(50% 0 0)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        position: 3,
+        minimumSize: Fraction.make(24n, 1n),
+        maximumSize: Fraction.make(12n, 1n),
+      },
+      fontWeight: 400,
+    });
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['step', 'maximumSize'],
+        message:
+          'Expected a maximum size of 24 px to 38.4 px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+      },
+    ]);
+  });
+
   it('asks for 7:1 when text is large-scale only on wider screens', () => {
     const exit = Color.verify({
       text: 'oklch(50% 0 0)',
@@ -453,6 +478,31 @@ describe('verify', () => {
 });
 
 describe('shade', () => {
+  it('rejects a step smaller than the minimum font size', () => {
+    const exit = Color.shade({
+      color: 'oklch(50% 0 0)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        position: 0,
+        minimumSize: Fraction.make(12n, 1n),
+        maximumSize: Fraction.make(15n, 1n),
+      },
+      fontWeight: 400,
+    });
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['step', 'minimumSize'],
+        message:
+          'Expected a minimum size of at least 13 px, the smallest size of the USWDS theme type scale',
+      },
+    ]);
+  });
+
   it('keeps a brand color that already reaches the contrast', () => {
     const exit = Color.shade({
       color: 'oklch(0% 0 0)',

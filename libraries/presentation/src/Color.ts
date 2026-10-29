@@ -233,7 +233,7 @@ export const contrast = (text: string, background: string): Exit.Exit<number, Sc
 export interface Pair {
   readonly text: string;
   readonly background: string;
-  readonly step: Typography.Step;
+  readonly step: typeof Typography.Step.Encoded;
   readonly fontWeight: number;
   readonly minimumContrast?: number | undefined;
 }
@@ -253,6 +253,7 @@ export const verify = (pair: Pair): Exit.Exit<number, Schema.SchemaError> =>
       Schema.Struct({
         text: Color,
         background: Color,
+        step: Typography.Step,
         fontWeight: Schema.Finite.pipe(
           Schema.check(
             Schema.isBetween(
@@ -267,9 +268,9 @@ export const verify = (pair: Pair): Exit.Exit<number, Schema.SchemaError> =>
       }).pipe(
         Schema.check(
           Schema.makeFilter((colors) => {
-            const required = requiredContrast(pair.step, colors.fontWeight);
+            const required = requiredContrast(colors.step, colors.fontWeight);
             const size =
-              Math.round(Fraction.toNumber(pair.step.minimumSize) * 10 ** Fluid.decimalPlaces) /
+              Math.round(Fraction.toNumber(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) /
               10 ** Fluid.decimalPlaces;
             if (colors.minimumContrast !== undefined && colors.minimumContrast < required) {
               return {
@@ -294,6 +295,7 @@ export const verify = (pair: Pair): Exit.Exit<number, Schema.SchemaError> =>
       {
         text: pair.text,
         background: pair.background,
+        step: pair.step,
         fontWeight: pair.fontWeight,
         minimumContrast: pair.minimumContrast,
       },
@@ -306,7 +308,7 @@ export const verify = (pair: Pair): Exit.Exit<number, Schema.SchemaError> =>
 export interface Brand {
   readonly color: string;
   readonly background: string;
-  readonly step: Typography.Step;
+  readonly step: typeof Typography.Step.Encoded;
   readonly fontWeight: number;
   readonly minimumContrast?: number | undefined;
 }
@@ -372,6 +374,7 @@ export const shade = (brand: Brand): Exit.Exit<string, Schema.SchemaError> =>
       Schema.Struct({
         color: Color,
         background: Color,
+        step: Typography.Step,
         fontWeight: Schema.Finite.pipe(
           Schema.check(
             Schema.isBetween(
@@ -386,9 +389,9 @@ export const shade = (brand: Brand): Exit.Exit<string, Schema.SchemaError> =>
       }).pipe(
         Schema.check(
           Schema.makeFilter((colors) => {
-            const required = requiredContrast(brand.step, colors.fontWeight);
+            const required = requiredContrast(colors.step, colors.fontWeight);
             const size =
-              Math.round(Fraction.toNumber(brand.step.minimumSize) * 10 ** Fluid.decimalPlaces) /
+              Math.round(Fraction.toNumber(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) /
               10 ** Fluid.decimalPlaces;
             if (colors.minimumContrast !== undefined && colors.minimumContrast < required) {
               return {
@@ -410,6 +413,7 @@ export const shade = (brand: Brand): Exit.Exit<string, Schema.SchemaError> =>
       {
         color: brand.color,
         background: brand.background,
+        step: brand.step,
         fontWeight: brand.fontWeight,
         minimumContrast: brand.minimumContrast,
       },
@@ -419,7 +423,7 @@ export const shade = (brand: Brand): Exit.Exit<string, Schema.SchemaError> =>
       const [lightness, chroma, hue] = closestShade(
         colors.color,
         colors.background,
-        colors.minimumContrast ?? requiredContrast(brand.step, colors.fontWeight),
+        colors.minimumContrast ?? requiredContrast(colors.step, colors.fontWeight),
       ) ?? [0, 0, 0];
       // Written in fixed notation, which CSS reads, rather than the exponent JavaScript uses for small numbers, without trailing zeros.
       return `oklch(${lightness.toFixed(16).replace(/\.?0+$/, '')} ${chroma.toFixed(16).replace(/\.?0+$/, '')} ${hue})`;

@@ -162,15 +162,42 @@ export const ScaleOptions = Schema.Struct({
 /** The ratios of a type scale and the size its body text reaches at the maximum viewport width. */
 export type ScaleOptions = typeof ScaleOptions.Type;
 
-/** A step of the type scale, with its size at the minimum and at the maximum viewport width. */
-export interface Step {
+/** A schema of a step of the type scale, with its size at the minimum and at the maximum viewport width, so that a step written by hand holds what every step of a scale holds before its size decides the contrast its text needs. */
+export const Step = Schema.Struct({
   /** The position of the step, 0 for body text, positive above it and negative below. */
-  readonly position: number;
-  /** The size at the minimum viewport width. Measured in CSS pixels. */
-  readonly minimumSize: Fraction.Fraction;
+  position: Schema.Int,
+  /** The size at the minimum viewport width, its smallest, from the minimum to the maximum font size. Measured in CSS pixels. */
+  minimumSize: Fraction.Fraction.pipe(
+    Schema.check(
+      Fraction.isGreaterThanOrEqualToFraction(Fraction.make(BigInt(minimumFontSize), 1n), {
+        message: `Expected a minimum size of at least ${minimumFontSize} px, the smallest size of the USWDS theme type scale`,
+      }),
+      Fraction.isLessThanOrEqualToFraction(maximumFontSize, {
+        message: `Expected a minimum size of at most ${Fraction.format(maximumFontSize)} px, so that a full-width character fits the minimum viewport width of ${Viewport.minimumViewportWidth} px at a font size of ${Viewport.maximumPageZoomFactor * 100} %, as WCAG 2.2 Reflow requires`,
+      }),
+    ),
+  ),
   /** The size at the maximum viewport width. Measured in CSS pixels. */
-  readonly maximumSize: Fraction.Fraction;
-}
+  maximumSize: Fraction.Fraction,
+}).pipe(
+  Schema.check(
+    /** The maximum size from the minimum size, so that the step never shrinks and its smallest size is the one at the minimum viewport width, to the minimum size grown by the maximum text growth factor, so that its text stays resizable. */
+    Schema.makeFilter(
+      (step) =>
+        (Fraction.isGreaterThanOrEqualTo(step.maximumSize, step.minimumSize) &&
+          Fraction.isLessThanOrEqualTo(
+            step.maximumSize,
+            Fraction.multiply(step.minimumSize, maximumTextGrowthFactor),
+          )) || {
+          path: ['maximumSize'],
+          issue: `Expected a maximum size of ${Fraction.toNumber(step.minimumSize)} px to ${Fraction.toNumber(Fraction.multiply(step.minimumSize, maximumTextGrowthFactor))} px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to ${textScaleFactor * 100} % within the ${Viewport.maximumPageZoomFactor * 100} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
+        },
+    ),
+  ),
+);
+
+/** A step of the type scale, with its size at the minimum and at the maximum viewport width. */
+export type Step = typeof Step.Type;
 
 /** The type scale from its lowest to its highest step: every step whose growth from the minimum to the maximum viewport width lies between 1 and the maximum text growth factor, and whose size at the minimum viewport width lies between the minimum and the maximum font size. */
 export const scale = (

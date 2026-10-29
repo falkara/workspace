@@ -319,6 +319,102 @@ describe('ScaleOptions', () => {
   });
 });
 
+describe('Step', () => {
+  it('accepts every step of a scale', () => {
+    const exit = Typography.scale({
+      minimumFactor: { numerator: 6n, denominator: 5n },
+      maximumFactor: { numerator: 5n, denominator: 4n },
+      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+    });
+    const steps = Exit.isSuccess(exit) ? exit.value : [];
+
+    expect(steps).not.toHaveLength(0);
+    for (const step of steps) {
+      expect(Exit.isSuccess(Schema.decodeExit(Typography.Step)(step))).toBe(true);
+    }
+  });
+
+  it('rejects a minimum size below the minimum font size', () => {
+    const exit = Schema.decodeExit(Typography.Step)({
+      position: 0,
+      minimumSize: Fraction.make(12n, 1n),
+      maximumSize: Fraction.make(15n, 1n),
+    });
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['minimumSize'],
+        message:
+          'Expected a minimum size of at least 13 px, the smallest size of the USWDS theme type scale',
+      },
+    ]);
+  });
+
+  it('rejects a minimum size above the maximum font size', () => {
+    const exit = Schema.decodeExit(Typography.Step)({
+      position: 0,
+      minimumSize: Fraction.make(120n, 1n),
+      maximumSize: Fraction.make(150n, 1n),
+    });
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['minimumSize'],
+        message:
+          'Expected a minimum size of at most 320/3 px, so that a full-width character fits the minimum viewport width of 320 px at a font size of 300 %, as WCAG 2.2 Reflow requires',
+      },
+    ]);
+  });
+
+  it('rejects a step that shrinks', () => {
+    const exit = Schema.decodeExit(Typography.Step)({
+      position: 0,
+      minimumSize: Fraction.make(24n, 1n),
+      maximumSize: Fraction.make(12n, 1n),
+    });
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['maximumSize'],
+        message:
+          'Expected a maximum size of 24 px to 38.4 px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+      },
+    ]);
+  });
+
+  it('rejects a step that grows by more than 8/5', () => {
+    const exit = Schema.decodeExit(Typography.Step)({
+      position: 0,
+      minimumSize: Fraction.make(24n, 1n),
+      maximumSize: Fraction.make(40n, 1n),
+    });
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['maximumSize'],
+        message:
+          'Expected a maximum size of 24 px to 38.4 px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+      },
+    ]);
+  });
+});
+
 describe('scale', () => {
   it('runs from small print to the largest heading that keeps text resizable', () => {
     const exit = Typography.scale({
