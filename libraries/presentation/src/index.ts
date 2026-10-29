@@ -5,3 +5,4 @@ export * as Fraction from '#src/Fraction';
 export * as Length from '#src/Length';
 export * as Space from '#src/Space';
 export * as Color from '#src/Color';
+export * as Layout from '#src/Layout';
