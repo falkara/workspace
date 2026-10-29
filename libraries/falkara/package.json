@@ -1,0 +1,42 @@
+{
+  "name": "falkara",
+  "version": "0.0.1",
+  "description": "Falkara builds how brands show up, online and in the room. The falkara command is the command line for every Falkara product.",
+  "keywords": [
+    "cli",
+    "command-line",
+    "falkara"
+  ],
+  "homepage": "https://falkara.com",
+  "bugs": {
+    "url": "https://github.com/falkara/workspace/issues"
+  },
+  "license": "MIT",
+  "author": "Filip Falcon",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/falkara/workspace.git",
+    "directory": "libraries/falkara"
+  },
+  "bin": {
+    "falkara": "dist/Entrypoint.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "imports": {
+    "#package.json": "./package.json",
+    "#src/*": "./src/*.ts"
+  },
+  "scripts": {
+    "prepack": "vp pack"
+  },
+  "devDependencies": {
+    "@effect/platform-node": "4.0.7",
+    "effect": "4.0.7"
+  },
+  "engines": {
+    "node": "^24.15.0"
+  }
+}
