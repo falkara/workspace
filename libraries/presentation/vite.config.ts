@@ -15,11 +15,8 @@ export default defineConfig({
     // Every module ships as a file of its own, so that a consumer's bundler leaves out the modules it never imports.
     unbundle: true,
     // JSR reads the types of each JavaScript module from the declarations it names, as it generates none for JavaScript.
-    banner: ({ fileName }) =>
-      fileName.startsWith('_virtual/')
-        ? undefined
-        : {
-            js: `/* @ts-self-types="./${fileName.replace(/^.*\//, '').replace(/\.mjs$/, '.d.mts')}" */`,
-          },
+    banner: ({ fileName }) => ({
+      js: `/* @ts-self-types="./${fileName.replace(/\.mjs$/, '.d.mts')}" */`,
+    }),
   },
 });
