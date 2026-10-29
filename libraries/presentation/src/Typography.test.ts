@@ -77,23 +77,28 @@ describe('boldFontWeight', () => {
 
 describe('lineHeightFactor', () => {
   it('is the space-and-a-half WCAG 2.2 Visual Presentation requires within paragraphs', () => {
-    expect(Typography.lineHeightFactor).toBe(3 / 2);
+    expect(Typography.lineHeightFactor).toEqual({ numerator: 3n, denominator: 2n });
   });
 });
 
 describe('paragraphSpacingLineFactor', () => {
   it('is how much larger than the line spacing WCAG 2.2 Visual Presentation requires paragraph spacing to be', () => {
-    expect(Typography.paragraphSpacingLineFactor).toBe(3 / 2);
+    expect(Typography.paragraphSpacingLineFactor).toEqual({ numerator: 3n, denominator: 2n });
   });
 });
 
 describe('paragraphSpacingFactor', () => {
   it('is 9/4', () => {
-    expect(Typography.paragraphSpacingFactor).toBe(9 / 4);
+    expect(Typography.paragraphSpacingFactor).toEqual({ numerator: 9n, denominator: 4n });
   });
 
   it('is at least the paragraph spacing a reader may set under WCAG 2.2 Text Spacing', () => {
-    expect(Typography.paragraphSpacingFactor).toBeGreaterThanOrEqual(2);
+    expect(
+      Fraction.isGreaterThanOrEqualTo(
+        Typography.paragraphSpacingFactor,
+        Typography.textSpacingParagraphSpacingFactor,
+      ),
+    ).toBe(true);
   });
 });
 
@@ -105,25 +110,28 @@ describe('textAlignment', () => {
 
 describe('textSpacingLineHeightFactor', () => {
   it('is the line height WCAG 2.2 Text Spacing lets a reader set', () => {
-    expect(Typography.textSpacingLineHeightFactor).toBe(3 / 2);
+    expect(Typography.textSpacingLineHeightFactor).toEqual({ numerator: 3n, denominator: 2n });
   });
 });
 
 describe('textSpacingParagraphSpacingFactor', () => {
   it('is the spacing following paragraphs WCAG 2.2 Text Spacing lets a reader set', () => {
-    expect(Typography.textSpacingParagraphSpacingFactor).toBe(2);
+    expect(Typography.textSpacingParagraphSpacingFactor).toEqual({
+      numerator: 2n,
+      denominator: 1n,
+    });
   });
 });
 
 describe('textSpacingLetterSpacingFactor', () => {
   it('is the letter spacing WCAG 2.2 Text Spacing lets a reader set', () => {
-    expect(Typography.textSpacingLetterSpacingFactor).toBe(3 / 25);
+    expect(Typography.textSpacingLetterSpacingFactor).toEqual({ numerator: 3n, denominator: 25n });
   });
 });
 
 describe('textSpacingWordSpacingFactor', () => {
   it('is the word spacing WCAG 2.2 Text Spacing lets a reader set', () => {
-    expect(Typography.textSpacingWordSpacingFactor).toBe(4 / 25);
+    expect(Typography.textSpacingWordSpacingFactor).toEqual({ numerator: 4n, denominator: 25n });
   });
 });
 

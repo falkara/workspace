@@ -67,7 +67,7 @@ export const boldFontWeight = 700;
  * @see https://www.w3.org/TR/WCAG22/#visual-presentation
  * @see https://www.w3.org/WAI/WCAG22/Techniques/css/C21
  */
-export const lineHeightFactor = 3 / 2;
+export const lineHeightFactor = Fraction.make(3n, 2n);
 
 /**
  * The text alignment that keeps text unjustified, as WCAG 2.2 Visual Presentation requires, aligned to the start of each line in every writing direction.
@@ -82,38 +82,41 @@ export const textAlignment = 'start';
  *
  * @see https://www.w3.org/TR/WCAG22/#visual-presentation
  */
-export const paragraphSpacingLineFactor = 3 / 2;
+export const paragraphSpacingLineFactor = Fraction.make(3n, 2n);
 
 /** The space between paragraphs, the line height grown by the paragraph spacing line factor, as a factor of the font size. Applied in `lh` instead, the paragraph spacing line factor keeps paragraphs apart by the line spacing a reader sets. */
-export const paragraphSpacingFactor = lineHeightFactor * paragraphSpacingLineFactor;
+export const paragraphSpacingFactor = Fraction.multiply(
+  lineHeightFactor,
+  paragraphSpacingLineFactor,
+);
 
 /**
  * The line height, as a factor of the font size, that WCAG 2.2 Text Spacing lets a reader set without loss of content or function.
  *
  * @see https://www.w3.org/TR/WCAG22/#text-spacing
  */
-export const textSpacingLineHeightFactor = 3 / 2;
+export const textSpacingLineHeightFactor = Fraction.make(3n, 2n);
 
 /**
  * The spacing following paragraphs, as a factor of the font size, that WCAG 2.2 Text Spacing lets a reader set without loss of content or function.
  *
  * @see https://www.w3.org/TR/WCAG22/#text-spacing
  */
-export const textSpacingParagraphSpacingFactor = 2;
+export const textSpacingParagraphSpacingFactor = Fraction.make(2n, 1n);
 
 /**
  * The letter spacing, as a factor of the font size, that WCAG 2.2 Text Spacing lets a reader set without loss of content or function.
  *
  * @see https://www.w3.org/TR/WCAG22/#text-spacing
  */
-export const textSpacingLetterSpacingFactor = 3 / 25;
+export const textSpacingLetterSpacingFactor = Fraction.make(3n, 25n);
 
 /**
  * The word spacing, as a factor of the font size, that WCAG 2.2 Text Spacing lets a reader set without loss of content or function.
  *
  * @see https://www.w3.org/TR/WCAG22/#text-spacing
  */
-export const textSpacingWordSpacingFactor = 4 / 25;
+export const textSpacingWordSpacingFactor = Fraction.make(4n, 25n);
 
 /** The maximum text growth factor from the minimum to the maximum viewport width that keeps text resizable by the text scale factor within the maximum page zoom factor, whether a reader zooms the page or sets a larger font size, as both act alike on fluid text. */
 export const maximumTextGrowthFactor = Fraction.make(
