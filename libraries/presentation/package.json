@@ -21,6 +21,6 @@
     "access": "public"
   },
   "peerDependencies": {
-    "effect": "^4.0.0"
+    "effect": "^4.0.7"
   }
 }
