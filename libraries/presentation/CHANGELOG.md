@@ -1,5 +1,33 @@
 # @falkara/presentation
 
+## 0.5.0
+
+### Minor Changes
+
+- [`b9c538b`](https://github.com/falkara/workspace/commit/b9c538b2bb42d0e9a37c17748b78cce7ab08ffd3) Thanks [@filipfalcon](https://github.com/filipfalcon)! - Every `Fraction` is in lowest terms: decoding reduces it, its type is branded, and every operation keeps it so by cancelling before it multiplies, which keeps the arithmetic fast and the call stack shallow for whole numbers of any size. `Fraction.toNumber` rounds a fraction of any size to the nearest number, ties to even, as IEEE 754 does. The type scales take their options as written, before decoding.
+
+- [`b9c538b`](https://github.com/falkara/workspace/commit/b9c538b2bb42d0e9a37c17748b78cce7ab08ffd3) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `rem`, `vw` and `decimalPlaces` move from `Length` to `Fluid`, which writes the CSS they serve, so that `Length` holds the facts of CSS lengths alone and depends on no other module.
+
+- [`deb6746`](https://github.com/falkara/workspace/commit/deb67468c78ac254417b4f1fab2681e25a2959ff) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Typography.minimumFontSize` is 13 px, the smallest size of the USWDS theme type scale in its default settings, where 12 px had been taken from an outdated page. A type scale no longer starts with a step smaller than 13 px.
+
+- [`dbc1d33`](https://github.com/falkara/workspace/commit/dbc1d33a66a27ab5885334750302eae10b8b8d94) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Color.verify` refuses a pair only when rounding cannot account for its shortfall, by a bound on the rounding error of each luminance carried through every step of the conversion from `Color.unitRoundoff`, where `Color.contrastTolerance` and `Color.conversionOperations` asserted one for every pair. `Color.Color` accepts an opaque alpha such as `oklch(50% 0 0 / 1)` and refuses only a translucent one as translucent, clamps lightness and alpha as CSS Color 4 does, and reduces the hue to one turn before converting it, so that a large hue keeps its precision.
+
+- [`6619d55`](https://github.com/falkara/workspace/commit/6619d55fbe1f086a44e6336c38a47e5f49290112) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Color.shade` picks the shade closest to the brand color by deltaEOK, the color difference CSS Color 4 defines, rather than by lightness alone, so a shade that keeps more chroma wins over one barely nearer in lightness. Its chroma is described as what it is: reduced at constant lightness and hue to the edge of sRGB, the reduction every CSS Color 4 gamut mapping algorithm aims at, reached exactly rather than within their tolerance.
+
+- [`60b7b5d`](https://github.com/falkara/workspace/commit/60b7b5d291391a2a50c7518642eb0cf5f881e552) Thanks [@filipfalcon](https://github.com/filipfalcon)! - The line height, paragraph spacing and text spacing factors of `Typography` are fractions, as every other ratio the library derives, so that `paragraphSpacingFactor` is exactly 9/4 and a factor such as 3/25 is held exactly rather than rounded to a number. `Fraction.toNumber` writes one into CSS.
+
+- [`b9c538b`](https://github.com/falkara/workspace/commit/b9c538b2bb42d0e9a37c17748b78cce7ab08ffd3) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Typography.scale` takes any factors at or above `Typography.minimumStepFactor`, 833/832, at which steps at the minimum font size still differ by the layout unit of browsers, with a maximum factor below, at or above the minimum factor, as Utopia does. A scale ends where the next step would shrink, grow by more than 8/5, fall below the minimum font size or rise above `Typography.maximumFontSize`, 320/3 px: the largest size at which a full-width character, one em wide as CSS Values 4 assumes it in `Typography.ideographAdvanceFactor`, still fits the minimum viewport width when a reader sets the font size to 300 %, as WCAG 2.2 Reflow requires. A step larger than that is no longer part of the scale.
+
+- [`037299a`](https://github.com/falkara/workspace/commit/037299ab4d3bbbd4fbbf8c83e1ee8b663ae31a8a) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Typography.Step` is a schema, and `Color.verify` and `Color.shade` decode the step they are given with the rest of their input before its size decides the contrast its text needs. A step whose smallest size lies outside the minimum and the maximum font size is refused. So is a step that shrinks or grows by more than 8/5, as its size at the minimum viewport width would no longer be its smallest and could earn small text the ratio of large text.
+
+### Patch Changes
+
+- [`2eac9dd`](https://github.com/falkara/workspace/commit/2eac9dd09e99b818b799c8724febe9024a9d7188) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Viewport.viewportWidthFactor` and `Viewport.maximumViewportWidth` describe 1280 CSS pixels as the choice it is: WCAG 2.2 names that width only in an informative note of Reflow and sets no maximum viewport width. The readme promises values of its own to every screen up to a desktop.
+
+- [`47b953d`](https://github.com/falkara/workspace/commit/47b953d80b5ab8c719af6e683513d86967da878a) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Layout.measures` says what WCAG 2.2 Visual Presentation asks of it: a mechanism by which a reader can bring lines to 80 characters or fewer, which columns in ex give by narrowing with the window, as technique C20 tests by relative units without asking the default view to stay under 80 characters.
+
+- [`64e08bc`](https://github.com/falkara/workspace/commit/64e08bc968bf39ef7bb5fc6258163175aad55077) Thanks [@filipfalcon](https://github.com/filipfalcon)! - Ship documentation comments once, in the type declarations an editor reads, and not again in the JavaScript, which makes the package smaller.
+
 ## 0.4.0
 
 ### Minor Changes
