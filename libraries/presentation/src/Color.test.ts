@@ -451,3 +451,155 @@ describe('verify', () => {
     ]);
   });
 });
+
+describe('shade', () => {
+  it('keeps a brand color that already reaches the contrast', () => {
+    const exit = Color.shade({
+      color: 'oklch(0% 0 0)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        position: 0,
+        minimumSize: Fraction.make(16n, 1n),
+        maximumSize: Fraction.make(20n, 1n),
+      },
+      fontWeight: 400,
+    });
+
+    expect(Exit.isSuccess(exit) ? exit.value : '').toBe('oklch(0 0 0)');
+  });
+
+  it('darkens a brand color against a light background to the contrast its text needs', () => {
+    const step = {
+      position: 0,
+      minimumSize: Fraction.make(16n, 1n),
+      maximumSize: Fraction.make(20n, 1n),
+    };
+    const exit = Color.shade({
+      color: 'oklch(64% 0.17 147)',
+      background: 'oklch(100% 0 0)',
+      step,
+      fontWeight: 400,
+    });
+    const shade = Exit.isSuccess(exit) ? exit.value : '';
+    const verified = Color.verify({
+      text: shade,
+      background: 'oklch(100% 0 0)',
+      step,
+      fontWeight: 400,
+    });
+
+    expect(shade).toMatch(/^oklch\(0\.4\d* 0\.1\d* 147\)$/);
+    expect(Exit.isSuccess(verified) ? verified.value : 0).toBeCloseTo(7, 9);
+  });
+
+  it('reduces the chroma where sRGB cannot hold it at the lightness the contrast needs', () => {
+    const exit = Color.shade({
+      color: 'oklch(64% 0.17 147)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        position: 0,
+        minimumSize: Fraction.make(16n, 1n),
+        maximumSize: Fraction.make(20n, 1n),
+      },
+      fontWeight: 400,
+    });
+    const chroma = Number(
+      /^oklch\(\S+ (\S+) \S+\)$/.exec(Exit.isSuccess(exit) ? exit.value : '')?.[1],
+    );
+
+    expect(chroma).toBeLessThan(0.17);
+  });
+
+  it('lightens a brand color against a dark background and keeps its chroma where sRGB holds it', () => {
+    const step = {
+      position: 0,
+      minimumSize: Fraction.make(16n, 1n),
+      maximumSize: Fraction.make(20n, 1n),
+    };
+    const exit = Color.shade({
+      color: 'oklch(64% 0.17 147)',
+      background: 'oklch(0% 0 0)',
+      step,
+      fontWeight: 400,
+    });
+    const shade = Exit.isSuccess(exit) ? exit.value : '';
+    const verified = Color.verify({
+      text: shade,
+      background: 'oklch(0% 0 0)',
+      step,
+      fontWeight: 400,
+    });
+
+    expect(shade).toMatch(/^oklch\(0\.6\d* 0\.17 147\)$/);
+    expect(Exit.isSuccess(verified) ? verified.value : 0).toBeCloseTo(7, 9);
+  });
+
+  it('reaches a stricter contrast the project asks for', () => {
+    const step = {
+      position: 0,
+      minimumSize: Fraction.make(16n, 1n),
+      maximumSize: Fraction.make(20n, 1n),
+    };
+    const exit = Color.shade({
+      color: 'oklch(64% 0.17 147)',
+      background: 'oklch(100% 0 0)',
+      step,
+      fontWeight: 400,
+      minimumContrast: 10,
+    });
+    const contrast = Color.contrast(Exit.isSuccess(exit) ? exit.value : '', 'oklch(100% 0 0)');
+
+    expect(Exit.isSuccess(contrast) ? contrast.value : 0).toBeCloseTo(10, 9);
+  });
+
+  it('rejects a background against which no shade within sRGB reaches the contrast', () => {
+    const exit = Color.shade({
+      color: 'oklch(64% 0.17 147)',
+      background: 'oklch(60% 0 0)',
+      step: {
+        position: 0,
+        minimumSize: Fraction.make(16n, 1n),
+        maximumSize: Fraction.make(20n, 1n),
+      },
+      fontWeight: 400,
+    });
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['background'],
+        message:
+          'Expected a background against which a shade of the color within sRGB reaches 7:1, the contrast WCAG 2.2 Contrast (Enhanced) requires for text of 16 px at weight 400',
+      },
+    ]);
+  });
+
+  it('rejects a contrast the project asks for that is looser than the standards', () => {
+    const exit = Color.shade({
+      color: 'oklch(64% 0.17 147)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        position: 0,
+        minimumSize: Fraction.make(16n, 1n),
+        maximumSize: Fraction.make(20n, 1n),
+      },
+      fontWeight: 400,
+      minimumContrast: 5,
+    });
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['minimumContrast'],
+        message:
+          'Expected a minimum contrast of at least 7:1, the ratio WCAG 2.2 Contrast (Enhanced) requires for text of 16 px at weight 400',
+      },
+    ]);
+  });
+});

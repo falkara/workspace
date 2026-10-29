@@ -114,8 +114,8 @@ export const conversionOperations = 32;
 /** The relative error that rounding may leave in a computed contrast ratio, so that a pair exactly at a threshold is not refused for an error of the computation. */
 export const contrastTolerance = conversionOperations * Number.EPSILON;
 
-/** The linear sRGB channels of an oklch() color as CSS Color 4 writes it, or none when it is written otherwise. */
-const linearSrgb = (color: string): ReadonlyArray<number> | undefined => {
+/** The lightness, chroma and hue in degrees of an oklch() color as CSS Color 4 writes it, or none when it is written otherwise. */
+const components = (color: string): readonly [number, number, number] | undefined => {
   const match = /^oklch\(\s*(\d*\.?\d+)(%?)\s+(\d*\.?\d+)(%?)\s+(-?\d*\.?\d+)(?:deg)?\s*\)$/.exec(
     color,
   );
@@ -123,16 +123,28 @@ const linearSrgb = (color: string): ReadonlyArray<number> | undefined => {
     return undefined;
   }
   const [, lightness, lightnessPercent, chroma, chromaPercent, hue] = match;
-  const l = Number(lightness) / (lightnessPercent === '%' ? 100 : 1);
-  const c =
-    (Number(chroma) * (chromaPercent === '%' ? fullChroma : 1)) / (chromaPercent === '%' ? 100 : 1);
-  const h = (Number(hue) * Math.PI) / 180;
-  const lab = [l, c * Math.cos(h), c * Math.sin(h)];
+  return [
+    Number(lightness) / (lightnessPercent === '%' ? 100 : 1),
+    (Number(chroma) * (chromaPercent === '%' ? fullChroma : 1)) / (chromaPercent === '%' ? 100 : 1),
+    Number(hue),
+  ];
+};
+
+/** The linear sRGB channels of a color of the given lightness, chroma and hue in degrees, converted as CSS Color 4 does. */
+const linearSrgbOf = (lightness: number, chroma: number, hue: number): ReadonlyArray<number> => {
+  const h = (hue * Math.PI) / 180;
+  const lab = [lightness, chroma * Math.cos(h), chroma * Math.sin(h)];
   const lms = oklabToLms.map(
     (row) => (row[0] * lab[0]! + row[1] * lab[1]! + row[2] * lab[2]!) ** 3,
   );
   const xyz = lmsToXyz.map((row) => row[0] * lms[0]! + row[1] * lms[1]! + row[2] * lms[2]!);
   return xyzToLinearSrgb.map((row) => row[0] * xyz[0]! + row[1] * xyz[1]! + row[2] * xyz[2]!);
+};
+
+/** The linear sRGB channels of an oklch() color as CSS Color 4 writes it, or none when it is written otherwise. */
+const linearSrgb = (color: string): ReadonlyArray<number> | undefined => {
+  const parts = components(color);
+  return parts === undefined ? undefined : linearSrgbOf(...parts);
 };
 
 /**
@@ -170,6 +182,10 @@ const encoded = (channel: number): number =>
     : Math.sign(channel) *
       ((1 + transferOffset) * Math.abs(channel) ** (1 / transferGamma) - transferOffset);
 
+/** Whether linear sRGB channels lie within sRGB once encoded, up to a tolerance. */
+const isInGamut = (channels: ReadonlyArray<number>, tolerance: number): boolean =>
+  channels.every((channel) => encoded(channel) >= -tolerance && encoded(channel) <= 1 + tolerance);
+
 /** A schema of a color written in oklch() as CSS Color 4 writes it, opaque and within sRGB, where WCAG 2.2 defines contrast. */
 export const Color = Schema.String.pipe(
   Schema.check(
@@ -182,10 +198,8 @@ export const Color = Schema.String.pipe(
         return 'Expected a color written in oklch() as CSS Color 4 writes it, such as oklch(64% 0.17 147)';
       }
       return (
-        channels.every(
-          (channel) =>
-            encoded(channel) >= -gamutTolerance && encoded(channel) <= 1 + gamutTolerance,
-        ) || 'Expected a color within sRGB, as WCAG 2.2 defines contrast only there'
+        isInGamut(channels, gamutTolerance) ||
+        'Expected a color within sRGB, as WCAG 2.2 defines contrast only there'
       );
     }),
   ),
@@ -285,4 +299,128 @@ export const verify = (pair: Pair): Exit.Exit<number, Schema.SchemaError> =>
       { errors: 'all' },
     ),
     (colors) => contrastRatio(colors.text, colors.background),
+  );
+
+/** A color of a brand, the background of text set in it, the step of the type scale the text is set in, its font weight, and a contrast ratio stricter than the standards that the project may ask for. */
+export interface Brand {
+  readonly color: string;
+  readonly background: string;
+  readonly step: Typography.Step;
+  readonly fontWeight: number;
+  readonly minimumContrast?: number | undefined;
+}
+
+/** The value next to which a condition stops holding, halving the interval from where it holds to where it does not until no JavaScript number lies between. */
+const boundary = (holds: (value: number) => boolean, inside: number, outside: number): number =>
+  (inside + outside) / 2 === inside || (inside + outside) / 2 === outside
+    ? inside
+    : holds((inside + outside) / 2)
+      ? boundary(holds, (inside + outside) / 2, outside)
+      : boundary(holds, inside, (inside + outside) / 2);
+
+/** The lightness, chroma and hue in degrees of the shade of a brand color closest to it in lightness that reaches the contrast ratio against the background: its hue kept, and its chroma kept or, where sRGB cannot hold it at that lightness, reduced as CSS Color 4 gamut mapping reduces it; or none when no shade reaches it. */
+const closestShade = (
+  color: string,
+  background: string,
+  target: number,
+): readonly [number, number, number] | undefined => {
+  const [lightness, chroma, hue] = components(color) ?? [0, 0, 0];
+  const chromaAt = (shade: number): number =>
+    // Reduced strictly within sRGB, so that the shade stays within it once written and read again.
+    isInGamut(linearSrgbOf(shade, chroma, hue), 0)
+      ? chroma
+      : boundary((reduced) => isInGamut(linearSrgbOf(shade, reduced, hue), 0), 0, chroma);
+  const luminanceAt = (shade: number): number =>
+    linearSrgbOf(shade, chromaAt(shade), hue).reduce(
+      (luminance, channel, index) =>
+        luminance + (luminanceWeights[index] ?? 0) * Math.min(Math.max(channel, 0), 1),
+      0,
+    );
+  const backgroundLuminance = relativeLuminance(background);
+  const reaches = (shade: number): boolean =>
+    (Math.max(luminanceAt(shade), backgroundLuminance) + contrastFlare) /
+      (Math.min(luminanceAt(shade), backgroundLuminance) + contrastFlare) >=
+    target;
+  // Luminance rises with lightness, so contrast falls toward the lightness of the background from either side.
+  const backgroundLightness = boundary((shade) => luminanceAt(shade) <= backgroundLuminance, 0, 1);
+  const darkEnd = Math.min(lightness, backgroundLightness);
+  const lightStart = Math.max(lightness, backgroundLightness);
+  const darker = reaches(darkEnd)
+    ? darkEnd
+    : reaches(0)
+      ? boundary(reaches, 0, darkEnd)
+      : undefined;
+  const lighter = reaches(lightStart)
+    ? lightStart
+    : reaches(1)
+      ? boundary(reaches, 1, lightStart)
+      : undefined;
+  const closest =
+    darker === undefined
+      ? lighter
+      : lighter === undefined || lightness - darker <= lighter - lightness
+        ? darker
+        : lighter;
+  return closest === undefined ? undefined : [closest, chromaAt(closest), hue];
+};
+
+/** The shade of a brand color, written in oklch(), that is closest to it in lightness and reaches the contrast WCAG 2.2 Contrast (Enhanced) requires for its text against the background, or the stricter ratio the project asks for; or a failure with the reason when no shade within sRGB reaches it. */
+export const shade = (brand: Brand): Exit.Exit<string, Schema.SchemaError> =>
+  Exit.map(
+    Schema.decodeExit(
+      Schema.Struct({
+        color: Color,
+        background: Color,
+        fontWeight: Schema.Finite.pipe(
+          Schema.check(
+            Schema.isBetween(
+              { minimum: Typography.minimumFontWeight, maximum: Typography.maximumFontWeight },
+              {
+                message: `Expected a font weight from ${Typography.minimumFontWeight} to ${Typography.maximumFontWeight}, as CSS Fonts allows`,
+              },
+            ),
+          ),
+        ),
+        minimumContrast: Schema.optional(Schema.Finite),
+      }).pipe(
+        Schema.check(
+          Schema.makeFilter((colors) => {
+            const required = requiredContrast(brand.step, colors.fontWeight);
+            const size =
+              Math.round(Fraction.toNumber(brand.step.minimumSize) * 10 ** Length.decimalPlaces) /
+              10 ** Length.decimalPlaces;
+            if (colors.minimumContrast !== undefined && colors.minimumContrast < required) {
+              return {
+                path: ['minimumContrast'],
+                issue: `Expected a minimum contrast of at least ${required}:1, the ratio WCAG 2.2 Contrast (Enhanced) requires for text of ${size} px at weight ${colors.fontWeight}`,
+              };
+            }
+            const target = colors.minimumContrast ?? required;
+            return (
+              closestShade(colors.color, colors.background, target) !== undefined || {
+                path: ['background'],
+                issue: `Expected a background against which a shade of the color within sRGB reaches ${target}:1, the contrast ${colors.minimumContrast === undefined ? `WCAG 2.2 Contrast (Enhanced) requires for text of ${size} px at weight ${colors.fontWeight}` : 'the project asks for'}`,
+              }
+            );
+          }),
+        ),
+      ),
+    )(
+      {
+        color: brand.color,
+        background: brand.background,
+        fontWeight: brand.fontWeight,
+        minimumContrast: brand.minimumContrast,
+      },
+      { errors: 'all' },
+    ),
+    (colors) => {
+      const [lightness, chroma, hue] = closestShade(
+        colors.color,
+        colors.background,
+        colors.minimumContrast ?? requiredContrast(brand.step, colors.fontWeight),
+      ) ?? [0, 0, 0];
+      // Written in fixed notation, which CSS reads, rather than the exponent JavaScript uses for small numbers, without trailing zeros.
+      return `oklch(${lightness.toFixed(16).replace(/\.?0+$/, '')} ${chroma.toFixed(16).replace(/\.?0+$/, '')} ${hue})`;
+    },
   );
