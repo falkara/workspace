@@ -10,6 +10,15 @@ describe('Fraction', () => {
     expect(Exit.isSuccess(exit)).toBe(true);
   });
 
+  it('decodes a ratio in lowest terms', () => {
+    const exit = Schema.decodeExit(Fraction.Fraction)({ numerator: 12n, denominator: 10n });
+
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual({
+      numerator: 6n,
+      denominator: 5n,
+    });
+  });
+
   it('rejects a numerator of 0', () => {
     const exit = Schema.decodeExit(Fraction.Fraction)({ numerator: 0n, denominator: 5n });
 
@@ -35,6 +44,12 @@ describe('make', () => {
   it('does not throw for a zero numerator and a zero denominator', () => {
     expect(() => Fraction.make(0n, 0n)).not.toThrow();
   });
+
+  it('reduces whole numbers of thousands of digits', () => {
+    const fraction = Fraction.make(2n * 833n ** 1600n, 2n * 832n ** 1600n);
+
+    expect(fraction).toEqual(Fraction.pow(Fraction.make(833n, 832n), 1600n));
+  });
 });
 
 describe('one', () => {
@@ -49,6 +64,12 @@ describe('sum', () => {
       Fraction.make(1n, 2n),
     );
   });
+
+  it('adds two fractions whose denominators share a divisor in lowest terms', () => {
+    expect(Fraction.sum(Fraction.make(1n, 6n), Fraction.make(1n, 10n))).toEqual(
+      Fraction.make(4n, 15n),
+    );
+  });
 });
 
 describe('multiply', () => {
@@ -57,12 +78,24 @@ describe('multiply', () => {
       Fraction.make(3n, 2n),
     );
   });
+
+  it('cancels each numerator against the other denominator', () => {
+    expect(Fraction.multiply(Fraction.make(4n, 9n), Fraction.make(3n, 8n))).toEqual(
+      Fraction.make(1n, 6n),
+    );
+  });
 });
 
 describe('divide', () => {
   it('divides two fractions in lowest terms', () => {
     expect(Fraction.divide(Fraction.make(5n, 4n), Fraction.make(6n, 5n))).toEqual(
       Fraction.make(25n, 24n),
+    );
+  });
+
+  it('cancels the numerators and the denominators against each other', () => {
+    expect(Fraction.divide(Fraction.make(4n, 9n), Fraction.make(8n, 3n))).toEqual(
+      Fraction.make(1n, 6n),
     );
   });
 });
@@ -93,9 +126,7 @@ describe('order', () => {
   });
 
   it('finds fractions of equal value equal', () => {
-    expect(
-      Fraction.order({ numerator: 12n, denominator: 10n }, { numerator: 6n, denominator: 5n }),
-    ).toBe(0);
+    expect(Fraction.order(Fraction.make(12n, 10n), Fraction.make(6n, 5n))).toBe(0);
   });
 });
 
@@ -200,5 +231,27 @@ describe('isLessThanOrEqualToFraction', () => {
 describe('toNumber', () => {
   it('gives the value of the fraction as a number', () => {
     expect(Fraction.toNumber(Fraction.make(6n, 5n))).toBe(1.2);
+  });
+
+  it('rounds a tie to the even number', () => {
+    expect(Fraction.toNumber(Fraction.make(2n ** 53n + 1n, 1n))).toBe(2 ** 53);
+    expect(Fraction.toNumber(Fraction.make(2n ** 53n + 3n, 1n))).toBe(2 ** 53 + 4);
+  });
+
+  it('converts a fraction whose fields are beyond the numbers JavaScript can hold', () => {
+    expect(Fraction.toNumber(Fraction.make(10n ** 400n + 1n, 10n ** 400n))).toBe(1);
+  });
+
+  it('rounds to the grid of the subnormal numbers', () => {
+    expect(Fraction.toNumber(Fraction.make(1n, 2n ** 1074n))).toBe(Number.MIN_VALUE);
+    expect(Fraction.toNumber(Fraction.make(3n, 2n ** 1076n))).toBe(Number.MIN_VALUE);
+    expect(Fraction.toNumber(Fraction.make(1n, 2n ** 1075n))).toBe(0);
+  });
+
+  it('rounds to the largest number or beyond it to infinity', () => {
+    expect(Fraction.toNumber(Fraction.make(2n ** 1024n - 2n ** 971n, 1n))).toBe(Number.MAX_VALUE);
+    expect(Fraction.toNumber(Fraction.make(2n ** 1024n - 2n ** 970n, 1n))).toBe(
+      Number.POSITIVE_INFINITY,
+    );
   });
 });

@@ -1,5 +1,6 @@
 import { Exit, Schema } from 'effect';
 
+import * as Fluid from '#src/Fluid';
 import * as Fraction from '#src/Fraction';
 import * as Length from '#src/Length';
 import * as Typography from '#src/Typography';
@@ -268,8 +269,8 @@ export const verify = (pair: Pair): Exit.Exit<number, Schema.SchemaError> =>
           Schema.makeFilter((colors) => {
             const required = requiredContrast(pair.step, colors.fontWeight);
             const size =
-              Math.round(Fraction.toNumber(pair.step.minimumSize) * 10 ** Length.decimalPlaces) /
-              10 ** Length.decimalPlaces;
+              Math.round(Fraction.toNumber(pair.step.minimumSize) * 10 ** Fluid.decimalPlaces) /
+              10 ** Fluid.decimalPlaces;
             if (colors.minimumContrast !== undefined && colors.minimumContrast < required) {
               return {
                 path: ['minimumContrast'],
@@ -387,8 +388,8 @@ export const shade = (brand: Brand): Exit.Exit<string, Schema.SchemaError> =>
           Schema.makeFilter((colors) => {
             const required = requiredContrast(brand.step, colors.fontWeight);
             const size =
-              Math.round(Fraction.toNumber(brand.step.minimumSize) * 10 ** Length.decimalPlaces) /
-              10 ** Length.decimalPlaces;
+              Math.round(Fraction.toNumber(brand.step.minimumSize) * 10 ** Fluid.decimalPlaces) /
+              10 ** Fluid.decimalPlaces;
             if (colors.minimumContrast !== undefined && colors.minimumContrast < required) {
               return {
                 path: ['minimumContrast'],

@@ -1,6 +1,7 @@
 import { Array, Exit, Schema } from 'effect';
 
 import * as Fraction from '#src/Fraction';
+import * as Length from '#src/Length';
 import * as Viewport from '#src/Viewport';
 
 /** The default font size that the Baseline core browsers implement for the root element until a reader sets their own. Measured in CSS pixels. */
@@ -12,6 +13,25 @@ export const defaultFontSize = 16;
  * @see https://designsystem.digital.gov/design-tokens/typesetting/font-size/#theme-tokens
  */
 export const minimumFontSize = 13;
+
+/**
+ * The advance of an ideograph, as a factor of the font size, that CSS Values 4 assumes for the ic unit when it cannot be measured: a full-width character, which no line break can split.
+ *
+ * @see https://www.w3.org/TR/css-values-4/#ic
+ */
+export const ideographAdvanceFactor = 1;
+
+/** The largest font size at the minimum viewport width, at which a full-width character still fits the minimum viewport width when a reader sets the font size up to the maximum page zoom factor, so that text reflows without scrolling in two dimensions, as WCAG 2.2 Reflow requires. Measured in CSS pixels. */
+export const maximumFontSize = Fraction.make(
+  BigInt(Viewport.minimumViewportWidth),
+  BigInt(Viewport.maximumPageZoomFactor * ideographAdvanceFactor),
+);
+
+/** The smallest ratio between consecutive steps of a type scale, at which steps at the minimum font size still differ by the layout unit, so that no two steps render alike. */
+export const minimumStepFactor = Fraction.sum(
+  Fraction.one,
+  Fraction.make(1n, BigInt(minimumFontSize / Length.layoutUnit)),
+);
 
 /**
  * The text scale factor that WCAG 2.2 requires content to support.
@@ -107,19 +127,19 @@ export const maximumTextGrowthFactor = Fraction.make(
 
 /** A schema of the ratios of a type scale and the size its body text reaches at the maximum viewport width. */
 export const ScaleOptions = Schema.Struct({
-  /** The ratio between consecutive steps at the minimum viewport width, greater than 1 so that every step is larger than the one below. */
+  /** The ratio between consecutive steps at the minimum viewport width, at least the minimum step factor so that every step is larger than the one below and no two steps render alike. */
   minimumFactor: Fraction.Fraction.pipe(
     Schema.check(
-      Fraction.isGreaterThanFraction(Fraction.one, {
-        message: `Expected a minimum factor greater than ${Fraction.format(Fraction.one)}, so that every step is larger than the one below`,
+      Fraction.isGreaterThanOrEqualToFraction(minimumStepFactor, {
+        message: `Expected a minimum factor of at least ${Fraction.format(minimumStepFactor)}, so that every step is larger than the one below by at least the layout unit of browsers and no two steps render alike`,
       }),
     ),
   ),
-  /** The ratio between consecutive steps at the maximum viewport width, greater than 1 so that every step is larger than the one below. */
+  /** The ratio between consecutive steps at the maximum viewport width, at least the minimum step factor so that every step is larger than the one below and no two steps render alike. */
   maximumFactor: Fraction.Fraction.pipe(
     Schema.check(
-      Fraction.isGreaterThanFraction(Fraction.one, {
-        message: `Expected a maximum factor greater than ${Fraction.format(Fraction.one)}, so that every step is larger than the one below`,
+      Fraction.isGreaterThanOrEqualToFraction(minimumStepFactor, {
+        message: `Expected a maximum factor of at least ${Fraction.format(minimumStepFactor)}, so that every step is larger than the one below by at least the layout unit of browsers and no two steps render alike`,
       }),
     ),
   ),
@@ -137,19 +157,7 @@ export const ScaleOptions = Schema.Struct({
       ),
     ),
   ),
-}).pipe(
-  Schema.check(
-    /** The maximum factor greater than the minimum factor, so that growth rises with the step and the scale ends. */
-    Schema.makeFilter(
-      (options) =>
-        Fraction.isGreaterThan(options.maximumFactor, options.minimumFactor) || {
-          path: ['maximumFactor'],
-          issue:
-            'Expected a maximum factor greater than the minimum factor, so that growth rises with the step and the scale ends',
-        },
-    ),
-  ),
-);
+});
 
 /** The ratios of a type scale and the size its body text reaches at the maximum viewport width. */
 export type ScaleOptions = typeof ScaleOptions.Type;
@@ -164,8 +172,10 @@ export interface Step {
   readonly maximumSize: Fraction.Fraction;
 }
 
-/** The type scale from its lowest to its highest step: every step whose growth from the minimum to the maximum viewport width lies between 1 and the maximum text growth factor, and whose size stays at or above the minimum font size. */
-export const scale = (options: ScaleOptions): Exit.Exit<ReadonlyArray<Step>, Schema.SchemaError> =>
+/** The type scale from its lowest to its highest step: every step whose growth from the minimum to the maximum viewport width lies between 1 and the maximum text growth factor, and whose size at the minimum viewport width lies between the minimum and the maximum font size. */
+export const scale = (
+  options: typeof ScaleOptions.Encoded,
+): Exit.Exit<ReadonlyArray<Step>, Schema.SchemaError> =>
   Exit.map(Schema.decodeExit(ScaleOptions)(options, { errors: 'all' }), (options) => {
     const minimumSize = (position: bigint) =>
       Fraction.multiply(
@@ -175,18 +185,21 @@ export const scale = (options: ScaleOptions): Exit.Exit<ReadonlyArray<Step>, Sch
     const maximumSize = (position: bigint) =>
       Fraction.multiply(options.maximumBodyFontSize, Fraction.pow(options.maximumFactor, position));
     const isAdmitted = (position: bigint) => {
-      const growth = Fraction.divide(maximumSize(position), minimumSize(position));
-      // A step that never shrinks is at its smallest at the minimum viewport width.
+      // The growth is bounded by comparing the sizes, so that no divisor is sought between two large numerators. A step that never shrinks is at its smallest at the minimum viewport width.
       return (
-        Fraction.isGreaterThanOrEqualTo(growth, Fraction.one) &&
-        Fraction.isLessThanOrEqualTo(growth, maximumTextGrowthFactor) &&
+        Fraction.isGreaterThanOrEqualTo(maximumSize(position), minimumSize(position)) &&
+        Fraction.isLessThanOrEqualTo(
+          maximumSize(position),
+          Fraction.multiply(minimumSize(position), maximumTextGrowthFactor),
+        ) &&
         Fraction.isGreaterThanOrEqualTo(
           minimumSize(position),
           Fraction.make(BigInt(minimumFontSize), 1n),
-        )
+        ) &&
+        Fraction.isLessThanOrEqualTo(minimumSize(position), maximumFontSize)
       );
     };
-    // Growth and size both rise with the position, so the admitted steps run unbroken from the lowest to the highest.
+    // Size rises with the position and growth rises or falls with it, so the admitted steps run unbroken from the lowest to the highest, and the font sizes bound them on both sides.
     const lowestFrom = (position: bigint): bigint =>
       isAdmitted(position - 1n) ? lowestFrom(position - 1n) : position;
     const highestFrom = (position: bigint): bigint =>

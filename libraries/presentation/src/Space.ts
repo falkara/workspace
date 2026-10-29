@@ -50,7 +50,7 @@ export interface Step {
 
 /** The space scale from its smallest to its largest step: every count of the spacing unit as a multiple of body text, so that each step grows exactly as body text does. It spaces the layout; spacing that belongs to a piece of text follows that text through the factors of typography in `em` and `lh`. */
 export const scale = (
-  options: Typography.ScaleOptions,
+  options: typeof Typography.ScaleOptions.Encoded,
 ): Exit.Exit<ReadonlyArray<Step>, Schema.SchemaError> =>
   Exit.map(Schema.decodeExit(Typography.ScaleOptions)(options, { errors: 'all' }), (options) =>
     spacingUnitCounts.map((count) => {

@@ -2,6 +2,7 @@ import { describe, expect, it } from '@effect/vitest';
 import { Exit, Option, Schema, SchemaIssue } from 'effect';
 
 import * as Fraction from '#src/Fraction';
+import * as Length from '#src/Length';
 import * as Typography from '#src/Typography';
 import * as Viewport from '#src/Viewport';
 
@@ -14,6 +15,39 @@ describe('defaultFontSize', () => {
 describe('minimumFontSize', () => {
   it('is the smallest size of the USWDS theme type scale in its default settings', () => {
     expect(Typography.minimumFontSize).toBe(13);
+  });
+});
+
+describe('ideographAdvanceFactor', () => {
+  it('is the advance CSS Values 4 assumes for an ideograph it cannot measure', () => {
+    expect(Typography.ideographAdvanceFactor).toBe(1);
+  });
+});
+
+describe('maximumFontSize', () => {
+  it('fits a full-width character into the minimum viewport width when a reader sets the font size up to the maximum page zoom factor', () => {
+    const characterWidth = Fraction.multiply(
+      Typography.maximumFontSize,
+      Fraction.make(BigInt(Viewport.maximumPageZoomFactor * Typography.ideographAdvanceFactor), 1n),
+    );
+
+    expect(characterWidth).toEqual(Fraction.make(BigInt(Viewport.minimumViewportWidth), 1n));
+  });
+});
+
+describe('minimumStepFactor', () => {
+  it('keeps steps at the minimum font size apart by the layout unit', () => {
+    const nextSize = Fraction.multiply(
+      Fraction.make(BigInt(Typography.minimumFontSize), 1n),
+      Typography.minimumStepFactor,
+    );
+
+    expect(nextSize).toEqual(
+      Fraction.sum(
+        Fraction.make(BigInt(Typography.minimumFontSize), 1n),
+        Fraction.make(1n, BigInt(1 / Length.layoutUnit)),
+      ),
+    );
   });
 });
 
@@ -156,6 +190,16 @@ describe('ScaleOptions', () => {
     expect(Exit.isSuccess(exit)).toBe(true);
   });
 
+  it('accepts a maximum factor below the minimum factor', () => {
+    const exit = Schema.decodeExit(Typography.ScaleOptions)({
+      minimumFactor: { numerator: 5n, denominator: 4n },
+      maximumFactor: { numerator: 6n, denominator: 5n },
+      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+    });
+
+    expect(Exit.isSuccess(exit)).toBe(true);
+  });
+
   it('rejects a minimum factor of 1', () => {
     const exit = Schema.decodeExit(Typography.ScaleOptions)({
       minimumFactor: { numerator: 1n, denominator: 1n },
@@ -171,29 +215,19 @@ describe('ScaleOptions', () => {
       {
         path: ['minimumFactor'],
         message:
-          'Expected a minimum factor greater than 1, so that every step is larger than the one below',
+          'Expected a minimum factor of at least 833/832, so that every step is larger than the one below by at least the layout unit of browsers and no two steps render alike',
       },
     ]);
   });
 
-  it('rejects a maximum factor equal to the minimum factor', () => {
+  it('accepts a maximum factor equal to the minimum factor', () => {
     const exit = Schema.decodeExit(Typography.ScaleOptions)({
       minimumFactor: { numerator: 6n, denominator: 5n },
       maximumFactor: { numerator: 6n, denominator: 5n },
       maximumBodyFontSize: { numerator: 20n, denominator: 1n },
     });
 
-    expect(
-      SchemaIssue.makeFormatterStandardSchemaV1()(
-        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
-      ).issues,
-    ).toEqual([
-      {
-        path: ['maximumFactor'],
-        message:
-          'Expected a maximum factor greater than the minimum factor, so that growth rises with the step and the scale ends',
-      },
-    ]);
+    expect(Exit.isSuccess(exit)).toBe(true);
   });
 
   it('reports an invalid minimum factor and an invalid maximum factor at once', () => {
@@ -214,12 +248,12 @@ describe('ScaleOptions', () => {
       {
         path: ['minimumFactor'],
         message:
-          'Expected a minimum factor greater than 1, so that every step is larger than the one below',
+          'Expected a minimum factor of at least 833/832, so that every step is larger than the one below by at least the layout unit of browsers and no two steps render alike',
       },
       {
         path: ['maximumFactor'],
         message:
-          'Expected a maximum factor greater than 1, so that every step is larger than the one below',
+          'Expected a maximum factor of at least 833/832, so that every step is larger than the one below by at least the layout unit of browsers and no two steps render alike',
       },
     ]);
   });
@@ -315,10 +349,10 @@ describe('scale', () => {
     });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 
-    expect(steps.map((step) => step.position)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    expect(steps.map((step) => step.position)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
-  it('keeps every step growing by 1 to 8/5 and at or above the minimum font size', () => {
+  it('keeps every step growing by 1 to 8/5 and between the minimum and the maximum font size', () => {
     const exit = Typography.scale({
       minimumFactor: { numerator: 6n, denominator: 5n },
       maximumFactor: { numerator: 5n, denominator: 4n },
@@ -338,6 +372,7 @@ describe('scale', () => {
           Fraction.make(BigInt(Typography.minimumFontSize), 1n),
         ),
       ).toBe(true);
+      expect(Fraction.isLessThanOrEqualTo(step.minimumSize, Typography.maximumFontSize)).toBe(true);
     }
   });
 
@@ -354,6 +389,19 @@ describe('scale', () => {
     expect(nextGrowth).toBeGreaterThan(8 / 5);
   });
 
+  it('ends where the next step would shrink when the maximum factor is below the minimum factor', () => {
+    const exit = Typography.scale({
+      minimumFactor: { numerator: 5n, denominator: 4n },
+      maximumFactor: { numerator: 6n, denominator: 5n },
+      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+    });
+    const highest = Exit.isSuccess(exit) ? exit.value.at(-1) : undefined;
+    const nextGrowth = (20 * (6 / 5) ** 6) / (16 * (5 / 4) ** 6);
+
+    expect(highest?.position).toBe(5);
+    expect(nextGrowth).toBeLessThan(1);
+  });
+
   it('starts where the next step down would be smaller than the minimum font size', () => {
     const exit = Typography.scale({
       minimumFactor: { numerator: 6n, denominator: 5n },
@@ -365,6 +413,35 @@ describe('scale', () => {
 
     expect(lowest?.position).toBe(-1);
     expect(nextMinimumSize).toBeLessThan(Typography.minimumFontSize);
+  });
+
+  it('ends where the next step would be larger than the maximum font size when the factors are equal', () => {
+    const exit = Typography.scale({
+      minimumFactor: { numerator: 6n, denominator: 5n },
+      maximumFactor: { numerator: 6n, denominator: 5n },
+      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+    });
+    const highest = Exit.isSuccess(exit) ? exit.value.at(-1) : undefined;
+    const nextMinimumSize = 16 * (6 / 5) ** 11;
+
+    expect(highest?.position).toBe(10);
+    expect(nextMinimumSize).toBeGreaterThan(Fraction.toNumber(Typography.maximumFontSize));
+  });
+
+  it('ends on both sides at the minimum step factor', () => {
+    const exit = Typography.scale({
+      minimumFactor: Typography.minimumStepFactor,
+      maximumFactor: Typography.minimumStepFactor,
+      maximumBodyFontSize: { numerator: 16n, denominator: 1n },
+    });
+    const steps = Exit.isSuccess(exit) ? exit.value : [];
+    const previousMinimumSize = 16 * (832 / 833) ** 173;
+    const nextMinimumSize = 16 * (833 / 832) ** 1580;
+
+    expect(steps.at(0)?.position).toBe(-172);
+    expect(steps.at(-1)?.position).toBe(1579);
+    expect(previousMinimumSize).toBeLessThan(Typography.minimumFontSize);
+    expect(nextMinimumSize).toBeGreaterThan(Fraction.toNumber(Typography.maximumFontSize));
   });
 
   it('reports every invalid option at once', () => {
@@ -382,12 +459,12 @@ describe('scale', () => {
       {
         path: ['minimumFactor'],
         message:
-          'Expected a minimum factor greater than 1, so that every step is larger than the one below',
+          'Expected a minimum factor of at least 833/832, so that every step is larger than the one below by at least the layout unit of browsers and no two steps render alike',
       },
       {
         path: ['maximumFactor'],
         message:
-          'Expected a maximum factor greater than 1, so that every step is larger than the one below',
+          'Expected a maximum factor of at least 833/832, so that every step is larger than the one below by at least the layout unit of browsers and no two steps render alike',
       },
       {
         path: ['maximumBodyFontSize'],
