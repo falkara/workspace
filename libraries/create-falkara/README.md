@@ -12,10 +12,10 @@ npm create falkara
 
 ## Requirements
 
-| Requirement      | Supported                |
-| ---------------- | ------------------------ |
-| Operating system | macOS, Linux, or Windows |
-| Node.js          | `^24.15.0`               |
+| Requirement      | Supported                              |
+| ---------------- | -------------------------------------- |
+| Operating system | macOS, Linux, or Windows               |
+| Node.js          | `^22.11.0 \|\| ^24.11.0 \|\| ^26.13.0` |
 
 ## Links
 
