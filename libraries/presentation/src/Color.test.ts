@@ -560,6 +560,62 @@ describe('shade', () => {
     expect(chroma).toBeLessThan(0.17);
   });
 
+  it('picks the shade closest by deltaEOK over one nearer in lightness that loses more chroma', () => {
+    const exit = Color.shade({
+      color: 'oklch(54% 0.16 0)',
+      background: 'oklch(56.2% 0 0)',
+      step: {
+        position: 3,
+        minimumSize: Fraction.make(24n, 1n),
+        maximumSize: Fraction.make(30n, 1n),
+      },
+      fontWeight: 400,
+    });
+
+    expect(Exit.isSuccess(exit) ? exit.value : '').toBe(
+      'oklch(0.0869102395243317 0.035232653611955 0)',
+    );
+  });
+
+  it('rests on a largest chroma within sRGB that rises with lightness to one peak and falls after it', () => {
+    const isInSrgb = (lightness: number, chroma: number, hue: number): boolean => {
+      const lab = [
+        lightness,
+        chroma * Math.cos((hue * Math.PI) / 180),
+        chroma * Math.sin((hue * Math.PI) / 180),
+      ];
+      const lms = Color.oklabToLms.map(
+        (row) => (row[0] * lab[0]! + row[1] * lab[1]! + row[2] * lab[2]!) ** 3,
+      );
+      const xyz = Color.lmsToXyz.map(
+        (row) => row[0] * lms[0]! + row[1] * lms[1]! + row[2] * lms[2]!,
+      );
+      return Color.xyzToLinearSrgb
+        .map((row) => row[0] * xyz[0]! + row[1] * xyz[1]! + row[2] * xyz[2]!)
+        .every((channel) => channel >= 0 && channel <= 1);
+    };
+    const largestChromas = Array.from({ length: 360 }, (_, hue) =>
+      Array.from(
+        { length: 199 },
+        (_, lightnessIndex) =>
+          Array.from({ length: 40 }).reduce<readonly [number, number]>(
+            ([inside, outside]) =>
+              isInSrgb((lightnessIndex + 1) / 200, (inside + outside) / 2, hue)
+                ? [(inside + outside) / 2, outside]
+                : [inside, (inside + outside) / 2],
+            [0, Color.fullChroma],
+          )[0],
+      ),
+    );
+
+    for (const chromas of largestChromas) {
+      const peak = chromas.indexOf(Math.max(...chromas));
+
+      expect(chromas.slice(0, peak + 1)).toEqual(chromas.slice(0, peak + 1).sort((a, b) => a - b));
+      expect(chromas.slice(peak)).toEqual(chromas.slice(peak).sort((a, b) => b - a));
+    }
+  });
+
   it('lightens a brand color against a dark background and keeps its chroma where sRGB holds it', () => {
     const step = {
       position: 0,

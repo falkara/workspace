@@ -321,7 +321,7 @@ const boundary = (holds: (value: number) => boolean, inside: number, outside: nu
       ? boundary(holds, (inside + outside) / 2, outside)
       : boundary(holds, inside, (inside + outside) / 2);
 
-/** The lightness, chroma and hue in degrees of the shade of a brand color closest to it in lightness that reaches the contrast ratio against the background: its hue kept, and its chroma kept or, where sRGB cannot hold it at that lightness, reduced as CSS Color 4 gamut mapping reduces it; or none when no shade reaches it. */
+/** The lightness, chroma and hue in degrees of the shade of a brand color closest to it by deltaEOK that reaches the contrast ratio against the background: its hue kept, and its chroma kept or, where sRGB cannot hold it at that lightness, reduced at constant lightness and hue to the edge of sRGB, the reduction every gamut mapping algorithm of CSS Color 4 aims at, reached exactly so that the lightness and hue the contrast rests on stay exact; or none when no shade reaches it. */
 const closestShade = (
   color: string,
   background: string,
@@ -358,16 +358,24 @@ const closestShade = (
     : reaches(1)
       ? boundary(reaches, 1, lightStart)
       : undefined;
+  // The largest chroma sRGB holds at a hue rises with lightness to one peak and falls after it, so on each side the shade nearest in lightness also loses the least chroma and is the closest by deltaEOK, which at a shared hue is the hypotenuse of the lightness and chroma differences.
   const closest =
     darker === undefined
       ? lighter
-      : lighter === undefined || lightness - darker <= lighter - lightness
+      : lighter === undefined ||
+          Math.hypot(lightness - darker, chroma - chromaAt(darker)) <=
+            Math.hypot(lighter - lightness, chroma - chromaAt(lighter))
         ? darker
         : lighter;
   return closest === undefined ? undefined : [closest, chromaAt(closest), hue];
 };
 
-/** The shade of a brand color, written in oklch(), that is closest to it in lightness and reaches the contrast WCAG 2.2 Contrast (Enhanced) requires for its text against the background, or the stricter ratio the project asks for; or a failure with the reason when no shade within sRGB reaches it. */
+/**
+ * The shade of a brand color, written in oklch(), that is closest to it by deltaEOK, the color difference CSS Color 4 defines, and reaches the contrast WCAG 2.2 Contrast (Enhanced) requires for its text against the background, or the stricter ratio the project asks for; or a failure with the reason when no shade within sRGB reaches it. Its hue is kept and its chroma is reduced only where sRGB cannot hold it, at constant lightness and hue as CSS Color 4 gamut mapping aims to reduce it.
+ *
+ * @see https://www.w3.org/TR/css-color-4/#color-difference-OK
+ * @see https://www.w3.org/TR/css-color-4/#css-gamut-mapping-algorithms
+ */
 export const shade = (brand: Brand): Exit.Exit<string, Schema.SchemaError> =>
   Exit.map(
     Schema.decodeExit(
