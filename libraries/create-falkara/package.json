@@ -34,8 +34,8 @@
     "prepack": "vp pack"
   },
   "devDependencies": {
-    "@effect/platform-node": "4.0.7",
-    "effect": "4.0.7"
+    "@effect/platform-node": "4.1.0",
+    "effect": "4.1.0"
   },
   "engines": {
     "node": "^22.11.0 || ^24.11.0 || ^26.13.0"

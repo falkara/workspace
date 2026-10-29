@@ -30,6 +30,6 @@
     "prepack": "vp pack"
   },
   "peerDependencies": {
-    "effect": "^4.0.7"
+    "effect": "~4.1.0"
   }
 }
