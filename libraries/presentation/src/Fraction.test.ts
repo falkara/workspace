@@ -137,6 +137,10 @@ describe('format', () => {
   it('writes the numerator over the denominator', () => {
     expect(Fraction.format(Fraction.make(6n, 5n))).toBe('6/5');
   });
+
+  it('writes a whole fraction as its numerator alone', () => {
+    expect(Fraction.format(Fraction.make(4n, 2n))).toBe('2');
+  });
 });
 
 describe('isGreaterThanFraction', () => {

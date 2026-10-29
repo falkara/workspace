@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@effect/vitest';
-import { Exit, Option } from 'effect';
+import { Exit, Option, SchemaIssue } from 'effect';
 
 import * as Fraction from '#src/Fraction';
 import * as Space from '#src/Space';
@@ -14,19 +14,19 @@ describe('spacingUnitCounts', () => {
   it('are the counts the USWDS spacing scale spaces content with', () => {
     expect(Space.spacingUnitCounts.map(Fraction.format)).toEqual([
       '1/2',
-      '1/1',
+      '1',
       '3/2',
-      '2/1',
+      '2',
       '5/2',
-      '3/1',
-      '4/1',
-      '5/1',
-      '6/1',
-      '7/1',
-      '8/1',
-      '9/1',
-      '10/1',
-      '15/1',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+      '10',
+      '15',
     ]);
   });
 });
@@ -50,16 +50,16 @@ describe('scale', () => {
       '1/4',
       '1/2',
       '3/4',
-      '1/1',
+      '1',
       '5/4',
       '3/2',
-      '2/1',
+      '2',
       '5/2',
-      '3/1',
+      '3',
       '7/2',
-      '4/1',
+      '4',
       '9/2',
-      '5/1',
+      '5',
       '15/2',
     ]);
   });
@@ -111,10 +111,27 @@ describe('scale', () => {
       maximumFactor: { numerator: 1n, denominator: 2n },
       maximumBodyFontSize: { numerator: 40n, denominator: 1n },
     });
-    const message = Option.getOrThrow(Exit.findErrorOption(exit)).message;
 
-    expect(message).toContain('["minimumFactor"]');
-    expect(message).toContain('["maximumFactor"]');
-    expect(message).toContain('["maximumBodyFontSize"]');
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['minimumFactor'],
+        message:
+          'Expected a minimum factor greater than 1, so that every step is larger than the one below',
+      },
+      {
+        path: ['maximumFactor'],
+        message:
+          'Expected a maximum factor greater than 1, so that every step is larger than the one below',
+      },
+      {
+        path: ['maximumBodyFontSize'],
+        message:
+          'Expected a body font size of at most 25.6 px, so that text can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+      },
+    ]);
   });
 });

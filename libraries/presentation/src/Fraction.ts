@@ -2,8 +2,22 @@ import { Order, Schema } from 'effect';
 
 /** A schema of a ratio of two positive whole numbers, held as big integers so that no arithmetic on it overflows. */
 export const Fraction = Schema.Struct({
-  numerator: Schema.BigInt.pipe(Schema.check(Schema.isGreaterThanBigInt(0n))),
-  denominator: Schema.BigInt.pipe(Schema.check(Schema.isGreaterThanBigInt(0n))),
+  numerator: Schema.BigInt.pipe(
+    Schema.check(
+      Schema.isGreaterThanBigInt(0n, {
+        message:
+          'Expected a positive numerator, so that every operation on the fraction keeps it positive',
+      }),
+    ),
+  ),
+  denominator: Schema.BigInt.pipe(
+    Schema.check(
+      Schema.isGreaterThanBigInt(0n, {
+        message:
+          'Expected a positive denominator, so that every operation on the fraction keeps it positive',
+      }),
+    ),
+  ),
 });
 
 /** A ratio of two positive whole numbers, which stays positive under every operation here, so that none of them can fail. */
@@ -58,8 +72,9 @@ export const isGreaterThanOrEqualTo = Order.isGreaterThanOrEqualTo(order);
 /** Whether the first fraction is less than or equal to the second. */
 export const isLessThanOrEqualTo = Order.isLessThanOrEqualTo(order);
 
-/** The fraction written as its numerator over its denominator, such as 6/5. */
-export const format = (self: Fraction): string => `${self.numerator}/${self.denominator}`;
+/** The fraction written as its numerator over its denominator, such as 6/5, or as its numerator alone when it is whole. */
+export const format = (self: Fraction): string =>
+  self.denominator === 1n ? `${self.numerator}` : `${self.numerator}/${self.denominator}`;
 
 /** A schema check that a fraction is greater than the given one. */
 export const isGreaterThanFraction = Schema.makeIsGreaterThan({ order, formatter: format });

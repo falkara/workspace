@@ -22,7 +22,7 @@ const Sizes = Schema.Struct({
             Fraction.multiply(sizes.minimumSize, Typography.maximumTextGrowthFactor),
           )) || {
           path: ['maximumSize'],
-          issue: `Expected a size that grows by 1 to ${Fraction.format(Typography.maximumTextGrowthFactor)} from the minimum size`,
+          issue: `Expected a maximum size of ${Math.round(Fraction.toNumber(sizes.minimumSize) * 10 ** Length.decimalPlaces) / 10 ** Length.decimalPlaces} px to ${Math.round(Fraction.toNumber(Fraction.multiply(sizes.minimumSize, Typography.maximumTextGrowthFactor)) * 10 ** Length.decimalPlaces) / 10 ** Length.decimalPlaces} px, so that the value never shrinks and grows no faster than text that can be enlarged to ${Typography.textScaleFactor * 100} % within the ${Viewport.maximumPageZoomFactor * 100} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
         },
     ),
   ),

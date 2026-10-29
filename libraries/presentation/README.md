@@ -33,7 +33,8 @@ Effect.gen(function* () {
 // ]
 
 Typography.scale({ ...intent, maximumBodyFontSize: Fraction.make(30n, 1n) });
-// Failure: SchemaError(Expected a value less than or equal to 128/5
+// Failure: SchemaError(Expected a body font size of at most 25.6 px, so that text can be enlarged
+//   to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires
 //   at ["maximumBodyFontSize"])
 ```
 

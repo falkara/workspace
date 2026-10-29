@@ -51,15 +51,32 @@ export const maximumTextGrowthFactor = Fraction.make(
 /** A schema of the ratios of a type scale and the size its body text reaches at the maximum viewport width. */
 export const ScaleOptions = Schema.Struct({
   /** The ratio between consecutive steps at the minimum viewport width, greater than 1 so that every step is larger than the one below. */
-  minimumFactor: Fraction.Fraction.pipe(Schema.check(Fraction.isGreaterThanFraction(Fraction.one))),
+  minimumFactor: Fraction.Fraction.pipe(
+    Schema.check(
+      Fraction.isGreaterThanFraction(Fraction.one, {
+        message: `Expected a minimum factor greater than ${Fraction.format(Fraction.one)}, so that every step is larger than the one below`,
+      }),
+    ),
+  ),
   /** The ratio between consecutive steps at the maximum viewport width, greater than 1 so that every step is larger than the one below. */
-  maximumFactor: Fraction.Fraction.pipe(Schema.check(Fraction.isGreaterThanFraction(Fraction.one))),
+  maximumFactor: Fraction.Fraction.pipe(
+    Schema.check(
+      Fraction.isGreaterThanFraction(Fraction.one, {
+        message: `Expected a maximum factor greater than ${Fraction.format(Fraction.one)}, so that every step is larger than the one below`,
+      }),
+    ),
+  ),
   /** The font size of body text at the maximum viewport width, from the default font size, so that body text never shrinks, to the size the maximum text growth factor allows. Measured in CSS pixels. */
   maximumBodyFontSize: Fraction.Fraction.pipe(
     Schema.check(
-      Fraction.isGreaterThanOrEqualToFraction(Fraction.make(BigInt(defaultFontSize), 1n)),
+      Fraction.isGreaterThanOrEqualToFraction(Fraction.make(BigInt(defaultFontSize), 1n), {
+        message: `Expected a body font size of at least ${defaultFontSize} px, so that body text never shrinks below the default font size of browsers`,
+      }),
       Fraction.isLessThanOrEqualToFraction(
         Fraction.multiply(Fraction.make(BigInt(defaultFontSize), 1n), maximumTextGrowthFactor),
+        {
+          message: `Expected a body font size of at most ${Fraction.toNumber(Fraction.multiply(Fraction.make(BigInt(defaultFontSize), 1n), maximumTextGrowthFactor))} px, so that text can be enlarged to ${textScaleFactor * 100} % within the ${Viewport.maximumPageZoomFactor * 100} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
+        },
       ),
     ),
   ),
@@ -70,7 +87,8 @@ export const ScaleOptions = Schema.Struct({
       (options) =>
         Fraction.isGreaterThan(options.maximumFactor, options.minimumFactor) || {
           path: ['maximumFactor'],
-          issue: 'Expected a factor greater than the minimum factor',
+          issue:
+            'Expected a maximum factor greater than the minimum factor, so that growth rises with the step and the scale ends',
         },
     ),
   ),

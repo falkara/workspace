@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@effect/vitest';
-import { Exit, Option, Schema } from 'effect';
+import { Exit, Option, Schema, SchemaIssue } from 'effect';
 
 import * as Fraction from '#src/Fraction';
 import * as Typography from '#src/Typography';
@@ -115,7 +115,17 @@ describe('ScaleOptions', () => {
       maximumBodyFontSize: { numerator: 20n, denominator: 1n },
     });
 
-    expect(Option.getOrThrow(Exit.findErrorOption(exit)).message).toContain('["minimumFactor"]');
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['minimumFactor'],
+        message:
+          'Expected a minimum factor greater than 1, so that every step is larger than the one below',
+      },
+    ]);
   });
 
   it('rejects a maximum factor equal to the minimum factor', () => {
@@ -125,7 +135,17 @@ describe('ScaleOptions', () => {
       maximumBodyFontSize: { numerator: 20n, denominator: 1n },
     });
 
-    expect(Option.getOrThrow(Exit.findErrorOption(exit)).message).toContain('["maximumFactor"]');
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['maximumFactor'],
+        message:
+          'Expected a maximum factor greater than the minimum factor, so that growth rises with the step and the scale ends',
+      },
+    ]);
   });
 
   it('reports an invalid minimum factor and an invalid maximum factor at once', () => {
@@ -137,10 +157,23 @@ describe('ScaleOptions', () => {
       },
       { errors: 'all' },
     );
-    const message = Option.getOrThrow(Exit.findErrorOption(exit)).message;
 
-    expect(message).toContain('["minimumFactor"]');
-    expect(message).toContain('["maximumFactor"]');
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['minimumFactor'],
+        message:
+          'Expected a minimum factor greater than 1, so that every step is larger than the one below',
+      },
+      {
+        path: ['maximumFactor'],
+        message:
+          'Expected a maximum factor greater than 1, so that every step is larger than the one below',
+      },
+    ]);
   });
 
   it('accepts a body size of the default font size', () => {
@@ -170,9 +203,17 @@ describe('ScaleOptions', () => {
       maximumBodyFontSize: { numerator: 159n, denominator: 10n },
     });
 
-    expect(Option.getOrThrow(Exit.findErrorOption(exit)).message).toContain(
-      '["maximumBodyFontSize"]',
-    );
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['maximumBodyFontSize'],
+        message:
+          'Expected a body font size of at least 16 px, so that body text never shrinks below the default font size of browsers',
+      },
+    ]);
   });
 
   it('rejects a body size above the default font size grown by the maximum text growth factor', () => {
@@ -182,9 +223,17 @@ describe('ScaleOptions', () => {
       maximumBodyFontSize: { numerator: 257n, denominator: 10n },
     });
 
-    expect(Option.getOrThrow(Exit.findErrorOption(exit)).message).toContain(
-      '["maximumBodyFontSize"]',
-    );
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['maximumBodyFontSize'],
+        message:
+          'Expected a body font size of at most 25.6 px, so that text can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+      },
+    ]);
   });
 });
 
@@ -276,10 +325,27 @@ describe('scale', () => {
       maximumFactor: { numerator: 1n, denominator: 2n },
       maximumBodyFontSize: { numerator: 40n, denominator: 1n },
     });
-    const message = Option.getOrThrow(Exit.findErrorOption(exit)).message;
 
-    expect(message).toContain('["minimumFactor"]');
-    expect(message).toContain('["maximumFactor"]');
-    expect(message).toContain('["maximumBodyFontSize"]');
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['minimumFactor'],
+        message:
+          'Expected a minimum factor greater than 1, so that every step is larger than the one below',
+      },
+      {
+        path: ['maximumFactor'],
+        message:
+          'Expected a maximum factor greater than 1, so that every step is larger than the one below',
+      },
+      {
+        path: ['maximumBodyFontSize'],
+        message:
+          'Expected a body font size of at most 25.6 px, so that text can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+      },
+    ]);
   });
 });

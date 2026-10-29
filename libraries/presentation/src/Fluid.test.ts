@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@effect/vitest';
-import { Exit, Option } from 'effect';
+import { Exit, Option, SchemaIssue } from 'effect';
 
 import * as Fluid from '#src/Fluid';
 import * as Fraction from '#src/Fraction';
@@ -107,7 +107,17 @@ describe('clamp', () => {
   it('rejects a value that would shrink', () => {
     const exit = Fluid.clamp(Fraction.make(20n, 1n), Fraction.make(16n, 1n));
 
-    expect(Option.getOrThrow(Exit.findErrorOption(exit)).message).toContain('["maximumSize"]');
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['maximumSize'],
+        message:
+          'Expected a maximum size of 20 px to 32 px, so that the value never shrinks and grows no faster than text that can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+      },
+    ]);
   });
 
   it('rejects a value that would grow by more than the maximum text growth factor', () => {
@@ -119,6 +129,16 @@ describe('clamp', () => {
       ),
     );
 
-    expect(Option.getOrThrow(Exit.findErrorOption(exit)).message).toContain('["maximumSize"]');
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['maximumSize'],
+        message:
+          'Expected a maximum size of 16 px to 25.6 px, so that the value never shrinks and grows no faster than text that can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+      },
+    ]);
   });
 });
