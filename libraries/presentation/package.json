@@ -1,7 +1,7 @@
 {
   "name": "@falkara/presentation",
   "version": "0.2.0",
-  "description": "Presentation of web content, every value following from a few axioms that cite their sources.",
+  "description": "An Effect-based TypeScript library for interface design that derives each value from established standards.",
   "license": "MIT",
   "author": "Filip Falcon",
   "repository": {
