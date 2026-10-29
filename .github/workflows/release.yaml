@@ -46,4 +46,4 @@ jobs:
         working-directory: libraries/presentation
         run: |
           npx vp pack
-          npx jsr@0.14.3 publish --provenance --set-version "$(node --print "require('./package.json').version")"
+          npx jsr@0.14.3 publish --set-version "$(node --print "require('./package.json').version")"
