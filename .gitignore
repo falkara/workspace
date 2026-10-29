@@ -4,5 +4,8 @@
 # Dependencies
 node_modules
 
+# Build
+dist
+
 # Agents
 .claude
