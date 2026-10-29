@@ -1,5 +1,23 @@
 # @falkara/presentation
 
+## 0.6.0
+
+### Minor Changes
+
+- [`6675760`](https://github.com/falkara/workspace/commit/6675760c4561882d72225f61890a98a33cec4fc4) Thanks [@filipfalcon](https://github.com/filipfalcon)! - Built on Effect 4.1.0. `@falkara/presentation` asks for Effect `~4.1.0` as its peer, the 4.1 line it is built and tested against, where it accepted any Effect 4 from 4.0.7 before.
+
+- [`e1ddea6`](https://github.com/falkara/workspace/commit/e1ddea6f0b163cf7a1dee360958c19788cf5c89a) Thanks [@filipfalcon](https://github.com/filipfalcon)! - Every module is imported on its own path, such as `import * as Typography from '@falkara/presentation/Typography'`, on npm and on JSR, and the package root no longer exports anything. Every module ships as a file of its own and the package declares itself free of side effects, so that a bundler leaves out the modules a project never imports: a project that reads only the line lengths of `Layout` takes 0.2 kB instead of 6 kB with `Color` inside.
+
+### Patch Changes
+
+- [`4156ec1`](https://github.com/falkara/workspace/commit/4156ec1b609e9118fc8222732605656acffb46d0) Thanks [@filipfalcon](https://github.com/filipfalcon)! - The JavaScript keeps its documentation comments, as Rolldown and TypeScript emit them by default and as Effect ships them, so that the reason behind each value is also at hand where the code runs.
+
+- [`f236684`](https://github.com/falkara/workspace/commit/f236684aeedb640761c4af27ddf0516efc96b57f) Thanks [@filipfalcon](https://github.com/filipfalcon)! - Publish to JSR alongside npm: the same built JavaScript with its type declarations, which the entry names for JSR, released with every version npm receives.
+
+- [`621619a`](https://github.com/falkara/workspace/commit/621619a702a455ab4b1b1c542206c79b6d9d1bb1) Thanks [@filipfalcon](https://github.com/filipfalcon)! - The type declarations no longer export the namespaces the build used internally, such as `Typography_d_exports`, which type-checked as imports but do not exist at runtime.
+
+- [`ac20719`](https://github.com/falkara/workspace/commit/ac207191d23b37295fa5565ef19e74c97de9cd1b) Thanks [@filipfalcon](https://github.com/filipfalcon)! - The package names its keywords, its homepage and where to report issues, so that npm search finds it and leads to the readme.
+
 ## 0.5.0
 
 ### Minor Changes
