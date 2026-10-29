@@ -9,13 +9,13 @@ describe('minimumViewportWidth', () => {
 });
 
 describe('viewportWidthFactor', () => {
-  it('is the page zoom at which WCAG 2.2 Reflow equates a desktop viewport with the minimum viewport width', () => {
+  it('is the page zoom by which an informative note of WCAG 2.2 Reflow equates a desktop viewport with the minimum viewport width', () => {
     expect(Viewport.viewportWidthFactor).toBe(4);
   });
 });
 
 describe('maximumViewportWidth', () => {
-  it('is the desktop viewport WCAG 2.2 Reflow pairs with the minimum viewport width', () => {
+  it('is the desktop viewport an informative note of WCAG 2.2 Reflow pairs with the minimum viewport width', () => {
     expect(Viewport.maximumViewportWidth).toBe(1280);
   });
 
