@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@effect/vitest';
+import { describe, expect, expectTypeOf, it } from '@effect/vitest';
 import { Exit, Option, Schema, SchemaIssue } from 'effect';
 
 import * as Fraction from '#src/Fraction';
@@ -328,6 +328,13 @@ describe('ScaleOptions', () => {
 });
 
 describe('Step', () => {
+  it('needs its position, written or decoded', () => {
+    expectTypeOf<Omit<typeof Typography.Step.Encoded, 'position'>>().not.toExtend<
+      typeof Typography.Step.Encoded
+    >();
+    expectTypeOf<Omit<Typography.Step, 'position'>>().not.toExtend<Typography.Step>();
+  });
+
   it('accepts every step of a scale', () => {
     const exit = Typography.scale({
       minimumFactor: { numerator: 6n, denominator: 5n },

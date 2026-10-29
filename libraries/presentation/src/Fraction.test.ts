@@ -1,9 +1,13 @@
-import { describe, expect, it } from '@effect/vitest';
+import { describe, expect, expectTypeOf, it } from '@effect/vitest';
 import { Exit, Schema } from 'effect';
 
 import * as Fraction from '#src/Fraction';
 
 describe('Fraction', () => {
+  it('is not written by hand, as only make and the schema bring a ratio to lowest terms', () => {
+    expectTypeOf<{ numerator: bigint; denominator: bigint }>().not.toExtend<Fraction.Fraction>();
+  });
+
   it('accepts a ratio of two positive whole numbers', () => {
     const exit = Schema.decodeExit(Fraction.Fraction)({ numerator: 6n, denominator: 5n });
 

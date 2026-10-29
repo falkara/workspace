@@ -19,4 +19,8 @@ export default defineConfig({
       js: `/* @ts-self-types="./${fileName.replace(/\.mjs$/, '.d.mts')}" */`,
     }),
   },
+  test: {
+    // Type tests checked by TypeScript beside the tests Vitest runs.
+    typecheck: { enabled: true, include: ['src/**/*.test.ts'] },
+  },
 });
