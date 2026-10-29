@@ -198,11 +198,15 @@ describe('scale', () => {
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 
     expect(steps.map((step) => step.position)).toEqual([-1, 0, 1, 2, 3, 4, 5, 6]);
-    expect(steps.at(0)).toEqual({ position: -1, minimumSize: 40 / 3, maximumSize: 16 });
+    expect(steps.at(0)).toEqual({
+      position: -1,
+      minimumSize: { numerator: 40n, denominator: 3n },
+      maximumSize: { numerator: 16n, denominator: 1n },
+    });
     expect(steps.at(-1)).toEqual({
       position: 6,
-      minimumSize: 746_496 / 15_625,
-      maximumSize: 312_500 / 4096,
+      minimumSize: { numerator: 746_496n, denominator: 15_625n },
+      maximumSize: { numerator: 78_125n, denominator: 1024n },
     });
   });
 
@@ -227,9 +231,16 @@ describe('scale', () => {
 
     expect(steps).not.toHaveLength(0);
     for (const step of steps) {
-      expect(step.maximumSize / step.minimumSize).toBeGreaterThanOrEqual(1);
-      expect(step.maximumSize / step.minimumSize).toBeLessThanOrEqual(8 / 5);
-      expect(step.minimumSize).toBeGreaterThanOrEqual(12);
+      const growth = Fraction.divide(step.maximumSize, step.minimumSize);
+
+      expect(Fraction.isGreaterThanOrEqualTo(growth, Fraction.one)).toBe(true);
+      expect(Fraction.isLessThanOrEqualTo(growth, Typography.maximumTextGrowthFactor)).toBe(true);
+      expect(
+        Fraction.isGreaterThanOrEqualTo(
+          step.minimumSize,
+          Fraction.make(BigInt(Typography.minimumFontSize), 1n),
+        ),
+      ).toBe(true);
     }
   });
 

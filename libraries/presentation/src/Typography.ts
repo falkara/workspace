@@ -84,9 +84,9 @@ export interface Step {
   /** The position of the step, 0 for body text, positive above it and negative below. */
   readonly position: number;
   /** The size at the minimum viewport width. Measured in CSS pixels. */
-  readonly minimumSize: number;
+  readonly minimumSize: Fraction.Fraction;
   /** The size at the maximum viewport width. Measured in CSS pixels. */
-  readonly maximumSize: number;
+  readonly maximumSize: Fraction.Fraction;
 }
 
 /** The type scale from its lowest to its highest step: every step whose growth from the minimum to the maximum viewport width lies between 1 and the maximum text growth factor, and whose size stays at or above the minimum font size. */
@@ -119,7 +119,7 @@ export const scale = (options: ScaleOptions): Exit.Exit<ReadonlyArray<Step>, Sch
     const lowest = lowestFrom(0n);
     return Array.makeBy(Number(highestFrom(0n) - lowest) + 1, (index) => ({
       position: Number(lowest) + index,
-      minimumSize: Fraction.toNumber(minimumSize(lowest + BigInt(index))),
-      maximumSize: Fraction.toNumber(maximumSize(lowest + BigInt(index))),
+      minimumSize: minimumSize(lowest + BigInt(index)),
+      maximumSize: maximumSize(lowest + BigInt(index)),
     }));
   });

@@ -72,7 +72,7 @@ describe('scale', () => {
     });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 
-    expect(steps.map((step) => step.minimumSize)).toEqual([
+    expect(steps.map((step) => Fraction.toNumber(step.minimumSize))).toEqual([
       4, 8, 12, 16, 20, 24, 32, 40, 48, 56, 64, 72, 80, 120,
     ]);
   });
@@ -87,7 +87,7 @@ describe('scale', () => {
 
     expect(steps).not.toHaveLength(0);
     for (const step of steps) {
-      expect(step.maximumSize / step.minimumSize).toBe(20 / 16);
+      expect(Fraction.divide(step.maximumSize, step.minimumSize)).toEqual(Fraction.make(20n, 16n));
     }
   });
 
@@ -101,7 +101,7 @@ describe('scale', () => {
 
     expect(steps).toHaveLength(14);
     for (const step of steps) {
-      expect(step.maximumSize).toBe(step.minimumSize);
+      expect(step.maximumSize).toEqual(step.minimumSize);
     }
   });
 

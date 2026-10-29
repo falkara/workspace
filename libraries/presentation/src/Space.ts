@@ -43,9 +43,9 @@ export interface Step {
   /** The multiple of body text the step is. */
   readonly factor: Fraction.Fraction;
   /** The size at the minimum viewport width. Measured in CSS pixels. */
-  readonly minimumSize: number;
+  readonly minimumSize: Fraction.Fraction;
   /** The size at the maximum viewport width. Measured in CSS pixels. */
-  readonly maximumSize: number;
+  readonly maximumSize: Fraction.Fraction;
 }
 
 /** The space scale from its smallest to its largest step: every count of the spacing unit as a multiple of body text, so that each step grows exactly as body text does. It spaces the layout; spacing that belongs to a piece of text follows that text through the factors of typography in `em` and `lh`. */
@@ -57,10 +57,11 @@ export const scale = (
       const factor = Fraction.multiply(count, spacingUnitFactor);
       return {
         factor,
-        minimumSize: Fraction.toNumber(
-          Fraction.multiply(Fraction.make(BigInt(Typography.defaultFontSize), 1n), factor),
+        minimumSize: Fraction.multiply(
+          Fraction.make(BigInt(Typography.defaultFontSize), 1n),
+          factor,
         ),
-        maximumSize: Fraction.toNumber(Fraction.multiply(options.maximumBodyFontSize, factor)),
+        maximumSize: Fraction.multiply(options.maximumBodyFontSize, factor),
       };
     }),
   );

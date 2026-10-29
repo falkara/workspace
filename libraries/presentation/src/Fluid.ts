@@ -1,14 +1,42 @@
+import { Exit, Schema } from 'effect';
+
+import * as Fraction from '#src/Fraction';
 import * as Length from '#src/Length';
+import * as Typography from '#src/Typography';
 import * as Viewport from '#src/Viewport';
 
-/** The CSS clamp() value that changes linearly from the minimum size at the minimum viewport width to the maximum size at the maximum viewport width. Sizes measured in CSS pixels. */
-export const clamp = (minimumSize: number, maximumSize: number): string => {
-  const slope =
-    (maximumSize - minimumSize) / (Viewport.maximumViewportWidth - Viewport.minimumViewportWidth);
-  const intercept = minimumSize - slope * Viewport.minimumViewportWidth;
-  const preferred =
-    slope < 0
-      ? `${Length.rem(intercept)} - ${Length.vw(-slope)}`
-      : `${Length.rem(intercept)} + ${Length.vw(slope)}`;
-  return `clamp(${Length.rem(Math.min(minimumSize, maximumSize))}, ${preferred}, ${Length.rem(Math.max(minimumSize, maximumSize))})`;
-};
+/** A schema of the sizes a fluid value takes at the minimum and at the maximum viewport width. Sizes measured in CSS pixels. */
+const Sizes = Schema.Struct({
+  /** The size at the minimum viewport width. */
+  minimumSize: Fraction.Fraction,
+  /** The size at the maximum viewport width. */
+  maximumSize: Fraction.Fraction,
+}).pipe(
+  Schema.check(
+    /** The maximum size from the minimum size, so that the value never shrinks, to the minimum size grown by the maximum text growth factor, so that text stays resizable and every other value grows no faster than text. */
+    Schema.makeFilter(
+      (sizes) =>
+        (Fraction.isGreaterThanOrEqualTo(sizes.maximumSize, sizes.minimumSize) &&
+          Fraction.isLessThanOrEqualTo(
+            sizes.maximumSize,
+            Fraction.multiply(sizes.minimumSize, Typography.maximumTextGrowthFactor),
+          )) || {
+          path: ['maximumSize'],
+          issue: `Expected a size that grows by 1 to ${Fraction.format(Typography.maximumTextGrowthFactor)} from the minimum size`,
+        },
+    ),
+  ),
+);
+
+/** The CSS clamp() value that changes linearly from the minimum size at the minimum viewport width to the maximum size at the maximum viewport width, or a failure when the value would shrink or grow by more than the maximum text growth factor. Sizes measured in CSS pixels. */
+export const clamp = (
+  minimumSize: Fraction.Fraction,
+  maximumSize: Fraction.Fraction,
+): Exit.Exit<string, Schema.SchemaError> =>
+  Exit.map(Schema.decodeExit(Sizes)({ minimumSize, maximumSize }, { errors: 'all' }), (sizes) => {
+    const slope =
+      (Fraction.toNumber(sizes.maximumSize) - Fraction.toNumber(sizes.minimumSize)) /
+      (Viewport.maximumViewportWidth - Viewport.minimumViewportWidth);
+    const intercept = Fraction.toNumber(sizes.minimumSize) - slope * Viewport.minimumViewportWidth;
+    return `clamp(${Length.rem(Fraction.toNumber(sizes.minimumSize))}, ${Length.rem(intercept)} + ${Length.vw(slope)}, ${Length.rem(Fraction.toNumber(sizes.maximumSize))})`;
+  });
