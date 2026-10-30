@@ -42,14 +42,18 @@ Typography.scale({ ...intent, maximumBodyFontSize: { numerator: 30n, denominator
 Without Effect the same call returns a plain value that reads right away.
 
 ```ts
+import { Exit, Option } from 'effect';
+
 const scale = Typography.scale(intent);
 
-if (scale._tag === 'Success') {
+if (Exit.isSuccess(scale)) {
   scale.value; // the steps
 } else {
-  scale.cause; // why it failed, with the SchemaError inside
+  Option.getOrUndefined(Exit.findErrorOption(scale))?.message; // every reason, one per line
 }
 ```
+
+Every schema the modules export, such as `Typography.ScaleOptions`, works with validators outside Effect too once it passes through `Schema.toStandardSchemaV1`.
 
 ## Modules
 
