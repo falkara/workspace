@@ -4,6 +4,16 @@ import { Effect, Exit, Option, Schema, SchemaIssue } from 'effect';
 import * as Color from '#src/Color';
 import * as Fraction from '#src/Fraction';
 
+/** The product of one of the matrices of Color and a vector, each row summed from left to right as CSS Color 4 sums it. */
+const transform = (
+  [first, second, third]: typeof Color.oklabToLms,
+  [x, y, z]: readonly [number, number, number],
+): readonly [number, number, number] => [
+  first[0] * x + first[1] * y + first[2] * z,
+  second[0] * x + second[1] * y + second[2] * z,
+  third[0] * x + third[1] * y + third[2] * z,
+];
+
 describe('enhancedContrastRatio', () => {
   it('is the contrast WCAG 2.2 Contrast (Enhanced) requires for text', () => {
     expect(Color.enhancedContrastRatio).toBe(7);
@@ -114,10 +124,10 @@ describe('transferOffset', () => {
 
 describe('oklabToLms, lmsToXyz and xyzToLinearSrgb', () => {
   it('turn the white of Oklab into the white of sRGB', () => {
-    const lms = Color.oklabToLms.map((row) => row[0] ** 3);
-    const xyz = Color.lmsToXyz.map((row) => row[0] * lms[0]! + row[1] * lms[1]! + row[2] * lms[2]!);
-    const srgb = Color.xyzToLinearSrgb.map(
-      (row) => row[0] * xyz[0]! + row[1] * xyz[1]! + row[2] * xyz[2]!,
+    const [long, medium, short] = transform(Color.oklabToLms, [1, 0, 0]);
+    const srgb = transform(
+      Color.xyzToLinearSrgb,
+      transform(Color.lmsToXyz, [long ** 3, medium ** 3, short ** 3]),
     );
 
     for (const channel of srgb) {
@@ -745,20 +755,15 @@ describe('shade', () => {
 
   it('rests on a largest chroma within sRGB that rises with lightness to one peak and falls after it', () => {
     const isInSrgb = (lightness: number, chroma: number, hue: number): boolean => {
-      const lab = [
+      const [long, medium, short] = transform(Color.oklabToLms, [
         lightness,
         chroma * Math.cos((hue * Math.PI) / 180),
         chroma * Math.sin((hue * Math.PI) / 180),
-      ];
-      const lms = Color.oklabToLms.map(
-        (row) => (row[0] * lab[0]! + row[1] * lab[1]! + row[2] * lab[2]!) ** 3,
-      );
-      const xyz = Color.lmsToXyz.map(
-        (row) => row[0] * lms[0]! + row[1] * lms[1]! + row[2] * lms[2]!,
-      );
-      return Color.xyzToLinearSrgb
-        .map((row) => row[0] * xyz[0]! + row[1] * xyz[1]! + row[2] * xyz[2]!)
-        .every((channel) => channel >= 0 && channel <= 1);
+      ]);
+      return transform(
+        Color.xyzToLinearSrgb,
+        transform(Color.lmsToXyz, [long ** 3, medium ** 3, short ** 3]),
+      ).every((channel) => channel >= 0 && channel <= 1);
     };
     const largestChromas = Array.from({ length: 360 }, (_, hue) =>
       Array.from(

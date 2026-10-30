@@ -49,12 +49,18 @@ export const channelSteps = 255;
 /** The distance a gamma-encoded sRGB channel may lie outside its range and still count as inside, half a step of an 8-bit channel, which no display can show. */
 export const gamutTolerance = 1 / (2 * channelSteps);
 
+/** Three numbers in order, such as the components or the channels of a color. */
+type Vector = readonly [number, number, number];
+
+/** Three rows of three numbers, which turn one vector of a color into another. */
+type Matrix = readonly [Vector, Vector, Vector];
+
 /**
  * The matrix from Oklab to the LMS cone responses that CSS Color 4 converts through.
  *
  * @see https://www.w3.org/TR/css-color-4/#color-conversion-code
  */
-export const oklabToLms: ReadonlyArray<readonly [number, number, number]> = [
+export const oklabToLms: Matrix = [
   [1, 0.3963377773761749, 0.2158037573099136],
   [1, -0.1055613458156586, -0.0638541728258133],
   [1, -0.0894841775298119, -1.2914855480194092],
@@ -65,7 +71,7 @@ export const oklabToLms: ReadonlyArray<readonly [number, number, number]> = [
  *
  * @see https://www.w3.org/TR/css-color-4/#color-conversion-code
  */
-export const lmsToXyz: ReadonlyArray<readonly [number, number, number]> = [
+export const lmsToXyz: Matrix = [
   [1.2268798758459243, -0.5578149944602171, 0.2813910456659647],
   [-0.0405757452148008, 1.112286803280317, -0.0717110580655164],
   [-0.0763729366746601, -0.4214933324022432, 1.5869240198367816],
@@ -76,7 +82,7 @@ export const lmsToXyz: ReadonlyArray<readonly [number, number, number]> = [
  *
  * @see https://www.w3.org/TR/css-color-4/#color-conversion-code
  */
-export const xyzToLinearSrgb: ReadonlyArray<readonly [number, number, number]> = [
+export const xyzToLinearSrgb: Matrix = [
   [3.2409699419045226, -1.537383177570094, -0.4986107602930034],
   [-0.9692436362808796, 1.8759675015077202, 0.04155505740717559],
   [0.05563007969699366, -0.20397695888897652, 1.0569715142428786],
@@ -94,7 +100,7 @@ export const fullChroma = 2 / 5;
  *
  * @see https://www.w3.org/TR/WCAG22/#dfn-relative-luminance
  */
-export const luminanceWeights: readonly [number, number, number] = [0.2126, 0.7152, 0.0722];
+export const luminanceWeights: Vector = [0.2126, 0.7152, 0.0722];
 
 /**
  * The flare WCAG 2.2 adds to both relative luminances of a contrast ratio.
@@ -113,85 +119,91 @@ export const maximumContrastRatio = (1 + contrastFlare) / contrastFlare;
  */
 export const unitRoundoff = Number.EPSILON / 2;
 
+/** The product of a matrix and a vector, each row summed from left to right as CSS Color 4 sums it. */
+const transform = ([first, second, third]: Matrix, [x, y, z]: Vector): Vector => [
+  first[0] * x + first[1] * y + first[2] * z,
+  second[0] * x + second[1] * y + second[2] * z,
+  third[0] * x + third[1] * y + third[2] * z,
+];
+
 /** The linear sRGB channels of a color of the given lightness, chroma and hue in degrees, converted as CSS Color 4 does, the hue first reduced to one turn exactly so that no large hue loses precision in radians. */
-const linearSrgbOf = (lightness: number, chroma: number, hue: number): ReadonlyArray<number> => {
+const linearSrgbOf = (lightness: number, chroma: number, hue: number): Vector => {
   const h = ((hue % 360) * Math.PI) / 180;
-  const lab = [lightness, chroma * Math.cos(h), chroma * Math.sin(h)];
-  const lms = oklabToLms.map(
-    (row) => (row[0] * lab[0]! + row[1] * lab[1]! + row[2] * lab[2]!) ** 3,
-  );
-  const xyz = lmsToXyz.map((row) => row[0] * lms[0]! + row[1] * lms[1]! + row[2] * lms[2]!);
-  return xyzToLinearSrgb.map((row) => row[0] * xyz[0]! + row[1] * xyz[1]! + row[2] * xyz[2]!);
+  const [long, medium, short] = transform(oklabToLms, [
+    lightness,
+    chroma * Math.cos(h),
+    chroma * Math.sin(h),
+  ]);
+  return transform(xyzToLinearSrgb, transform(lmsToXyz, [long ** 3, medium ** 3, short ** 3]));
 };
+
+/** The relative luminance of linear sRGB channels as WCAG 2.2 defines it, each weighted and held within its range. */
+const luminanceOf = ([red, green, blue]: Vector): number =>
+  luminanceWeights[0] * Math.min(Math.max(red, 0), 1) +
+  luminanceWeights[1] * Math.min(Math.max(green, 0), 1) +
+  luminanceWeights[2] * Math.min(Math.max(blue, 0), 1);
 
 /** A bound on the absolute rounding error in the relative luminance of a color, carried through every step of its conversion by the rounding error analysis of Higham: each sum of products by the unit roundoff over the absolute values of its terms, each cosine, sine and power by one unit in the last place, and every error already made through the coefficients it meets. Doubled, so that rounding while computing the bound, a relative error of tens of unit roundoffs, cannot leave it below the error it bounds. */
 const luminanceError = ({ lightness, chroma, hue }: Color): number => {
   // The relative error left by n roundings, as Higham bounds it.
   const gamma = (n: number): number => (n * unitRoundoff) / (1 - n * unitRoundoff);
+  // The error of a row of a matrix product: the error already in the vector through the coefficients it meets, and the rounding of the sum of products.
+  const rowError = (row: Vector, [x, y, z]: Vector, [dx, dy, dz]: Vector): number =>
+    Math.abs(row[0]) * dx +
+    Math.abs(row[1]) * dy +
+    Math.abs(row[2]) * dz +
+    gamma(4) * (Math.abs(row[0] * x) + Math.abs(row[1] * y) + Math.abs(row[2] * z));
+  // The error of a cube of a value that carries an error, and the rounding of the power.
+  const cubeError = (value: number, error: number): number =>
+    (Math.abs(value) + error) ** 3 - Math.abs(value) ** 3 + 2 * unitRoundoff * Math.abs(value) ** 3;
   const angle = ((hue % 360) * Math.PI) / 180;
   const angleError = (unitRoundoff * Math.abs(hue) * Math.PI) / 180 + gamma(3) * Math.abs(angle);
   const lightnessError = gamma(2) * lightness;
   const chromaError = gamma(4) * chroma;
-  const trigonometry = [Math.cos(angle), Math.sin(angle)];
-  const lab = [lightness, chroma * trigonometry[0]!, chroma * trigonometry[1]!];
-  const labError = [
+  const [cosine, sine] = [Math.cos(angle), Math.sin(angle)];
+  const lab: Vector = [lightness, chroma * cosine, chroma * sine];
+  const labError: Vector = [
     lightnessError,
-    ...trigonometry.map(
-      (value, index) =>
-        chroma * (angleError + 2 * unitRoundoff) +
-        (Math.abs(value) + angleError + 2 * unitRoundoff) * chromaError +
-        unitRoundoff * Math.abs(lab[index + 1]!),
-    ),
+    chroma * (angleError + 2 * unitRoundoff) +
+      (Math.abs(cosine) + angleError + 2 * unitRoundoff) * chromaError +
+      unitRoundoff * Math.abs(lab[1]),
+    chroma * (angleError + 2 * unitRoundoff) +
+      (Math.abs(sine) + angleError + 2 * unitRoundoff) * chromaError +
+      unitRoundoff * Math.abs(lab[2]),
   ];
-  const cubeRoots = oklabToLms.map((row) => row[0] * lab[0]! + row[1] * lab[1]! + row[2] * lab[2]!);
-  const cubeRootErrors = oklabToLms.map(
-    (row) =>
-      row.reduce(
-        (error, coefficient, index) => error + Math.abs(coefficient) * labError[index]!,
-        0,
-      ) +
-      gamma(4) *
-        row.reduce((sum, coefficient, index) => sum + Math.abs(coefficient * lab[index]!), 0),
-  );
-  const lms = cubeRoots.map((value) => value ** 3);
-  const lmsError = cubeRoots.map(
-    (value, index) =>
-      (Math.abs(value) + cubeRootErrors[index]!) ** 3 -
-      Math.abs(value) ** 3 +
-      2 * unitRoundoff * Math.abs(value) ** 3,
-  );
-  const xyz = lmsToXyz.map((row) => row[0] * lms[0]! + row[1] * lms[1]! + row[2] * lms[2]!);
-  const xyzError = lmsToXyz.map(
-    (row) =>
-      row.reduce(
-        (error, coefficient, index) => error + Math.abs(coefficient) * lmsError[index]!,
-        0,
-      ) +
-      gamma(4) *
-        row.reduce((sum, coefficient, index) => sum + Math.abs(coefficient * lms[index]!), 0),
-  );
-  const channels = xyzToLinearSrgb.map(
-    (row) => row[0] * xyz[0]! + row[1] * xyz[1]! + row[2] * xyz[2]!,
-  );
-  const channelError = xyzToLinearSrgb.map(
-    (row) =>
-      row.reduce(
-        (error, coefficient, index) => error + Math.abs(coefficient) * xyzError[index]!,
-        0,
-      ) +
-      gamma(4) *
-        row.reduce((sum, coefficient, index) => sum + Math.abs(coefficient * xyz[index]!), 0),
-  );
+  const cubeRoots = transform(oklabToLms, lab);
+  const cubeRootErrors: Vector = [
+    rowError(oklabToLms[0], lab, labError),
+    rowError(oklabToLms[1], lab, labError),
+    rowError(oklabToLms[2], lab, labError),
+  ];
+  const lms: Vector = [cubeRoots[0] ** 3, cubeRoots[1] ** 3, cubeRoots[2] ** 3];
+  const lmsError: Vector = [
+    cubeError(cubeRoots[0], cubeRootErrors[0]),
+    cubeError(cubeRoots[1], cubeRootErrors[1]),
+    cubeError(cubeRoots[2], cubeRootErrors[2]),
+  ];
+  const xyz = transform(lmsToXyz, lms);
+  const xyzError: Vector = [
+    rowError(lmsToXyz[0], lms, lmsError),
+    rowError(lmsToXyz[1], lms, lmsError),
+    rowError(lmsToXyz[2], lms, lmsError),
+  ];
+  const channels = transform(xyzToLinearSrgb, xyz);
+  const channelError: Vector = [
+    rowError(xyzToLinearSrgb[0], xyz, xyzError),
+    rowError(xyzToLinearSrgb[1], xyz, xyzError),
+    rowError(xyzToLinearSrgb[2], xyz, xyzError),
+  ];
   // Holding a channel within its range moves it no further than its error.
   return (
     2 *
-    luminanceWeights.reduce(
-      (error, weight, index) =>
-        error +
-        weight * channelError[index]! +
-        gamma(4) * weight * Math.min(Math.max(channels[index]!, 0), 1),
-      0,
-    )
+    (luminanceWeights[0] * channelError[0] +
+      gamma(4) * luminanceWeights[0] * Math.min(Math.max(channels[0], 0), 1) +
+      luminanceWeights[1] * channelError[1] +
+      gamma(4) * luminanceWeights[1] * Math.min(Math.max(channels[1], 0), 1) +
+      luminanceWeights[2] * channelError[2] +
+      gamma(4) * luminanceWeights[2] * Math.min(Math.max(channels[2], 0), 1))
   );
 };
 
@@ -306,11 +318,7 @@ export type Color = typeof Color.Type;
 
 /** The relative luminance of a color as WCAG 2.2 defines it, its linear sRGB channels weighted and held within their range. */
 const relativeLuminance = (color: Color): number =>
-  linearSrgbOf(color.lightness, color.chroma, color.hue).reduce(
-    (luminance, channel, index) =>
-      luminance + (luminanceWeights[index] ?? 0) * Math.min(Math.max(channel, 0), 1),
-    0,
-  );
+  luminanceOf(linearSrgbOf(color.lightness, color.chroma, color.hue));
 
 /** The contrast ratio of two colors as WCAG 2.2 defines it, the lighter over the darker with the flare added to both. */
 const contrastRatio = (text: Color, background: Color): number =>
@@ -482,11 +490,7 @@ const closestShade = (
       ? chroma
       : boundary((reduced) => isInGamut(linearSrgbOf(shade, reduced, hue), 0), 0, chroma);
   const luminanceAt = (shade: number): number =>
-    linearSrgbOf(shade, chromaAt(shade), hue).reduce(
-      (luminance, channel, index) =>
-        luminance + (luminanceWeights[index] ?? 0) * Math.min(Math.max(channel, 0), 1),
-      0,
-    );
+    luminanceOf(linearSrgbOf(shade, chromaAt(shade), hue));
   const backgroundLuminance = relativeLuminance(background);
   const reaches = (shade: number): boolean =>
     (Math.max(luminanceAt(shade), backgroundLuminance) + contrastFlare) /
