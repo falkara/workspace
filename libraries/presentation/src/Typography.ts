@@ -1,4 +1,4 @@
-import { Array, Exit, Schema } from 'effect';
+import { Array, Exit, Option, Schema } from 'effect';
 
 import * as Fraction from '#src/Fraction';
 import * as Length from '#src/Length';
@@ -224,31 +224,55 @@ export const scale = (
   options: typeof ScaleOptions.Encoded,
 ): Exit.Exit<ReadonlyArray<Step>, Schema.SchemaError> =>
   Exit.map(Schema.decodeExit(ScaleOptions)(options, { errors: 'all' }), (options) => {
-    const minimumSize = (position: bigint) =>
-      Fraction.multiply(defaultFontSize, Fraction.pow(options.minimumFactor, position));
-    const maximumSize = (position: bigint) =>
-      Fraction.multiply(options.maximumBodyFontSize, Fraction.pow(options.maximumFactor, position));
-    const isAdmitted = (position: bigint) => {
-      // The growth is bounded by comparing the sizes, so that no divisor is sought between two large numerators. A step that never shrinks is at its smallest at the minimum viewport width.
-      return (
-        Fraction.isGreaterThanOrEqualTo(maximumSize(position), minimumSize(position)) &&
-        Fraction.isLessThanOrEqualTo(
-          maximumSize(position),
-          Fraction.multiply(minimumSize(position), maximumTextGrowthFactor),
-        ) &&
-        Fraction.isGreaterThanOrEqualTo(minimumSize(position), minimumFontSize) &&
-        Fraction.isLessThanOrEqualTo(minimumSize(position), maximumFontSize)
-      );
-    };
-    // Size rises with the position and growth rises or falls with it, so the admitted steps run unbroken from the lowest to the highest, and the font sizes bound them on both sides.
-    const lowestFrom = (position: bigint): bigint =>
-      isAdmitted(position - 1n) ? lowestFrom(position - 1n) : position;
-    const highestFrom = (position: bigint): bigint =>
-      isAdmitted(position + 1n) ? highestFrom(position + 1n) : position;
-    const lowest = lowestFrom(0n);
-    return Array.makeBy(Number(highestFrom(0n) - lowest) + 1, (index) => ({
-      position: Number(lowest) + index,
-      minimumSize: minimumSize(lowest + BigInt(index)),
-      maximumSize: maximumSize(lowest + BigInt(index)),
-    }));
+    // A step never shrinks, so that it is at its smallest at the minimum viewport width, grows by no more than the maximum text growth factor, and lies at that width between the minimum and the maximum font size. The growth is bounded by comparing the sizes, so that no divisor is sought between two large numerators.
+    const isAdmitted = (step: Step): boolean =>
+      Fraction.isGreaterThanOrEqualTo(step.maximumSize, step.minimumSize) &&
+      Fraction.isLessThanOrEqualTo(
+        step.maximumSize,
+        Fraction.multiply(step.minimumSize, maximumTextGrowthFactor),
+      ) &&
+      Fraction.isGreaterThanOrEqualTo(step.minimumSize, minimumFontSize) &&
+      Fraction.isLessThanOrEqualTo(step.minimumSize, maximumFontSize);
+    // Size rises with the position and growth rises or falls with it, so the admitted steps run unbroken from body text, which the options admit, down to the lowest and up to the highest, and the font sizes bound them on both sides. Each step is the one before it divided or multiplied by the factors once, rather than a power of the factors worked out again for every step.
+    const below = Array.unfold(
+      {
+        position: -1,
+        minimumSize: Fraction.divide(defaultFontSize, options.minimumFactor),
+        maximumSize: Fraction.divide(options.maximumBodyFontSize, options.maximumFactor),
+      },
+      (step): Option.Option<readonly [Step, Step]> =>
+        isAdmitted(step)
+          ? Option.some([
+              step,
+              {
+                position: step.position - 1,
+                minimumSize: Fraction.divide(step.minimumSize, options.minimumFactor),
+                maximumSize: Fraction.divide(step.maximumSize, options.maximumFactor),
+              },
+            ])
+          : Option.none(),
+    );
+    const above = Array.unfold(
+      {
+        position: 1,
+        minimumSize: Fraction.multiply(defaultFontSize, options.minimumFactor),
+        maximumSize: Fraction.multiply(options.maximumBodyFontSize, options.maximumFactor),
+      },
+      (step): Option.Option<readonly [Step, Step]> =>
+        isAdmitted(step)
+          ? Option.some([
+              step,
+              {
+                position: step.position + 1,
+                minimumSize: Fraction.multiply(step.minimumSize, options.minimumFactor),
+                maximumSize: Fraction.multiply(step.maximumSize, options.maximumFactor),
+              },
+            ])
+          : Option.none(),
+    );
+    return [
+      ...Array.reverse(below),
+      { position: 0, minimumSize: defaultFontSize, maximumSize: options.maximumBodyFontSize },
+      ...above,
+    ];
   });

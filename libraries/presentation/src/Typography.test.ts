@@ -467,6 +467,36 @@ describe('Step', () => {
 });
 
 describe('scale', () => {
+  it('sizes every step as body text times each factor to the power of its position', () => {
+    for (const [minimumFactor, maximumFactor] of [
+      [Fraction.makeUnsafe(6n, 5n), Fraction.makeUnsafe(5n, 4n)],
+      [Typography.minimumStepFactor, Typography.minimumStepFactor],
+    ] as const) {
+      const exit = Typography.scale({
+        minimumFactor,
+        maximumFactor,
+        maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+      });
+      const steps = Exit.isSuccess(exit) ? exit.value : [];
+
+      expect(steps).not.toHaveLength(0);
+      for (const step of steps) {
+        expect(step.minimumSize).toEqual(
+          Fraction.multiply(
+            Typography.defaultFontSize,
+            Fraction.pow(minimumFactor, BigInt(step.position)),
+          ),
+        );
+        expect(step.maximumSize).toEqual(
+          Fraction.multiply(
+            Fraction.makeUnsafe(20n, 1n),
+            Fraction.pow(maximumFactor, BigInt(step.position)),
+          ),
+        );
+      }
+    }
+  });
+
   it('runs from small print to the largest heading that keeps text resizable', () => {
     const exit = Typography.scale({
       minimumFactor: { numerator: 6n, denominator: 5n },
