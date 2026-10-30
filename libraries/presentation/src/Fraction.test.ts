@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from '@effect/vitest';
-import { Exit, Option, Schema, SchemaIssue } from 'effect';
+import { Exit, Option, pipe, Schema, SchemaIssue } from 'effect';
 
 import * as Fraction from '#src/Fraction';
 
@@ -149,6 +149,14 @@ describe('one', () => {
 });
 
 describe('sum', () => {
+  it.prop(
+    'agrees in its data-last form, as pipe calls it',
+    [Fraction.Fraction, Fraction.Fraction],
+    ([a, b]) => {
+      expect(pipe(a, Fraction.sum(b))).toEqual(Fraction.sum(a, b));
+    },
+  );
+
   it('adds two fractions in lowest terms', () => {
     expect(Fraction.sum(Fraction.makeUnsafe(1n, 6n), Fraction.makeUnsafe(1n, 3n))).toEqual(
       Fraction.makeUnsafe(1n, 2n),
@@ -183,6 +191,14 @@ describe('sum', () => {
 });
 
 describe('subtract', () => {
+  it.prop(
+    'agrees in its data-last form, as pipe calls it',
+    [Fraction.Fraction, Fraction.Fraction],
+    ([a, b]) => {
+      expect(pipe(a, Fraction.subtract(b))).toEqual(Fraction.subtract(a, b));
+    },
+  );
+
   it('subtracts the second fraction from the first in lowest terms', () => {
     const exit = Fraction.subtract(Fraction.makeUnsafe(1n, 2n), Fraction.makeUnsafe(1n, 6n));
 
@@ -221,6 +237,14 @@ describe('subtract', () => {
 });
 
 describe('subtractUnsafe', () => {
+  it.prop(
+    'agrees in its data-last form, as pipe calls it',
+    [Fraction.Fraction, Fraction.Fraction],
+    ([a, b]) => {
+      expect(pipe(a, Fraction.subtractUnsafe(b))).toEqual(Fraction.subtractUnsafe(a, b));
+    },
+  );
+
   it('subtracts the second fraction from the first in lowest terms', () => {
     expect(
       Fraction.subtractUnsafe(Fraction.makeUnsafe(1n, 2n), Fraction.makeUnsafe(1n, 6n)),
@@ -259,6 +283,14 @@ describe('subtractUnsafe', () => {
 });
 
 describe('multiply', () => {
+  it.prop(
+    'agrees in its data-last form, as pipe calls it',
+    [Fraction.Fraction, Fraction.Fraction],
+    ([a, b]) => {
+      expect(pipe(a, Fraction.multiply(b))).toEqual(Fraction.multiply(a, b));
+    },
+  );
+
   it('multiplies two fractions in lowest terms', () => {
     expect(Fraction.multiply(Fraction.makeUnsafe(6n, 5n), Fraction.makeUnsafe(5n, 4n))).toEqual(
       Fraction.makeUnsafe(3n, 2n),
@@ -305,6 +337,14 @@ describe('multiply', () => {
 });
 
 describe('divide', () => {
+  it.prop(
+    'agrees in its data-last form, as pipe calls it',
+    [Fraction.Fraction, Fraction.Fraction],
+    ([a, b]) => {
+      expect(pipe(a, Fraction.divide(b))).toEqual(Fraction.divide(a, b));
+    },
+  );
+
   it('divides two fractions in lowest terms', () => {
     expect(Fraction.divide(Fraction.makeUnsafe(5n, 4n), Fraction.makeUnsafe(6n, 5n))).toEqual(
       Fraction.makeUnsafe(25n, 24n),
@@ -339,6 +379,14 @@ describe('divide', () => {
 });
 
 describe('pow', () => {
+  it.prop(
+    'agrees in its data-last form, as pipe calls it',
+    [Fraction.Fraction, Schema.BigInt.check(Schema.isBetweenBigInt({ minimum: -8n, maximum: 8n }))],
+    ([a, exponent]) => {
+      expect(pipe(a, Fraction.pow(exponent))).toEqual(Fraction.pow(a, exponent));
+    },
+  );
+
   it('raises a fraction to a positive exponent', () => {
     expect(Fraction.pow(Fraction.makeUnsafe(6n, 5n), 2n)).toEqual(Fraction.makeUnsafe(36n, 25n));
   });

@@ -1,4 +1,12 @@
-import { BigInt, Equivalence as Equ, Exit, Order as order, Schema, SchemaGetter } from 'effect';
+import {
+  BigInt,
+  Equivalence as Equ,
+  Exit,
+  Function,
+  Order as order,
+  Schema,
+  SchemaGetter,
+} from 'effect';
 
 /** A schema of a ratio of two positive whole numbers, held as big integers so that no arithmetic on it overflows, and decoded in lowest terms so that equal ratios have equal fields and every operation here keeps them so. */
 export const Fraction = Schema.Struct({
@@ -64,7 +72,10 @@ export const makeUnsafe = <Numerator extends bigint, Denominator extends bigint>
 export const one = makeUnsafe(1n, 1n);
 
 /** The sum of two fractions in lowest terms, reduced only by the common divisor of the denominators, as Knuth gives it, so that no divisor is sought between two large products. */
-export const sum = (self: Fraction, that: Fraction): Fraction => {
+export const sum: {
+  (that: Fraction): (self: Fraction) => Fraction;
+  (self: Fraction, that: Fraction): Fraction;
+} = Function.dual(2, (self: Fraction, that: Fraction): Fraction => {
   const divisor = BigInt.gcd(self.denominator, that.denominator);
   const numerator =
     self.numerator * (that.denominator / divisor) + that.numerator * (self.denominator / divisor);
@@ -73,17 +84,24 @@ export const sum = (self: Fraction, that: Fraction): Fraction => {
     numerator: numerator / remainingDivisor,
     denominator: (self.denominator / divisor) * (that.denominator / remainingDivisor),
   } as Fraction;
-};
+});
 
 /** The difference of the first fraction less the second in lowest terms, or a failure with the reason when the second is not smaller, as a difference that is not positive is no fraction. */
-export const subtract = (self: Fraction, that: Fraction): Exit.Exit<Fraction, Schema.SchemaError> =>
+export const subtract: {
+  (that: Fraction): (self: Fraction) => Exit.Exit<Fraction, Schema.SchemaError>;
+  (self: Fraction, that: Fraction): Exit.Exit<Fraction, Schema.SchemaError>;
+} = Function.dual(2, (self: Fraction, that: Fraction): Exit.Exit<Fraction, Schema.SchemaError> =>
   make(
     self.numerator * that.denominator - that.numerator * self.denominator,
     self.denominator * that.denominator,
-  );
+  ),
+);
 
 /** The difference of a fraction less one known to be smaller, such as a factor of this library less 1, in lowest terms, reduced only by the common divisor of the denominators, as Knuth gives it. Nothing is checked as it runs, so a second fraction that is not smaller gives a value that breaks every promise of the type; `subtract` checks it. */
-export const subtractUnsafe = (self: Fraction, that: Fraction): Fraction => {
+export const subtractUnsafe: {
+  (that: Fraction): (self: Fraction) => Fraction;
+  (self: Fraction, that: Fraction): Fraction;
+} = Function.dual(2, (self: Fraction, that: Fraction): Fraction => {
   const divisor = BigInt.gcd(self.denominator, that.denominator);
   const numerator =
     self.numerator * (that.denominator / divisor) - that.numerator * (self.denominator / divisor);
@@ -92,36 +110,48 @@ export const subtractUnsafe = (self: Fraction, that: Fraction): Fraction => {
     numerator: numerator / remainingDivisor,
     denominator: (self.denominator / divisor) * (that.denominator / remainingDivisor),
   } as Fraction;
-};
+});
 
 /** The product of two fractions in lowest terms, each numerator cancelled against the other denominator before they multiply, so that no divisor is sought between two large products. */
-export const multiply = (self: Fraction, that: Fraction): Fraction => {
+export const multiply: {
+  (that: Fraction): (self: Fraction) => Fraction;
+  (self: Fraction, that: Fraction): Fraction;
+} = Function.dual(2, (self: Fraction, that: Fraction): Fraction => {
   const selfDivisor = BigInt.gcd(self.numerator, that.denominator);
   const thatDivisor = BigInt.gcd(that.numerator, self.denominator);
   return {
     numerator: (self.numerator / selfDivisor) * (that.numerator / thatDivisor),
     denominator: (self.denominator / thatDivisor) * (that.denominator / selfDivisor),
   } as Fraction;
-};
+});
 
 /** The quotient of two fractions in lowest terms, the numerators and the denominators cancelled against each other before they multiply, so that no divisor is sought between two large products. */
-export const divide = (self: Fraction, that: Fraction): Fraction => {
+export const divide: {
+  (that: Fraction): (self: Fraction) => Fraction;
+  (self: Fraction, that: Fraction): Fraction;
+} = Function.dual(2, (self: Fraction, that: Fraction): Fraction => {
   const numeratorDivisor = BigInt.gcd(self.numerator, that.numerator);
   const denominatorDivisor = BigInt.gcd(self.denominator, that.denominator);
   return {
     numerator: (self.numerator / numeratorDivisor) * (that.denominator / denominatorDivisor),
     denominator: (self.denominator / denominatorDivisor) * (that.numerator / numeratorDivisor),
   } as Fraction;
-};
+});
 
 /** The fraction raised to a whole exponent, negative exponents inverting it, in lowest terms as the powers of numbers without a common divisor have none. */
-export const pow = (self: Fraction, exponent: bigint): Fraction =>
-  (exponent < 0n
-    ? { numerator: self.denominator ** -exponent, denominator: self.numerator ** -exponent }
-    : {
-        numerator: self.numerator ** exponent,
-        denominator: self.denominator ** exponent,
-      }) as Fraction;
+export const pow: {
+  (exponent: bigint): (self: Fraction) => Fraction;
+  (self: Fraction, exponent: bigint): Fraction;
+} = Function.dual(
+  2,
+  (self: Fraction, exponent: bigint): Fraction =>
+    (exponent < 0n
+      ? { numerator: self.denominator ** -exponent, denominator: self.numerator ** -exponent }
+      : {
+          numerator: self.numerator ** exponent,
+          denominator: self.denominator ** exponent,
+        }) as Fraction,
+);
 
 /** The order of fractions by value, compared through cross products, so that no division rounds them. */
 export const Order: order.Order<Fraction> = order.make((self, that) =>
