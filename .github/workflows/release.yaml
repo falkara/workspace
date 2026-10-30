@@ -42,10 +42,16 @@ jobs:
           pr-title: 'chore: version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Deno
+        # Deno publishes to JSR itself, which the jsr package on npm only wraps.
+        if: steps.changesets.outputs.has-changesets == 'false'
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: '2.9.8'
       - name: Publish the presentation library to JSR
         # Every run without changesets, whose package.json holds the version npm has; JSR never publishes a version it already has, so a version an earlier run left out is published by the next. A run with changesets holds the next version in a Version Packages pull request instead.
         if: steps.changesets.outputs.has-changesets == 'false'
         working-directory: libraries/presentation
         run: |
           npx vp pack
-          npx jsr@0.14.3 publish --set-version "$(node --print "require('./package.json').version")"
+          deno publish --set-version "$(node --print "require('./package.json').version")"
