@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@effect/vitest';
+import { describe, expect, expectTypeOf, it } from '@effect/vitest';
 import { Effect, Exit, Option, Schema, SchemaIssue } from 'effect';
 
 import * as Color from '#src/Color';
@@ -311,6 +311,44 @@ describe('contrast', () => {
         message: 'Expected a color within sRGB, as WCAG 2.2 defines contrast only there',
       },
     ]);
+  });
+});
+
+describe('Pair', () => {
+  it('is written as the schema encodes it', () => {
+    expectTypeOf<Color.Pair>().toEqualTypeOf<typeof Color.Pair.Encoded>();
+  });
+
+  it('decodes a pair whose contrast a project asks for is at least the one the standards require', () => {
+    const exit = Schema.decodeExit(Color.Pair)({
+      text: 'oklch(0% 0 0)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        position: 0,
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
+      },
+      fontWeight: 400,
+      minimumContrast: 10,
+    });
+
+    expect(Exit.isSuccess(exit)).toBe(true);
+  });
+
+  it('rejects a pair whose contrast a project asks for is looser than the standards', () => {
+    const exit = Schema.decodeExit(Color.Pair)({
+      text: 'oklch(0% 0 0)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        position: 0,
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
+      },
+      fontWeight: 400,
+      minimumContrast: 5,
+    });
+
+    expect(Exit.isFailure(exit)).toBe(true);
   });
 });
 
@@ -650,6 +688,27 @@ describe('verify', () => {
         message: 'Expected a font weight from 1 to 1000, as CSS Fonts allows',
       },
     ]);
+  });
+});
+
+describe('Brand', () => {
+  it('is written as the schema encodes it', () => {
+    expectTypeOf<Color.Brand>().toEqualTypeOf<typeof Color.Brand.Encoded>();
+  });
+
+  it('rejects a font weight CSS Fonts does not allow', () => {
+    const exit = Schema.decodeExit(Color.Brand)({
+      color: 'oklch(64% 0.17 147)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        position: 0,
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
+      },
+      fontWeight: 1200,
+    });
+
+    expect(Exit.isFailure(exit)).toBe(true);
   });
 });
 

@@ -325,24 +325,19 @@ const contrastRatio = (text: Color, background: Color): number =>
   (Math.max(relativeLuminance(text), relativeLuminance(background)) + contrastFlare) /
   (Math.min(relativeLuminance(text), relativeLuminance(background)) + contrastFlare);
 
+/** A schema of the colors of a piece of text and its background. */
+const Colors = Schema.Struct({
+  /** The color of the text. */
+  text: Color,
+  /** The color of the background. */
+  background: Color,
+});
+
 /** The contrast ratio of text over its background as WCAG 2.2 defines it, or a failure naming the color that WCAG 2.2 gives no contrast. */
 export const contrast = (text: string, background: string): Exit.Exit<number, Schema.SchemaError> =>
-  Exit.map(
-    Schema.decodeExit(Schema.Struct({ text: Color, background: Color }))(
-      { text, background },
-      { errors: 'all' },
-    ),
-    (colors) => contrastRatio(colors.text, colors.background),
+  Exit.map(Schema.decodeExit(Colors)({ text, background }, { errors: 'all' }), (colors) =>
+    contrastRatio(colors.text, colors.background),
   );
-
-/** The colors of a piece of text and its background, the step of the type scale it is set in, its font weight, and a contrast ratio stricter than the standards that the project may ask for. */
-export interface Pair {
-  readonly text: string;
-  readonly background: string;
-  readonly step: typeof Typography.Step.Encoded;
-  readonly fontWeight: number;
-  readonly minimumContrast?: number | undefined;
-}
 
 /** The contrast ratio a piece of text needs as WCAG 2.2 Contrast (Enhanced) sets it, from its size at the minimum viewport width, its smallest, and its font weight. */
 const requiredContrast = (step: Typography.Step, fontWeight: number): number =>
@@ -351,6 +346,58 @@ const requiredContrast = (step: Typography.Step, fontWeight: number): number =>
     Fraction.isGreaterThanOrEqualTo(step.minimumSize, largeBoldTextSize))
     ? largeTextEnhancedContrastRatio
     : enhancedContrastRatio;
+
+/** A schema of a font weight, from the lightest to the heaviest that CSS Fonts allows. */
+const FontWeight = Schema.Finite.pipe(
+  Schema.check(
+    Schema.isBetween(
+      { minimum: Typography.minimumFontWeight, maximum: Typography.maximumFontWeight },
+      {
+        message: `Expected a font weight from ${Typography.minimumFontWeight} to ${Typography.maximumFontWeight}, as CSS Fonts allows`,
+      },
+    ),
+  ),
+);
+
+/** A schema of a contrast ratio stricter than the standards that a project may ask for, at most the largest contrast WCAG 2.2 defines, which some colors can reach. */
+const MinimumContrast = Schema.Finite.pipe(
+  Schema.check(
+    Schema.isLessThanOrEqualTo(maximumContrastRatio, {
+      message: `Expected a minimum contrast of at most ${maximumContrastRatio}:1, the largest contrast WCAG 2.2 defines, of black against white`,
+    }),
+  ),
+);
+
+/** A check that the contrast ratio a project asks for is at least the one WCAG 2.2 Contrast (Enhanced) requires for its text, so that a project can only be stricter than the standards. */
+const isAtLeastRequiredContrast = Schema.makeFilter(
+  (text: {
+    readonly step: Typography.Step;
+    readonly fontWeight: number;
+    readonly minimumContrast?: number | undefined;
+  }) =>
+    text.minimumContrast === undefined ||
+    text.minimumContrast >= requiredContrast(text.step, text.fontWeight) || {
+      path: ['minimumContrast'],
+      issue: `Expected a minimum contrast of at least ${requiredContrast(text.step, text.fontWeight)}:1, the ratio WCAG 2.2 Contrast (Enhanced) requires for text of ${Math.round(Fraction.toNumber(text.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${text.fontWeight}`,
+    },
+);
+
+/** A schema of the colors of a piece of text and its background, the step of the type scale it is set in, its font weight, and a contrast ratio stricter than the standards that the project may ask for. */
+export const Pair = Schema.Struct({
+  /** The color of the text. */
+  text: Color,
+  /** The color of the background. */
+  background: Color,
+  /** The step of the type scale the text is set in. */
+  step: Typography.Step,
+  /** The font weight of the text. */
+  fontWeight: FontWeight,
+  /** A contrast ratio stricter than the standards that the project may ask for. */
+  minimumContrast: Schema.optional(MinimumContrast),
+}).pipe(Schema.check(isAtLeastRequiredContrast));
+
+/** The colors of a piece of text and its background, the step of the type scale it is set in, its font weight, and a contrast ratio stricter than the standards that the project may ask for, as they are written. */
+export type Pair = typeof Pair.Encoded;
 
 /** The failure of a pair whose contrast falls short of what its text needs, a result of comparing the colors rather than a fault of the input. */
 export class ContrastShortfall extends Schema.TaggedError<
@@ -367,87 +414,39 @@ export class ContrastShortfall extends Schema.TaggedError<
 
 /** The contrast ratio of a pair; or a failure with the reason when the input is not valid, or a contrast shortfall when the pair falls short of what WCAG 2.2 Contrast (Enhanced) requires for its text, or of the stricter ratio the project asks for. */
 export const verify = (pair: Pair): Exit.Exit<number, Schema.SchemaError | ContrastShortfall> =>
-  Exit.match(
-    Schema.decodeExit(
-      Schema.Struct({
-        text: Color,
-        background: Color,
-        step: Typography.Step,
-        fontWeight: Schema.Finite.pipe(
-          Schema.check(
-            Schema.isBetween(
-              { minimum: Typography.minimumFontWeight, maximum: Typography.maximumFontWeight },
-              {
-                message: `Expected a font weight from ${Typography.minimumFontWeight} to ${Typography.maximumFontWeight}, as CSS Fonts allows`,
-              },
-            ),
+  Exit.match(Schema.decodeExit(Pair)(pair, { errors: 'all' }), {
+    onFailure: Exit.failCause,
+    onSuccess: (colors) => {
+      const target = colors.minimumContrast ?? requiredContrast(colors.step, colors.fontWeight);
+      // The largest contrast the exact colors may have, so that a pair is refused only when rounding cannot account for its shortfall. Raised by sixteen unit roundoffs, more than the flare and the six roundings of this quotient can take from it.
+      return ((Math.max(
+        relativeLuminance(colors.text) + luminanceError(colors.text),
+        relativeLuminance(colors.background) + luminanceError(colors.background),
+      ) +
+        contrastFlare) /
+        (Math.max(
+          Math.min(
+            relativeLuminance(colors.text) - luminanceError(colors.text),
+            relativeLuminance(colors.background) - luminanceError(colors.background),
           ),
-        ),
-        minimumContrast: Schema.optional(
-          Schema.Finite.pipe(
-            Schema.check(
-              Schema.isLessThanOrEqualTo(maximumContrastRatio, {
-                message: `Expected a minimum contrast of at most ${maximumContrastRatio}:1, the largest contrast WCAG 2.2 defines, of black against white`,
-              }),
-            ),
-          ),
-        ),
-      }).pipe(
-        Schema.check(
-          Schema.makeFilter(
-            (colors) =>
-              colors.minimumContrast === undefined ||
-              colors.minimumContrast >= requiredContrast(colors.step, colors.fontWeight) || {
-                path: ['minimumContrast'],
-                issue: `Expected a minimum contrast of at least ${requiredContrast(colors.step, colors.fontWeight)}:1, the ratio WCAG 2.2 Contrast (Enhanced) requires for text of ${Math.round(Fraction.toNumber(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${colors.fontWeight}`,
-              },
-          ),
-        ),
-      ),
-    )(
-      {
-        text: pair.text,
-        background: pair.background,
-        step: pair.step,
-        fontWeight: pair.fontWeight,
-        minimumContrast: pair.minimumContrast,
-      },
-      { errors: 'all' },
-    ),
-    {
-      onFailure: Exit.failCause,
-      onSuccess: (colors) => {
-        const target = colors.minimumContrast ?? requiredContrast(colors.step, colors.fontWeight);
-        // The largest contrast the exact colors may have, so that a pair is refused only when rounding cannot account for its shortfall. Raised by sixteen unit roundoffs, more than the flare and the six roundings of this quotient can take from it.
-        return ((Math.max(
-          relativeLuminance(colors.text) + luminanceError(colors.text),
-          relativeLuminance(colors.background) + luminanceError(colors.background),
+          0,
         ) +
-          contrastFlare) /
-          (Math.max(
-            Math.min(
-              relativeLuminance(colors.text) - luminanceError(colors.text),
-              relativeLuminance(colors.background) - luminanceError(colors.background),
-            ),
-            0,
-          ) +
-            contrastFlare)) *
-          (1 + 16 * unitRoundoff) >=
-          target
-          ? Exit.succeed(contrastRatio(colors.text, colors.background))
-          : Exit.fail(
-              new ContrastShortfall({
-                contrast: contrastRatio(colors.text, colors.background),
-                requiredContrast: target,
-                message:
-                  colors.minimumContrast === undefined
-                    ? `Expected a contrast of at least ${target}:1 for text of ${Math.round(Fraction.toNumber(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${colors.fontWeight}, as WCAG 2.2 Contrast (Enhanced) requires`
-                    : `Expected a contrast of at least ${target}:1, the ratio the project asks for`,
-              }),
-            );
-      },
+          contrastFlare)) *
+        (1 + 16 * unitRoundoff) >=
+        target
+        ? Exit.succeed(contrastRatio(colors.text, colors.background))
+        : Exit.fail(
+            new ContrastShortfall({
+              contrast: contrastRatio(colors.text, colors.background),
+              requiredContrast: target,
+              message:
+                colors.minimumContrast === undefined
+                  ? `Expected a contrast of at least ${target}:1 for text of ${Math.round(Fraction.toNumber(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${colors.fontWeight}, as WCAG 2.2 Contrast (Enhanced) requires`
+                  : `Expected a contrast of at least ${target}:1, the ratio the project asks for`,
+            }),
+          );
     },
-  );
+  });
 
 /** The failure of a brand color no shade of which within sRGB reaches the contrast its text needs against the background, a result of searching the shades rather than a fault of the input. */
 export class NoLegibleShade extends Schema.TaggedError<
@@ -460,14 +459,22 @@ export class NoLegibleShade extends Schema.TaggedError<
   message: Schema.String,
 }) {}
 
-/** A color of a brand, the background of text set in it, the step of the type scale the text is set in, its font weight, and a contrast ratio stricter than the standards that the project may ask for. */
-export interface Brand {
-  readonly color: string;
-  readonly background: string;
-  readonly step: typeof Typography.Step.Encoded;
-  readonly fontWeight: number;
-  readonly minimumContrast?: number | undefined;
-}
+/** A schema of a color of a brand, the background of text set in it, the step of the type scale the text is set in, its font weight, and a contrast ratio stricter than the standards that the project may ask for. */
+export const Brand = Schema.Struct({
+  /** The color of the brand. */
+  color: Color,
+  /** The color of the background. */
+  background: Color,
+  /** The step of the type scale the text is set in. */
+  step: Typography.Step,
+  /** The font weight of the text. */
+  fontWeight: FontWeight,
+  /** A contrast ratio stricter than the standards that the project may ask for. */
+  minimumContrast: Schema.optional(MinimumContrast),
+}).pipe(Schema.check(isAtLeastRequiredContrast));
+
+/** A color of a brand, the background of text set in it, the step of the type scale the text is set in, its font weight, and a contrast ratio stricter than the standards that the project may ask for, as they are written. */
+export type Brand = typeof Brand.Encoded;
 
 /** The value next to which a condition stops holding, halving the interval from where it holds to where it does not until no JavaScript number lies between. */
 const boundary = (holds: (value: number) => boolean, inside: number, outside: number): number =>
@@ -529,70 +536,22 @@ const closestShade = (
  * @see https://www.w3.org/TR/css-color-4/#css-gamut-mapping-algorithms
  */
 export const shade = (brand: Brand): Exit.Exit<string, Schema.SchemaError | NoLegibleShade> =>
-  Exit.match(
-    Schema.decodeExit(
-      Schema.Struct({
-        color: Color,
-        background: Color,
-        step: Typography.Step,
-        fontWeight: Schema.Finite.pipe(
-          Schema.check(
-            Schema.isBetween(
-              { minimum: Typography.minimumFontWeight, maximum: Typography.maximumFontWeight },
-              {
-                message: `Expected a font weight from ${Typography.minimumFontWeight} to ${Typography.maximumFontWeight}, as CSS Fonts allows`,
-              },
-            ),
-          ),
-        ),
-        minimumContrast: Schema.optional(
-          Schema.Finite.pipe(
-            Schema.check(
-              Schema.isLessThanOrEqualTo(maximumContrastRatio, {
-                message: `Expected a minimum contrast of at most ${maximumContrastRatio}:1, the largest contrast WCAG 2.2 defines, of black against white`,
-              }),
-            ),
-          ),
-        ),
-      }).pipe(
-        Schema.check(
-          Schema.makeFilter(
-            (colors) =>
-              colors.minimumContrast === undefined ||
-              colors.minimumContrast >= requiredContrast(colors.step, colors.fontWeight) || {
-                path: ['minimumContrast'],
-                issue: `Expected a minimum contrast of at least ${requiredContrast(colors.step, colors.fontWeight)}:1, the ratio WCAG 2.2 Contrast (Enhanced) requires for text of ${Math.round(Fraction.toNumber(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${colors.fontWeight}`,
-              },
-          ),
-        ),
-      ),
-    )(
-      {
-        color: brand.color,
-        background: brand.background,
-        step: brand.step,
-        fontWeight: brand.fontWeight,
-        minimumContrast: brand.minimumContrast,
-      },
-      { errors: 'all' },
-    ),
-    {
-      onFailure: Exit.failCause,
-      onSuccess: (colors) => {
-        const target = colors.minimumContrast ?? requiredContrast(colors.step, colors.fontWeight);
-        // The shade is found once, and its absence is the failure.
-        const closest = closestShade(colors.color, colors.background, target);
-        return closest === undefined
-          ? Exit.fail(
-              new NoLegibleShade({
-                requiredContrast: target,
-                message: `Expected a background against which a shade of the color within sRGB reaches ${target}:1, the contrast ${colors.minimumContrast === undefined ? `WCAG 2.2 Contrast (Enhanced) requires for text of ${Math.round(Fraction.toNumber(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${colors.fontWeight}` : 'the project asks for'}`,
-              }),
-            )
-          : // Written in fixed notation, which CSS reads, rather than the exponent JavaScript uses for small numbers, without trailing zeros.
-            Exit.succeed(
-              `oklch(${closest[0].toFixed(16).replace(/\.?0+$/, '')} ${closest[1].toFixed(16).replace(/\.?0+$/, '')} ${closest[2]})`,
-            );
-      },
+  Exit.match(Schema.decodeExit(Brand)(brand, { errors: 'all' }), {
+    onFailure: Exit.failCause,
+    onSuccess: (colors) => {
+      const target = colors.minimumContrast ?? requiredContrast(colors.step, colors.fontWeight);
+      // The shade is found once, and its absence is the failure.
+      const closest = closestShade(colors.color, colors.background, target);
+      return closest === undefined
+        ? Exit.fail(
+            new NoLegibleShade({
+              requiredContrast: target,
+              message: `Expected a background against which a shade of the color within sRGB reaches ${target}:1, the contrast ${colors.minimumContrast === undefined ? `WCAG 2.2 Contrast (Enhanced) requires for text of ${Math.round(Fraction.toNumber(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${colors.fontWeight}` : 'the project asks for'}`,
+            }),
+          )
+        : // Written in fixed notation, which CSS reads, rather than the exponent JavaScript uses for small numbers, without trailing zeros.
+          Exit.succeed(
+            `oklch(${closest[0].toFixed(16).replace(/\.?0+$/, '')} ${closest[1].toFixed(16).replace(/\.?0+$/, '')} ${closest[2]})`,
+          );
     },
-  );
+  });
