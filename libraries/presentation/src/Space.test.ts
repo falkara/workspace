@@ -43,11 +43,7 @@ describe('spacingUnitFactor', () => {
 
 describe('scale', () => {
   it('runs from a quarter to seven and a half times body text', () => {
-    const exit = Space.scale({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
-    });
+    const exit = Space.scale({ maximumBodyFontSize: { numerator: 20n, denominator: 1n } });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 
     expect(steps.map((step) => Fraction.format(step.factor))).toEqual([
@@ -69,11 +65,7 @@ describe('scale', () => {
   });
 
   it('takes the USWDS sizes at the minimum viewport width', () => {
-    const exit = Space.scale({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
-    });
+    const exit = Space.scale({ maximumBodyFontSize: { numerator: 20n, denominator: 1n } });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 
     expect(steps.map((step) => Fraction.toNumber(step.minimumSize))).toEqual([
@@ -82,11 +74,7 @@ describe('scale', () => {
   });
 
   it('grows every step exactly as body text grows', () => {
-    const exit = Space.scale({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
-    });
+    const exit = Space.scale({ maximumBodyFontSize: { numerator: 20n, denominator: 1n } });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 
     expect(steps).not.toHaveLength(0);
@@ -98,11 +86,7 @@ describe('scale', () => {
   });
 
   it('keeps every step on every screen when body text keeps the default font size', () => {
-    const exit = Space.scale({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 16n, denominator: 1n },
-    });
+    const exit = Space.scale({ maximumBodyFontSize: { numerator: 16n, denominator: 1n } });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 
     expect(steps).toHaveLength(14);
@@ -111,28 +95,25 @@ describe('scale', () => {
     }
   });
 
-  it('reports every invalid option at once', () => {
-    const exit = Space.scale({
+  it('takes the options of a type scale as they are, refused by none of its ratios', () => {
+    const intent = {
       minimumFactor: { numerator: 1n, denominator: 1n },
       maximumFactor: { numerator: 1n, denominator: 2n },
-      maximumBodyFontSize: { numerator: 40n, denominator: 1n },
-    });
+      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+    };
+    const exit = Space.scale(intent);
+
+    expect(Exit.isSuccess(exit)).toBe(true);
+  });
+
+  it('rejects a body font size the type scale would reject, with the same reason', () => {
+    const exit = Space.scale({ maximumBodyFontSize: { numerator: 40n, denominator: 1n } });
 
     expect(
       SchemaIssue.makeFormatterStandardSchemaV1()(
         Option.getOrThrow(Exit.findErrorOption(exit)).issue,
       ).issues,
     ).toEqual([
-      {
-        path: ['minimumFactor'],
-        message:
-          'Expected a minimum factor of at least 781/780, so that every step is larger than the one below and lengths of at least 1 em in consecutive steps never fall on the same point of the layout grid of a browser',
-      },
-      {
-        path: ['maximumFactor'],
-        message:
-          'Expected a maximum factor of at least 781/780, so that every step is larger than the one below and lengths of at least 1 em in consecutive steps never fall on the same point of the layout grid of a browser',
-      },
       {
         path: ['maximumBodyFontSize'],
         message:

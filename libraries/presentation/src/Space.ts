@@ -45,11 +45,20 @@ export interface Step {
   readonly maximumSize: Fraction.Fraction;
 }
 
+/** A schema of the size body text reaches at the maximum viewport width, the one part of the intent of a type scale that the space scale grows with, so that the options of a type scale serve it as they are and no ratio of the type scale refuses the space scale. */
+export const ScaleOptions = Schema.Struct({
+  /** The font size of body text at the maximum viewport width, checked as the type scale checks it. Measured in CSS pixels. */
+  maximumBodyFontSize: Typography.ScaleOptions.fields.maximumBodyFontSize,
+});
+
+/** The size body text reaches at the maximum viewport width, which the space scale grows with. */
+export type ScaleOptions = typeof ScaleOptions.Type;
+
 /** The space scale from its smallest to its largest step: every count of the spacing unit as a multiple of body text, so that each step grows exactly as body text does. It spaces the layout; spacing that belongs to a piece of text follows that text through the factors of typography in `em` and `lh`. */
 export const scale = (
-  options: typeof Typography.ScaleOptions.Encoded,
+  options: typeof ScaleOptions.Encoded,
 ): Exit.Exit<ReadonlyArray<Step>, Schema.SchemaError> =>
-  Exit.map(Schema.decodeExit(Typography.ScaleOptions)(options, { errors: 'all' }), (options) =>
+  Exit.map(Schema.decodeExit(ScaleOptions)(options, { errors: 'all' }), (options) =>
     spacingUnitCounts.map((count) => {
       const factor = Fraction.multiply(count, spacingUnitFactor);
       return {
