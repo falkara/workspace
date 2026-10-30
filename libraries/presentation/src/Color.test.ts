@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@effect/vitest';
-import { Exit, Option, Schema, SchemaIssue } from 'effect';
+import { Effect, Exit, Option, Schema, SchemaIssue } from 'effect';
 
 import * as Color from '#src/Color';
 import * as Fraction from '#src/Fraction';
@@ -332,18 +332,50 @@ describe('verify', () => {
       fontWeight: 400,
     });
 
-    expect(
-      SchemaIssue.makeFormatterStandardSchemaV1()(
-        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
-      ).issues,
-    ).toEqual([
-      {
-        path: ['text'],
-        message:
-          'Expected a contrast of at least 7:1 for text of 16 px at weight 400, as WCAG 2.2 Contrast (Enhanced) requires',
-      },
-    ]);
+    expect(Option.getOrThrow(Exit.findErrorOption(exit))).toMatchObject({
+      _tag: 'ContrastShortfall',
+      requiredContrast: 7,
+      message:
+        'Expected a contrast of at least 7:1 for text of 16 px at weight 400, as WCAG 2.2 Contrast (Enhanced) requires',
+    });
   });
+
+  it('reports the contrast of the colors with the shortfall', () => {
+    const exit = Color.verify({
+      text: 'oklch(50% 0 0)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        position: 0,
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
+      },
+      fontWeight: 400,
+    });
+    const contrast = Color.contrast('oklch(50% 0 0)', 'oklch(100% 0 0)');
+
+    expect(Option.getOrThrow(Exit.findErrorOption(exit))).toMatchObject({
+      contrast: Exit.isSuccess(contrast) ? contrast.value : undefined,
+    });
+  });
+
+  it.effect('lets a shortfall be caught by its tag, apart from a fault of the input', () =>
+    Effect.gen(function* () {
+      const requiredContrast = yield* Color.verify({
+        text: 'oklch(50% 0 0)',
+        background: 'oklch(100% 0 0)',
+        step: {
+          position: 0,
+          minimumSize: Fraction.makeUnsafe(16n, 1n),
+          maximumSize: Fraction.makeUnsafe(20n, 1n),
+        },
+        fontWeight: 400,
+      }).pipe(
+        Effect.catchTag('ContrastShortfall', (error) => Effect.succeed(error.requiredContrast)),
+      );
+
+      expect(requiredContrast).toBe(7);
+    }),
+  );
 
   it('accepts 9/2 for text that is large-scale at its smallest', () => {
     const exit = Color.verify({
@@ -374,7 +406,7 @@ describe('verify', () => {
 
     expect(
       SchemaIssue.makeFormatterStandardSchemaV1()(
-        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+        Option.getOrThrow(Option.filter(Exit.findErrorOption(exit), Schema.isSchemaError)).issue,
       ).issues,
     ).toEqual([
       {
@@ -427,17 +459,12 @@ describe('verify', () => {
       fontWeight: 600,
     });
 
-    expect(
-      SchemaIssue.makeFormatterStandardSchemaV1()(
-        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
-      ).issues,
-    ).toEqual([
-      {
-        path: ['text'],
-        message:
-          'Expected a contrast of at least 7:1 for text of 18.6667 px at weight 600, as WCAG 2.2 Contrast (Enhanced) requires',
-      },
-    ]);
+    expect(Option.getOrThrow(Exit.findErrorOption(exit))).toMatchObject({
+      _tag: 'ContrastShortfall',
+      requiredContrast: 7,
+      message:
+        'Expected a contrast of at least 7:1 for text of 18.6667 px at weight 600, as WCAG 2.2 Contrast (Enhanced) requires',
+    });
   });
 
   it('accepts a pair whose contrast is exactly 7:1', () => {
@@ -516,16 +543,11 @@ describe('verify', () => {
       minimumContrast: 13 / 2,
     });
 
-    expect(
-      SchemaIssue.makeFormatterStandardSchemaV1()(
-        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
-      ).issues,
-    ).toEqual([
-      {
-        path: ['text'],
-        message: 'Expected a contrast of at least 6.5:1, the ratio the project asks for',
-      },
-    ]);
+    expect(Option.getOrThrow(Exit.findErrorOption(exit))).toMatchObject({
+      _tag: 'ContrastShortfall',
+      requiredContrast: 6.5,
+      message: 'Expected a contrast of at least 6.5:1, the ratio the project asks for',
+    });
   });
 
   it('rejects a contrast the project asks for that is looser than the standards', () => {
@@ -543,7 +565,7 @@ describe('verify', () => {
 
     expect(
       SchemaIssue.makeFormatterStandardSchemaV1()(
-        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+        Option.getOrThrow(Option.filter(Exit.findErrorOption(exit), Schema.isSchemaError)).issue,
       ).issues,
     ).toEqual([
       {
@@ -569,7 +591,7 @@ describe('verify', () => {
 
     expect(
       SchemaIssue.makeFormatterStandardSchemaV1()(
-        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+        Option.getOrThrow(Option.filter(Exit.findErrorOption(exit), Schema.isSchemaError)).issue,
       ).issues,
     ).toEqual([
       {
@@ -610,7 +632,7 @@ describe('verify', () => {
 
     expect(
       SchemaIssue.makeFormatterStandardSchemaV1()(
-        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+        Option.getOrThrow(Option.filter(Exit.findErrorOption(exit), Schema.isSchemaError)).issue,
       ).issues,
     ).toEqual([
       {
@@ -636,7 +658,7 @@ describe('shade', () => {
 
     expect(
       SchemaIssue.makeFormatterStandardSchemaV1()(
-        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+        Option.getOrThrow(Option.filter(Exit.findErrorOption(exit), Schema.isSchemaError)).issue,
       ).issues,
     ).toEqual([
       {
@@ -814,18 +836,30 @@ describe('shade', () => {
       fontWeight: 400,
     });
 
-    expect(
-      SchemaIssue.makeFormatterStandardSchemaV1()(
-        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
-      ).issues,
-    ).toEqual([
-      {
-        path: ['background'],
-        message:
-          'Expected a background against which a shade of the color within sRGB reaches 7:1, the contrast WCAG 2.2 Contrast (Enhanced) requires for text of 16 px at weight 400',
-      },
-    ]);
+    expect(Option.getOrThrow(Exit.findErrorOption(exit))).toMatchObject({
+      _tag: 'NoLegibleShade',
+      requiredContrast: 7,
+      message:
+        'Expected a background against which a shade of the color within sRGB reaches 7:1, the contrast WCAG 2.2 Contrast (Enhanced) requires for text of 16 px at weight 400',
+    });
   });
+
+  it.effect('lets a missing shade be caught by its tag, apart from a fault of the input', () =>
+    Effect.gen(function* () {
+      const requiredContrast = yield* Color.shade({
+        color: 'oklch(64% 0.17 147)',
+        background: 'oklch(60% 0 0)',
+        step: {
+          position: 0,
+          minimumSize: Fraction.makeUnsafe(16n, 1n),
+          maximumSize: Fraction.makeUnsafe(20n, 1n),
+        },
+        fontWeight: 400,
+      }).pipe(Effect.catchTag('NoLegibleShade', (error) => Effect.succeed(error.requiredContrast)));
+
+      expect(requiredContrast).toBe(7);
+    }),
+  );
 
   it('rejects a contrast the project asks for that is looser than the standards', () => {
     const exit = Color.shade({
@@ -842,7 +876,7 @@ describe('shade', () => {
 
     expect(
       SchemaIssue.makeFormatterStandardSchemaV1()(
-        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+        Option.getOrThrow(Option.filter(Exit.findErrorOption(exit), Schema.isSchemaError)).issue,
       ).issues,
     ).toEqual([
       {
@@ -868,7 +902,7 @@ describe('shade', () => {
 
     expect(
       SchemaIssue.makeFormatterStandardSchemaV1()(
-        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+        Option.getOrThrow(Option.filter(Exit.findErrorOption(exit), Schema.isSchemaError)).issue,
       ).issues,
     ).toEqual([
       {
