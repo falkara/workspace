@@ -1,4 +1,4 @@
-import { Effect, Exit, Schema, SchemaIssue, SchemaTransformation } from 'effect';
+import { Effect, Exit, Schema, SchemaIssue, SchemaTransformation, Struct } from 'effect';
 
 import * as Fluid from '#src/Fluid';
 import * as Fraction from '#src/Fraction';
@@ -398,8 +398,13 @@ export const contrast = (text: string, background: string): Exit.Exit<number, Sc
     contrastRatio(colors.text, colors.background),
   );
 
+/** A schema of the step of the type scale a piece of text is set in, without its position, which the contrast never reads. The check of the step is kept, as it reads the sizes alone: the step never shrinks, so that its size at the minimum viewport width is its smallest, the size the contrast it needs rests on. */
+const TextStep = Typography.Step.mapFields(Struct.omit(['position']), {
+  unsafePreserveChecks: true,
+});
+
 /** The contrast ratio a piece of text needs as WCAG 2.2 Contrast (Enhanced) sets it, from its size at the minimum viewport width, its smallest, and its font weight. */
-const requiredContrast = (step: Typography.Step, fontWeight: number): number =>
+const requiredContrast = (step: typeof TextStep.Type, fontWeight: number): number =>
   Fraction.isGreaterThanOrEqualTo(step.minimumSize, largeTextSize) ||
   (fontWeight >= Typography.boldFontWeight &&
     Fraction.isGreaterThanOrEqualTo(step.minimumSize, largeBoldTextSize))
@@ -430,7 +435,7 @@ const MinimumContrast = Schema.Finite.pipe(
 /** A check that the contrast ratio a project asks for is at least the one WCAG 2.2 Contrast (Enhanced) requires for its text, so that a project can only be stricter than the standards. */
 const isAtLeastRequiredContrast = Schema.makeFilter(
   (text: {
-    readonly step: Typography.Step;
+    readonly step: typeof TextStep.Type;
     readonly fontWeight: number;
     readonly minimumContrast?: number | undefined;
   }) =>
@@ -447,8 +452,8 @@ export const Pair = Schema.Struct({
   text: Color,
   /** The color of the background. */
   background: Color,
-  /** The step of the type scale the text is set in. */
-  step: Typography.Step,
+  /** The step of the type scale the text is set in, its position aside. */
+  step: TextStep,
   /** The font weight of the text. */
   fontWeight: FontWeight,
   /** A contrast ratio stricter than the standards that the project may ask for. */
@@ -524,8 +529,8 @@ export const Brand = Schema.Struct({
   color: Color,
   /** The color of the background. */
   background: Color,
-  /** The step of the type scale the text is set in. */
-  step: Typography.Step,
+  /** The step of the type scale the text is set in, its position aside. */
+  step: TextStep,
   /** The font weight of the text. */
   fontWeight: FontWeight,
   /** A contrast ratio stricter than the standards that the project may ask for. */

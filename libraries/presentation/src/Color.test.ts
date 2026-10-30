@@ -3,6 +3,7 @@ import { Effect, Exit, Option, Schema, SchemaIssue } from 'effect';
 
 import * as Color from '#src/Color';
 import * as Fraction from '#src/Fraction';
+import * as Typography from '#src/Typography';
 
 /** The product of one of the matrices of Color and a vector, each row summed from left to right as CSS Color 4 sums it. */
 const transform = (
@@ -412,7 +413,6 @@ describe('Pair', () => {
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -428,7 +428,6 @@ describe('Pair', () => {
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -441,12 +440,35 @@ describe('Pair', () => {
 });
 
 describe('verify', () => {
+  it('takes a step of a type scale as it is, its position aside', () => {
+    const scale = Typography.scale({
+      minimumFactor: { numerator: 6n, denominator: 5n },
+      maximumFactor: { numerator: 5n, denominator: 4n },
+      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+    });
+    const step = Exit.isSuccess(scale)
+      ? scale.value.find((step) => step.position === 0)
+      : undefined;
+
+    expect(step).toBeDefined();
+    expect(
+      step !== undefined &&
+        Exit.isSuccess(
+          Color.verify({
+            text: 'oklch(0% 0 0)',
+            background: 'oklch(100% 0 0)',
+            step,
+            fontWeight: 400,
+          }),
+        ),
+    ).toBe(true);
+  });
+
   it('accepts a pair whose contrast meets what text of its size and weight needs', () => {
     const exit = Color.verify({
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -461,7 +483,6 @@ describe('verify', () => {
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -481,7 +502,6 @@ describe('verify', () => {
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -500,7 +520,6 @@ describe('verify', () => {
         text: 'oklch(50% 0 0)',
         background: 'oklch(100% 0 0)',
         step: {
-          position: 0,
           minimumSize: Fraction.makeUnsafe(16n, 1n),
           maximumSize: Fraction.makeUnsafe(20n, 1n),
         },
@@ -518,7 +537,6 @@ describe('verify', () => {
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 3,
         minimumSize: Fraction.makeUnsafe(24n, 1n),
         maximumSize: Fraction.makeUnsafe(30n, 1n),
       },
@@ -533,7 +551,6 @@ describe('verify', () => {
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 3,
         minimumSize: Fraction.makeUnsafe(24n, 1n),
         maximumSize: Fraction.makeUnsafe(12n, 1n),
       },
@@ -558,7 +575,6 @@ describe('verify', () => {
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 2,
         minimumSize: Fraction.makeUnsafe(22n, 1n),
         maximumSize: Fraction.makeUnsafe(28n, 1n),
       },
@@ -573,7 +589,6 @@ describe('verify', () => {
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 1,
         minimumSize: Fraction.makeUnsafe(56n, 3n),
         maximumSize: Fraction.makeUnsafe(24n, 1n),
       },
@@ -588,7 +603,6 @@ describe('verify', () => {
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 1,
         minimumSize: Fraction.makeUnsafe(56n, 3n),
         maximumSize: Fraction.makeUnsafe(24n, 1n),
       },
@@ -608,7 +622,6 @@ describe('verify', () => {
       text: `oklch(${Math.cbrt(1 / 10)} 0 0)`,
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -624,7 +637,6 @@ describe('verify', () => {
       text: 'oklch(0.132707 0.067688 288.9246)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -640,7 +652,6 @@ describe('verify', () => {
       text: 'oklch(0.132707 0.067688 288.9246)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -656,7 +667,6 @@ describe('verify', () => {
       text: 'oklch(0.4642 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -671,7 +681,6 @@ describe('verify', () => {
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 3,
         minimumSize: Fraction.makeUnsafe(24n, 1n),
         maximumSize: Fraction.makeUnsafe(30n, 1n),
       },
@@ -691,7 +700,6 @@ describe('verify', () => {
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -717,7 +725,6 @@ describe('verify', () => {
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -743,7 +750,6 @@ describe('verify', () => {
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -759,7 +765,6 @@ describe('verify', () => {
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -789,7 +794,6 @@ describe('Brand', () => {
       color: 'oklch(64% 0.17 147)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -806,7 +810,6 @@ describe('shade', () => {
       color: 'oklch(64% 0.17 147)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -816,7 +819,6 @@ describe('shade', () => {
       color: 'oklch(64% 0.17 0.4turn)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -832,7 +834,6 @@ describe('shade', () => {
       color: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(12n, 1n),
         maximumSize: Fraction.makeUnsafe(15n, 1n),
       },
@@ -857,7 +858,6 @@ describe('shade', () => {
       color: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -869,7 +869,6 @@ describe('shade', () => {
 
   it('darkens a brand color against a light background to the contrast its text needs', () => {
     const step = {
-      position: 0,
       minimumSize: Fraction.makeUnsafe(16n, 1n),
       maximumSize: Fraction.makeUnsafe(20n, 1n),
     };
@@ -896,7 +895,6 @@ describe('shade', () => {
       color: 'oklch(64% 0.17 147)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -914,7 +912,6 @@ describe('shade', () => {
       color: 'oklch(54% 0.16 0)',
       background: 'oklch(56.2% 0 0)',
       step: {
-        position: 3,
         minimumSize: Fraction.makeUnsafe(24n, 1n),
         maximumSize: Fraction.makeUnsafe(30n, 1n),
       },
@@ -962,7 +959,6 @@ describe('shade', () => {
 
   it('lightens a brand color against a dark background and keeps its chroma where sRGB holds it', () => {
     const step = {
-      position: 0,
       minimumSize: Fraction.makeUnsafe(16n, 1n),
       maximumSize: Fraction.makeUnsafe(20n, 1n),
     };
@@ -986,7 +982,6 @@ describe('shade', () => {
 
   it('reaches a stricter contrast the project asks for', () => {
     const step = {
-      position: 0,
       minimumSize: Fraction.makeUnsafe(16n, 1n),
       maximumSize: Fraction.makeUnsafe(20n, 1n),
     };
@@ -1007,7 +1002,6 @@ describe('shade', () => {
       color: 'oklch(64% 0.17 147)',
       background: 'oklch(60% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -1028,7 +1022,6 @@ describe('shade', () => {
         color: 'oklch(64% 0.17 147)',
         background: 'oklch(60% 0 0)',
         step: {
-          position: 0,
           minimumSize: Fraction.makeUnsafe(16n, 1n),
           maximumSize: Fraction.makeUnsafe(20n, 1n),
         },
@@ -1044,7 +1037,6 @@ describe('shade', () => {
       color: 'oklch(64% 0.17 147)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
@@ -1070,7 +1062,6 @@ describe('shade', () => {
       color: 'oklch(64% 0.17 147)',
       background: 'oklch(100% 0 0)',
       step: {
-        position: 0,
         minimumSize: Fraction.makeUnsafe(16n, 1n),
         maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
