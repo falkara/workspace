@@ -103,6 +103,9 @@ export const luminanceWeights: readonly [number, number, number] = [0.2126, 0.71
  */
 export const contrastFlare = 1 / 20;
 
+/** The largest contrast ratio WCAG 2.2 defines, of black against white: the largest relative luminance, 1, over the smallest, 0, with the flare added to both. */
+export const maximumContrastRatio = (1 + contrastFlare) / contrastFlare;
+
 /**
  * The unit roundoff of JavaScript numbers, half their machine epsilon: the largest relative error of an arithmetic operation, which ECMAScript rounds to the nearest number as IEEE 754 does. The engines of the Baseline core browsers compute the cosine, the sine and powers within one unit in the last place, twice the unit roundoff.
  *
@@ -359,7 +362,15 @@ export const verify = (pair: Pair): Exit.Exit<number, Schema.SchemaError> =>
             ),
           ),
         ),
-        minimumContrast: Schema.optional(Schema.Finite),
+        minimumContrast: Schema.optional(
+          Schema.Finite.pipe(
+            Schema.check(
+              Schema.isLessThanOrEqualTo(maximumContrastRatio, {
+                message: `Expected a minimum contrast of at most ${maximumContrastRatio}:1, the largest contrast WCAG 2.2 defines, of black against white`,
+              }),
+            ),
+          ),
+        ),
       }).pipe(
         Schema.check(
           Schema.makeFilter((colors) => {
@@ -502,7 +513,15 @@ export const shade = (brand: Brand): Exit.Exit<string, Schema.SchemaError> =>
           ),
         ),
       ),
-      minimumContrast: Schema.optional(Schema.Finite),
+      minimumContrast: Schema.optional(
+        Schema.Finite.pipe(
+          Schema.check(
+            Schema.isLessThanOrEqualTo(maximumContrastRatio, {
+              message: `Expected a minimum contrast of at most ${maximumContrastRatio}:1, the largest contrast WCAG 2.2 defines, of black against white`,
+            }),
+          ),
+        ),
+      ),
     }).pipe(
       Schema.check(
         Schema.makeFilter(

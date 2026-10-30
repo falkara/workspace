@@ -82,6 +82,12 @@ describe('contrastFlare', () => {
   });
 });
 
+describe('maximumContrastRatio', () => {
+  it('is 21, the contrast of black against white', () => {
+    expect(Color.maximumContrastRatio).toBe(21);
+  });
+});
+
 describe('transferThreshold', () => {
   it('is where the sRGB transfer function stops being linear', () => {
     expect(Color.transferThreshold).toBe(0.0031308);
@@ -548,6 +554,48 @@ describe('verify', () => {
     ]);
   });
 
+  it('rejects a contrast the project asks for that no colors can reach', () => {
+    const exit = Color.verify({
+      text: 'oklch(0% 0 0)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        position: 0,
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
+      },
+      fontWeight: 400,
+      minimumContrast: 25,
+    });
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['minimumContrast'],
+        message:
+          'Expected a minimum contrast of at most 21:1, the largest contrast WCAG 2.2 defines, of black against white',
+      },
+    ]);
+  });
+
+  it('accepts the largest contrast for black against white', () => {
+    const exit = Color.verify({
+      text: 'oklch(0% 0 0)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        position: 0,
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
+      },
+      fontWeight: 400,
+      minimumContrast: Color.maximumContrastRatio,
+    });
+
+    expect(Exit.isSuccess(exit)).toBe(true);
+  });
+
   it('rejects a font weight CSS Fonts does not allow', () => {
     const exit = Color.verify({
       text: 'oklch(0% 0 0)',
@@ -801,6 +849,32 @@ describe('shade', () => {
         path: ['minimumContrast'],
         message:
           'Expected a minimum contrast of at least 7:1, the ratio WCAG 2.2 Contrast (Enhanced) requires for text of 16 px at weight 400',
+      },
+    ]);
+  });
+
+  it('rejects a contrast the project asks for that no shade can reach, instead of blaming the background', () => {
+    const exit = Color.shade({
+      color: 'oklch(64% 0.17 147)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        position: 0,
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
+      },
+      fontWeight: 400,
+      minimumContrast: 25,
+    });
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['minimumContrast'],
+        message:
+          'Expected a minimum contrast of at most 21:1, the largest contrast WCAG 2.2 defines, of black against white',
       },
     ]);
   });
