@@ -1,5 +1,0 @@
----
-'@falkara/presentation': minor
----
-
-Every guarantee rests on the maximum a reader adjustment reaches that it needs, each taken from the browsers: what a reader must be able to reach rests on the lowest maximum, which every Baseline core browser offers, and what must hold however far a reader goes rests on the highest. `Viewport.maximumPageZoomFactor` is split into `Viewport.lowestMaximumPageZoomFactor`, 3 in Safari, and `Viewport.highestMaximumPageZoomFactor`, 5 in Chromium and Firefox, and `Typography.highestMaximumDefaultFontSize`, 72 px in Chromium and Firefox, gives `Typography.highestMaximumFontSizeFactor`, 9/2, beside `Typography.lowestMaximumFontSizeFactor`, 1, as Safari lets a reader set no font size. `Typography.maximumTextGrowthFactor` stays on the lowest page zoom and keeps 8/5; `Typography.maximumFontSize` rests on the largest font size a reader sets and falls from 320/3 px to 640/9 px; and `Fluid.decimalPlaces` rests on the highest page zoom and font size together and rises from 4 to 5.
