@@ -92,18 +92,20 @@ export const writeNotices = ({
   };
 
   const rule = '-'.repeat(70);
-  const sections = [...resolved.keys()].sort().map((name) => {
-    const directory = resolved.get(name) as string;
-    const manifest = JSON.parse(fs.readFileSync(path.join(directory, 'package.json'), 'utf8'));
-    const text = licenseText(directory);
-    if (text === undefined) {
-      console.error(`${name} ships no license file; its terms cannot be reproduced.`);
-      process.exit(1);
-    }
-    return [rule, `${name} ${manifest.version} (${manifest.license})`, rule, '', text, ''].join(
-      '\n',
-    );
-  });
+  // Ordered by name in code units, as a plain sort orders strings; names are unique, so none compare equal.
+  const sections = [...resolved]
+    .sort(([first], [second]) => (first < second ? -1 : 1))
+    .map(([name, directory]) => {
+      const manifest = JSON.parse(fs.readFileSync(path.join(directory, 'package.json'), 'utf8'));
+      const text = licenseText(directory);
+      if (text === undefined) {
+        console.error(`${name} ships no license file; its terms cannot be reproduced.`);
+        process.exit(1);
+      }
+      return [rule, `${name} ${manifest.version} (${manifest.license})`, rule, '', text, ''].join(
+        '\n',
+      );
+    });
 
   const header = [
     'This package is distributed as a single bundled file that includes the',
