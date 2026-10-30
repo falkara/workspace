@@ -144,6 +144,46 @@ describe('Color', () => {
     expect(Exit.isSuccess(exit)).toBe(true);
   });
 
+  it('decodes a color into its components, its percentages read as CSS Color 4 reads them', () => {
+    const exit = Schema.decodeExit(Color.Color)('oklch(64% 25% 147)');
+
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual({
+      lightness: 0.64,
+      chroma: 0.1,
+      hue: 147,
+      alpha: 1,
+    });
+  });
+
+  it('clamps the lightness and the alpha to their range as CSS Color 4 clamps them', () => {
+    const exit = Schema.decodeExit(Color.Color)('oklch(150% 0 0 / 1.5)');
+
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual({
+      lightness: 1,
+      chroma: 0,
+      hue: 0,
+      alpha: 1,
+    });
+  });
+
+  it('encodes a color in fixed notation, which it decodes again into the same components', () => {
+    const decoded = Schema.decodeExit(Color.Color)('oklch(50% 0.0000001 147)');
+    const encoded = Exit.isSuccess(decoded)
+      ? Schema.encodeExit(Color.Color)(decoded.value)
+      : undefined;
+    const redecoded =
+      encoded !== undefined && Exit.isSuccess(encoded)
+        ? Schema.decodeExit(Color.Color)(encoded.value)
+        : undefined;
+
+    expect(encoded !== undefined && Exit.isSuccess(encoded) ? encoded.value : undefined).toBe(
+      'oklch(0.5 0.0000001 147 / 1)',
+    );
+    expect(
+      redecoded !== undefined && Exit.isSuccess(redecoded) ? redecoded.value : undefined,
+    ).toEqual(Exit.isSuccess(decoded) ? decoded.value : undefined);
+  });
+
   it('rejects a color written otherwise', () => {
     const exit = Schema.decodeExit(Color.Color)('#ffffff');
 

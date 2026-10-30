@@ -1,4 +1,4 @@
-import { Exit, Schema } from 'effect';
+import { Effect, Exit, Schema, SchemaIssue, SchemaTransformation } from 'effect';
 
 import * as Fluid from '#src/Fluid';
 import * as Fraction from '#src/Fraction';
@@ -110,24 +110,6 @@ export const contrastFlare = 1 / 20;
  */
 export const unitRoundoff = Number.EPSILON / 2;
 
-/** The lightness, chroma, hue in degrees and alpha of an oklch() color as CSS Color 4 writes it, the lightness and the alpha clamped to their range as CSS Color 4 clamps them, or none when it is written otherwise. */
-const components = (color: string): readonly [number, number, number, number] | undefined => {
-  const match =
-    /^oklch\(\s*(\d*\.?\d+)(%?)\s+(\d*\.?\d+)(%?)\s+(-?\d*\.?\d+)(?:deg)?\s*(?:\/\s*(\d*\.?\d+)(%?)\s*)?\)$/.exec(
-      color,
-    );
-  if (match === null) {
-    return undefined;
-  }
-  const [, lightness, lightnessPercent, chroma, chromaPercent, hue, alpha, alphaPercent] = match;
-  return [
-    Math.min(Number(lightness) / (lightnessPercent === '%' ? 100 : 1), 1),
-    (Number(chroma) * (chromaPercent === '%' ? fullChroma : 1)) / (chromaPercent === '%' ? 100 : 1),
-    Number(hue),
-    alpha === undefined ? 1 : Math.min(Number(alpha) / (alphaPercent === '%' ? 100 : 1), 1),
-  ];
-};
-
 /** The linear sRGB channels of a color of the given lightness, chroma and hue in degrees, converted as CSS Color 4 does, the hue first reduced to one turn exactly so that no large hue loses precision in radians. */
 const linearSrgbOf = (lightness: number, chroma: number, hue: number): ReadonlyArray<number> => {
   const h = ((hue % 360) * Math.PI) / 180;
@@ -139,15 +121,8 @@ const linearSrgbOf = (lightness: number, chroma: number, hue: number): ReadonlyA
   return xyzToLinearSrgb.map((row) => row[0] * xyz[0]! + row[1] * xyz[1]! + row[2] * xyz[2]!);
 };
 
-/** The linear sRGB channels of an oklch() color as CSS Color 4 writes it, or none when it is written otherwise. */
-const linearSrgb = (color: string): ReadonlyArray<number> | undefined => {
-  const parts = components(color);
-  return parts === undefined ? undefined : linearSrgbOf(parts[0], parts[1], parts[2]);
-};
-
-/** A bound on the absolute rounding error in the relative luminance of a valid color, carried through every step of its conversion by the rounding error analysis of Higham: each sum of products by the unit roundoff over the absolute values of its terms, each cosine, sine and power by one unit in the last place, and every error already made through the coefficients it meets. Doubled, so that rounding while computing the bound, a relative error of tens of unit roundoffs, cannot leave it below the error it bounds. */
-const luminanceError = (color: string): number => {
-  const [lightness, chroma, hue] = components(color) ?? [0, 0, 0];
+/** A bound on the absolute rounding error in the relative luminance of a color, carried through every step of its conversion by the rounding error analysis of Higham: each sum of products by the unit roundoff over the absolute values of its terms, each cosine, sine and power by one unit in the last place, and every error already made through the coefficients it meets. Doubled, so that rounding while computing the bound, a relative error of tens of unit roundoffs, cannot leave it below the error it bounds. */
+const luminanceError = ({ lightness, chroma, hue }: Color): number => {
   // The relative error left by n roundings, as Higham bounds it.
   const gamma = (n: number): number => (n * unitRoundoff) / (1 - n * unitRoundoff);
   const angle = ((hue % 360) * Math.PI) / 180;
@@ -256,35 +231,86 @@ const encoded = (channel: number): number =>
 const isInGamut = (channels: ReadonlyArray<number>, tolerance: number): boolean =>
   channels.every((channel) => encoded(channel) >= -tolerance && encoded(channel) <= 1 + tolerance);
 
-/** A schema of a color written in oklch() as CSS Color 4 writes it, opaque and within sRGB, where WCAG 2.2 defines contrast. */
-export const Color = Schema.String.pipe(
+/** A schema of the components of an oklch() color as CSS Color 4 defines them, opaque and within sRGB, where WCAG 2.2 defines contrast. */
+const Components = Schema.Struct({
+  /** The lightness, from 0 for black to 1 for white. */
+  lightness: Schema.Finite,
+  /** The chroma, 0 for a gray. */
+  chroma: Schema.Finite,
+  /** The hue. Measured in degrees. */
+  hue: Schema.Finite,
+  /** The alpha, from 0 for transparent to 1 for opaque. */
+  alpha: Schema.Finite,
+}).pipe(
   Schema.check(
-    Schema.makeFilter((color) => {
-      const parts = components(color);
-      if (parts === undefined) {
-        return 'Expected a color written in oklch() as CSS Color 4 writes it, such as oklch(64% 0.17 147)';
-      }
-      if (parts[3] < 1) {
-        return 'Expected an opaque color, as WCAG 2.2 defines no contrast for a translucent one';
-      }
-      return (
-        isInGamut(linearSrgbOf(parts[0], parts[1], parts[2]), gamutTolerance) ||
-        'Expected a color within sRGB, as WCAG 2.2 defines contrast only there'
-      );
+    Schema.makeFilter(
+      (color) =>
+        color.alpha >= 1 ||
+        'Expected an opaque color, as WCAG 2.2 defines no contrast for a translucent one',
+    ),
+    Schema.makeFilter(
+      (color) =>
+        isInGamut(linearSrgbOf(color.lightness, color.chroma, color.hue), gamutTolerance) ||
+        'Expected a color within sRGB, as WCAG 2.2 defines contrast only there',
+    ),
+  ),
+);
+
+/** A schema of a color written in oklch() as CSS Color 4 writes it, decoded once into its lightness, chroma, hue in degrees and alpha, the lightness and the alpha clamped to their range as CSS Color 4 clamps them, and checked to be opaque and within sRGB, where WCAG 2.2 defines contrast. Encoded in fixed notation, which it decodes again. */
+export const Color = Schema.String.pipe(
+  Schema.decodeTo(
+    Components,
+    SchemaTransformation.transformEffect({
+      decode: (color, options) => {
+        const match =
+          /^oklch\(\s*(\d*\.?\d+)(%?)\s+(\d*\.?\d+)(%?)\s+(-?\d*\.?\d+)(?:deg)?\s*(?:\/\s*(\d*\.?\d+)(%?)\s*)?\)$/.exec(
+            color,
+          );
+        if (match === null) {
+          return Effect.fail(
+            new SchemaIssue.InvalidValue(
+              {
+                message:
+                  'Expected a color written in oklch() as CSS Color 4 writes it, such as oklch(64% 0.17 147)',
+              },
+              color,
+              options,
+            ),
+          );
+        }
+        const [, lightness, lightnessPercent, chroma, chromaPercent, hue, alpha, alphaPercent] =
+          match;
+        return Effect.succeed({
+          lightness: Math.min(Number(lightness) / (lightnessPercent === '%' ? 100 : 1), 1),
+          chroma:
+            (Number(chroma) * (chromaPercent === '%' ? fullChroma : 1)) /
+            (chromaPercent === '%' ? 100 : 1),
+          hue: Number(hue),
+          alpha:
+            alpha === undefined ? 1 : Math.min(Number(alpha) / (alphaPercent === '%' ? 100 : 1), 1),
+        });
+      },
+      encode: (color) =>
+        Effect.succeed(
+          `oklch(${color.lightness.toFixed(16).replace(/\.?0+$/, '')} ${color.chroma.toFixed(16).replace(/\.?0+$/, '')} ${color.hue.toFixed(16).replace(/\.?0+$/, '')} / ${color.alpha.toFixed(16).replace(/\.?0+$/, '')})`,
+        ),
     }),
   ),
 );
 
-/** The relative luminance of a valid color as WCAG 2.2 defines it, its linear sRGB channels weighted and held within their range. */
-const relativeLuminance = (color: string): number =>
-  (linearSrgb(color) ?? [0, 0, 0]).reduce(
+/** A color with its lightness, chroma, hue in degrees and alpha, opaque and within sRGB. */
+export type Color = typeof Color.Type;
+
+/** The relative luminance of a color as WCAG 2.2 defines it, its linear sRGB channels weighted and held within their range. */
+const relativeLuminance = (color: Color): number =>
+  linearSrgbOf(color.lightness, color.chroma, color.hue).reduce(
     (luminance, channel, index) =>
       luminance + (luminanceWeights[index] ?? 0) * Math.min(Math.max(channel, 0), 1),
     0,
   );
 
-/** The contrast ratio of two valid colors as WCAG 2.2 defines it, the lighter over the darker with the flare added to both. */
-const contrastRatio = (text: string, background: string): number =>
+/** The contrast ratio of two colors as WCAG 2.2 defines it, the lighter over the darker with the flare added to both. */
+const contrastRatio = (text: Color, background: Color): number =>
   (Math.max(relativeLuminance(text), relativeLuminance(background)) + contrastFlare) /
   (Math.min(relativeLuminance(text), relativeLuminance(background)) + contrastFlare);
 
@@ -407,11 +433,11 @@ const boundary = (holds: (value: number) => boolean, inside: number, outside: nu
 
 /** The lightness, chroma and hue in degrees of the shade of a brand color closest to it by deltaEOK that reaches the contrast ratio against the background: its hue kept, and its chroma kept or, where sRGB cannot hold it at that lightness, reduced at constant lightness and hue to the edge of sRGB, the reduction every gamut mapping algorithm of CSS Color 4 aims at, reached exactly so that the lightness and hue the contrast rests on stay exact; or none when no shade reaches it. */
 const closestShade = (
-  color: string,
-  background: string,
+  color: Color,
+  background: Color,
   target: number,
 ): readonly [number, number, number] | undefined => {
-  const [lightness, chroma, hue] = components(color) ?? [0, 0, 0];
+  const { lightness, chroma, hue } = color;
   const chromaAt = (shade: number): number =>
     // Reduced strictly within sRGB, so that the shade stays within it once written and read again.
     isInGamut(linearSrgbOf(shade, chroma, hue), 0)
