@@ -5,7 +5,7 @@ import * as Length from '#src/Length';
 import * as Typography from '#src/Typography';
 import * as Viewport from '#src/Viewport';
 
-/** The fewest decimal places that keep the rounding of a CSS length below the layout unit, for a reader who both zooms the page and sets the font size up to the maximum page zoom factor, as the layout unit counts zoomed pixels. */
+/** The fewest decimal places that keep the rounding of a CSS length below the finest layout unit, for a reader who both zooms the page and sets the font size up to the maximum page zoom factor, as the finest layout unit counts zoomed pixels. */
 export const decimalPlaces =
   Math.floor(
     Math.log10(
@@ -18,7 +18,7 @@ export const decimalPlaces =
               Fraction.divide(Viewport.maximumViewportWidth, Length.viewportWidthUnits),
             ),
           ),
-          Fraction.multiply(Fraction.makeUnsafe(2n, 1n), Length.layoutUnit),
+          Fraction.multiply(Fraction.makeUnsafe(2n, 1n), Length.finestLayoutUnit),
         ),
       ),
     ),

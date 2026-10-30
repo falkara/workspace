@@ -1,7 +1,10 @@
 import * as Fraction from '#src/Fraction';
 
-/** The layout unit that WebKit and Chromium implement, the finest among the Baseline core browsers. Measured in rendered pixels, CSS pixels times the page zoom. */
-export const layoutUnit = Fraction.makeUnsafe(1n, 64n);
+/** The layout unit that WebKit and Chromium implement, the finest among the Baseline core browsers, so that a rounding below it stays below the layout unit of every one of them. Measured in rendered pixels, CSS pixels times the page zoom. */
+export const finestLayoutUnit = Fraction.makeUnsafe(1n, 64n);
+
+/** The layout unit that Gecko implements, its app unit, the coarsest among the Baseline core browsers, so that lengths apart by at least it fall on different points of the layout grid of every one of them. Measured in CSS pixels, as Gecko keeps 60 app units to the CSS pixel at every page zoom. */
+export const coarsestLayoutUnit = Fraction.makeUnsafe(1n, 60n);
 
 /**
  * The length of a CSS inch. Measured in CSS pixels.

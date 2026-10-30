@@ -8,7 +8,7 @@ import * as Typography from '#src/Typography';
 import * as Viewport from '#src/Viewport';
 
 describe('decimalPlaces', () => {
-  it('keeps the rendered rounding below the layout unit for a reader at the maximum page zoom and font size', () => {
+  it('keeps the rendered rounding below the finest layout unit for a reader at the maximum page zoom and font size', () => {
     const sizes = Array.from({ length: 100_000 }, (_, index) => index / 1000);
     const shares = Array.from({ length: 100_000 }, (_, index) => index / 10_000_000);
     const remError = Math.max(
@@ -33,7 +33,7 @@ describe('decimalPlaces', () => {
         (vwError * Fraction.toNumber(Viewport.maximumViewportWidth)) /
           Fraction.toNumber(Length.viewportWidthUnits));
 
-    expect(renderedError).toBeLessThan(Fraction.toNumber(Length.layoutUnit));
+    expect(renderedError).toBeLessThan(Fraction.toNumber(Length.finestLayoutUnit));
   });
 
   it('is the fewest decimal places that do', () => {
@@ -64,7 +64,7 @@ describe('decimalPlaces', () => {
         (vwError * Fraction.toNumber(Viewport.maximumViewportWidth)) /
           Fraction.toNumber(Length.viewportWidthUnits));
 
-    expect(renderedError).toBeGreaterThanOrEqual(Fraction.toNumber(Length.layoutUnit));
+    expect(renderedError).toBeGreaterThanOrEqual(Fraction.toNumber(Length.finestLayoutUnit));
   });
 
   it('is 4', () => {
@@ -161,8 +161,8 @@ describe('clamp', () => {
       Number(maximum) * Fraction.toNumber(Typography.defaultFontSize),
     );
 
-    expect(Math.abs(sizeAtMinimum - 16)).toBeLessThan(Fraction.toNumber(Length.layoutUnit));
-    expect(Math.abs(sizeAtMaximum - 20)).toBeLessThan(Fraction.toNumber(Length.layoutUnit));
+    expect(Math.abs(sizeAtMinimum - 16)).toBeLessThan(Fraction.toNumber(Length.finestLayoutUnit));
+    expect(Math.abs(sizeAtMaximum - 20)).toBeLessThan(Fraction.toNumber(Length.finestLayoutUnit));
   });
 
   it('grows linearly between the minimum and the maximum viewport width', () => {
@@ -184,7 +184,7 @@ describe('clamp', () => {
       Number(maximum) * Fraction.toNumber(Typography.defaultFontSize),
     );
 
-    expect(Math.abs(sizeHalfway - 18)).toBeLessThan(Fraction.toNumber(Length.layoutUnit));
+    expect(Math.abs(sizeHalfway - 18)).toBeLessThan(Fraction.toNumber(Length.finestLayoutUnit));
   });
 
   it('holds its sizes outside the viewport range', () => {

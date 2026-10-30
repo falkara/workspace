@@ -44,10 +44,10 @@ describe('minimumStepFactor', () => {
     expect(Schema.is(Fraction.Fraction)(Typography.minimumStepFactor)).toBe(true);
   });
 
-  it('keeps steps at the minimum font size apart by the layout unit', () => {
+  it('keeps steps at the minimum font size apart by the coarsest layout unit', () => {
     const nextSize = Fraction.multiply(Typography.minimumFontSize, Typography.minimumStepFactor);
 
-    expect(nextSize).toEqual(Fraction.sum(Typography.minimumFontSize, Length.layoutUnit));
+    expect(nextSize).toEqual(Fraction.sum(Typography.minimumFontSize, Length.coarsestLayoutUnit));
   });
 });
 
@@ -233,7 +233,7 @@ describe('ScaleOptions', () => {
       {
         path: ['minimumFactor'],
         message:
-          'Expected a minimum factor of at least 833/832, so that every step is larger than the one below by at least the layout unit of browsers and no two steps render alike',
+          'Expected a minimum factor of at least 781/780, so that every step is larger than the one below and lengths of at least 1 em in consecutive steps never fall on the same point of the layout grid of a browser',
       },
     ]);
   });
@@ -266,12 +266,12 @@ describe('ScaleOptions', () => {
       {
         path: ['minimumFactor'],
         message:
-          'Expected a minimum factor of at least 833/832, so that every step is larger than the one below by at least the layout unit of browsers and no two steps render alike',
+          'Expected a minimum factor of at least 781/780, so that every step is larger than the one below and lengths of at least 1 em in consecutive steps never fall on the same point of the layout grid of a browser',
       },
       {
         path: ['maximumFactor'],
         message:
-          'Expected a maximum factor of at least 833/832, so that every step is larger than the one below by at least the layout unit of browsers and no two steps render alike',
+          'Expected a maximum factor of at least 781/780, so that every step is larger than the one below and lengths of at least 1 em in consecutive steps never fall on the same point of the layout grid of a browser',
       },
     ]);
   });
@@ -553,11 +553,11 @@ describe('scale', () => {
       maximumBodyFontSize: { numerator: 16n, denominator: 1n },
     });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
-    const previousMinimumSize = 16 * (832 / 833) ** 173;
-    const nextMinimumSize = 16 * (833 / 832) ** 1580;
+    const previousMinimumSize = 16 * (780 / 781) ** 163;
+    const nextMinimumSize = 16 * (781 / 780) ** 1481;
 
-    expect(steps.at(0)?.position).toBe(-172);
-    expect(steps.at(-1)?.position).toBe(1579);
+    expect(steps.at(0)?.position).toBe(-162);
+    expect(steps.at(-1)?.position).toBe(1480);
     expect(previousMinimumSize).toBeLessThan(Fraction.toNumber(Typography.minimumFontSize));
     expect(nextMinimumSize).toBeGreaterThan(Fraction.toNumber(Typography.maximumFontSize));
   });
@@ -577,12 +577,12 @@ describe('scale', () => {
       {
         path: ['minimumFactor'],
         message:
-          'Expected a minimum factor of at least 833/832, so that every step is larger than the one below by at least the layout unit of browsers and no two steps render alike',
+          'Expected a minimum factor of at least 781/780, so that every step is larger than the one below and lengths of at least 1 em in consecutive steps never fall on the same point of the layout grid of a browser',
       },
       {
         path: ['maximumFactor'],
         message:
-          'Expected a maximum factor of at least 833/832, so that every step is larger than the one below by at least the layout unit of browsers and no two steps render alike',
+          'Expected a maximum factor of at least 781/780, so that every step is larger than the one below and lengths of at least 1 em in consecutive steps never fall on the same point of the layout grid of a browser',
       },
       {
         path: ['maximumBodyFontSize'],

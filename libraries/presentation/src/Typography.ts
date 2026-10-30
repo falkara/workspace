@@ -27,10 +27,10 @@ export const maximumFontSize = Fraction.divide(
   Fraction.multiply(Viewport.maximumPageZoomFactor, ideographAdvanceFactor),
 );
 
-/** The smallest ratio between consecutive steps of a type scale, at which steps at the minimum font size still differ by the layout unit, so that no two steps render alike. */
+/** The smallest ratio between consecutive steps of a type scale, at which steps at the minimum font size still differ by the coarsest layout unit, so that a length of at least 1 em, such as the line height, falls on a different point of the layout grid in consecutive steps in every Baseline core browser and no two steps lay out alike. It promises nothing about how glyphs render, as the browsers keep the font size itself unrounded. */
 export const minimumStepFactor = Fraction.sum(
   Fraction.one,
-  Fraction.divide(Length.layoutUnit, minimumFontSize),
+  Fraction.divide(Length.coarsestLayoutUnit, minimumFontSize),
 );
 
 /**
@@ -135,19 +135,19 @@ export const maximumTextGrowthFactor = Fraction.divide(
 
 /** A schema of the ratios of a type scale and the size its body text reaches at the maximum viewport width. */
 export const ScaleOptions = Schema.Struct({
-  /** The ratio between consecutive steps at the minimum viewport width, at least the minimum step factor so that every step is larger than the one below and no two steps render alike. */
+  /** The ratio between consecutive steps at the minimum viewport width, at least the minimum step factor so that every step is larger than the one below and no two steps lay out alike. */
   minimumFactor: Fraction.Fraction.pipe(
     Schema.check(
       Fraction.isGreaterThanOrEqualToFraction(minimumStepFactor, {
-        message: `Expected a minimum factor of at least ${Fraction.format(minimumStepFactor)}, so that every step is larger than the one below by at least the layout unit of browsers and no two steps render alike`,
+        message: `Expected a minimum factor of at least ${Fraction.format(minimumStepFactor)}, so that every step is larger than the one below and lengths of at least 1 em in consecutive steps never fall on the same point of the layout grid of a browser`,
       }),
     ),
   ),
-  /** The ratio between consecutive steps at the maximum viewport width, at least the minimum step factor so that every step is larger than the one below and no two steps render alike. */
+  /** The ratio between consecutive steps at the maximum viewport width, at least the minimum step factor so that every step is larger than the one below and no two steps lay out alike. */
   maximumFactor: Fraction.Fraction.pipe(
     Schema.check(
       Fraction.isGreaterThanOrEqualToFraction(minimumStepFactor, {
-        message: `Expected a maximum factor of at least ${Fraction.format(minimumStepFactor)}, so that every step is larger than the one below by at least the layout unit of browsers and no two steps render alike`,
+        message: `Expected a maximum factor of at least ${Fraction.format(minimumStepFactor)}, so that every step is larger than the one below and lengths of at least 1 em in consecutive steps never fall on the same point of the layout grid of a browser`,
       }),
     ),
   ),

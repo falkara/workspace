@@ -4,9 +4,21 @@ import { Schema } from 'effect';
 import * as Fraction from '#src/Fraction';
 import * as Length from '#src/Length';
 
-describe('layoutUnit', () => {
+describe('finestLayoutUnit', () => {
   it('is the layout unit of WebKit and Chromium, the finest among the Baseline core browsers', () => {
-    expect(Length.layoutUnit).toEqual({ numerator: 1n, denominator: 64n });
+    expect(Length.finestLayoutUnit).toEqual({ numerator: 1n, denominator: 64n });
+  });
+});
+
+describe('coarsestLayoutUnit', () => {
+  it('is the app unit of Gecko, the coarsest layout unit among the Baseline core browsers', () => {
+    expect(Length.coarsestLayoutUnit).toEqual({ numerator: 1n, denominator: 60n });
+  });
+
+  it('is at least the finest layout unit, so that lengths apart by it are apart on every layout grid', () => {
+    expect(
+      Fraction.isGreaterThanOrEqualTo(Length.coarsestLayoutUnit, Length.finestLayoutUnit),
+    ).toBe(true);
   });
 });
 

@@ -126,12 +126,12 @@ describe('scale', () => {
       {
         path: ['minimumFactor'],
         message:
-          'Expected a minimum factor of at least 833/832, so that every step is larger than the one below by at least the layout unit of browsers and no two steps render alike',
+          'Expected a minimum factor of at least 781/780, so that every step is larger than the one below and lengths of at least 1 em in consecutive steps never fall on the same point of the layout grid of a browser',
       },
       {
         path: ['maximumFactor'],
         message:
-          'Expected a maximum factor of at least 833/832, so that every step is larger than the one below by at least the layout unit of browsers and no two steps render alike',
+          'Expected a maximum factor of at least 781/780, so that every step is larger than the one below and lengths of at least 1 em in consecutive steps never fall on the same point of the layout grid of a browser',
       },
       {
         path: ['maximumBodyFontSize'],
