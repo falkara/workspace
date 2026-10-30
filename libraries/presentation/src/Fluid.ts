@@ -5,16 +5,19 @@ import * as Length from '#src/Length';
 import * as Typography from '#src/Typography';
 import * as Viewport from '#src/Viewport';
 
-/** The fewest decimal places that keep the rounding of a CSS length below the finest layout unit, for a reader who both zooms the page and sets the font size up to the maximum page zoom factor, as the finest layout unit counts zoomed pixels. */
+/** The fewest decimal places that keep the rounding of a CSS length below the finest layout unit, for a reader who both zooms the page as far as any Baseline core browser allows and sets the largest default font size any of them allows, as the finest layout unit counts zoomed pixels. */
 export const decimalPlaces =
   Math.floor(
     Math.log10(
       Fraction.toNumber(
         Fraction.divide(
           Fraction.multiply(
-            Viewport.maximumPageZoomFactor,
+            Viewport.highestMaximumPageZoomFactor,
             Fraction.sum(
-              Fraction.multiply(Typography.defaultFontSize, Viewport.maximumPageZoomFactor),
+              Fraction.multiply(
+                Typography.defaultFontSize,
+                Typography.highestMaximumFontSizeFactor,
+              ),
               Fraction.divide(Viewport.maximumViewportWidth, Length.viewportWidthUnits),
             ),
           ),
@@ -49,7 +52,7 @@ const Sizes = Schema.Struct({
             Fraction.multiply(sizes.minimumSize, Typography.maximumTextGrowthFactor),
           )) || {
           path: ['maximumSize'],
-          issue: `Expected a maximum size of ${Math.round(Fraction.toNumber(sizes.minimumSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px to ${Math.round(Fraction.toNumber(Fraction.multiply(sizes.minimumSize, Typography.maximumTextGrowthFactor)) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that the value never shrinks and grows no faster than text that can be enlarged to ${Fraction.format(Fraction.multiply(Typography.textScaleFactor, Fraction.makeUnsafe(100n, 1n)))} % within the ${Fraction.format(Fraction.multiply(Viewport.maximumPageZoomFactor, Fraction.makeUnsafe(100n, 1n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
+          issue: `Expected a maximum size of ${Math.round(Fraction.toNumber(sizes.minimumSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px to ${Math.round(Fraction.toNumber(Fraction.multiply(sizes.minimumSize, Typography.maximumTextGrowthFactor)) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that the value never shrinks and grows no faster than text that can be enlarged to ${Fraction.format(Fraction.multiply(Typography.textScaleFactor, Fraction.makeUnsafe(100n, 1n)))} % within the ${Fraction.format(Fraction.multiply(Viewport.lowestMaximumPageZoomFactor, Fraction.makeUnsafe(100n, 1n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
         },
     ),
   ),

@@ -27,10 +27,10 @@ Effect.gen(function* () {
   return yield* Effect.forEach(steps, (step) => Fluid.clamp(step.minimumSize, step.maximumSize));
 });
 // Success: [
-//   'clamp(0.8333rem, 0.7778rem + 0.2778vw, 1rem)',     position −1
-//   'clamp(1rem, 0.9167rem + 0.4167vw, 1.25rem)',       position 0, body text
+//   'clamp(0.83333rem, 0.77778rem + 0.27778vw, 1rem)',       position −1
+//   'clamp(1rem, 0.91667rem + 0.41667vw, 1.25rem)',          position 0, body text
 //   …
-//   'clamp(2.986rem, 2.3919rem + 2.9706vw, 4.7684rem)', position 6
+//   'clamp(2.98598rem, 2.39185rem + 2.97065vw, 4.76837rem)', position 6
 // ]
 
 Typography.scale({ ...intent, maximumBodyFontSize: { numerator: 30n, denominator: 1n } });

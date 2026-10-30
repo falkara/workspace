@@ -17,5 +17,8 @@ export const viewportWidthFactor = Fraction.makeUnsafe(4n, 1n);
 /** The maximum viewport width, at and beyond which fluid values hold their largest size, so that text stays resizable on every wider screen. Measured in CSS pixels. */
 export const maximumViewportWidth = Fraction.multiply(minimumViewportWidth, viewportWidthFactor);
 
-/** The maximum page zoom factor that Safari implements, the lowest among the Baseline core browsers. */
-export const maximumPageZoomFactor = Fraction.makeUnsafe(3n, 1n);
+/** The maximum page zoom factor that Safari implements, the lowest maximum among the Baseline core browsers, so that a reader reaches it in every one of them. What a reader must be able to reach by zooming rests on it. */
+export const lowestMaximumPageZoomFactor = Fraction.makeUnsafe(3n, 1n);
+
+/** The maximum page zoom factor that Chromium and Firefox implement, the highest maximum among the Baseline core browsers, so that no reader zooms further in any of them. What must hold however far a reader zooms rests on it. */
+export const highestMaximumPageZoomFactor = Fraction.makeUnsafe(5n, 1n);

@@ -680,7 +680,7 @@ describe('verify', () => {
       _tag: 'ContrastShortfall',
       requiredContrast: 7,
       message:
-        'Expected a contrast of at least 7:1 for text of 18.6667 px at weight 600, as WCAG 2.2 Contrast (Enhanced) requires',
+        'Expected a contrast of at least 7:1 for text of 18.66667 px at weight 600, as WCAG 2.2 Contrast (Enhanced) requires',
     });
   });
 

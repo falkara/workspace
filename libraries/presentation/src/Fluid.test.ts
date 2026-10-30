@@ -8,7 +8,7 @@ import * as Typography from '#src/Typography';
 import * as Viewport from '#src/Viewport';
 
 describe('decimalPlaces', () => {
-  it('keeps the rendered rounding below the finest layout unit for a reader at the maximum page zoom and font size', () => {
+  it('keeps the rendered rounding below the finest layout unit for a reader at the highest maximum page zoom and font size', () => {
     const sizes = Array.from({ length: 100_000 }, (_, index) => index / 1000);
     const shares = Array.from({ length: 100_000 }, (_, index) => index / 10_000_000);
     const remError = Math.max(
@@ -26,10 +26,10 @@ describe('decimalPlaces', () => {
       ),
     );
     const renderedError =
-      Fraction.toNumber(Viewport.maximumPageZoomFactor) *
+      Fraction.toNumber(Viewport.highestMaximumPageZoomFactor) *
       (remError *
         Fraction.toNumber(Typography.defaultFontSize) *
-        Fraction.toNumber(Viewport.maximumPageZoomFactor) +
+        Fraction.toNumber(Typography.highestMaximumFontSizeFactor) +
         (vwError * Fraction.toNumber(Viewport.maximumViewportWidth)) /
           Fraction.toNumber(Length.viewportWidthUnits));
 
@@ -57,18 +57,18 @@ describe('decimalPlaces', () => {
       ),
     );
     const renderedError =
-      Fraction.toNumber(Viewport.maximumPageZoomFactor) *
+      Fraction.toNumber(Viewport.highestMaximumPageZoomFactor) *
       (remError *
         Fraction.toNumber(Typography.defaultFontSize) *
-        Fraction.toNumber(Viewport.maximumPageZoomFactor) +
+        Fraction.toNumber(Typography.highestMaximumFontSizeFactor) +
         (vwError * Fraction.toNumber(Viewport.maximumViewportWidth)) /
           Fraction.toNumber(Length.viewportWidthUnits));
 
     expect(renderedError).toBeGreaterThanOrEqual(Fraction.toNumber(Length.finestLayoutUnit));
   });
 
-  it('is 4', () => {
-    expect(Fluid.decimalPlaces).toBe(4);
+  it('is 5', () => {
+    expect(Fluid.decimalPlaces).toBe(5);
   });
 });
 
@@ -79,7 +79,7 @@ describe('rem', () => {
   });
 
   it('rounds to the decimal places', () => {
-    expect(Fluid.rem(40 / 3)).toBe('0.8333rem');
+    expect(Fluid.rem(40 / 3)).toBe('0.83333rem');
   });
 
   it('writes a negative size with its sign', () => {
@@ -93,7 +93,7 @@ describe('vw', () => {
   });
 
   it('rounds to the decimal places', () => {
-    expect(Fluid.vw(1 / 240)).toBe('0.4167vw');
+    expect(Fluid.vw(1 / 240)).toBe('0.41667vw');
   });
 });
 
@@ -105,7 +105,7 @@ describe('clamp', () => {
     );
 
     expect(Exit.isSuccess(exit) ? exit.value : '').toBe(
-      'clamp(1rem, 0.9167rem + 0.4167vw, 1.25rem)',
+      'clamp(1rem, 0.91667rem + 0.41667vw, 1.25rem)',
     );
   });
 
@@ -132,7 +132,7 @@ describe('clamp', () => {
     const exit = Fluid.clamp(Fraction.makeUnsafe(16n, 1n), Fraction.makeUnsafe(20n, 1n));
 
     expect(Exit.isSuccess(exit) ? exit.value : '').toBe(
-      'clamp(1rem, 0.9167rem + 0.4167vw, 1.25rem)',
+      'clamp(1rem, 0.91667rem + 0.41667vw, 1.25rem)',
     );
   });
 

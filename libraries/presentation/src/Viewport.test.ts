@@ -32,16 +32,31 @@ describe('maximumViewportWidth', () => {
   });
 });
 
-describe('maximumPageZoomFactor', () => {
-  it('is the maximum page zoom of Safari, the lowest among the Baseline core browsers', () => {
-    expect(Viewport.maximumPageZoomFactor).toEqual({ numerator: 3n, denominator: 1n });
+describe('lowestMaximumPageZoomFactor', () => {
+  it('is the maximum page zoom of Safari, the lowest maximum among the Baseline core browsers', () => {
+    expect(Viewport.lowestMaximumPageZoomFactor).toEqual({ numerator: 3n, denominator: 1n });
   });
 
   it('keeps the maximum viewport width within the viewport range at full zoom', () => {
     expect(
       Fraction.isGreaterThanOrEqualTo(
-        Fraction.divide(Viewport.maximumViewportWidth, Viewport.maximumPageZoomFactor),
+        Fraction.divide(Viewport.maximumViewportWidth, Viewport.lowestMaximumPageZoomFactor),
         Viewport.minimumViewportWidth,
+      ),
+    ).toBe(true);
+  });
+});
+
+describe('highestMaximumPageZoomFactor', () => {
+  it('is the maximum page zoom of Chromium and Firefox, the highest maximum among the Baseline core browsers', () => {
+    expect(Viewport.highestMaximumPageZoomFactor).toEqual({ numerator: 5n, denominator: 1n });
+  });
+
+  it('is at least the lowest maximum page zoom', () => {
+    expect(
+      Fraction.isGreaterThanOrEqualTo(
+        Viewport.highestMaximumPageZoomFactor,
+        Viewport.lowestMaximumPageZoomFactor,
       ),
     ).toBe(true);
   });

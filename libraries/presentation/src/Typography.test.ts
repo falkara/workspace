@@ -12,6 +12,28 @@ describe('defaultFontSize', () => {
   });
 });
 
+describe('highestMaximumDefaultFontSize', () => {
+  it('is the largest default font size Chromium and Firefox let a reader set', () => {
+    expect(Typography.highestMaximumDefaultFontSize).toEqual({ numerator: 72n, denominator: 1n });
+  });
+});
+
+describe('highestMaximumFontSizeFactor', () => {
+  it('is a valid fraction', () => {
+    expect(Schema.is(Fraction.Fraction)(Typography.highestMaximumFontSizeFactor)).toBe(true);
+  });
+
+  it('is 9/2, the largest default font size over the default font size', () => {
+    expect(Typography.highestMaximumFontSizeFactor).toEqual({ numerator: 9n, denominator: 2n });
+  });
+});
+
+describe('lowestMaximumFontSizeFactor', () => {
+  it('is 1, as Safari lets a reader set no default font size', () => {
+    expect(Typography.lowestMaximumFontSizeFactor).toEqual(Fraction.one);
+  });
+});
+
 describe('minimumFontSize', () => {
   it('is the smallest size of the USWDS theme type scale in its default settings', () => {
     expect(Typography.minimumFontSize).toEqual({ numerator: 13n, denominator: 1n });
@@ -29,10 +51,14 @@ describe('maximumFontSize', () => {
     expect(Schema.is(Fraction.Fraction)(Typography.maximumFontSize)).toBe(true);
   });
 
-  it('fits a full-width character into the minimum viewport width when a reader sets the font size up to the maximum page zoom factor', () => {
+  it('is 640/9 CSS pixels', () => {
+    expect(Typography.maximumFontSize).toEqual({ numerator: 640n, denominator: 9n });
+  });
+
+  it('fits a full-width character into the minimum viewport width when a reader sets the largest default font size a browser allows', () => {
     const characterWidth = Fraction.multiply(
       Typography.maximumFontSize,
-      Fraction.multiply(Viewport.maximumPageZoomFactor, Typography.ideographAdvanceFactor),
+      Fraction.multiply(Typography.highestMaximumFontSizeFactor, Typography.ideographAdvanceFactor),
     );
 
     expect(characterWidth).toEqual(Viewport.minimumViewportWidth);
@@ -153,9 +179,9 @@ describe('maximumTextGrowthFactor', () => {
     const zoomedWidthAboveMinimum = Fraction.divide(
       Fraction.subtractUnsafe(
         Viewport.maximumViewportWidth,
-        Fraction.multiply(Viewport.maximumPageZoomFactor, Viewport.minimumViewportWidth),
+        Fraction.multiply(Viewport.lowestMaximumPageZoomFactor, Viewport.minimumViewportWidth),
       ),
-      Viewport.maximumPageZoomFactor,
+      Viewport.lowestMaximumPageZoomFactor,
     );
     const viewportRange = Fraction.subtractUnsafe(
       Viewport.maximumViewportWidth,
@@ -169,7 +195,7 @@ describe('maximumTextGrowthFactor', () => {
       ),
     );
 
-    expect(Fraction.multiply(Viewport.maximumPageZoomFactor, zoomedSize)).toEqual(
+    expect(Fraction.multiply(Viewport.lowestMaximumPageZoomFactor, zoomedSize)).toEqual(
       Fraction.multiply(Typography.textScaleFactor, growth),
     );
   });
@@ -189,7 +215,7 @@ describe('maximumTextGrowthFactor', () => {
       viewportRange,
     );
     const resizedSize = Fraction.sum(
-      Fraction.multiply(Viewport.maximumPageZoomFactor, intercept),
+      Fraction.multiply(Viewport.lowestMaximumPageZoomFactor, intercept),
       Fraction.multiply(slope, Viewport.maximumViewportWidth),
     );
 
@@ -394,7 +420,7 @@ describe('Step', () => {
       {
         path: ['minimumSize'],
         message:
-          'Expected a minimum size of at most 320/3 px, so that a full-width character fits the minimum viewport width of 320 px at a font size of 300 %, as WCAG 2.2 Reflow requires',
+          'Expected a minimum size of at most 640/9 px, so that a full-width character fits the minimum viewport width of 320 px at a font size of 450 %, as WCAG 2.2 Reflow requires',
       },
     ]);
   });
@@ -470,7 +496,7 @@ describe('scale', () => {
     });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 
-    expect(steps.map((step) => step.position)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(steps.map((step) => step.position)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
   });
 
   it('keeps every step growing by 1 to 8/5 and between the minimum and the maximum font size', () => {
@@ -540,9 +566,9 @@ describe('scale', () => {
       maximumBodyFontSize: { numerator: 20n, denominator: 1n },
     });
     const highest = Exit.isSuccess(exit) ? exit.value.at(-1) : undefined;
-    const nextMinimumSize = 16 * (6 / 5) ** 11;
+    const nextMinimumSize = 16 * (6 / 5) ** 9;
 
-    expect(highest?.position).toBe(10);
+    expect(highest?.position).toBe(8);
     expect(nextMinimumSize).toBeGreaterThan(Fraction.toNumber(Typography.maximumFontSize));
   });
 
@@ -554,10 +580,10 @@ describe('scale', () => {
     });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
     const previousMinimumSize = 16 * (780 / 781) ** 163;
-    const nextMinimumSize = 16 * (781 / 780) ** 1481;
+    const nextMinimumSize = 16 * (781 / 780) ** 1165;
 
     expect(steps.at(0)?.position).toBe(-162);
-    expect(steps.at(-1)?.position).toBe(1480);
+    expect(steps.at(-1)?.position).toBe(1164);
     expect(previousMinimumSize).toBeLessThan(Fraction.toNumber(Typography.minimumFontSize));
     expect(nextMinimumSize).toBeGreaterThan(Fraction.toNumber(Typography.maximumFontSize));
   });
