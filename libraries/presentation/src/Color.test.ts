@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from '@effect/vitest';
-import { Effect, Exit, Option, Schema, SchemaIssue } from 'effect';
+import { Effect, Exit, Option, pipe, Schema, SchemaIssue } from 'effect';
 
 import * as Color from '#src/Color';
 import * as Fraction from '#src/Fraction';
@@ -398,6 +398,73 @@ describe('contrast', () => {
       {
         path: ['background'],
         message: 'Expected a color within sRGB, as WCAG 2.2 defines contrast only there',
+      },
+    ]);
+  });
+});
+
+describe('reaches', () => {
+  it('reaches a ratio the exact colors meet, though the ratio JavaScript computes lies below it', () => {
+    const colors = { text: `oklch(${Math.cbrt(1 / 10)} 0 0)`, background: 'oklch(100% 0 0)' };
+    const contrast = Color.contrast(colors.text, colors.background);
+    const exit = Color.reaches(colors, 7);
+
+    expect(Exit.isSuccess(contrast) ? contrast.value : undefined).toBeLessThan(7);
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toBe(true);
+  });
+
+  it('reaches the largest contrast with black against white', () => {
+    const exit = Color.reaches(
+      { text: 'oklch(0% 0 0)', background: 'oklch(100% 0 0)' },
+      Color.maximumContrastRatio,
+    );
+
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toBe(true);
+  });
+
+  it('falls short of a ratio by more than rounding can account for', () => {
+    const exit = Color.reaches({ text: 'oklch(50% 0 0)', background: 'oklch(100% 0 0)' }, 7);
+
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toBe(false);
+  });
+
+  it('decides as verify decides', () => {
+    const step = {
+      minimumSize: Fraction.makeUnsafe(16n, 1n),
+      maximumSize: Fraction.makeUnsafe(20n, 1n),
+    };
+
+    for (const text of [
+      'oklch(0% 0 0)',
+      'oklch(40% 0 0)',
+      'oklch(50% 0 0)',
+      'oklch(45% 0.1 250)',
+    ]) {
+      const reached = Color.reaches({ text, background: 'oklch(100% 0 0)' }, 7);
+      const verified = Color.verify({ text, background: 'oklch(100% 0 0)', step, fontWeight: 400 });
+
+      expect(Exit.isSuccess(reached) ? reached.value : undefined).toBe(Exit.isSuccess(verified));
+    }
+  });
+
+  it('takes the ratio alone too, as pipe calls it', () => {
+    const exit = pipe({ text: 'oklch(0% 0 0)', background: 'oklch(100% 0 0)' }, Color.reaches(7));
+
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toBe(true);
+  });
+
+  it('rejects a ratio outside the range of the contrast WCAG 2.2 defines, with the reason', () => {
+    const exit = Color.reaches({ text: 'oklch(0% 0 0)', background: 'oklch(100% 0 0)' }, 25);
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['ratio'],
+        message:
+          'Expected a contrast ratio from 1:1 to 21:1, the range of the contrast WCAG 2.2 defines',
       },
     ]);
   });

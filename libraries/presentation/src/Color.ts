@@ -1,4 +1,4 @@
-import { Effect, Exit, Schema, SchemaIssue, SchemaTransformation, Struct } from 'effect';
+import { Effect, Exit, Function, Schema, SchemaIssue, SchemaTransformation, Struct } from 'effect';
 
 import * as Fluid from '#src/Fluid';
 import * as Fraction from '#src/Fraction';
@@ -384,19 +384,73 @@ const contrastRatio = (text: Color, background: Color): number =>
   (Math.max(relativeLuminance(text), relativeLuminance(background)) + contrastFlare) /
   (Math.min(relativeLuminance(text), relativeLuminance(background)) + contrastFlare);
 
+/** Whether the exact colors may have a contrast ratio of at least the given one: the largest contrast they may have once the rounding of both luminances is accounted for, raised by sixteen unit roundoffs, more than the flare and the six roundings of this quotient can take from it, so that a ratio is out of reach only when rounding cannot account for the shortfall. */
+const mayReach = (text: Color, background: Color, ratio: number): boolean =>
+  ((Math.max(
+    relativeLuminance(text) + luminanceError(text),
+    relativeLuminance(background) + luminanceError(background),
+  ) +
+    contrastFlare) /
+    (Math.max(
+      Math.min(
+        relativeLuminance(text) - luminanceError(text),
+        relativeLuminance(background) - luminanceError(background),
+      ),
+      0,
+    ) +
+      contrastFlare)) *
+    (1 + 16 * unitRoundoff) >=
+  ratio;
+
 /** A schema of the colors of a piece of text and its background. */
-const Colors = Schema.Struct({
+export const Colors = Schema.Struct({
   /** The color of the text. */
   text: Color,
   /** The color of the background. */
   background: Color,
 });
 
-/** The contrast ratio of text over its background as WCAG 2.2 defines it, or a failure naming the color that WCAG 2.2 gives no contrast. */
+/** The colors of a piece of text and its background, as they are written. */
+export type Colors = typeof Colors.Encoded;
+
+/** The contrast ratio of text over its background as WCAG 2.2 defines it, or a failure naming the color that WCAG 2.2 gives no contrast. The ratio is the one JavaScript computes, which may lie a few units in the last place from the ratio of the exact colors, so that black against white gives 20.999999999999986; whether it meets a ratio is decided by `reaches` or `verify`, which account for that rounding. */
 export const contrast = (text: string, background: string): Exit.Exit<number, Schema.SchemaError> =>
   Exit.map(Schema.decodeExit(Colors)({ text, background }, { errors: 'all' }), (colors) =>
     contrastRatio(colors.text, colors.background),
   );
+
+/** A schema of the colors of a piece of text and its background, and a contrast ratio from 1:1 to the largest WCAG 2.2 defines that they are to reach. */
+const Threshold = Schema.Struct({
+  /** The color of the text. */
+  text: Color,
+  /** The color of the background. */
+  background: Color,
+  /** The contrast ratio the colors are to reach. */
+  ratio: Schema.Finite.pipe(
+    Schema.check(
+      Schema.isBetween(
+        { minimum: 1, maximum: maximumContrastRatio },
+        {
+          message: `Expected a contrast ratio from 1:1 to ${maximumContrastRatio}:1, the range of the contrast WCAG 2.2 defines`,
+        },
+      ),
+    ),
+  ),
+});
+
+/** Whether text over its background reaches a contrast ratio as WCAG 2.2 defines it, decided as `verify` decides it: false only when the rounding of the computed ratio cannot account for its shortfall, so that colors whose exact contrast meets the ratio always reach it; or a failure with the reason when a color or the ratio is not valid. */
+export const reaches: {
+  (ratio: number): (colors: Colors) => Exit.Exit<boolean, Schema.SchemaError>;
+  (colors: Colors, ratio: number): Exit.Exit<boolean, Schema.SchemaError>;
+} = Function.dual(2, (colors: Colors, ratio: number): Exit.Exit<boolean, Schema.SchemaError> =>
+  Exit.map(
+    Schema.decodeExit(Threshold)(
+      { text: colors.text, background: colors.background, ratio },
+      { errors: 'all' },
+    ),
+    (threshold) => mayReach(threshold.text, threshold.background, threshold.ratio),
+  ),
+);
 
 /** A schema of the step of the type scale a piece of text is set in, without its position, which the contrast never reads. The check of the step is kept, as it reads the sizes alone: the step never shrinks, so that its size at the minimum viewport width is its smallest, the size the contrast it needs rests on. */
 const TextStep = Typography.Step.mapFields(Struct.omit(['position']), {
@@ -476,28 +530,13 @@ export class ContrastShortfall extends Schema.TaggedError<
   message: Schema.String,
 }) {}
 
-/** The contrast ratio of a pair; or a failure with the reason when the input is not valid, or a contrast shortfall when the pair falls short of what WCAG 2.2 Contrast (Enhanced) requires for its text, or of the stricter ratio the project asks for. */
+/** The contrast ratio of a pair; or a failure with the reason when the input is not valid, or a contrast shortfall when the pair falls short of what WCAG 2.2 Contrast (Enhanced) requires for its text, or of the stricter ratio the project asks for. A pair is refused only when rounding cannot account for its shortfall, so that a pair whose exact colors meet the ratio passes even when the ratio it returns, the one JavaScript computes, lies a few units in the last place below it. */
 export const verify = (pair: Pair): Exit.Exit<number, Schema.SchemaError | ContrastShortfall> =>
   Exit.match(Schema.decodeExit(Pair)(pair, { errors: 'all' }), {
     onFailure: Exit.failCause,
     onSuccess: (colors) => {
       const target = colors.minimumContrast ?? requiredContrast(colors.step, colors.fontWeight);
-      // The largest contrast the exact colors may have, so that a pair is refused only when rounding cannot account for its shortfall. Raised by sixteen unit roundoffs, more than the flare and the six roundings of this quotient can take from it.
-      return ((Math.max(
-        relativeLuminance(colors.text) + luminanceError(colors.text),
-        relativeLuminance(colors.background) + luminanceError(colors.background),
-      ) +
-        contrastFlare) /
-        (Math.max(
-          Math.min(
-            relativeLuminance(colors.text) - luminanceError(colors.text),
-            relativeLuminance(colors.background) - luminanceError(colors.background),
-          ),
-          0,
-        ) +
-          contrastFlare)) *
-        (1 + 16 * unitRoundoff) >=
-        target
+      return mayReach(colors.text, colors.background, target)
         ? Exit.succeed(contrastRatio(colors.text, colors.background))
         : Exit.fail(
             new ContrastShortfall({
