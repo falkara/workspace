@@ -9,6 +9,11 @@ export default defineConfig({
   },
   lint: {
     extends: [recommended],
+    rules: {
+      'typescript/consistent-type-assertions': ['error', { assertionStyle: 'never' }],
+      'typescript/no-explicit-any': 'error',
+      'typescript/no-non-null-assertion': 'error',
+    },
     options: {
       typeAware: true,
       typeCheck: true,
