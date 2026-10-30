@@ -1265,7 +1265,7 @@ describe('shade', () => {
     });
 
     expect(Exit.isSuccess(exit) ? exit.value : '').toBe(
-      'oklch(0.0869102395243317 0.035232653611955 0)',
+      'oklch(0.08691023952433169 0.035232653611955 0)',
     );
   });
 

@@ -821,9 +821,9 @@ export const shade = (brand: Brand): Exit.Exit<string, Schema.SchemaError | NoLe
               message: `Expected a background against which a shade of the color within sRGB reaches ${target}:1, the contrast ${colors.minimumContrast === undefined ? `WCAG 2.2 Contrast (Enhanced) requires for text of ${Math.round(Fraction.toNumber(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${colors.fontWeight}` : 'the project asks for'}`,
             }),
           )
-        : // Written in fixed notation, which CSS reads, rather than the exponent JavaScript uses for small numbers, without trailing zeros.
+        : // Written as JavaScript writes each number, the shortest form that reads back as the same number, with an exponent for a small one, which CSS reads as well, so that the shade read back is the one found.
           Exit.succeed(
-            `oklch(${closest[0].toFixed(16).replace(/\.?0+$/, '')} ${closest[1].toFixed(16).replace(/\.?0+$/, '')} ${closest[2]}${colors.color.hueUnit === 'deg' ? '' : colors.color.hueUnit})`,
+            `oklch(${closest[0]} ${closest[1]} ${closest[2]}${colors.color.hueUnit === 'deg' ? '' : colors.color.hueUnit})`,
           );
     },
   });
