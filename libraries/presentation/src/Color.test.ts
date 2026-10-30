@@ -76,6 +76,12 @@ describe('fullChroma', () => {
   });
 });
 
+describe('halfTurns', () => {
+  it('are the half turns of the units of angle CSS Values 4 defines but the radian', () => {
+    expect(Color.halfTurns).toEqual({ deg: 180, grad: 200, turn: 1 / 2 });
+  });
+});
+
 describe('luminanceWeights', () => {
   it('are the weights of the linear sRGB channels in WCAG 2.2 relative luminance', () => {
     expect(Color.luminanceWeights).toEqual([0.2126, 0.7152, 0.0722]);
@@ -167,6 +173,7 @@ describe('Color', () => {
       lightness: 0.64,
       chroma: 0.1,
       hue: 147,
+      hueUnit: 'deg',
       alpha: 1,
     });
   });
@@ -178,12 +185,13 @@ describe('Color', () => {
       lightness: 1,
       chroma: 0,
       hue: 0,
+      hueUnit: 'deg',
       alpha: 1,
     });
   });
 
-  it('encodes a color in fixed notation, which it decodes again into the same components', () => {
-    const decoded = Schema.decodeExit(Color.Color)('oklch(50% 0.0000001 147)');
+  it('encodes a color as JavaScript writes each number, which it decodes again into the same components', () => {
+    const decoded = Schema.decodeExit(Color.Color)('oklch(50% 0.0000001 1.5rad)');
     const encoded = Exit.isSuccess(decoded)
       ? Schema.encodeExit(Color.Color)(decoded.value)
       : undefined;
@@ -193,11 +201,91 @@ describe('Color', () => {
         : undefined;
 
     expect(encoded !== undefined && Exit.isSuccess(encoded) ? encoded.value : undefined).toBe(
-      'oklch(0.5 0.0000001 147 / 1)',
+      'oklch(0.5 1e-7 1.5rad / 1)',
     );
     expect(
       redecoded !== undefined && Exit.isSuccess(redecoded) ? redecoded.value : undefined,
     ).toEqual(Exit.isSuccess(decoded) ? decoded.value : undefined);
+  });
+
+  it('reads the name of the function in any case, as CSS reads it', () => {
+    const exit = Schema.decodeExit(Color.Color)('OKLCH(64% 0.17 147DEG)');
+
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual({
+      lightness: 0.64,
+      chroma: 0.17,
+      hue: 147,
+      hueUnit: 'deg',
+      alpha: 1,
+    });
+  });
+
+  it('reads a sign and an exponent as CSS Syntax reads a number', () => {
+    const exit = Schema.decodeExit(Color.Color)('oklch(+6.4e1% 1.7E-1 +147 / 1e0)');
+
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual({
+      lightness: 0.64,
+      chroma: 0.17,
+      hue: 147,
+      hueUnit: 'deg',
+      alpha: 1,
+    });
+  });
+
+  it('reads none as 0, as CSS Color 4 reads a missing component', () => {
+    const exit = Schema.decodeExit(Color.Color)('oklch(none none none)');
+
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual({
+      lightness: 0,
+      chroma: 0,
+      hue: 0,
+      hueUnit: 'deg',
+      alpha: 1,
+    });
+  });
+
+  it('clamps a negative lightness and chroma to 0, as CSS Color 4 does', () => {
+    const exit = Schema.decodeExit(Color.Color)('oklch(-10% -0.1 20)');
+
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual({
+      lightness: 0,
+      chroma: 0,
+      hue: 20,
+      hueUnit: 'deg',
+      alpha: 1,
+    });
+  });
+
+  it('clamps a negative alpha and an alpha of none to 0, which leaves the color translucent', () => {
+    for (const color of ['oklch(50% 0 0 / -1)', 'oklch(50% 0 0 / none)']) {
+      const exit = Schema.decodeExit(Color.Color)(color);
+
+      expect(
+        SchemaIssue.makeFormatterStandardSchemaV1()(
+          Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+        ).issues,
+      ).toEqual([
+        {
+          path: [],
+          message:
+            'Expected an opaque color, as WCAG 2.2 defines no contrast for a translucent one',
+        },
+      ]);
+    }
+  });
+
+  it('reads a hue in every unit of angle CSS Values 4 defines, each the same angle', () => {
+    const reference = Color.contrast('oklch(70% 0.1 180)', 'oklch(100% 0 0)');
+
+    expect(Exit.isSuccess(reference)).toBe(true);
+    for (const hue of ['180deg', '200grad', '0.5turn', `${Math.PI}rad`]) {
+      const exit = Color.contrast(`oklch(70% 0.1 ${hue})`, 'oklch(100% 0 0)');
+
+      expect(Exit.isSuccess(exit) ? exit.value : undefined).toBeCloseTo(
+        Exit.isSuccess(reference) ? reference.value : 0,
+        12,
+      );
+    }
   });
 
   it('rejects a color written otherwise', () => {
@@ -211,7 +299,7 @@ describe('Color', () => {
       {
         path: [],
         message:
-          'Expected a color written in oklch() as CSS Color 4 writes it, such as oklch(64% 0.17 147)',
+          'Expected a color written in oklch() as CSS Color 4 writes it, such as oklch(64% 0.17 147), with no math function or relative color',
       },
     ]);
   });
@@ -304,7 +392,7 @@ describe('contrast', () => {
       {
         path: ['text'],
         message:
-          'Expected a color written in oklch() as CSS Color 4 writes it, such as oklch(64% 0.17 147)',
+          'Expected a color written in oklch() as CSS Color 4 writes it, such as oklch(64% 0.17 147), with no math function or relative color',
       },
       {
         path: ['background'],
@@ -713,6 +801,32 @@ describe('Brand', () => {
 });
 
 describe('shade', () => {
+  it('writes the shade with the hue in the unit of angle of the brand color', () => {
+    const inDegrees = Color.shade({
+      color: 'oklch(64% 0.17 147)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        position: 0,
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
+      },
+      fontWeight: 400,
+    });
+    const inTurns = Color.shade({
+      color: 'oklch(64% 0.17 0.4turn)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        position: 0,
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
+      },
+      fontWeight: 400,
+    });
+
+    expect(Exit.isSuccess(inDegrees) ? inDegrees.value : undefined).toMatch(/ 147\)$/);
+    expect(Exit.isSuccess(inTurns) ? inTurns.value : undefined).toMatch(/ 0\.4turn\)$/);
+  });
+
   it('rejects a step smaller than the minimum font size', () => {
     const exit = Color.shade({
       color: 'oklch(50% 0 0)',

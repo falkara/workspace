@@ -119,6 +119,21 @@ export const maximumContrastRatio = (1 + contrastFlare) / contrastFlare;
  */
 export const unitRoundoff = Number.EPSILON / 2;
 
+/**
+ * The half turn in each unit of angle CSS Values 4 defines but the radian, whose half turn, π, no number holds exactly, so that a hue in these units is reduced to one turn exactly.
+ *
+ * @see https://www.w3.org/TR/css-values-4/#angles
+ */
+export const halfTurns: { readonly deg: number; readonly grad: number; readonly turn: number } = {
+  deg: 180,
+  grad: 200,
+  turn: 1 / 2,
+};
+
+/** The angle in radians of a hue in its unit of angle: reduced to one turn exactly and then turned into radians, or taken as it is when it is already in radians, as the cosine and the sine reduce any argument themselves. */
+const angleOf = (hue: number, hueUnit: 'deg' | 'grad' | 'rad' | 'turn'): number =>
+  hueUnit === 'rad' ? hue : ((hue % (2 * halfTurns[hueUnit])) * Math.PI) / halfTurns[hueUnit];
+
 /** The product of a matrix and a vector, each row summed from left to right as CSS Color 4 sums it. */
 const transform = ([first, second, third]: Matrix, [x, y, z]: Vector): Vector => [
   first[0] * x + first[1] * y + first[2] * z,
@@ -126,9 +141,14 @@ const transform = ([first, second, third]: Matrix, [x, y, z]: Vector): Vector =>
   third[0] * x + third[1] * y + third[2] * z,
 ];
 
-/** The linear sRGB channels of a color of the given lightness, chroma and hue in degrees, converted as CSS Color 4 does, the hue first reduced to one turn exactly so that no large hue loses precision in radians. */
-const linearSrgbOf = (lightness: number, chroma: number, hue: number): Vector => {
-  const h = ((hue % 360) * Math.PI) / 180;
+/** The linear sRGB channels of a color of the given lightness, chroma and hue in its unit of angle, converted as CSS Color 4 does, the hue first reduced to one turn exactly where its unit allows, so that no large hue loses precision in radians. */
+const linearSrgbOf = (
+  lightness: number,
+  chroma: number,
+  hue: number,
+  hueUnit: 'deg' | 'grad' | 'rad' | 'turn',
+): Vector => {
+  const h = angleOf(hue, hueUnit);
   const [long, medium, short] = transform(oklabToLms, [
     lightness,
     chroma * Math.cos(h),
@@ -144,7 +164,7 @@ const luminanceOf = ([red, green, blue]: Vector): number =>
   luminanceWeights[2] * Math.min(Math.max(blue, 0), 1);
 
 /** A bound on the absolute rounding error in the relative luminance of a color, carried through every step of its conversion by the rounding error analysis of Higham: each sum of products by the unit roundoff over the absolute values of its terms, each cosine, sine and power by one unit in the last place, and every error already made through the coefficients it meets. Doubled, so that rounding while computing the bound, a relative error of tens of unit roundoffs, cannot leave it below the error it bounds. */
-const luminanceError = ({ lightness, chroma, hue }: Color): number => {
+const luminanceError = ({ lightness, chroma, hue, hueUnit }: Color): number => {
   // The relative error left by n roundings, as Higham bounds it.
   const gamma = (n: number): number => (n * unitRoundoff) / (1 - n * unitRoundoff);
   // The error of a row of a matrix product: the error already in the vector through the coefficients it meets, and the rounding of the sum of products.
@@ -156,8 +176,12 @@ const luminanceError = ({ lightness, chroma, hue }: Color): number => {
   // The error of a cube of a value that carries an error, and the rounding of the power.
   const cubeError = (value: number, error: number): number =>
     (Math.abs(value) + error) ** 3 - Math.abs(value) ** 3 + 2 * unitRoundoff * Math.abs(value) ** 3;
-  const angle = ((hue % 360) * Math.PI) / 180;
-  const angleError = (unitRoundoff * Math.abs(hue) * Math.PI) / 180 + gamma(3) * Math.abs(angle);
+  const angle = angleOf(hue, hueUnit);
+  // A hue in radians is the angle itself, off by the rounding of the number it was read as; a hue in another unit is also off by the rounding of π and of the product and quotient that turn it into radians.
+  const angleError =
+    hueUnit === 'rad'
+      ? unitRoundoff * Math.abs(hue)
+      : (unitRoundoff * Math.abs(hue) * Math.PI) / halfTurns[hueUnit] + gamma(3) * Math.abs(angle);
   const lightnessError = gamma(2) * lightness;
   const chromaError = gamma(4) * chroma;
   const [cosine, sine] = [Math.cos(angle), Math.sin(angle)];
@@ -252,8 +276,10 @@ const Components = Schema.Struct({
   lightness: Schema.Finite,
   /** The chroma, 0 for a gray. */
   chroma: Schema.Finite,
-  /** The hue. Measured in degrees. */
+  /** The hue. Measured in its unit of angle. */
   hue: Schema.Finite,
+  /** The unit of angle the hue is written in, degrees when it is written as a number. */
+  hueUnit: Schema.Literals(['deg', 'grad', 'rad', 'turn']),
   /** The alpha, from 0 for transparent to 1 for opaque. */
   alpha: Schema.Finite,
 }).pipe(
@@ -265,20 +291,23 @@ const Components = Schema.Struct({
     ),
     Schema.makeFilter(
       (color) =>
-        isInGamut(linearSrgbOf(color.lightness, color.chroma, color.hue), gamutTolerance) ||
-        'Expected a color within sRGB, as WCAG 2.2 defines contrast only there',
+        isInGamut(
+          linearSrgbOf(color.lightness, color.chroma, color.hue, color.hueUnit),
+          gamutTolerance,
+        ) || 'Expected a color within sRGB, as WCAG 2.2 defines contrast only there',
     ),
   ),
 );
 
-/** A schema of a color written in oklch() as CSS Color 4 writes it, decoded once into its lightness, chroma, hue in degrees and alpha, the lightness and the alpha clamped to their range as CSS Color 4 clamps them, and checked to be opaque and within sRGB, where WCAG 2.2 defines contrast. Encoded in fixed notation, which it decodes again. */
+/** A schema of a color written in oklch() as CSS Color 4 writes it, its function named in any case, each component a number, a percentage or none, the hue a number or an angle in any unit, apart from math functions and relative colors, which name no value until a browser computes them. Decoded once into its lightness, chroma, hue and alpha, none read as 0 and each component clamped to its range as CSS Color 4 clamps it, and checked to be opaque and within sRGB, where WCAG 2.2 defines contrast. Encoded as JavaScript writes each number, which it decodes again into the same components. */
 export const Color = Schema.String.pipe(
   Schema.decodeTo(
     Components,
     SchemaTransformation.transformEffect({
       decode: (color, options) => {
+        // A number as CSS Syntax reads it, a sign, a whole or a decimal part, and an exponent each optional, and whitespace as CSS Syntax counts it.
         const match =
-          /^oklch\(\s*(\d*\.?\d+)(%?)\s+(\d*\.?\d+)(%?)\s+(-?\d*\.?\d+)(?:deg)?\s*(?:\/\s*(\d*\.?\d+)(%?)\s*)?\)$/.exec(
+          /^oklch\([\t\n\f\r ]*(?:([+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?)(%)?|none)[\t\n\f\r ]+(?:([+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?)(%)?|none)[\t\n\f\r ]+(?:([+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?)(deg|grad|rad|turn)?|none)[\t\n\f\r ]*(?:(\/)[\t\n\f\r ]*(?:([+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?)(%)?|none)[\t\n\f\r ]*)?\)$/i.exec(
             color,
           );
         if (match === null) {
@@ -286,39 +315,69 @@ export const Color = Schema.String.pipe(
             new SchemaIssue.InvalidValue(
               {
                 message:
-                  'Expected a color written in oklch() as CSS Color 4 writes it, such as oklch(64% 0.17 147)',
+                  'Expected a color written in oklch() as CSS Color 4 writes it, such as oklch(64% 0.17 147), with no math function or relative color',
               },
               color,
               options,
             ),
           );
         }
-        const [, lightness, lightnessPercent, chroma, chromaPercent, hue, alpha, alphaPercent] =
-          match;
+        const [
+          ,
+          lightness,
+          lightnessPercent,
+          chroma,
+          chromaPercent,
+          hue,
+          hueUnit,
+          slash,
+          alpha,
+          alphaPercent,
+        ] = match;
         return Effect.succeed({
-          lightness: Math.min(Number(lightness) / (lightnessPercent === '%' ? 100 : 1), 1),
+          lightness:
+            lightness === undefined
+              ? 0
+              : Math.min(Math.max(Number(lightness) / (lightnessPercent === '%' ? 100 : 1), 0), 1),
           chroma:
-            (Number(chroma) * (chromaPercent === '%' ? fullChroma : 1)) /
-            (chromaPercent === '%' ? 100 : 1),
-          hue: Number(hue),
+            chroma === undefined
+              ? 0
+              : Math.max(
+                  (Number(chroma) * (chromaPercent === '%' ? fullChroma : 1)) /
+                    (chromaPercent === '%' ? 100 : 1),
+                  0,
+                ),
+          hue: hue === undefined ? 0 : Number(hue),
+          hueUnit:
+            hueUnit?.toLowerCase() === 'grad'
+              ? 'grad'
+              : hueUnit?.toLowerCase() === 'rad'
+                ? 'rad'
+                : hueUnit?.toLowerCase() === 'turn'
+                  ? 'turn'
+                  : 'deg',
           alpha:
-            alpha === undefined ? 1 : Math.min(Number(alpha) / (alphaPercent === '%' ? 100 : 1), 1),
+            slash === undefined
+              ? 1
+              : alpha === undefined
+                ? 0
+                : Math.min(Math.max(Number(alpha) / (alphaPercent === '%' ? 100 : 1), 0), 1),
         });
       },
       encode: (color) =>
         Effect.succeed(
-          `oklch(${color.lightness.toFixed(16).replace(/\.?0+$/, '')} ${color.chroma.toFixed(16).replace(/\.?0+$/, '')} ${color.hue.toFixed(16).replace(/\.?0+$/, '')} / ${color.alpha.toFixed(16).replace(/\.?0+$/, '')})`,
+          `oklch(${color.lightness} ${color.chroma} ${color.hue}${color.hueUnit === 'deg' ? '' : color.hueUnit} / ${color.alpha})`,
         ),
     }),
   ),
 );
 
-/** A color with its lightness, chroma, hue in degrees and alpha, opaque and within sRGB. */
+/** A color with its lightness, chroma, hue in its unit of angle and alpha, opaque and within sRGB. */
 export type Color = typeof Color.Type;
 
 /** The relative luminance of a color as WCAG 2.2 defines it, its linear sRGB channels weighted and held within their range. */
 const relativeLuminance = (color: Color): number =>
-  luminanceOf(linearSrgbOf(color.lightness, color.chroma, color.hue));
+  luminanceOf(linearSrgbOf(color.lightness, color.chroma, color.hue, color.hueUnit));
 
 /** The contrast ratio of two colors as WCAG 2.2 defines it, the lighter over the darker with the flare added to both. */
 const contrastRatio = (text: Color, background: Color): number =>
@@ -484,20 +543,20 @@ const boundary = (holds: (value: number) => boolean, inside: number, outside: nu
       ? boundary(holds, (inside + outside) / 2, outside)
       : boundary(holds, inside, (inside + outside) / 2);
 
-/** The lightness, chroma and hue in degrees of the shade of a brand color closest to it by deltaEOK that reaches the contrast ratio against the background: its hue kept, and its chroma kept or, where sRGB cannot hold it at that lightness, reduced at constant lightness and hue to the edge of sRGB, the reduction every gamut mapping algorithm of CSS Color 4 aims at, reached exactly so that the lightness and hue the contrast rests on stay exact; or none when no shade reaches it. */
+/** The lightness, chroma and hue, in the unit of angle the brand color is written in, of the shade of a brand color closest to it by deltaEOK that reaches the contrast ratio against the background: its hue kept, and its chroma kept or, where sRGB cannot hold it at that lightness, reduced at constant lightness and hue to the edge of sRGB, the reduction every gamut mapping algorithm of CSS Color 4 aims at, reached exactly so that the lightness and hue the contrast rests on stay exact; or none when no shade reaches it. */
 const closestShade = (
   color: Color,
   background: Color,
   target: number,
 ): readonly [number, number, number] | undefined => {
-  const { lightness, chroma, hue } = color;
+  const { lightness, chroma, hue, hueUnit } = color;
   const chromaAt = (shade: number): number =>
     // Reduced strictly within sRGB, so that the shade stays within it once written and read again.
-    isInGamut(linearSrgbOf(shade, chroma, hue), 0)
+    isInGamut(linearSrgbOf(shade, chroma, hue, hueUnit), 0)
       ? chroma
-      : boundary((reduced) => isInGamut(linearSrgbOf(shade, reduced, hue), 0), 0, chroma);
+      : boundary((reduced) => isInGamut(linearSrgbOf(shade, reduced, hue, hueUnit), 0), 0, chroma);
   const luminanceAt = (shade: number): number =>
-    luminanceOf(linearSrgbOf(shade, chromaAt(shade), hue));
+    luminanceOf(linearSrgbOf(shade, chromaAt(shade), hue, hueUnit));
   const backgroundLuminance = relativeLuminance(background);
   const reaches = (shade: number): boolean =>
     (Math.max(luminanceAt(shade), backgroundLuminance) + contrastFlare) /
@@ -551,7 +610,7 @@ export const shade = (brand: Brand): Exit.Exit<string, Schema.SchemaError | NoLe
           )
         : // Written in fixed notation, which CSS reads, rather than the exponent JavaScript uses for small numbers, without trailing zeros.
           Exit.succeed(
-            `oklch(${closest[0].toFixed(16).replace(/\.?0+$/, '')} ${closest[1].toFixed(16).replace(/\.?0+$/, '')} ${closest[2]})`,
+            `oklch(${closest[0].toFixed(16).replace(/\.?0+$/, '')} ${closest[1].toFixed(16).replace(/\.?0+$/, '')} ${closest[2]}${colors.color.hueUnit === 'deg' ? '' : colors.color.hueUnit})`,
           );
     },
   });
