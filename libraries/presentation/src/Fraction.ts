@@ -1,5 +1,6 @@
 import {
   BigInt,
+  Brand,
   Equivalence as Equ,
   Exit,
   Function,
@@ -48,6 +49,9 @@ export const Fraction = Schema.Struct({
 /** A ratio of two positive whole numbers in lowest terms, which stays positive and in lowest terms under every operation here, so that none of them can fail. */
 export type Fraction = typeof Fraction.Type;
 
+/** The fraction of fields known to be positive and in lowest terms, branded without a check, as every operation here keeps both by construction. */
+const branded = Brand.nominal<Fraction>();
+
 /** The fraction of the numerator over the denominator in lowest terms, or a failure with the reason when either is not positive. */
 export const make = (
   numerator: bigint,
@@ -61,11 +65,11 @@ export const makeUnsafe = <Numerator extends bigint, Denominator extends bigint>
   denominator: `${Denominator}` extends `-${string}` | '0' ? never : Denominator,
 ): Fraction => {
   const divisor = BigInt.gcd(numerator, denominator);
-  return (
+  return branded(
     divisor === 0n
       ? { numerator, denominator }
-      : { numerator: numerator / divisor, denominator: denominator / divisor }
-  ) as Fraction;
+      : { numerator: numerator / divisor, denominator: denominator / divisor },
+  );
 };
 
 /** The fraction 1. */
@@ -80,10 +84,10 @@ export const sum: {
   const numerator =
     self.numerator * (that.denominator / divisor) + that.numerator * (self.denominator / divisor);
   const remainingDivisor = BigInt.gcd(numerator, divisor);
-  return {
+  return branded({
     numerator: numerator / remainingDivisor,
     denominator: (self.denominator / divisor) * (that.denominator / remainingDivisor),
-  } as Fraction;
+  });
 });
 
 /** The difference of the first fraction less the second in lowest terms, or a failure with the reason when the second is not smaller, as a difference that is not positive is no fraction. */
@@ -106,10 +110,10 @@ export const subtractUnsafe: {
   const numerator =
     self.numerator * (that.denominator / divisor) - that.numerator * (self.denominator / divisor);
   const remainingDivisor = BigInt.gcd(numerator, divisor);
-  return {
+  return branded({
     numerator: numerator / remainingDivisor,
     denominator: (self.denominator / divisor) * (that.denominator / remainingDivisor),
-  } as Fraction;
+  });
 });
 
 /** The product of two fractions in lowest terms, each numerator cancelled against the other denominator before they multiply, so that no divisor is sought between two large products. */
@@ -119,10 +123,10 @@ export const multiply: {
 } = Function.dual(2, (self: Fraction, that: Fraction): Fraction => {
   const selfDivisor = BigInt.gcd(self.numerator, that.denominator);
   const thatDivisor = BigInt.gcd(that.numerator, self.denominator);
-  return {
+  return branded({
     numerator: (self.numerator / selfDivisor) * (that.numerator / thatDivisor),
     denominator: (self.denominator / thatDivisor) * (that.denominator / selfDivisor),
-  } as Fraction;
+  });
 });
 
 /** The quotient of two fractions in lowest terms, the numerators and the denominators cancelled against each other before they multiply, so that no divisor is sought between two large products. */
@@ -132,25 +136,25 @@ export const divide: {
 } = Function.dual(2, (self: Fraction, that: Fraction): Fraction => {
   const numeratorDivisor = BigInt.gcd(self.numerator, that.numerator);
   const denominatorDivisor = BigInt.gcd(self.denominator, that.denominator);
-  return {
+  return branded({
     numerator: (self.numerator / numeratorDivisor) * (that.denominator / denominatorDivisor),
     denominator: (self.denominator / denominatorDivisor) * (that.numerator / numeratorDivisor),
-  } as Fraction;
+  });
 });
 
 /** The fraction raised to a whole exponent, negative exponents inverting it, in lowest terms as the powers of numbers without a common divisor have none. */
 export const pow: {
   (exponent: bigint): (self: Fraction) => Fraction;
   (self: Fraction, exponent: bigint): Fraction;
-} = Function.dual(
-  2,
-  (self: Fraction, exponent: bigint): Fraction =>
-    (exponent < 0n
+} = Function.dual(2, (self: Fraction, exponent: bigint): Fraction =>
+  branded(
+    exponent < 0n
       ? { numerator: self.denominator ** -exponent, denominator: self.numerator ** -exponent }
       : {
           numerator: self.numerator ** exponent,
           denominator: self.denominator ** exponent,
-        }) as Fraction,
+        },
+  ),
 );
 
 /** The order of fractions by value, compared through cross products, so that no division rounds them. */
