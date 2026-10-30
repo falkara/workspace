@@ -58,12 +58,15 @@ const Sizes = Schema.Struct({
   ),
 );
 
-/** The CSS clamp() value that changes linearly from the minimum size at the minimum viewport width to the maximum size at the maximum viewport width, or a failure when a size is not a positive fraction or when the value would shrink or grow by more than the maximum text growth factor. Sizes measured in CSS pixels. */
+/** The CSS clamp() value that changes linearly from the minimum size at the minimum viewport width to the maximum size at the maximum viewport width, or the rem length alone when both sizes are written alike and the value never changes; or a failure when a size is not a positive fraction or when the value would shrink or grow by more than the maximum text growth factor. Sizes measured in CSS pixels. */
 export const clamp = (
   minimumSize: typeof Fraction.Fraction.Encoded,
   maximumSize: typeof Fraction.Fraction.Encoded,
 ): Exit.Exit<string, Schema.SchemaError> =>
   Exit.map(Schema.decodeExit(Sizes)({ minimumSize, maximumSize }, { errors: 'all' }), (sizes) => {
+    if (rem(Fraction.toNumber(sizes.minimumSize)) === rem(Fraction.toNumber(sizes.maximumSize))) {
+      return rem(Fraction.toNumber(sizes.minimumSize));
+    }
     const slope =
       (Fraction.toNumber(sizes.maximumSize) - Fraction.toNumber(sizes.minimumSize)) /
       Fraction.toNumber(

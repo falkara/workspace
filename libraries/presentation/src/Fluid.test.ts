@@ -98,6 +98,21 @@ describe('vw', () => {
 });
 
 describe('clamp', () => {
+  it('writes a value that never changes as its rem length alone', () => {
+    const exit = Fluid.clamp(Fraction.makeUnsafe(16n, 1n), Fraction.makeUnsafe(16n, 1n));
+
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toBe('1rem');
+  });
+
+  it('writes a value whose sizes are written alike as their rem length alone', () => {
+    const exit = Fluid.clamp(
+      Fraction.makeUnsafe(16n, 1n),
+      Fraction.makeUnsafe(16_000_000_001n, 1_000_000_000n),
+    );
+
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toBe('1rem');
+  });
+
   it('takes sizes written as plain fractions and reduces them', () => {
     const exit = Fluid.clamp(
       { numerator: 32n, denominator: 2n },
