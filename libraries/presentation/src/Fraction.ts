@@ -50,8 +50,11 @@ export const make = (
 ): Exit.Exit<Fraction, Schema.SchemaError> =>
   Schema.decodeExit(Fraction)({ numerator, denominator }, { errors: 'all' });
 
-/** The fraction of a numerator and a denominator known to be positive, such as the constants of this library, in lowest terms. Nothing is checked, so a numerator or a denominator that is not positive gives a value that breaks every promise of the type; `make` checks them. */
-export const makeUnsafe = (numerator: bigint, denominator: bigint): Fraction => {
+/** The fraction of a numerator and a denominator known to be positive, such as the constants of this library, in lowest terms. A literal that is not positive is refused by its type as the code is written, but nothing is checked as it runs, so a computed numerator or denominator that is not positive gives a value that breaks every promise of the type; `make` checks them. */
+export const makeUnsafe = <Numerator extends bigint, Denominator extends bigint>(
+  numerator: `${Numerator}` extends `-${string}` | '0' ? never : Numerator,
+  denominator: `${Denominator}` extends `-${string}` | '0' ? never : Denominator,
+): Fraction => {
   const divisor = greatestCommonDivisor(numerator, denominator);
   return (
     divisor === 0n

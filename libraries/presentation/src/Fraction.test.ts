@@ -75,6 +75,15 @@ describe('make', () => {
 });
 
 describe('makeUnsafe', () => {
+  it('refuses a literal that is not positive as the code is written', () => {
+    // @ts-expect-error A negative numerator is refused by its type.
+    const negative = () => Fraction.makeUnsafe(-1n, 2n);
+    // @ts-expect-error A denominator of 0 is refused by its type.
+    const zero = () => Fraction.makeUnsafe(1n, 0n);
+
+    expect([negative, zero]).toHaveLength(2);
+  });
+
   it('reduces the ratio to lowest terms', () => {
     expect(Fraction.makeUnsafe(12n, 10n)).toEqual({ numerator: 6n, denominator: 5n });
   });
