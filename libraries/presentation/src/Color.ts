@@ -163,10 +163,12 @@ const luminanceOf = ([red, green, blue]: Vector): number =>
   luminanceWeights[1] * Math.min(Math.max(green, 0), 1) +
   luminanceWeights[2] * Math.min(Math.max(blue, 0), 1);
 
-/** A bound on the absolute rounding error in the relative luminance of a color, carried through every step of its conversion by the rounding error analysis of Higham: each sum of products by the unit roundoff over the absolute values of its terms, each cosine, sine and power by one unit in the last place, and every error already made through the coefficients it meets. Doubled, so that rounding while computing the bound, a relative error of tens of unit roundoffs, cannot leave it below the error it bounds. */
-const luminanceError = ({ lightness, chroma, hue, hueUnit }: Color): number => {
-  // The relative error left by n roundings, as Higham bounds it.
-  const gamma = (n: number): number => (n * unitRoundoff) / (1 - n * unitRoundoff);
+/** The relative error left by a number of roundings, as Higham bounds it. */
+const gamma = (roundings: number): number =>
+  (roundings * unitRoundoff) / (1 - roundings * unitRoundoff);
+
+/** A bound on the absolute rounding error in each linear sRGB channel of a color, carried through every step of its conversion by the rounding error analysis of Higham: each sum of products by the unit roundoff over the absolute values of its terms, each cosine, sine and power by one unit in the last place, and every error already made through the coefficients it meets. */
+const channelErrors = ({ lightness, chroma, hue, hueUnit }: Color): Vector => {
   // The error of a row of a matrix product: the error already in the vector through the coefficients it meets, and the rounding of the sum of products.
   const rowError = (row: Vector, [x, y, z]: Vector, [dx, dy, dz]: Vector): number =>
     Math.abs(row[0]) * dx +
@@ -213,13 +215,17 @@ const luminanceError = ({ lightness, chroma, hue, hueUnit }: Color): number => {
     rowError(lmsToXyz[1], lms, lmsError),
     rowError(lmsToXyz[2], lms, lmsError),
   ];
-  const channels = transform(xyzToLinearSrgb, xyz);
-  const channelError: Vector = [
+  return [
     rowError(xyzToLinearSrgb[0], xyz, xyzError),
     rowError(xyzToLinearSrgb[1], xyz, xyzError),
     rowError(xyzToLinearSrgb[2], xyz, xyzError),
   ];
-  // Holding a channel within its range moves it no further than its error.
+};
+
+/** A bound on the absolute rounding error in the relative luminance of a color: the error of each linear sRGB channel through its weight, and the rounding of the weighted sum, as holding a channel within its range moves it no further than its error. Doubled, so that rounding while computing the bound, a relative error of tens of unit roundoffs, cannot leave it below the error it bounds. */
+const luminanceError = (color: Color): number => {
+  const channels = linearSrgbOf(color.lightness, color.chroma, color.hue, color.hueUnit);
+  const channelError = channelErrors(color);
   return (
     2 *
     (luminanceWeights[0] * channelError[0] +
@@ -269,6 +275,54 @@ const encoded = (channel: number): number =>
 /** Whether linear sRGB channels lie within sRGB once encoded, up to a tolerance. */
 const isInGamut = (channels: ReadonlyArray<number>, tolerance: number): boolean =>
   channels.every((channel) => encoded(channel) >= -tolerance && encoded(channel) <= 1 + tolerance);
+
+/**
+ * The gamma-encoded sRGB value up to which the sRGB transfer function reads a channel as linear.
+ *
+ * @see https://www.w3.org/TR/css-color-4/#color-conversion-code
+ */
+export const encodedTransferThreshold = 0.04045;
+
+/** The linear sRGB value of a gamma-encoded channel within its range, as the sRGB transfer function reads it. */
+const decoded = (channel: number): number =>
+  channel <= encodedTransferThreshold
+    ? channel / transferSlope
+    : ((channel + transferOffset) / (1 + transferOffset)) ** transferGamma;
+
+/** The relative luminance of a color once each of its gamma-encoded sRGB channels is rounded to the nearest of the given number of steps, as a display or a tool that holds channels in whole steps shows and measures it: the least, as rounded, and the largest it may have. A channel whose encoded value lies within its rounding error of the middle between two steps may round to either, so the least and the largest take both: the error of its linear value, doubled as for the luminance, and sixty-four unit roundoffs of a step, more than encoding the value and scaling it to steps can take from it. */
+const roundedLuminances = (color: Color, steps: number): Vector => {
+  const channels = linearSrgbOf(color.lightness, color.chroma, color.hue, color.hueUnit);
+  const errors = channelErrors(color);
+  // The step a channel rounds to once its linear value is moved by its error to one side, or not at all.
+  const stepAt = (channel: number, error: number, side: number): number =>
+    Math.min(
+      Math.max(
+        Math.round(
+          encoded(Math.min(Math.max(channel + side * 2 * error, 0), 1)) * steps +
+            side * 64 * unitRoundoff * steps,
+        ),
+        0,
+      ),
+      steps,
+    );
+  // The relative luminance of the channels rounded toward one side.
+  const luminanceAt = (side: number): number =>
+    luminanceWeights[0] * decoded(stepAt(channels[0], errors[0], side) / steps) +
+    luminanceWeights[1] * decoded(stepAt(channels[1], errors[1], side) / steps) +
+    luminanceWeights[2] * decoded(stepAt(channels[2], errors[2], side) / steps);
+  return [luminanceAt(-1), luminanceAt(0), luminanceAt(1)];
+};
+
+/** The relative error of the relative luminance of channels rounded to steps, computed: dividing a step, adding the offset, the offset added to 1 and dividing by it round four times, which the power of 2.4 makes less than ten unit roundoffs and rounds once more by two; weighting and adding the channels round three times more, sixteen in all. */
+const roundedLuminanceError = gamma(16);
+
+/** The two luminances, one from each range, closest to each other, at which the contrast of the two ranges is least: the top of the darker range and the bottom of the lighter, or a luminance both ranges hold. */
+const leastApart = (text: Vector, background: Vector): readonly [number, number] =>
+  text[2] < background[0]
+    ? [text[2], background[0]]
+    : background[2] < text[0]
+      ? [text[0], background[2]]
+      : [Math.max(text[0], background[0]), Math.max(text[0], background[0])];
 
 /** A schema of the components of an oklch() color as CSS Color 4 defines them, opaque and within sRGB, where WCAG 2.2 defines contrast. */
 const Components = Schema.Struct({
@@ -385,36 +439,110 @@ const contrastRatio = (text: Color, background: Color): number =>
   (Math.min(relativeLuminance(text), relativeLuminance(background)) + contrastFlare);
 
 /**
- * Whether the exact colors may have a contrast ratio of at least the given one, so that a ratio is out of reach only when rounding cannot account for the shortfall. The exact colors are the colors the matrices of CSS Color 4 convert as they are written, computed without rounding: by those matrices white has a relative luminance of 0.99999999999999941 and black against white a contrast ratio of 20.999999999999987, as the matrices hold the conversion of Oklab to sixteen digits.
+ * Whether colors of the given relative luminances, each off by at most the given rounding error, may have a contrast ratio of at least the given one, so that a ratio is out of reach only when rounding cannot account for the shortfall. The exact colors are the colors the matrices of CSS Color 4 convert as they are written, computed without rounding: by those matrices white has a relative luminance of 0.99999999999999941 and black against white a contrast ratio of 20.999999999999987, as the matrices hold the conversion of Oklab to sixteen digits.
  *
  * The largest contrast the exact colors may have is the quotient of the largest luminance and the smallest, each moved by its rounding error, with the flare added to both. Computing it rounds five times: the luminance and its error added in the numerator and in the denominator, the flare added to each, and the quotient, so that it lies below the exact quotient by a relative error of at most five unit roundoffs and their products. Raising it by sixteen unit roundoffs, whose product rounds once more, leaves it above the exact quotient with ten unit roundoffs to spare.
  */
-const mayReach = (text: Color, background: Color, ratio: number): boolean =>
-  ((Math.max(
-    relativeLuminance(text) + luminanceError(text),
-    relativeLuminance(background) + luminanceError(background),
-  ) +
-    contrastFlare) /
-    (Math.max(
-      Math.min(
-        relativeLuminance(text) - luminanceError(text),
-        relativeLuminance(background) - luminanceError(background),
-      ),
-      0,
-    ) +
-      contrastFlare)) *
+const mayReachLuminances = (
+  text: number,
+  textError: number,
+  background: number,
+  backgroundError: number,
+  ratio: number,
+): boolean =>
+  ((Math.max(text + textError, background + backgroundError) + contrastFlare) /
+    (Math.max(Math.min(text - textError, background - backgroundError), 0) + contrastFlare)) *
     (1 + 16 * unitRoundoff) >=
   ratio;
 
-/** A schema of the colors of a piece of text and its background. */
+/** Whether colors of the given relative luminances, each off by at most the given rounding error, certainly have a contrast ratio of at least the given one, so that a ratio is reached only when no rounding can account for reaching it. The smallest contrast the exact colors may have is the quotient of the smallest luminance the lighter may have and the largest the darker may have, with the flare added to both. Computing it rounds five times as the largest does, so that it lies above the exact quotient by a relative error of at most five unit roundoffs and their products; lowering it by sixteen unit roundoffs, whose product rounds once more, leaves it below the exact quotient with ten unit roundoffs to spare. */
+const mustReachLuminances = (
+  text: number,
+  textError: number,
+  background: number,
+  backgroundError: number,
+  ratio: number,
+): boolean =>
+  ((Math.max(text - textError, background - backgroundError) + contrastFlare) /
+    (Math.min(text + textError, background + backgroundError) + contrastFlare)) *
+    (1 - 16 * unitRoundoff) >=
+  ratio;
+
+/** Whether the exact colors may have a contrast ratio of at least the given one, so that a ratio is out of reach only when rounding cannot account for the shortfall. */
+const mayReach = (text: Color, background: Color, ratio: number): boolean =>
+  mayReachLuminances(
+    relativeLuminance(text),
+    luminanceError(text),
+    relativeLuminance(background),
+    luminanceError(background),
+    ratio,
+  );
+
+/** Whether colors whose channels are rounded to the given number of steps may reach a ratio at the rounding that gives the least contrast, so that a pair whose channel lies on the edge between two steps passes only when it passes rounded either way, and otherwise is refused only when rounding cannot account for the shortfall. */
+const mayReachRounded = (text: Color, background: Color, steps: number, ratio: number): boolean => {
+  const [textLuminance, backgroundLuminance] = leastApart(
+    roundedLuminances(text, steps),
+    roundedLuminances(background, steps),
+  );
+  return mayReachLuminances(
+    textLuminance,
+    roundedLuminanceError * textLuminance,
+    backgroundLuminance,
+    roundedLuminanceError * backgroundLuminance,
+    ratio,
+  );
+};
+
+/** Whether colors whose channels are rounded to the given number of steps certainly reach a ratio, however a channel on the edge between two steps rounds and whatever rounding takes from the computed contrast. */
+const mustReachRounded = (
+  text: Color,
+  background: Color,
+  steps: number,
+  ratio: number,
+): boolean => {
+  const [textLuminance, backgroundLuminance] = leastApart(
+    roundedLuminances(text, steps),
+    roundedLuminances(background, steps),
+  );
+  return mustReachLuminances(
+    textLuminance,
+    roundedLuminanceError * textLuminance,
+    backgroundLuminance,
+    roundedLuminanceError * backgroundLuminance,
+    ratio,
+  );
+};
+
+/** The contrast ratio of two colors as WCAG 2.2 defines it once each of their channels is rounded to the nearest of the given number of steps, as a display or a tool that holds channels in whole steps computes it. */
+const roundedContrastRatio = (text: Color, background: Color, steps: number): number =>
+  (Math.max(roundedLuminances(text, steps)[1], roundedLuminances(background, steps)[1]) +
+    contrastFlare) /
+  (Math.min(roundedLuminances(text, steps)[1], roundedLuminances(background, steps)[1]) +
+    contrastFlare);
+
+/** A schema of the number of bits each sRGB channel is held in by a display or a tool that colors are judged on, from 1 to 16, the most an image format such as PNG holds, so that its steps are whole numbers a number holds exactly. */
+const ChannelBits = Schema.Int.pipe(
+  Schema.check(
+    Schema.isBetween(
+      { minimum: 1, maximum: 16 },
+      {
+        message: 'Expected from 1 to 16 bits per channel, as displays and image formats hold them',
+      },
+    ),
+  ),
+);
+
+/** A schema of the colors of a piece of text and its background, and the bits per channel of a display or a tool they are judged on, which rounds each channel to its steps; the exact colors are judged when none is given. */
 export const Colors = Schema.Struct({
   /** The color of the text. */
   text: Color,
   /** The color of the background. */
   background: Color,
+  /** The bits per sRGB channel of a display or a tool the colors are judged on, such as 8 for a color written in hex. */
+  channelBits: Schema.optional(ChannelBits),
 });
 
-/** The colors of a piece of text and its background, as they are written. */
+/** The colors of a piece of text and its background, and the bits per channel they are judged on, as they are written. */
 export type Colors = typeof Colors.Encoded;
 
 /** The contrast ratio of text over its background as WCAG 2.2 defines it, or a failure naming the color that WCAG 2.2 gives no contrast. The ratio is the one JavaScript computes, which may lie a few units in the last place from the ratio of the exact colors, the colors the matrices of CSS Color 4 convert as they are written, computed without rounding: black against white gives 20.999999999999986, the number nearest to the 20.999999999999987 the exact colors give, as the matrices hold the conversion of Oklab to sixteen digits. Whether it meets a ratio is decided by `reaches` or `verify`, which account for that rounding. */
@@ -423,12 +551,9 @@ export const contrast = (text: string, background: string): Exit.Exit<number, Sc
     contrastRatio(colors.text, colors.background),
   );
 
-/** A schema of the colors of a piece of text and its background, and a contrast ratio from 1:1 to the largest WCAG 2.2 defines that they are to reach. */
+/** A schema of the colors of a piece of text and its background, the bits per channel they are judged on, and a contrast ratio from 1:1 to the largest WCAG 2.2 defines that they are to reach. */
 const Threshold = Schema.Struct({
-  /** The color of the text. */
-  text: Color,
-  /** The color of the background. */
-  background: Color,
+  ...Colors.fields,
   /** The contrast ratio the colors are to reach. */
   ratio: Schema.Finite.pipe(
     Schema.check(
@@ -442,17 +567,20 @@ const Threshold = Schema.Struct({
   ),
 });
 
-/** Whether text over its background reaches a contrast ratio as WCAG 2.2 defines it, decided as `verify` decides it: false only when the rounding of the computed ratio cannot account for its shortfall, so that colors whose exact contrast meets the ratio always reach it, the exact colors being the colors the matrices of CSS Color 4 convert as they are written, computed without rounding; or a failure with the reason when a color or the ratio is not valid. */
+/** Whether text over its background reaches a contrast ratio as WCAG 2.2 defines it, decided as `verify` decides it: false only when the rounding of the computed ratio cannot account for its shortfall, so that colors whose exact contrast meets the ratio always reach it, the exact colors being the colors the matrices of CSS Color 4 convert as they are written, computed without rounding; or a failure with the reason when a color or the ratio is not valid. With bits per channel, the colors are judged as a display or a tool holding channels in that many bits shows and measures them, each channel rounded to the nearest step, and a channel on the edge between two steps must reach the ratio rounded either way. */
 export const reaches: {
   (ratio: number): (colors: Colors) => Exit.Exit<boolean, Schema.SchemaError>;
   (colors: Colors, ratio: number): Exit.Exit<boolean, Schema.SchemaError>;
 } = Function.dual(2, (colors: Colors, ratio: number): Exit.Exit<boolean, Schema.SchemaError> =>
-  Exit.map(
-    Schema.decodeExit(Threshold)(
-      { text: colors.text, background: colors.background, ratio },
-      { errors: 'all' },
-    ),
-    (threshold) => mayReach(threshold.text, threshold.background, threshold.ratio),
+  Exit.map(Schema.decodeExit(Threshold)({ ...colors, ratio }, { errors: 'all' }), (threshold) =>
+    threshold.channelBits === undefined
+      ? mayReach(threshold.text, threshold.background, threshold.ratio)
+      : mayReachRounded(
+          threshold.text,
+          threshold.background,
+          2 ** threshold.channelBits - 1,
+          threshold.ratio,
+        ),
   ),
 );
 
@@ -516,9 +644,11 @@ export const Pair = Schema.Struct({
   fontWeight: FontWeight,
   /** A contrast ratio stricter than the standards that the project may ask for. */
   minimumContrast: Schema.optional(MinimumContrast),
+  /** The bits per sRGB channel of a display or a tool the colors are judged on, such as 8 for a color written in hex. */
+  channelBits: Schema.optional(ChannelBits),
 }).pipe(Schema.check(isAtLeastRequiredContrast));
 
-/** The colors of a piece of text and its background, the step of the type scale it is set in, its font weight, and a contrast ratio stricter than the standards that the project may ask for, as they are written. */
+/** The colors of a piece of text and its background, the step of the type scale it is set in, its font weight, a contrast ratio stricter than the standards that the project may ask for, and the bits per channel the colors are judged on, as they are written. */
 export type Pair = typeof Pair.Encoded;
 
 /** The failure of a pair whose contrast falls short of what its text needs, a result of comparing the colors rather than a fault of the input. */
@@ -534,17 +664,25 @@ export class ContrastShortfall extends Schema.TaggedError<
   message: Schema.String,
 }) {}
 
-/** The contrast ratio of a pair; or a failure with the reason when the input is not valid, or a contrast shortfall when the pair falls short of what WCAG 2.2 Contrast (Enhanced) requires for its text, or of the stricter ratio the project asks for. A pair is refused only when rounding cannot account for its shortfall, so that a pair whose exact colors, the colors the matrices of CSS Color 4 convert as they are written, meet the ratio passes even when the ratio it returns, the one JavaScript computes, lies a few units in the last place below it. */
+/** The contrast ratio of a pair; or a failure with the reason when the input is not valid, or a contrast shortfall when the pair falls short of what WCAG 2.2 Contrast (Enhanced) requires for its text, or of the stricter ratio the project asks for. A pair is refused only when rounding cannot account for its shortfall, so that a pair whose exact colors, the colors the matrices of CSS Color 4 convert as they are written, meet the ratio passes even when the ratio it returns, the one JavaScript computes, lies a few units in the last place below it. With bits per channel, the colors are judged as a display or a tool holding channels in that many bits shows and measures them, each channel rounded to the nearest step, the ratio returned is theirs, and a channel on the edge between two steps must meet the ratio rounded either way. */
 export const verify = (pair: Pair): Exit.Exit<number, Schema.SchemaError | ContrastShortfall> =>
   Exit.match(Schema.decodeExit(Pair)(pair, { errors: 'all' }), {
     onFailure: Exit.failCause,
     onSuccess: (colors) => {
       const target = colors.minimumContrast ?? requiredContrast(colors.step, colors.fontWeight);
-      return mayReach(colors.text, colors.background, target)
-        ? Exit.succeed(contrastRatio(colors.text, colors.background))
+      const contrast =
+        colors.channelBits === undefined
+          ? contrastRatio(colors.text, colors.background)
+          : roundedContrastRatio(colors.text, colors.background, 2 ** colors.channelBits - 1);
+      return (
+        colors.channelBits === undefined
+          ? mayReach(colors.text, colors.background, target)
+          : mayReachRounded(colors.text, colors.background, 2 ** colors.channelBits - 1, target)
+      )
+        ? Exit.succeed(contrast)
         : Exit.fail(
             new ContrastShortfall({
-              contrast: contrastRatio(colors.text, colors.background),
+              contrast,
               requiredContrast: target,
               message:
                 colors.minimumContrast === undefined
@@ -591,7 +729,7 @@ const boundary = (holds: (value: number) => boolean, inside: number, outside: nu
       ? boundary(holds, (inside + outside) / 2, outside)
       : boundary(holds, inside, (inside + outside) / 2);
 
-/** The lightness, chroma and hue, in the unit of angle the brand color is written in, of the shade of a brand color closest to it by deltaEOK that reaches the contrast ratio against the background: its hue kept, and its chroma kept or, where sRGB cannot hold it at that lightness, reduced at constant lightness and hue to the edge of sRGB, the reduction every gamut mapping algorithm of CSS Color 4 aims at, reached exactly so that the lightness and hue the contrast rests on stay exact; or none when no shade reaches it. */
+/** The lightness, chroma and hue, in the unit of angle the brand color is written in, of the shade of a brand color closest to it by deltaEOK that reaches the contrast ratio against the background both exactly and certainly once it and the background are rounded to 8-bit channels, as most displays show them and tools measure them, however a channel on the edge between two steps rounds: its hue kept, and its chroma kept or, where sRGB cannot hold it at that lightness, reduced at constant lightness and hue to the edge of sRGB, the reduction every gamut mapping algorithm of CSS Color 4 aims at, reached exactly so that the lightness and hue the contrast rests on stay exact; or none when no shade reaches it. */
 const closestShade = (
   color: Color,
   background: Color,
@@ -610,20 +748,47 @@ const closestShade = (
     (Math.max(luminanceAt(shade), backgroundLuminance) + contrastFlare) /
       (Math.min(luminanceAt(shade), backgroundLuminance) + contrastFlare) >=
     target;
+  // A shade passes when it reaches the contrast exactly and certainly once rounded to 8-bit channels.
+  const passes = (shade: number): boolean =>
+    reaches(shade) &&
+    mustReachRounded(
+      { lightness: shade, chroma: chromaAt(shade), hue, hueUnit, alpha: 1 },
+      background,
+      channelSteps,
+      target,
+    );
+  // The first shade that passes, from one that reaches the contrast exactly onward to the end of the lightness: rounded contrast rises with lightness in steps, but a channel may round down while another rounds up, so the shades are stepped through by a 4096th of the lightness, finer than a step of an 8-bit channel moves it, and the last step is halved.
+  const firstPassing = (failing: number, end: number): number | undefined => {
+    const next =
+      end < failing ? Math.max(failing - 1 / 4096, end) : Math.min(failing + 1 / 4096, end);
+    return passes(next)
+      ? boundary(passes, next, failing)
+      : next === end
+        ? undefined
+        : firstPassing(next, end);
+  };
   // Luminance rises with lightness, so contrast falls toward the lightness of the background from either side.
   const backgroundLightness = boundary((shade) => luminanceAt(shade) <= backgroundLuminance, 0, 1);
   const darkEnd = Math.min(lightness, backgroundLightness);
   const lightStart = Math.max(lightness, backgroundLightness);
-  const darker = reaches(darkEnd)
+  const exactlyDarker = reaches(darkEnd)
     ? darkEnd
     : reaches(0)
       ? boundary(reaches, 0, darkEnd)
       : undefined;
-  const lighter = reaches(lightStart)
+  const exactlyLighter = reaches(lightStart)
     ? lightStart
     : reaches(1)
       ? boundary(reaches, 1, lightStart)
       : undefined;
+  const darker =
+    exactlyDarker === undefined || passes(exactlyDarker)
+      ? exactlyDarker
+      : firstPassing(exactlyDarker, 0);
+  const lighter =
+    exactlyLighter === undefined || passes(exactlyLighter)
+      ? exactlyLighter
+      : firstPassing(exactlyLighter, 1);
   // The largest chroma sRGB holds at a hue rises with lightness to one peak and falls after it, so on each side the shade nearest in lightness also loses the least chroma and is the closest by deltaEOK, which at a shared hue is the hypotenuse of the lightness and chroma differences.
   const closest =
     darker === undefined
@@ -637,7 +802,7 @@ const closestShade = (
 };
 
 /**
- * The shade of a brand color, written in oklch(), that is closest to it by deltaEOK, the color difference CSS Color 4 defines, and reaches the contrast WCAG 2.2 Contrast (Enhanced) requires for its text against the background, or the stricter ratio the project asks for; or a failure with the reason when the input is not valid, or no legible shade when no shade within sRGB reaches it. Its hue is kept and its chroma is reduced only where sRGB cannot hold it, at constant lightness and hue as CSS Color 4 gamut mapping aims to reduce it.
+ * The shade of a brand color, written in oklch(), that is closest to it by deltaEOK, the color difference CSS Color 4 defines, and reaches the contrast WCAG 2.2 Contrast (Enhanced) requires for its text against the background, or the stricter ratio the project asks for, both exactly and once it and the background are written in hex, rounded to the 8-bit channels most displays show and tools measure; or a failure with the reason when the input is not valid, or no legible shade when no shade within sRGB reaches it. Its hue is kept and its chroma is reduced only where sRGB cannot hold it, at constant lightness and hue as CSS Color 4 gamut mapping aims to reduce it.
  *
  * @see https://www.w3.org/TR/css-color-4/#color-difference-OK
  * @see https://www.w3.org/TR/css-color-4/#css-gamut-mapping-algorithms

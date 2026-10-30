@@ -109,6 +109,39 @@ const numberBelow = (value: Rational): number => {
   return view.getFloat64(0);
 };
 
+/** The contrast ratio of two colors written in oklch() with a hue in degrees as a tool measures it from hex: each linear sRGB channel encoded, rounded to 8 bits, and read back as WCAG 2.2 reads it, apart from the code of Color. */
+const hexContrast = (text: string, background: string): number => {
+  const luminance = (written: string): number => {
+    const exit = Schema.decodeExit(Color.Color)(written);
+    const color = Exit.isSuccess(exit)
+      ? exit.value
+      : { lightness: 0, chroma: 0, hue: 0, hueUnit: 'deg', alpha: 1 };
+    const angle = (color.hue * Math.PI) / 180;
+    const [long, medium, short] = transform(Color.oklabToLms, [
+      color.lightness,
+      color.chroma * Math.cos(angle),
+      color.chroma * Math.sin(angle),
+    ]);
+    const [red, green, blue] = transform(
+      Color.xyzToLinearSrgb,
+      transform(Color.lmsToXyz, [long ** 3, medium ** 3, short ** 3]),
+    );
+    // Encoded, rounded to 8 bits and read back, each channel held within its range first.
+    const read = (channel: number): number => {
+      const held = Math.min(Math.max(channel, 0), 1);
+      const hex =
+        Math.round((held <= 0.0031308 ? 12.92 * held : 1.055 * held ** (1 / 2.4) - 0.055) * 255) /
+        255;
+      return hex <= 0.04045 ? hex / 12.92 : ((hex + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * read(red) + 0.7152 * read(green) + 0.0722 * read(blue);
+  };
+  return (
+    (Math.max(luminance(text), luminance(background)) + 0.05) /
+    (Math.min(luminance(text), luminance(background)) + 0.05)
+  );
+};
+
 describe('enhancedContrastRatio', () => {
   it('is the contrast WCAG 2.2 Contrast (Enhanced) requires for text', () => {
     expect(Color.enhancedContrastRatio).toBe(7);
@@ -220,6 +253,12 @@ describe('transferGamma', () => {
 describe('transferOffset', () => {
   it('is the offset of the curved part of the sRGB transfer function', () => {
     expect(Color.transferOffset).toBe(0.055);
+  });
+});
+
+describe('encodedTransferThreshold', () => {
+  it('is the encoded value up to which CSS Color 4 reads an sRGB channel as linear', () => {
+    expect(Color.encodedTransferThreshold).toBe(0.04045);
   });
 });
 
@@ -498,6 +537,45 @@ describe('contrast', () => {
 });
 
 describe('reaches', () => {
+  it('judges colors rounded to the bits per channel of a display or a tool apart from the exact colors', () => {
+    const colors = {
+      text: 'oklch(0.4503768287010991 0.1338540582986573 147)',
+      background: 'oklch(100% 0 0)',
+    };
+    const exact = Color.reaches(colors, 7);
+    const rounded = Color.reaches({ ...colors, channelBits: 8 }, 7);
+
+    expect(hexContrast(colors.text, colors.background)).toBeLessThan(7);
+    expect(Exit.isSuccess(exact) ? exact.value : undefined).toBe(true);
+    expect(Exit.isSuccess(rounded) ? rounded.value : undefined).toBe(false);
+  });
+
+  it('rejects bits per channel no display or image format holds, with the reason', () => {
+    for (const channelBits of [0, 17, 7.5]) {
+      const exit = Color.reaches(
+        { text: 'oklch(0% 0 0)', background: 'oklch(100% 0 0)', channelBits },
+        7,
+      );
+
+      expect(Exit.isFailure(exit)).toBe(true);
+    }
+    const exit = Color.reaches(
+      { text: 'oklch(0% 0 0)', background: 'oklch(100% 0 0)', channelBits: 17 },
+      7,
+    );
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['channelBits'],
+        message: 'Expected from 1 to 16 bits per channel, as displays and image formats hold them',
+      },
+    ]);
+  });
+
   it('rests on the exact colors, by which white falls short of a relative luminance of 1', () => {
     const white = exactLuminance(1, 0);
 
@@ -653,6 +731,31 @@ describe('Pair', () => {
 });
 
 describe('verify', () => {
+  it('reports the contrast of the rounded colors and refuses a pair that falls short of it in hex', () => {
+    const pair = {
+      text: 'oklch(0.4503768287010991 0.1338540582986573 147)',
+      background: 'oklch(100% 0 0)',
+      step: {
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
+      },
+      fontWeight: 400,
+    };
+    const exact = Color.verify(pair);
+    const rounded = Color.verify({ ...pair, channelBits: 8 });
+
+    expect(Exit.isSuccess(exact)).toBe(true);
+    expect(Option.getOrThrow(Exit.findErrorOption(rounded))).toMatchObject({
+      _tag: 'ContrastShortfall',
+      requiredContrast: 7,
+    });
+    expect(
+      Option.getOrThrow(Exit.findErrorOption(rounded)).pipe((error) =>
+        error._tag === 'ContrastShortfall' ? error.contrast : 0,
+      ),
+    ).toBeCloseTo(hexContrast(pair.text, pair.background), 12);
+  });
+
   it('takes a step of a type scale as it is, its position aside', () => {
     const scale = Typography.scale({
       minimumFactor: { numerator: 6n, denominator: 5n },
@@ -1018,6 +1121,28 @@ describe('Brand', () => {
 });
 
 describe('shade', () => {
+  it('writes a shade that reaches the contrast in hex too, as tools measure it', () => {
+    const step = {
+      minimumSize: Fraction.makeUnsafe(16n, 1n),
+      maximumSize: Fraction.makeUnsafe(20n, 1n),
+    };
+
+    for (const [color, background] of [
+      ['oklch(64% 0.17 147)', 'oklch(100% 0 0)'],
+      ['oklch(55% 0.18 300)', 'oklch(98% 0.01 90)'],
+      ['oklch(60% 0.2 30)', 'oklch(100% 0 0)'],
+      ['oklch(40% 0.1 250)', 'oklch(15% 0.02 250)'],
+      ['oklch(70% 0.12 90)', 'oklch(100% 0 0)'],
+      ['oklch(50% 0.08 200)', 'oklch(20% 0 0)'],
+    ] as const) {
+      const exit = Color.shade({ color, background, step, fontWeight: 400 });
+
+      expect(Exit.isSuccess(exit) ? hexContrast(exit.value, background) : 0).toBeGreaterThanOrEqual(
+        7,
+      );
+    }
+  });
+
   it('writes the shade with the hue in the unit of angle of the brand color', () => {
     const inDegrees = Color.shade({
       color: 'oklch(64% 0.17 147)',
@@ -1098,9 +1223,17 @@ describe('shade', () => {
       step,
       fontWeight: 400,
     });
+    const rounded = Color.verify({
+      text: shade,
+      background: 'oklch(100% 0 0)',
+      step,
+      fontWeight: 400,
+      channelBits: 8,
+    });
 
     expect(shade).toMatch(/^oklch\(0\.4\d* 0\.1\d* 147\)$/);
-    expect(Exit.isSuccess(verified) ? verified.value : 0).toBeCloseTo(7, 9);
+    expect(Exit.isSuccess(verified) ? verified.value : 0).toBeGreaterThanOrEqual(7);
+    expect(Exit.isSuccess(rounded) ? rounded.value : 0).toBeGreaterThanOrEqual(7);
   });
 
   it('reduces the chroma where sRGB cannot hold it at the lightness the contrast needs', () => {
@@ -1188,9 +1321,17 @@ describe('shade', () => {
       step,
       fontWeight: 400,
     });
+    const rounded = Color.verify({
+      text: shade,
+      background: 'oklch(0% 0 0)',
+      step,
+      fontWeight: 400,
+      channelBits: 8,
+    });
 
     expect(shade).toMatch(/^oklch\(0\.6\d* 0\.17 147\)$/);
-    expect(Exit.isSuccess(verified) ? verified.value : 0).toBeCloseTo(7, 9);
+    expect(Exit.isSuccess(verified) ? verified.value : 0).toBeGreaterThanOrEqual(7);
+    expect(Exit.isSuccess(rounded) ? rounded.value : 0).toBeGreaterThanOrEqual(7);
   });
 
   it('reaches a stricter contrast the project asks for', () => {
@@ -1205,9 +1346,21 @@ describe('shade', () => {
       fontWeight: 400,
       minimumContrast: 10,
     });
-    const contrast = Color.contrast(Exit.isSuccess(exit) ? exit.value : '', 'oklch(100% 0 0)');
+    const rounded = Color.reaches(
+      {
+        text: Exit.isSuccess(exit) ? exit.value : '',
+        background: 'oklch(100% 0 0)',
+        channelBits: 8,
+      },
+      10,
+    );
+    const exact = Color.reaches(
+      { text: Exit.isSuccess(exit) ? exit.value : '', background: 'oklch(100% 0 0)' },
+      10,
+    );
 
-    expect(Exit.isSuccess(contrast) ? contrast.value : 0).toBeCloseTo(10, 9);
+    expect(Exit.isSuccess(exact) ? exact.value : undefined).toBe(true);
+    expect(Exit.isSuccess(rounded) ? rounded.value : undefined).toBe(true);
   });
 
   it('rejects a background against which no shade within sRGB reaches the contrast', () => {
