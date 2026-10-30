@@ -1,12 +1,12 @@
 import { describe, expect, it } from '@effect/vitest';
-import { Exit, Option, SchemaIssue } from 'effect';
+import { Exit, Option, Schema, SchemaIssue } from 'effect';
 
 import * as Fraction from '#src/Fraction';
 import * as Space from '#src/Space';
 
 describe('spacingUnit', () => {
   it('is the spacing unit of the USWDS spacing scale', () => {
-    expect(Space.spacingUnit).toBe(8);
+    expect(Space.spacingUnit).toEqual({ numerator: 8n, denominator: 1n });
   });
 });
 
@@ -32,6 +32,10 @@ describe('spacingUnitCounts', () => {
 });
 
 describe('spacingUnitFactor', () => {
+  it('is a valid fraction', () => {
+    expect(Schema.is(Fraction.Fraction)(Space.spacingUnitFactor)).toBe(true);
+  });
+
   it('is 1/2', () => {
     expect(Space.spacingUnitFactor).toEqual({ numerator: 1n, denominator: 2n });
   });

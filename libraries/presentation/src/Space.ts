@@ -8,7 +8,7 @@ import * as Typography from '#src/Typography';
  *
  * @see https://designsystem.digital.gov/design-tokens/spacing-units/
  */
-export const spacingUnit = 8;
+export const spacingUnit = Fraction.makeUnsafe(8n, 1n);
 
 /**
  * The counts of the spacing unit that the USWDS spacing scale spaces content with, from the smallest to the largest.
@@ -33,10 +33,7 @@ export const spacingUnitCounts: ReadonlyArray<Fraction.Fraction> = [
 ];
 
 /** The spacing unit as a factor of body text, the share of the default font size it takes in USWDS, so that spacing grows with body text. */
-export const spacingUnitFactor = Fraction.makeUnsafe(
-  BigInt(spacingUnit),
-  BigInt(Typography.defaultFontSize),
-);
+export const spacingUnitFactor = Fraction.divide(spacingUnit, Typography.defaultFontSize);
 
 /** A step of the space scale, with its size at the minimum and at the maximum viewport width. */
 export interface Step {
@@ -57,10 +54,7 @@ export const scale = (
       const factor = Fraction.multiply(count, spacingUnitFactor);
       return {
         factor,
-        minimumSize: Fraction.multiply(
-          Fraction.makeUnsafe(BigInt(Typography.defaultFontSize), 1n),
-          factor,
-        ),
+        minimumSize: Fraction.multiply(Typography.defaultFontSize, factor),
         maximumSize: Fraction.multiply(options.maximumBodyFontSize, factor),
       };
     }),

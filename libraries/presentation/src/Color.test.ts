@@ -18,23 +18,31 @@ describe('largeTextEnhancedContrastRatio', () => {
 
 describe('largeTextPointSize', () => {
   it('is the size from which WCAG 2.2 counts text as large-scale', () => {
-    expect(Color.largeTextPointSize).toBe(18);
+    expect(Color.largeTextPointSize).toEqual({ numerator: 18n, denominator: 1n });
   });
 });
 
 describe('largeBoldTextPointSize', () => {
   it('is the size from which WCAG 2.2 counts bold text as large-scale', () => {
-    expect(Color.largeBoldTextPointSize).toBe(14);
+    expect(Color.largeBoldTextPointSize).toEqual({ numerator: 14n, denominator: 1n });
   });
 });
 
 describe('largeTextSize', () => {
+  it('is a valid fraction', () => {
+    expect(Schema.is(Fraction.Fraction)(Color.largeTextSize)).toBe(true);
+  });
+
   it('is 24 CSS pixels', () => {
     expect(Color.largeTextSize).toEqual({ numerator: 24n, denominator: 1n });
   });
 });
 
 describe('largeBoldTextSize', () => {
+  it('is a valid fraction', () => {
+    expect(Schema.is(Fraction.Fraction)(Color.largeBoldTextSize)).toBe(true);
+  });
+
   it('is 56/3 CSS pixels', () => {
     expect(Color.largeBoldTextSize).toEqual({ numerator: 56n, denominator: 3n });
   });

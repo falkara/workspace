@@ -8,55 +8,52 @@ import * as Viewport from '#src/Viewport';
 
 describe('defaultFontSize', () => {
   it('is the font size the Baseline core browsers give the root element', () => {
-    expect(Typography.defaultFontSize).toBe(16);
+    expect(Typography.defaultFontSize).toEqual({ numerator: 16n, denominator: 1n });
   });
 });
 
 describe('minimumFontSize', () => {
   it('is the smallest size of the USWDS theme type scale in its default settings', () => {
-    expect(Typography.minimumFontSize).toBe(13);
+    expect(Typography.minimumFontSize).toEqual({ numerator: 13n, denominator: 1n });
   });
 });
 
 describe('ideographAdvanceFactor', () => {
   it('is the advance CSS Values 4 assumes for an ideograph it cannot measure', () => {
-    expect(Typography.ideographAdvanceFactor).toBe(1);
+    expect(Typography.ideographAdvanceFactor).toEqual({ numerator: 1n, denominator: 1n });
   });
 });
 
 describe('maximumFontSize', () => {
+  it('is a valid fraction', () => {
+    expect(Schema.is(Fraction.Fraction)(Typography.maximumFontSize)).toBe(true);
+  });
+
   it('fits a full-width character into the minimum viewport width when a reader sets the font size up to the maximum page zoom factor', () => {
     const characterWidth = Fraction.multiply(
       Typography.maximumFontSize,
-      Fraction.makeUnsafe(
-        BigInt(Viewport.maximumPageZoomFactor * Typography.ideographAdvanceFactor),
-        1n,
-      ),
+      Fraction.multiply(Viewport.maximumPageZoomFactor, Typography.ideographAdvanceFactor),
     );
 
-    expect(characterWidth).toEqual(Fraction.makeUnsafe(BigInt(Viewport.minimumViewportWidth), 1n));
+    expect(characterWidth).toEqual(Viewport.minimumViewportWidth);
   });
 });
 
 describe('minimumStepFactor', () => {
-  it('keeps steps at the minimum font size apart by the layout unit', () => {
-    const nextSize = Fraction.multiply(
-      Fraction.makeUnsafe(BigInt(Typography.minimumFontSize), 1n),
-      Typography.minimumStepFactor,
-    );
+  it('is a valid fraction', () => {
+    expect(Schema.is(Fraction.Fraction)(Typography.minimumStepFactor)).toBe(true);
+  });
 
-    expect(nextSize).toEqual(
-      Fraction.sum(
-        Fraction.makeUnsafe(BigInt(Typography.minimumFontSize), 1n),
-        Fraction.makeUnsafe(1n, BigInt(1 / Length.layoutUnit)),
-      ),
-    );
+  it('keeps steps at the minimum font size apart by the layout unit', () => {
+    const nextSize = Fraction.multiply(Typography.minimumFontSize, Typography.minimumStepFactor);
+
+    expect(nextSize).toEqual(Fraction.sum(Typography.minimumFontSize, Length.layoutUnit));
   });
 });
 
 describe('textScaleFactor', () => {
   it('is the text resize WCAG 2.2 Resize Text requires content to support', () => {
-    expect(Typography.textScaleFactor).toBe(2);
+    expect(Typography.textScaleFactor).toEqual({ numerator: 2n, denominator: 1n });
   });
 });
 
@@ -91,6 +88,10 @@ describe('paragraphSpacingLineFactor', () => {
 });
 
 describe('paragraphSpacingFactor', () => {
+  it('is a valid fraction', () => {
+    expect(Schema.is(Fraction.Fraction)(Typography.paragraphSpacingFactor)).toBe(true);
+  });
+
   it('is 9/4', () => {
     expect(Typography.paragraphSpacingFactor).toEqual({ numerator: 9n, denominator: 4n });
   });
@@ -139,62 +140,60 @@ describe('textSpacingWordSpacingFactor', () => {
 });
 
 describe('maximumTextGrowthFactor', () => {
+  it('is a valid fraction', () => {
+    expect(Schema.is(Fraction.Fraction)(Typography.maximumTextGrowthFactor)).toBe(true);
+  });
+
   it('is 8/5 for the viewport range, the page zoom and the text scale it follows from', () => {
     expect(Typography.maximumTextGrowthFactor).toEqual({ numerator: 8n, denominator: 5n });
   });
 
   it('lets text that grows by it reach the text scale factor at the maximum page zoom', () => {
     const growth = Typography.maximumTextGrowthFactor;
-    const growthAboveOne = Fraction.makeUnsafe(
-      growth.numerator - growth.denominator,
-      growth.denominator,
-    );
-    const zoomedWidthAboveMinimum = Fraction.makeUnsafe(
-      BigInt(
-        Viewport.maximumViewportWidth -
-          Viewport.maximumPageZoomFactor * Viewport.minimumViewportWidth,
+    const zoomedWidthAboveMinimum = Fraction.divide(
+      Fraction.subtractUnsafe(
+        Viewport.maximumViewportWidth,
+        Fraction.multiply(Viewport.maximumPageZoomFactor, Viewport.minimumViewportWidth),
       ),
-      BigInt(Viewport.maximumPageZoomFactor),
+      Viewport.maximumPageZoomFactor,
     );
-    const viewportRange = Fraction.makeUnsafe(
-      BigInt(Viewport.maximumViewportWidth - Viewport.minimumViewportWidth),
-      1n,
+    const viewportRange = Fraction.subtractUnsafe(
+      Viewport.maximumViewportWidth,
+      Viewport.minimumViewportWidth,
     );
     const zoomedSize = Fraction.sum(
       Fraction.one,
-      Fraction.divide(Fraction.multiply(growthAboveOne, zoomedWidthAboveMinimum), viewportRange),
+      Fraction.divide(
+        Fraction.multiply(Fraction.subtractUnsafe(growth, Fraction.one), zoomedWidthAboveMinimum),
+        viewportRange,
+      ),
     );
 
-    expect(
-      Fraction.multiply(
-        Fraction.makeUnsafe(BigInt(Viewport.maximumPageZoomFactor), 1n),
-        zoomedSize,
-      ),
-    ).toEqual(
-      Fraction.multiply(Fraction.makeUnsafe(BigInt(Typography.textScaleFactor), 1n), growth),
+    expect(Fraction.multiply(Viewport.maximumPageZoomFactor, zoomedSize)).toEqual(
+      Fraction.multiply(Typography.textScaleFactor, growth),
     );
   });
 
   it('lets text that grows by it reach the text scale factor at a font size of the maximum page zoom', () => {
     const growth = Typography.maximumTextGrowthFactor;
-    const viewportRange = BigInt(Viewport.maximumViewportWidth - Viewport.minimumViewportWidth);
-    const slope = Fraction.makeUnsafe(
-      growth.numerator - growth.denominator,
-      growth.denominator * viewportRange,
+    const viewportRange = Fraction.subtractUnsafe(
+      Viewport.maximumViewportWidth,
+      Viewport.minimumViewportWidth,
     );
-    const intercept = Fraction.makeUnsafe(
-      BigInt(Viewport.maximumViewportWidth) * growth.denominator -
-        growth.numerator * BigInt(Viewport.minimumViewportWidth),
-      viewportRange * growth.denominator,
+    const slope = Fraction.divide(Fraction.subtractUnsafe(growth, Fraction.one), viewportRange);
+    const intercept = Fraction.divide(
+      Fraction.subtractUnsafe(
+        Viewport.maximumViewportWidth,
+        Fraction.multiply(growth, Viewport.minimumViewportWidth),
+      ),
+      viewportRange,
     );
     const resizedSize = Fraction.sum(
-      Fraction.multiply(Fraction.makeUnsafe(BigInt(Viewport.maximumPageZoomFactor), 1n), intercept),
-      Fraction.multiply(slope, Fraction.makeUnsafe(BigInt(Viewport.maximumViewportWidth), 1n)),
+      Fraction.multiply(Viewport.maximumPageZoomFactor, intercept),
+      Fraction.multiply(slope, Viewport.maximumViewportWidth),
     );
 
-    expect(resizedSize).toEqual(
-      Fraction.multiply(Fraction.makeUnsafe(BigInt(Typography.textScaleFactor), 1n), growth),
-    );
+    expect(resizedSize).toEqual(Fraction.multiply(Typography.textScaleFactor, growth));
   });
 });
 
@@ -488,12 +487,9 @@ describe('scale', () => {
 
       expect(Fraction.isGreaterThanOrEqualTo(growth, Fraction.one)).toBe(true);
       expect(Fraction.isLessThanOrEqualTo(growth, Typography.maximumTextGrowthFactor)).toBe(true);
-      expect(
-        Fraction.isGreaterThanOrEqualTo(
-          step.minimumSize,
-          Fraction.makeUnsafe(BigInt(Typography.minimumFontSize), 1n),
-        ),
-      ).toBe(true);
+      expect(Fraction.isGreaterThanOrEqualTo(step.minimumSize, Typography.minimumFontSize)).toBe(
+        true,
+      );
       expect(Fraction.isLessThanOrEqualTo(step.minimumSize, Typography.maximumFontSize)).toBe(true);
     }
   });
@@ -534,7 +530,7 @@ describe('scale', () => {
     const nextMinimumSize = 16 * (5 / 6) ** 2;
 
     expect(lowest?.position).toBe(-1);
-    expect(nextMinimumSize).toBeLessThan(Typography.minimumFontSize);
+    expect(nextMinimumSize).toBeLessThan(Fraction.toNumber(Typography.minimumFontSize));
   });
 
   it('ends where the next step would be larger than the maximum font size when the factors are equal', () => {
@@ -562,7 +558,7 @@ describe('scale', () => {
 
     expect(steps.at(0)?.position).toBe(-172);
     expect(steps.at(-1)?.position).toBe(1579);
-    expect(previousMinimumSize).toBeLessThan(Typography.minimumFontSize);
+    expect(previousMinimumSize).toBeLessThan(Fraction.toNumber(Typography.minimumFontSize));
     expect(nextMinimumSize).toBeGreaterThan(Fraction.toNumber(Typography.maximumFontSize));
   });
 

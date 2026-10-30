@@ -9,20 +9,28 @@ import * as Viewport from '#src/Viewport';
 export const decimalPlaces =
   Math.floor(
     Math.log10(
-      (Viewport.maximumPageZoomFactor *
-        (Typography.defaultFontSize * Viewport.maximumPageZoomFactor +
-          Viewport.maximumViewportWidth / Length.viewportWidthUnits)) /
-        (2 * Length.layoutUnit),
+      Fraction.toNumber(
+        Fraction.divide(
+          Fraction.multiply(
+            Viewport.maximumPageZoomFactor,
+            Fraction.sum(
+              Fraction.multiply(Typography.defaultFontSize, Viewport.maximumPageZoomFactor),
+              Fraction.divide(Viewport.maximumViewportWidth, Length.viewportWidthUnits),
+            ),
+          ),
+          Fraction.multiply(Fraction.makeUnsafe(2n, 1n), Length.layoutUnit),
+        ),
+      ),
     ),
   ) + 1;
 
 /** The CSS rem length of a size, rounded to the decimal places. Measured in CSS pixels. */
 export const rem = (size: number): string =>
-  `${Math.round((size / Typography.defaultFontSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces}rem`;
+  `${Math.round((size / Fraction.toNumber(Typography.defaultFontSize)) * 10 ** decimalPlaces) / 10 ** decimalPlaces}rem`;
 
 /** The CSS vw length of a share of the viewport width, rounded to the decimal places. The share measured in viewport widths, so that 1 is the whole width. */
 export const vw = (share: number): string =>
-  `${Math.round(share * Length.viewportWidthUnits * 10 ** decimalPlaces) / 10 ** decimalPlaces}vw`;
+  `${Math.round(share * Fraction.toNumber(Length.viewportWidthUnits) * 10 ** decimalPlaces) / 10 ** decimalPlaces}vw`;
 
 /** A schema of the sizes a fluid value takes at the minimum and at the maximum viewport width. Sizes measured in CSS pixels. */
 const Sizes = Schema.Struct({
@@ -41,7 +49,7 @@ const Sizes = Schema.Struct({
             Fraction.multiply(sizes.minimumSize, Typography.maximumTextGrowthFactor),
           )) || {
           path: ['maximumSize'],
-          issue: `Expected a maximum size of ${Math.round(Fraction.toNumber(sizes.minimumSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px to ${Math.round(Fraction.toNumber(Fraction.multiply(sizes.minimumSize, Typography.maximumTextGrowthFactor)) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that the value never shrinks and grows no faster than text that can be enlarged to ${Typography.textScaleFactor * 100} % within the ${Viewport.maximumPageZoomFactor * 100} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
+          issue: `Expected a maximum size of ${Math.round(Fraction.toNumber(sizes.minimumSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px to ${Math.round(Fraction.toNumber(Fraction.multiply(sizes.minimumSize, Typography.maximumTextGrowthFactor)) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that the value never shrinks and grows no faster than text that can be enlarged to ${Fraction.format(Fraction.multiply(Typography.textScaleFactor, Fraction.makeUnsafe(100n, 1n)))} % within the ${Fraction.format(Fraction.multiply(Viewport.maximumPageZoomFactor, Fraction.makeUnsafe(100n, 1n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
         },
     ),
   ),
@@ -55,7 +63,11 @@ export const clamp = (
   Exit.map(Schema.decodeExit(Sizes)({ minimumSize, maximumSize }, { errors: 'all' }), (sizes) => {
     const slope =
       (Fraction.toNumber(sizes.maximumSize) - Fraction.toNumber(sizes.minimumSize)) /
-      (Viewport.maximumViewportWidth - Viewport.minimumViewportWidth);
-    const intercept = Fraction.toNumber(sizes.minimumSize) - slope * Viewport.minimumViewportWidth;
+      Fraction.toNumber(
+        Fraction.subtractUnsafe(Viewport.maximumViewportWidth, Viewport.minimumViewportWidth),
+      );
+    const intercept =
+      Fraction.toNumber(sizes.minimumSize) -
+      slope * Fraction.toNumber(Viewport.minimumViewportWidth);
     return `clamp(${rem(Fraction.toNumber(sizes.minimumSize))}, ${rem(intercept)} + ${vw(slope)}, ${rem(Fraction.toNumber(sizes.maximumSize))})`;
   });

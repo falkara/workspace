@@ -24,26 +24,20 @@ export const largeTextEnhancedContrastRatio = 9 / 2;
  *
  * @see https://www.w3.org/TR/WCAG22/#dfn-large-scale
  */
-export const largeTextPointSize = 18;
+export const largeTextPointSize = Fraction.makeUnsafe(18n, 1n);
 
 /**
  * The font size from which WCAG 2.2 counts bold text as large-scale. Measured in CSS points.
  *
  * @see https://www.w3.org/TR/WCAG22/#dfn-large-scale
  */
-export const largeBoldTextPointSize = 14;
+export const largeBoldTextPointSize = Fraction.makeUnsafe(14n, 1n);
 
 /** The font size from which text is large-scale, the large text point size in CSS points. Measured in CSS pixels. */
-export const largeTextSize = Fraction.multiply(
-  Fraction.makeUnsafe(BigInt(largeTextPointSize), 1n),
-  Length.point,
-);
+export const largeTextSize = Fraction.multiply(largeTextPointSize, Length.point);
 
 /** The font size from which bold text is large-scale, the large bold text point size in CSS points. Measured in CSS pixels. */
-export const largeBoldTextSize = Fraction.multiply(
-  Fraction.makeUnsafe(BigInt(largeBoldTextPointSize), 1n),
-  Length.point,
-);
+export const largeBoldTextSize = Fraction.multiply(largeBoldTextPointSize, Length.point);
 
 /**
  * The number of steps between the darkest and the lightest level of an 8-bit sRGB channel.

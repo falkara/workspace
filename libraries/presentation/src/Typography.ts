@@ -5,32 +5,32 @@ import * as Length from '#src/Length';
 import * as Viewport from '#src/Viewport';
 
 /** The default font size that the Baseline core browsers implement for the root element until a reader sets their own. Measured in CSS pixels. */
-export const defaultFontSize = 16;
+export const defaultFontSize = Fraction.makeUnsafe(16n, 1n);
 
 /**
  * The smallest font size of the USWDS theme type scale in its default settings. Measured in CSS pixels.
  *
  * @see https://designsystem.digital.gov/design-tokens/typesetting/font-size/#theme-tokens
  */
-export const minimumFontSize = 13;
+export const minimumFontSize = Fraction.makeUnsafe(13n, 1n);
 
 /**
  * The advance of an ideograph, as a factor of the font size, that CSS Values 4 assumes for the ic unit when it cannot be measured: a full-width character, which no line break can split.
  *
  * @see https://www.w3.org/TR/css-values-4/#ic
  */
-export const ideographAdvanceFactor = 1;
+export const ideographAdvanceFactor = Fraction.makeUnsafe(1n, 1n);
 
 /** The largest font size at the minimum viewport width, at which a full-width character still fits the minimum viewport width when a reader sets the font size up to the maximum page zoom factor, so that text reflows without scrolling in two dimensions, as WCAG 2.2 Reflow requires. Measured in CSS pixels. */
-export const maximumFontSize = Fraction.makeUnsafe(
-  BigInt(Viewport.minimumViewportWidth),
-  BigInt(Viewport.maximumPageZoomFactor * ideographAdvanceFactor),
+export const maximumFontSize = Fraction.divide(
+  Viewport.minimumViewportWidth,
+  Fraction.multiply(Viewport.maximumPageZoomFactor, ideographAdvanceFactor),
 );
 
 /** The smallest ratio between consecutive steps of a type scale, at which steps at the minimum font size still differ by the layout unit, so that no two steps render alike. */
 export const minimumStepFactor = Fraction.sum(
   Fraction.one,
-  Fraction.makeUnsafe(1n, BigInt(minimumFontSize / Length.layoutUnit)),
+  Fraction.divide(Length.layoutUnit, minimumFontSize),
 );
 
 /**
@@ -38,7 +38,7 @@ export const minimumStepFactor = Fraction.sum(
  *
  * @see https://www.w3.org/TR/WCAG22/#resize-text
  */
-export const textScaleFactor = 2;
+export const textScaleFactor = Fraction.makeUnsafe(2n, 1n);
 
 /**
  * The lightest font weight that CSS Fonts allows.
@@ -118,13 +118,18 @@ export const textSpacingLetterSpacingFactor = Fraction.makeUnsafe(3n, 25n);
  */
 export const textSpacingWordSpacingFactor = Fraction.makeUnsafe(4n, 25n);
 
-/** The maximum text growth factor from the minimum to the maximum viewport width that keeps text resizable by the text scale factor within the maximum page zoom factor, whether a reader zooms the page or sets a larger font size, as both act alike on fluid text. */
-export const maximumTextGrowthFactor = Fraction.makeUnsafe(
-  BigInt(Viewport.viewportWidthFactor * (Viewport.maximumPageZoomFactor - 1)),
-  BigInt(
-    Viewport.viewportWidthFactor * (textScaleFactor - 1) +
-      Viewport.maximumPageZoomFactor -
-      textScaleFactor,
+/** The maximum text growth factor from the minimum to the maximum viewport width that keeps text resizable by the text scale factor within the maximum page zoom factor, whether a reader zooms the page or sets a larger font size, as both act alike on fluid text. Each factor enters less 1, as its growth beyond 1, so that every difference is positive while every factor is above 1. */
+export const maximumTextGrowthFactor = Fraction.divide(
+  Fraction.multiply(
+    Viewport.viewportWidthFactor,
+    Fraction.subtractUnsafe(Viewport.maximumPageZoomFactor, Fraction.one),
+  ),
+  Fraction.sum(
+    Fraction.multiply(
+      Fraction.subtractUnsafe(Viewport.viewportWidthFactor, Fraction.one),
+      Fraction.subtractUnsafe(textScaleFactor, Fraction.one),
+    ),
+    Fraction.subtractUnsafe(Viewport.maximumPageZoomFactor, Fraction.one),
   ),
 );
 
@@ -149,16 +154,13 @@ export const ScaleOptions = Schema.Struct({
   /** The font size of body text at the maximum viewport width, from the default font size, so that body text never shrinks, to the size the maximum text growth factor allows. Measured in CSS pixels. */
   maximumBodyFontSize: Fraction.Fraction.pipe(
     Schema.check(
-      Fraction.isGreaterThanOrEqualToFraction(Fraction.makeUnsafe(BigInt(defaultFontSize), 1n), {
-        message: `Expected a body font size of at least ${defaultFontSize} px, so that body text never shrinks below the default font size of browsers`,
+      Fraction.isGreaterThanOrEqualToFraction(defaultFontSize, {
+        message: `Expected a body font size of at least ${Fraction.format(defaultFontSize)} px, so that body text never shrinks below the default font size of browsers`,
       }),
       Fraction.isLessThanOrEqualToFraction(
-        Fraction.multiply(
-          Fraction.makeUnsafe(BigInt(defaultFontSize), 1n),
-          maximumTextGrowthFactor,
-        ),
+        Fraction.multiply(defaultFontSize, maximumTextGrowthFactor),
         {
-          message: `Expected a body font size of at most ${Fraction.toNumber(Fraction.multiply(Fraction.makeUnsafe(BigInt(defaultFontSize), 1n), maximumTextGrowthFactor))} px, so that text can be enlarged to ${textScaleFactor * 100} % within the ${Viewport.maximumPageZoomFactor * 100} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
+          message: `Expected a body font size of at most ${Fraction.toNumber(Fraction.multiply(defaultFontSize, maximumTextGrowthFactor))} px, so that text can be enlarged to ${Fraction.format(Fraction.multiply(textScaleFactor, Fraction.makeUnsafe(100n, 1n)))} % within the ${Fraction.format(Fraction.multiply(Viewport.maximumPageZoomFactor, Fraction.makeUnsafe(100n, 1n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
         },
       ),
     ),
@@ -175,11 +177,11 @@ export const Step = Schema.Struct({
   /** The size at the minimum viewport width, its smallest, from the minimum to the maximum font size. Measured in CSS pixels. */
   minimumSize: Fraction.Fraction.pipe(
     Schema.check(
-      Fraction.isGreaterThanOrEqualToFraction(Fraction.makeUnsafe(BigInt(minimumFontSize), 1n), {
-        message: `Expected a minimum size of at least ${minimumFontSize} px, the smallest size of the USWDS theme type scale`,
+      Fraction.isGreaterThanOrEqualToFraction(minimumFontSize, {
+        message: `Expected a minimum size of at least ${Fraction.format(minimumFontSize)} px, the smallest size of the USWDS theme type scale`,
       }),
       Fraction.isLessThanOrEqualToFraction(maximumFontSize, {
-        message: `Expected a minimum size of at most ${Fraction.format(maximumFontSize)} px, so that a full-width character fits the minimum viewport width of ${Viewport.minimumViewportWidth} px at a font size of ${Viewport.maximumPageZoomFactor * 100} %, as WCAG 2.2 Reflow requires`,
+        message: `Expected a minimum size of at most ${Fraction.format(maximumFontSize)} px, so that a full-width character fits the minimum viewport width of ${Fraction.format(Viewport.minimumViewportWidth)} px at a font size of ${Fraction.format(Fraction.multiply(Viewport.maximumPageZoomFactor, Fraction.makeUnsafe(100n, 1n)))} %, as WCAG 2.2 Reflow requires`,
       }),
     ),
   ),
@@ -196,7 +198,7 @@ export const Step = Schema.Struct({
             Fraction.multiply(step.minimumSize, maximumTextGrowthFactor),
           )) || {
           path: ['maximumSize'],
-          issue: `Expected a maximum size of ${Fraction.toNumber(step.minimumSize)} px to ${Fraction.toNumber(Fraction.multiply(step.minimumSize, maximumTextGrowthFactor))} px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to ${textScaleFactor * 100} % within the ${Viewport.maximumPageZoomFactor * 100} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
+          issue: `Expected a maximum size of ${Fraction.toNumber(step.minimumSize)} px to ${Fraction.toNumber(Fraction.multiply(step.minimumSize, maximumTextGrowthFactor))} px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to ${Fraction.format(Fraction.multiply(textScaleFactor, Fraction.makeUnsafe(100n, 1n)))} % within the ${Fraction.format(Fraction.multiply(Viewport.maximumPageZoomFactor, Fraction.makeUnsafe(100n, 1n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
         },
     ),
   ),
@@ -211,10 +213,7 @@ export const scale = (
 ): Exit.Exit<ReadonlyArray<Step>, Schema.SchemaError> =>
   Exit.map(Schema.decodeExit(ScaleOptions)(options, { errors: 'all' }), (options) => {
     const minimumSize = (position: bigint) =>
-      Fraction.multiply(
-        Fraction.makeUnsafe(BigInt(defaultFontSize), 1n),
-        Fraction.pow(options.minimumFactor, position),
-      );
+      Fraction.multiply(defaultFontSize, Fraction.pow(options.minimumFactor, position));
     const maximumSize = (position: bigint) =>
       Fraction.multiply(options.maximumBodyFontSize, Fraction.pow(options.maximumFactor, position));
     const isAdmitted = (position: bigint) => {
@@ -225,10 +224,7 @@ export const scale = (
           maximumSize(position),
           Fraction.multiply(minimumSize(position), maximumTextGrowthFactor),
         ) &&
-        Fraction.isGreaterThanOrEqualTo(
-          minimumSize(position),
-          Fraction.makeUnsafe(BigInt(minimumFontSize), 1n),
-        ) &&
+        Fraction.isGreaterThanOrEqualTo(minimumSize(position), minimumFontSize) &&
         Fraction.isLessThanOrEqualTo(minimumSize(position), maximumFontSize)
       );
     };

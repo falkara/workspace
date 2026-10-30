@@ -13,20 +13,27 @@ describe('decimalPlaces', () => {
     const shares = Array.from({ length: 100_000 }, (_, index) => index / 10_000_000);
     const remError = Math.max(
       ...sizes.map((size) =>
-        Math.abs(Number.parseFloat(Fluid.rem(size)) - size / Typography.defaultFontSize),
+        Math.abs(
+          Number.parseFloat(Fluid.rem(size)) - size / Fraction.toNumber(Typography.defaultFontSize),
+        ),
       ),
     );
     const vwError = Math.max(
       ...shares.map((share) =>
-        Math.abs(Number.parseFloat(Fluid.vw(share)) - share * Length.viewportWidthUnits),
+        Math.abs(
+          Number.parseFloat(Fluid.vw(share)) - share * Fraction.toNumber(Length.viewportWidthUnits),
+        ),
       ),
     );
     const renderedError =
-      Viewport.maximumPageZoomFactor *
-      (remError * Typography.defaultFontSize * Viewport.maximumPageZoomFactor +
-        (vwError * Viewport.maximumViewportWidth) / Length.viewportWidthUnits);
+      Fraction.toNumber(Viewport.maximumPageZoomFactor) *
+      (remError *
+        Fraction.toNumber(Typography.defaultFontSize) *
+        Fraction.toNumber(Viewport.maximumPageZoomFactor) +
+        (vwError * Fraction.toNumber(Viewport.maximumViewportWidth)) /
+          Fraction.toNumber(Length.viewportWidthUnits));
 
-    expect(renderedError).toBeLessThan(Length.layoutUnit);
+    expect(renderedError).toBeLessThan(Fraction.toNumber(Length.layoutUnit));
   });
 
   it('is the fewest decimal places that do', () => {
@@ -36,25 +43,28 @@ describe('decimalPlaces', () => {
     const remError = Math.max(
       ...sizes.map((size) =>
         Math.abs(
-          Math.round((size / Typography.defaultFontSize) * fewer) / fewer -
-            size / Typography.defaultFontSize,
+          Math.round((size / Fraction.toNumber(Typography.defaultFontSize)) * fewer) / fewer -
+            size / Fraction.toNumber(Typography.defaultFontSize),
         ),
       ),
     );
     const vwError = Math.max(
       ...shares.map((share) =>
         Math.abs(
-          Math.round(share * Length.viewportWidthUnits * fewer) / fewer -
-            share * Length.viewportWidthUnits,
+          Math.round(share * Fraction.toNumber(Length.viewportWidthUnits) * fewer) / fewer -
+            share * Fraction.toNumber(Length.viewportWidthUnits),
         ),
       ),
     );
     const renderedError =
-      Viewport.maximumPageZoomFactor *
-      (remError * Typography.defaultFontSize * Viewport.maximumPageZoomFactor +
-        (vwError * Viewport.maximumViewportWidth) / Length.viewportWidthUnits);
+      Fraction.toNumber(Viewport.maximumPageZoomFactor) *
+      (remError *
+        Fraction.toNumber(Typography.defaultFontSize) *
+        Fraction.toNumber(Viewport.maximumPageZoomFactor) +
+        (vwError * Fraction.toNumber(Viewport.maximumViewportWidth)) /
+          Fraction.toNumber(Length.viewportWidthUnits));
 
-    expect(renderedError).toBeGreaterThanOrEqual(Length.layoutUnit);
+    expect(renderedError).toBeGreaterThanOrEqual(Fraction.toNumber(Length.layoutUnit));
   });
 
   it('is 4', () => {
@@ -79,7 +89,7 @@ describe('rem', () => {
 
 describe('vw', () => {
   it('writes a share of the viewport width in vw', () => {
-    expect(Fluid.vw(1 / Length.viewportWidthUnits)).toBe('1vw');
+    expect(Fluid.vw(1 / Fraction.toNumber(Length.viewportWidthUnits))).toBe('1vw');
   });
 
   it('rounds to the decimal places', () => {
@@ -134,23 +144,25 @@ describe('clamp', () => {
       ) ?? [];
     const sizeAtMinimum = Math.min(
       Math.max(
-        Number(intercept) * Typography.defaultFontSize +
-          (Number(slope) * Viewport.minimumViewportWidth) / Length.viewportWidthUnits,
-        Number(minimum) * Typography.defaultFontSize,
+        Number(intercept) * Fraction.toNumber(Typography.defaultFontSize) +
+          (Number(slope) * Fraction.toNumber(Viewport.minimumViewportWidth)) /
+            Fraction.toNumber(Length.viewportWidthUnits),
+        Number(minimum) * Fraction.toNumber(Typography.defaultFontSize),
       ),
-      Number(maximum) * Typography.defaultFontSize,
+      Number(maximum) * Fraction.toNumber(Typography.defaultFontSize),
     );
     const sizeAtMaximum = Math.min(
       Math.max(
-        Number(intercept) * Typography.defaultFontSize +
-          (Number(slope) * Viewport.maximumViewportWidth) / Length.viewportWidthUnits,
-        Number(minimum) * Typography.defaultFontSize,
+        Number(intercept) * Fraction.toNumber(Typography.defaultFontSize) +
+          (Number(slope) * Fraction.toNumber(Viewport.maximumViewportWidth)) /
+            Fraction.toNumber(Length.viewportWidthUnits),
+        Number(minimum) * Fraction.toNumber(Typography.defaultFontSize),
       ),
-      Number(maximum) * Typography.defaultFontSize,
+      Number(maximum) * Fraction.toNumber(Typography.defaultFontSize),
     );
 
-    expect(Math.abs(sizeAtMinimum - 16)).toBeLessThan(Length.layoutUnit);
-    expect(Math.abs(sizeAtMaximum - 20)).toBeLessThan(Length.layoutUnit);
+    expect(Math.abs(sizeAtMinimum - 16)).toBeLessThan(Fraction.toNumber(Length.layoutUnit));
+    expect(Math.abs(sizeAtMaximum - 20)).toBeLessThan(Fraction.toNumber(Length.layoutUnit));
   });
 
   it('grows linearly between the minimum and the maximum viewport width', () => {
@@ -161,15 +173,18 @@ describe('clamp', () => {
       ) ?? [];
     const sizeHalfway = Math.min(
       Math.max(
-        Number(intercept) * Typography.defaultFontSize +
-          (Number(slope) * ((Viewport.minimumViewportWidth + Viewport.maximumViewportWidth) / 2)) /
-            Length.viewportWidthUnits,
-        Number(minimum) * Typography.defaultFontSize,
+        Number(intercept) * Fraction.toNumber(Typography.defaultFontSize) +
+          (Number(slope) *
+            ((Fraction.toNumber(Viewport.minimumViewportWidth) +
+              Fraction.toNumber(Viewport.maximumViewportWidth)) /
+              2)) /
+            Fraction.toNumber(Length.viewportWidthUnits),
+        Number(minimum) * Fraction.toNumber(Typography.defaultFontSize),
       ),
-      Number(maximum) * Typography.defaultFontSize,
+      Number(maximum) * Fraction.toNumber(Typography.defaultFontSize),
     );
 
-    expect(Math.abs(sizeHalfway - 18)).toBeLessThan(Length.layoutUnit);
+    expect(Math.abs(sizeHalfway - 18)).toBeLessThan(Fraction.toNumber(Length.layoutUnit));
   });
 
   it('holds its sizes outside the viewport range', () => {
@@ -180,19 +195,21 @@ describe('clamp', () => {
       ) ?? [];
     const sizeBelow = Math.min(
       Math.max(
-        Number(intercept) * Typography.defaultFontSize +
-          (Number(slope) * (Viewport.minimumViewportWidth - 40)) / Length.viewportWidthUnits,
-        Number(minimum) * Typography.defaultFontSize,
+        Number(intercept) * Fraction.toNumber(Typography.defaultFontSize) +
+          (Number(slope) * (Fraction.toNumber(Viewport.minimumViewportWidth) - 40)) /
+            Fraction.toNumber(Length.viewportWidthUnits),
+        Number(minimum) * Fraction.toNumber(Typography.defaultFontSize),
       ),
-      Number(maximum) * Typography.defaultFontSize,
+      Number(maximum) * Fraction.toNumber(Typography.defaultFontSize),
     );
     const sizeAbove = Math.min(
       Math.max(
-        Number(intercept) * Typography.defaultFontSize +
-          (Number(slope) * (Viewport.maximumViewportWidth + 320)) / Length.viewportWidthUnits,
-        Number(minimum) * Typography.defaultFontSize,
+        Number(intercept) * Fraction.toNumber(Typography.defaultFontSize) +
+          (Number(slope) * (Fraction.toNumber(Viewport.maximumViewportWidth) + 320)) /
+            Fraction.toNumber(Length.viewportWidthUnits),
+        Number(minimum) * Fraction.toNumber(Typography.defaultFontSize),
       ),
-      Number(maximum) * Typography.defaultFontSize,
+      Number(maximum) * Fraction.toNumber(Typography.defaultFontSize),
     );
 
     expect(sizeBelow).toBe(16);

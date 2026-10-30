@@ -100,6 +100,10 @@ describe('makeUnsafe', () => {
 });
 
 describe('one', () => {
+  it('is a valid fraction', () => {
+    expect(Schema.is(Fraction.Fraction)(Fraction.one)).toBe(true);
+  });
+
   it('is 1/1', () => {
     expect(Fraction.one).toEqual({ numerator: 1n, denominator: 1n });
   });
