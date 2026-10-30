@@ -1,13 +1,4 @@
-import { Exit, Order, Schema, SchemaGetter } from 'effect';
-
-/** The greatest common divisor, found in a loop rather than by recursion, so that whole numbers of any size never exhaust the call stack. */
-const greatestCommonDivisor = (a: bigint, b: bigint): bigint => {
-  let [dividend, divisor] = [a, b];
-  while (divisor !== 0n) {
-    [dividend, divisor] = [divisor, dividend % divisor];
-  }
-  return dividend;
-};
+import { BigInt, Exit, Order, Schema, SchemaGetter } from 'effect';
 
 /** A schema of a ratio of two positive whole numbers, held as big integers so that no arithmetic on it overflows, and decoded in lowest terms so that equal ratios have equal fields and every operation here keeps them so. */
 export const Fraction = Schema.Struct({
@@ -30,10 +21,8 @@ export const Fraction = Schema.Struct({
 }).pipe(
   Schema.decode({
     decode: SchemaGetter.transform((fraction) => ({
-      numerator:
-        fraction.numerator / greatestCommonDivisor(fraction.numerator, fraction.denominator),
-      denominator:
-        fraction.denominator / greatestCommonDivisor(fraction.numerator, fraction.denominator),
+      numerator: fraction.numerator / BigInt.gcd(fraction.numerator, fraction.denominator),
+      denominator: fraction.denominator / BigInt.gcd(fraction.numerator, fraction.denominator),
     })),
     encode: SchemaGetter.passthrough(),
   }),
@@ -55,7 +44,7 @@ export const makeUnsafe = <Numerator extends bigint, Denominator extends bigint>
   numerator: `${Numerator}` extends `-${string}` | '0' ? never : Numerator,
   denominator: `${Denominator}` extends `-${string}` | '0' ? never : Denominator,
 ): Fraction => {
-  const divisor = greatestCommonDivisor(numerator, denominator);
+  const divisor = BigInt.gcd(numerator, denominator);
   return (
     divisor === 0n
       ? { numerator, denominator }
@@ -68,10 +57,10 @@ export const one = makeUnsafe(1n, 1n);
 
 /** The sum of two fractions in lowest terms, reduced only by the common divisor of the denominators, as Knuth gives it, so that no divisor is sought between two large products. */
 export const sum = (self: Fraction, that: Fraction): Fraction => {
-  const divisor = greatestCommonDivisor(self.denominator, that.denominator);
+  const divisor = BigInt.gcd(self.denominator, that.denominator);
   const numerator =
     self.numerator * (that.denominator / divisor) + that.numerator * (self.denominator / divisor);
-  const remainingDivisor = greatestCommonDivisor(numerator, divisor);
+  const remainingDivisor = BigInt.gcd(numerator, divisor);
   return {
     numerator: numerator / remainingDivisor,
     denominator: (self.denominator / divisor) * (that.denominator / remainingDivisor),
@@ -87,10 +76,10 @@ export const subtract = (self: Fraction, that: Fraction): Exit.Exit<Fraction, Sc
 
 /** The difference of a fraction less one known to be smaller, such as a factor of this library less 1, in lowest terms, reduced only by the common divisor of the denominators, as Knuth gives it. Nothing is checked as it runs, so a second fraction that is not smaller gives a value that breaks every promise of the type; `subtract` checks it. */
 export const subtractUnsafe = (self: Fraction, that: Fraction): Fraction => {
-  const divisor = greatestCommonDivisor(self.denominator, that.denominator);
+  const divisor = BigInt.gcd(self.denominator, that.denominator);
   const numerator =
     self.numerator * (that.denominator / divisor) - that.numerator * (self.denominator / divisor);
-  const remainingDivisor = greatestCommonDivisor(numerator, divisor);
+  const remainingDivisor = BigInt.gcd(numerator, divisor);
   return {
     numerator: numerator / remainingDivisor,
     denominator: (self.denominator / divisor) * (that.denominator / remainingDivisor),
@@ -99,8 +88,8 @@ export const subtractUnsafe = (self: Fraction, that: Fraction): Fraction => {
 
 /** The product of two fractions in lowest terms, each numerator cancelled against the other denominator before they multiply, so that no divisor is sought between two large products. */
 export const multiply = (self: Fraction, that: Fraction): Fraction => {
-  const selfDivisor = greatestCommonDivisor(self.numerator, that.denominator);
-  const thatDivisor = greatestCommonDivisor(that.numerator, self.denominator);
+  const selfDivisor = BigInt.gcd(self.numerator, that.denominator);
+  const thatDivisor = BigInt.gcd(that.numerator, self.denominator);
   return {
     numerator: (self.numerator / selfDivisor) * (that.numerator / thatDivisor),
     denominator: (self.denominator / thatDivisor) * (that.denominator / selfDivisor),
@@ -109,8 +98,8 @@ export const multiply = (self: Fraction, that: Fraction): Fraction => {
 
 /** The quotient of two fractions in lowest terms, the numerators and the denominators cancelled against each other before they multiply, so that no divisor is sought between two large products. */
 export const divide = (self: Fraction, that: Fraction): Fraction => {
-  const numeratorDivisor = greatestCommonDivisor(self.numerator, that.numerator);
-  const denominatorDivisor = greatestCommonDivisor(self.denominator, that.denominator);
+  const numeratorDivisor = BigInt.gcd(self.numerator, that.numerator);
+  const denominatorDivisor = BigInt.gcd(self.denominator, that.denominator);
   return {
     numerator: (self.numerator / numeratorDivisor) * (that.denominator / denominatorDivisor),
     denominator: (self.denominator / denominatorDivisor) * (that.numerator / numeratorDivisor),
@@ -167,15 +156,16 @@ export const toNumber = (self: Fraction): number => {
   const shift = Math.min(
     (
       exponent >= 0
-        ? self.numerator >= self.denominator << BigInt(exponent)
-        : self.numerator << BigInt(-exponent) >= self.denominator
+        ? self.numerator >= self.denominator << globalThis.BigInt(exponent)
+        : self.numerator << globalThis.BigInt(-exponent) >= self.denominator
     )
       ? 52 - exponent
       : 53 - exponent,
     1074,
   );
-  const scaledNumerator = shift >= 0 ? self.numerator << BigInt(shift) : self.numerator;
-  const scaledDenominator = shift >= 0 ? self.denominator : self.denominator << BigInt(-shift);
+  const scaledNumerator = shift >= 0 ? self.numerator << globalThis.BigInt(shift) : self.numerator;
+  const scaledDenominator =
+    shift >= 0 ? self.denominator : self.denominator << globalThis.BigInt(-shift);
   const quotient = scaledNumerator / scaledDenominator;
   const twiceRemainder = (scaledNumerator % scaledDenominator) * 2n;
   return (
