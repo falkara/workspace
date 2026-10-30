@@ -1,4 +1,4 @@
-import { Effect, Exit, Schema, SchemaIssue, SchemaTransformation } from 'effect';
+import { Effect, Exit, Schema, SchemaGetter, SchemaIssue, SchemaTransformation } from 'effect';
 
 import * as Fluid from '#src/Fluid';
 import * as Fraction from '#src/Fraction';
@@ -487,63 +487,71 @@ const closestShade = (
  * @see https://www.w3.org/TR/css-color-4/#css-gamut-mapping-algorithms
  */
 export const shade = (brand: Brand): Exit.Exit<string, Schema.SchemaError> =>
-  Exit.map(
-    Schema.decodeExit(
-      Schema.Struct({
-        color: Color,
-        background: Color,
-        step: Typography.Step,
-        fontWeight: Schema.Finite.pipe(
-          Schema.check(
-            Schema.isBetween(
-              { minimum: Typography.minimumFontWeight, maximum: Typography.maximumFontWeight },
-              {
-                message: `Expected a font weight from ${Typography.minimumFontWeight} to ${Typography.maximumFontWeight}, as CSS Fonts allows`,
-              },
-            ),
+  Schema.decodeExit(
+    Schema.Struct({
+      color: Color,
+      background: Color,
+      step: Typography.Step,
+      fontWeight: Schema.Finite.pipe(
+        Schema.check(
+          Schema.isBetween(
+            { minimum: Typography.minimumFontWeight, maximum: Typography.maximumFontWeight },
+            {
+              message: `Expected a font weight from ${Typography.minimumFontWeight} to ${Typography.maximumFontWeight}, as CSS Fonts allows`,
+            },
           ),
         ),
-        minimumContrast: Schema.optional(Schema.Finite),
-      }).pipe(
-        Schema.check(
-          Schema.makeFilter((colors) => {
-            const required = requiredContrast(colors.step, colors.fontWeight);
-            const size =
-              Math.round(Fraction.toNumber(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) /
-              10 ** Fluid.decimalPlaces;
-            if (colors.minimumContrast !== undefined && colors.minimumContrast < required) {
-              return {
-                path: ['minimumContrast'],
-                issue: `Expected a minimum contrast of at least ${required}:1, the ratio WCAG 2.2 Contrast (Enhanced) requires for text of ${size} px at weight ${colors.fontWeight}`,
-              };
-            }
-            const target = colors.minimumContrast ?? required;
-            return (
-              closestShade(colors.color, colors.background, target) !== undefined || {
-                path: ['background'],
-                issue: `Expected a background against which a shade of the color within sRGB reaches ${target}:1, the contrast ${colors.minimumContrast === undefined ? `WCAG 2.2 Contrast (Enhanced) requires for text of ${size} px at weight ${colors.fontWeight}` : 'the project asks for'}`,
-              }
-            );
-          }),
+      ),
+      minimumContrast: Schema.optional(Schema.Finite),
+    }).pipe(
+      Schema.check(
+        Schema.makeFilter(
+          (colors) =>
+            colors.minimumContrast === undefined ||
+            colors.minimumContrast >= requiredContrast(colors.step, colors.fontWeight) || {
+              path: ['minimumContrast'],
+              issue: `Expected a minimum contrast of at least ${requiredContrast(colors.step, colors.fontWeight)}:1, the ratio WCAG 2.2 Contrast (Enhanced) requires for text of ${Math.round(Fraction.toNumber(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${colors.fontWeight}`,
+            },
         ),
       ),
-    )(
-      {
-        color: brand.color,
-        background: brand.background,
-        step: brand.step,
-        fontWeight: brand.fontWeight,
-        minimumContrast: brand.minimumContrast,
-      },
-      { errors: 'all' },
+      // The shade is found once, as the value the brand decodes to, and its absence is the failure.
+      Schema.decodeTo(
+        Schema.String,
+        SchemaTransformation.makeTransformation({
+          decode: SchemaGetter.transformEffect((colors, options) => {
+            const target =
+              colors.minimumContrast ?? requiredContrast(colors.step, colors.fontWeight);
+            const closest = closestShade(colors.color, colors.background, target);
+            return closest === undefined
+              ? Effect.fail(
+                  new SchemaIssue.Pointer(
+                    ['background'],
+                    new SchemaIssue.InvalidValue(
+                      {
+                        message: `Expected a background against which a shade of the color within sRGB reaches ${target}:1, the contrast ${colors.minimumContrast === undefined ? `WCAG 2.2 Contrast (Enhanced) requires for text of ${Math.round(Fraction.toNumber(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${colors.fontWeight}` : 'the project asks for'}`,
+                      },
+                      colors.background,
+                      options,
+                    ),
+                  ),
+                )
+              : // Written in fixed notation, which CSS reads, rather than the exponent JavaScript uses for small numbers, without trailing zeros.
+                Effect.succeed(
+                  `oklch(${closest[0].toFixed(16).replace(/\.?0+$/, '')} ${closest[1].toFixed(16).replace(/\.?0+$/, '')} ${closest[2]})`,
+                );
+          }),
+          // The brand a shade was found for cannot be read back from the shade.
+          encode: SchemaGetter.forbiddenEncoding,
+        }),
+      ),
     ),
-    (colors) => {
-      const [lightness, chroma, hue] = closestShade(
-        colors.color,
-        colors.background,
-        colors.minimumContrast ?? requiredContrast(colors.step, colors.fontWeight),
-      ) ?? [0, 0, 0];
-      // Written in fixed notation, which CSS reads, rather than the exponent JavaScript uses for small numbers, without trailing zeros.
-      return `oklch(${lightness.toFixed(16).replace(/\.?0+$/, '')} ${chroma.toFixed(16).replace(/\.?0+$/, '')} ${hue})`;
+  )(
+    {
+      color: brand.color,
+      background: brand.background,
+      step: brand.step,
+      fontWeight: brand.fontWeight,
+      minimumContrast: brand.minimumContrast,
     },
+    { errors: 'all' },
   );
