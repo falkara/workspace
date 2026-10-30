@@ -26,6 +26,14 @@ export const Fraction = Schema.Struct({
     })),
     encode: SchemaGetter.passthrough(),
   }),
+  Schema.check(
+    // Checked on the decoded fraction as well, so that a fraction made in any other way is valid only in lowest terms.
+    Schema.makeFilter(
+      (fraction) =>
+        BigInt.gcd(fraction.numerator, fraction.denominator) === 1n ||
+        'Expected a fraction in lowest terms, so that equal ratios have equal fields',
+    ),
+  ),
   Schema.brand('Fraction'),
 );
 

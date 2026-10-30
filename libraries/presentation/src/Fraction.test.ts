@@ -34,6 +34,10 @@ describe('Fraction', () => {
 
     expect(Exit.isFailure(exit)).toBe(true);
   });
+
+  it('refuses a ratio that is not in lowest terms as a fraction made otherwise than by decoding', () => {
+    expect(Schema.is(Fraction.Fraction)({ numerator: 2n, denominator: 4n })).toBe(false);
+  });
 });
 
 describe('make', () => {
