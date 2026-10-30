@@ -78,6 +78,25 @@ export const sum = (self: Fraction, that: Fraction): Fraction => {
   } as Fraction;
 };
 
+/** The difference of the first fraction less the second in lowest terms, or a failure with the reason when the second is not smaller, as a difference that is not positive is no fraction. */
+export const subtract = (self: Fraction, that: Fraction): Exit.Exit<Fraction, Schema.SchemaError> =>
+  make(
+    self.numerator * that.denominator - that.numerator * self.denominator,
+    self.denominator * that.denominator,
+  );
+
+/** The difference of a fraction less one known to be smaller, such as a factor of this library less 1, in lowest terms, reduced only by the common divisor of the denominators, as Knuth gives it. Nothing is checked as it runs, so a second fraction that is not smaller gives a value that breaks every promise of the type; `subtract` checks it. */
+export const subtractUnsafe = (self: Fraction, that: Fraction): Fraction => {
+  const divisor = greatestCommonDivisor(self.denominator, that.denominator);
+  const numerator =
+    self.numerator * (that.denominator / divisor) - that.numerator * (self.denominator / divisor);
+  const remainingDivisor = greatestCommonDivisor(numerator, divisor);
+  return {
+    numerator: numerator / remainingDivisor,
+    denominator: (self.denominator / divisor) * (that.denominator / remainingDivisor),
+  } as Fraction;
+};
+
 /** The product of two fractions in lowest terms, each numerator cancelled against the other denominator before they multiply, so that no divisor is sought between two large products. */
 export const multiply = (self: Fraction, that: Fraction): Fraction => {
   const selfDivisor = greatestCommonDivisor(self.numerator, that.denominator);

@@ -119,6 +119,58 @@ describe('sum', () => {
   });
 });
 
+describe('subtract', () => {
+  it('subtracts the second fraction from the first in lowest terms', () => {
+    const exit = Fraction.subtract(Fraction.makeUnsafe(1n, 2n), Fraction.makeUnsafe(1n, 6n));
+
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual(Fraction.makeUnsafe(1n, 3n));
+  });
+
+  it('rejects a second fraction equal to the first, with the reason', () => {
+    const exit = Fraction.subtract(Fraction.makeUnsafe(1n, 2n), Fraction.makeUnsafe(1n, 2n));
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['numerator'],
+        message:
+          'Expected a positive numerator, so that every operation on the fraction keeps it positive',
+      },
+    ]);
+  });
+
+  it('rejects a second fraction larger than the first', () => {
+    const exit = Fraction.subtract(Fraction.makeUnsafe(1n, 6n), Fraction.makeUnsafe(1n, 2n));
+
+    expect(Exit.isFailure(exit)).toBe(true);
+  });
+});
+
+describe('subtractUnsafe', () => {
+  it('subtracts the second fraction from the first in lowest terms', () => {
+    expect(
+      Fraction.subtractUnsafe(Fraction.makeUnsafe(1n, 2n), Fraction.makeUnsafe(1n, 6n)),
+    ).toEqual(Fraction.makeUnsafe(1n, 3n));
+  });
+
+  it('subtracts two fractions whose denominators share a divisor in lowest terms', () => {
+    expect(
+      Fraction.subtractUnsafe(Fraction.makeUnsafe(3n, 10n), Fraction.makeUnsafe(1n, 6n)),
+    ).toEqual(Fraction.makeUnsafe(2n, 15n));
+  });
+
+  it('agrees with subtract on a smaller second fraction', () => {
+    const exit = Fraction.subtract(Fraction.makeUnsafe(7n, 4n), Fraction.makeUnsafe(5n, 6n));
+
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual(
+      Fraction.subtractUnsafe(Fraction.makeUnsafe(7n, 4n), Fraction.makeUnsafe(5n, 6n)),
+    );
+  });
+});
+
 describe('multiply', () => {
   it('multiplies two fractions in lowest terms', () => {
     expect(Fraction.multiply(Fraction.makeUnsafe(6n, 5n), Fraction.makeUnsafe(5n, 4n))).toEqual(
