@@ -15,6 +15,100 @@ const transform = (
   third[0] * x + third[1] * y + third[2] * z,
 ];
 
+/** A rational number, a numerator over a positive denominator, both big integers, so that the conversion of CSS Color 4 is followed without rounding. */
+type Rational = readonly [bigint, bigint];
+
+/** The number JavaScript holds, exactly as the rational its bits encode. */
+const rational = (value: number): Rational => {
+  const view = new DataView(new ArrayBuffer(8));
+  view.setFloat64(0, value);
+  const bits = view.getBigUint64(0);
+  const sign = bits >> 63n === 0n ? 1n : -1n;
+  const exponent = Number((bits >> 52n) & 0x7ffn);
+  const fraction = bits & ((1n << 52n) - 1n);
+  // A subnormal number has no hidden bit and the exponent of the smallest normal one.
+  const significand = exponent === 0 ? fraction : fraction | (1n << 52n);
+  const power = (exponent === 0 ? 1 : exponent) - 1075;
+  return power >= 0
+    ? [sign * (significand << BigInt(power)), 1n]
+    : [sign * significand, 1n << BigInt(-power)];
+};
+
+/** The sum of two rationals. */
+const plus = ([a, b]: Rational, [c, d]: Rational): Rational => [a * d + c * b, b * d];
+
+/** The product of two rationals. */
+const times = ([a, b]: Rational, [c, d]: Rational): Rational => [a * c, b * d];
+
+/** Whether the first rational is smaller than the second. */
+const isBelow = ([a, b]: Rational, [c, d]: Rational): boolean => a * d < c * b;
+
+/** The product of one of the matrices of Color and a vector of rationals, without rounding. */
+const exactTransform = (
+  [first, second, third]: typeof Color.oklabToLms,
+  [x, y, z]: readonly [Rational, Rational, Rational],
+): readonly [Rational, Rational, Rational] => [
+  plus(
+    plus(times(rational(first[0]), x), times(rational(first[1]), y)),
+    times(rational(first[2]), z),
+  ),
+  plus(
+    plus(times(rational(second[0]), x), times(rational(second[1]), y)),
+    times(rational(second[2]), z),
+  ),
+  plus(
+    plus(times(rational(third[0]), x), times(rational(third[1]), y)),
+    times(rational(third[2]), z),
+  ),
+];
+
+/** A rational held within the range of a channel, from 0 to 1. */
+const held = (value: Rational): Rational =>
+  isBelow(value, [0n, 1n]) ? [0n, 1n] : isBelow([1n, 1n], value) ? [1n, 1n] : value;
+
+/** The relative luminance of a color of the given lightness and chroma at a hue of 0, whose cosine and sine are 1 and 0 exactly, converted by the matrices of CSS Color 4 as they are written, without rounding. */
+const exactLuminance = (lightness: number, chroma: number): Rational => {
+  const [long, medium, short] = exactTransform(Color.oklabToLms, [
+    rational(lightness),
+    rational(chroma),
+    [0n, 1n],
+  ]);
+  const [red, green, blue] = exactTransform(
+    Color.xyzToLinearSrgb,
+    exactTransform(Color.lmsToXyz, [
+      times(times(long, long), long),
+      times(times(medium, medium), medium),
+      times(times(short, short), short),
+    ]),
+  );
+  return plus(
+    plus(
+      times(rational(Color.luminanceWeights[0]), held(red)),
+      times(rational(Color.luminanceWeights[1]), held(green)),
+    ),
+    times(rational(Color.luminanceWeights[2]), held(blue)),
+  );
+};
+
+/** The contrast ratio of two relative luminances as WCAG 2.2 defines it, without rounding. */
+const exactContrast = (first: Rational, second: Rational): Rational => {
+  const [lighter, darker] = isBelow(first, second) ? [second, first] : [first, second];
+  const [numerator, denominator] = plus(lighter, rational(Color.contrastFlare));
+  const [darkNumerator, darkDenominator] = plus(darker, rational(Color.contrastFlare));
+  return [numerator * darkDenominator, denominator * darkNumerator];
+};
+
+/** The largest number JavaScript holds that is at most the given positive rational, so that a ratio taken from it is one the exact colors meet. */
+const numberBelow = (value: Rational): number => {
+  const view = new DataView(new ArrayBuffer(8));
+  view.setFloat64(0, Number((value[0] * 10n ** 30n) / value[1]) / 1e30);
+  // Stepping down by one unit in the last place until the number no longer lies above the rational.
+  while (isBelow(value, rational(view.getFloat64(0)))) {
+    view.setBigUint64(0, view.getBigUint64(0) - 1n);
+  }
+  return view.getFloat64(0);
+};
+
 describe('enhancedContrastRatio', () => {
   it('is the contrast WCAG 2.2 Contrast (Enhanced) requires for text', () => {
     expect(Color.enhancedContrastRatio).toBe(7);
@@ -404,6 +498,58 @@ describe('contrast', () => {
 });
 
 describe('reaches', () => {
+  it('rests on the exact colors, by which white falls short of a relative luminance of 1', () => {
+    const white = exactLuminance(1, 0);
+
+    expect(isBelow(white, [1n, 1n])).toBe(true);
+    expect(numberBelow(exactContrast(white, exactLuminance(0, 0)))).toBe(20.999999999999986);
+  });
+
+  it.prop(
+    'reaches the exact contrast of every two grays',
+    [
+      Schema.Finite.check(Schema.isBetween({ minimum: 0, maximum: 1 })),
+      Schema.Finite.check(Schema.isBetween({ minimum: 0, maximum: 1 })),
+    ],
+    ([textLightness, backgroundLightness]) => {
+      const exit = Color.reaches(
+        { text: `oklch(${textLightness} 0 0)`, background: `oklch(${backgroundLightness} 0 0)` },
+        numberBelow(
+          exactContrast(exactLuminance(textLightness, 0), exactLuminance(backgroundLightness, 0)),
+        ),
+      );
+
+      expect(Exit.isSuccess(exit) ? exit.value : undefined).toBe(true);
+    },
+  );
+
+  it.prop(
+    'reaches the exact contrast of every two colors within sRGB at a hue of 0',
+    [
+      Schema.Finite.check(Schema.isBetween({ minimum: 0, maximum: 1 })),
+      Schema.Finite.check(Schema.isBetween({ minimum: 0, maximum: 1 / 10 })),
+      Schema.Finite.check(Schema.isBetween({ minimum: 0, maximum: 1 })),
+      Schema.Finite.check(Schema.isBetween({ minimum: 0, maximum: 1 / 10 })),
+    ],
+    ([textLightness, textChroma, backgroundLightness, backgroundChroma]) => {
+      const exit = Color.reaches(
+        {
+          text: `oklch(${textLightness} ${textChroma} 0)`,
+          background: `oklch(${backgroundLightness} ${backgroundChroma} 0)`,
+        },
+        numberBelow(
+          exactContrast(
+            exactLuminance(textLightness, textChroma),
+            exactLuminance(backgroundLightness, backgroundChroma),
+          ),
+        ),
+      );
+
+      // A color outside sRGB is refused before any contrast, so that only colors within it are held to it.
+      expect(Exit.isFailure(exit) || exit.value).toBe(true);
+    },
+  );
+
   it('reaches a ratio the exact colors meet, though the ratio JavaScript computes lies below it', () => {
     const colors = { text: `oklch(${Math.cbrt(1 / 10)} 0 0)`, background: 'oklch(100% 0 0)' };
     const contrast = Color.contrast(colors.text, colors.background);
