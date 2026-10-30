@@ -376,26 +376,48 @@ describe('pow', () => {
   );
 });
 
-describe('order', () => {
+describe('Order', () => {
   it('orders fractions by value', () => {
-    expect(Fraction.order(Fraction.makeUnsafe(6n, 5n), Fraction.makeUnsafe(5n, 4n))).toBe(-1);
+    expect(Fraction.Order(Fraction.makeUnsafe(6n, 5n), Fraction.makeUnsafe(5n, 4n))).toBe(-1);
   });
 
   it('finds fractions of equal value equal', () => {
-    expect(Fraction.order(Fraction.makeUnsafe(12n, 10n), Fraction.makeUnsafe(6n, 5n))).toBe(0);
+    expect(Fraction.Order(Fraction.makeUnsafe(12n, 10n), Fraction.makeUnsafe(6n, 5n))).toBe(0);
   });
 
   it.prop('is antisymmetric', [Fraction.Fraction, Fraction.Fraction], ([a, b]) => {
-    expect(Fraction.order(a, b)).toBe(-Fraction.order(b, a) || 0);
+    expect(Fraction.Order(a, b)).toBe(-Fraction.Order(b, a) || 0);
   });
 
   it.prop(
     'finds a fraction equal only to itself',
     [Fraction.Fraction, Fraction.Fraction],
     ([a, b]) => {
-      expect(Fraction.order(a, b) === 0).toBe(
+      expect(Fraction.Order(a, b) === 0).toBe(
         a.numerator === b.numerator && a.denominator === b.denominator,
       );
+    },
+  );
+});
+
+describe('Equivalence', () => {
+  it('finds fractions of equal value equal', () => {
+    expect(Fraction.Equivalence(Fraction.makeUnsafe(12n, 10n), Fraction.makeUnsafe(6n, 5n))).toBe(
+      true,
+    );
+  });
+
+  it('finds fractions of different value different', () => {
+    expect(Fraction.Equivalence(Fraction.makeUnsafe(6n, 5n), Fraction.makeUnsafe(5n, 4n))).toBe(
+      false,
+    );
+  });
+
+  it.prop(
+    'agrees with the order on which fractions are equal',
+    [Fraction.Fraction, Fraction.Fraction],
+    ([a, b]) => {
+      expect(Fraction.Equivalence(a, b)).toBe(Fraction.Order(a, b) === 0);
     },
   );
 });

@@ -1,4 +1,4 @@
-import { BigInt, Exit, Order, Schema, SchemaGetter } from 'effect';
+import { BigInt, Equivalence as Equ, Exit, Order as order, Schema, SchemaGetter } from 'effect';
 
 /** A schema of a ratio of two positive whole numbers, held as big integers so that no arithmetic on it overflows, and decoded in lowest terms so that equal ratios have equal fields and every operation here keeps them so. */
 export const Fraction = Schema.Struct({
@@ -124,35 +124,40 @@ export const pow = (self: Fraction, exponent: bigint): Fraction =>
       }) as Fraction;
 
 /** The order of fractions by value, compared through cross products, so that no division rounds them. */
-export const order: Order.Order<Fraction> = Order.make((self, that) =>
-  Order.BigInt(self.numerator * that.denominator, that.numerator * self.denominator),
+export const Order: order.Order<Fraction> = order.make((self, that) =>
+  order.BigInt(self.numerator * that.denominator, that.numerator * self.denominator),
+);
+
+/** The equality of fractions by value, field by field, as a fraction in lowest terms is the only one of its value. */
+export const Equivalence: Equ.Equivalence<Fraction> = Equ.make(
+  (self, that) => self.numerator === that.numerator && self.denominator === that.denominator,
 );
 
 /** Whether the first fraction is greater than the second. */
-export const isGreaterThan = Order.isGreaterThan(order);
+export const isGreaterThan = order.isGreaterThan(Order);
 
 /** Whether the first fraction is greater than or equal to the second. */
-export const isGreaterThanOrEqualTo = Order.isGreaterThanOrEqualTo(order);
+export const isGreaterThanOrEqualTo = order.isGreaterThanOrEqualTo(Order);
 
 /** Whether the first fraction is less than or equal to the second. */
-export const isLessThanOrEqualTo = Order.isLessThanOrEqualTo(order);
+export const isLessThanOrEqualTo = order.isLessThanOrEqualTo(Order);
 
 /** The fraction written as its numerator over its denominator, such as 6/5, or as its numerator alone when it is whole. */
 export const format = (self: Fraction): string =>
   self.denominator === 1n ? `${self.numerator}` : `${self.numerator}/${self.denominator}`;
 
 /** A schema check that a fraction is greater than the given one. */
-export const isGreaterThanFraction = Schema.makeIsGreaterThan({ order, formatter: format });
+export const isGreaterThanFraction = Schema.makeIsGreaterThan({ order: Order, formatter: format });
 
 /** A schema check that a fraction is greater than or equal to the given one. */
 export const isGreaterThanOrEqualToFraction = Schema.makeIsGreaterThanOrEqualTo({
-  order,
+  order: Order,
   formatter: format,
 });
 
 /** A schema check that a fraction is less than or equal to the given one. */
 export const isLessThanOrEqualToFraction = Schema.makeIsLessThanOrEqualTo({
-  order,
+  order: Order,
   formatter: format,
 });
 
