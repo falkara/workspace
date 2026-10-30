@@ -88,6 +88,36 @@ describe('vw', () => {
 });
 
 describe('clamp', () => {
+  it('takes sizes written as plain fractions and reduces them', () => {
+    const exit = Fluid.clamp(
+      { numerator: 32n, denominator: 2n },
+      { numerator: 20n, denominator: 1n },
+    );
+
+    expect(Exit.isSuccess(exit) ? exit.value : '').toBe(
+      'clamp(1rem, 0.9167rem + 0.4167vw, 1.25rem)',
+    );
+  });
+
+  it('rejects a size that is not a positive fraction, with the reason', () => {
+    const exit = Fluid.clamp(
+      { numerator: 0n, denominator: 1n },
+      { numerator: 20n, denominator: 1n },
+    );
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['minimumSize', 'numerator'],
+        message:
+          'Expected a positive numerator, so that every operation on the fraction keeps it positive',
+      },
+    ]);
+  });
+
   it('writes a CSS clamp() with the sizes in rem and the growth in vw', () => {
     const exit = Fluid.clamp(Fraction.makeUnsafe(16n, 1n), Fraction.makeUnsafe(20n, 1n));
 
