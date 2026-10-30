@@ -1,5 +1,39 @@
 # @falkara/presentation
 
+## 0.7.0
+
+### Minor Changes
+
+- [`e9b3c5f`](https://github.com/falkara/workspace/commit/e9b3c5fcb35caaf569f25a8abc82510f86d6f431) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Fraction.make` checks its numerator and denominator and returns an `Exit`, failing with the reason when either is not positive, so that no fraction breaks the promise of its type. `Fraction.makeUnsafe` builds a fraction of values known to be positive without checking them, as the constants of the library do. A type scale takes its options as plain objects, such as `{ numerator: 6n, denominator: 5n }`, and checks them itself.
+
+- [`7940ef3`](https://github.com/falkara/workspace/commit/7940ef3fb11a7ce3fcc33511cde27e1e5169f9cd) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Color.Pair` and `Color.Brand` are the schemas of the inputs of `Color.verify` and `Color.shade`, built once with the module rather than on every call, and the `Pair` and `Brand` types are their encoded side, written as before.
+
+- [`f05e349`](https://github.com/falkara/workspace/commit/f05e3498af0cceadb936a969c946a905283d0646) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Color.verify` fails with a `ContrastShortfall`, which holds the contrast of the colors and the contrast required, when a pair falls short of the contrast its text needs, and `Color.shade` fails with a `NoLegibleShade` when no shade within sRGB reaches it. Both are tagged errors apart from the `SchemaError` of an input that is not valid, so that a caller tells a result from a typo by its `_tag`, or catches it with `Effect.catchTag`, instead of reading the message.
+
+- [`80a7ec8`](https://github.com/falkara/workspace/commit/80a7ec85f4974d9cc9b8a991ab46e4117fe748e0) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Fraction.sum`, `Fraction.subtract`, `Fraction.subtractUnsafe`, `Fraction.multiply`, `Fraction.divide` and `Fraction.pow` take their second operand alone as well, as the arithmetic of Effect does, so that `pipe(a, Fraction.multiply(b))` reads as `Fraction.multiply(a, b)`.
+
+- [`c88cde1`](https://github.com/falkara/workspace/commit/c88cde1192900166282295f203a7ca09c5b2e279) Thanks [@filipfalcon](https://github.com/filipfalcon)! - Every fact that the library derives fractions from is itself a fraction, such as `Viewport.minimumViewportWidth`, `Typography.defaultFontSize` or `Length.layoutUnit`, and every value that follows from them is derived by fraction arithmetic alone, so that a fact that is not a whole number, such as a viewport width factor of 15/4, gives exact values instead of failing as the module loads. Read a fact as a number with `Fraction.toNumber`.
+
+- [`adc0745`](https://github.com/falkara/workspace/commit/adc0745a18650aedee1607c0885902a37dd1c7c9) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Fraction.order` is renamed `Fraction.Order`, as Effect names the order of its own data types, and `Fraction.Equivalence` compares fractions by value field by field, as a fraction in lowest terms is the only one of its value.
+
+- [`5a1a0dc`](https://github.com/falkara/workspace/commit/5a1a0dcb2f5733a88aec090717376273473df1a5) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Fraction.subtract` gives the difference of two fractions, or a failure with the reason when it is not positive, and `Fraction.subtractUnsafe` gives it for a second fraction known to be smaller.
+
+- [`8ee0ac4`](https://github.com/falkara/workspace/commit/8ee0ac4c2999b2f9b2e01c85e7261ba163b2e47d) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Color.maximumContrastRatio` is 21, the largest contrast ratio WCAG 2.2 defines, of black against white, derived from the flare. `Color.verify` and `Color.shade` refuse a `minimumContrast` above it with that reason, instead of a contrast no colors can reach or, in `shade`, a failure that blamed the background.
+
+- [`1b59fff`](https://github.com/falkara/workspace/commit/1b59fff090343337987808743e8d306c59867171) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Color.Color` decodes an oklch() color once into its components, `{ lightness, chroma, hue, alpha }`, instead of checking a string that every function then reads again, and checks that the color is opaque and within sRGB on those components. It encodes them back in fixed notation. `Color.contrast`, `Color.verify` and `Color.shade` take colors written as strings as before.
+
+- [`9edd859`](https://github.com/falkara/workspace/commit/9edd859779ced05c46c0ee849d4ea264144ca5bb) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Fluid.clamp` takes its sizes as plain fractions, such as `{ numerator: 16n, denominator: 1n }`, and checks them itself, as every other input of the library does.
+
+- [`b8cf189`](https://github.com/falkara/workspace/commit/b8cf189a3249229d81312ebc307579846b875d83) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Length.layoutUnit` is split in two: `Length.finestLayoutUnit`, the 1/64 px of WebKit and Chromium, keeps the rounding of `Fluid` below the layout unit of every browser, and `Length.coarsestLayoutUnit`, the 1/60 px app unit of Gecko, sets `Typography.minimumStepFactor`, now 781/780. Its guarantee is restated as layout: a length of at least 1 em, such as the line height, falls on a different point of the layout grid in consecutive steps in every Baseline core browser. It promises nothing about how glyphs render, as browsers keep the font size itself unrounded.
+
+### Patch Changes
+
+- [`0762394`](https://github.com/falkara/workspace/commit/0762394300b9d87ea415893960ccd76b6b774ba5) Thanks [@filipfalcon](https://github.com/filipfalcon)! - The peer range on Effect is `^4.1.0`, so that a project can move to a later Effect 4 minor as soon as it is released: the library uses only Effect modules marked stable, which Effect keeps compatible across minors.
+
+- [`46eb561`](https://github.com/falkara/workspace/commit/46eb561b3afd3be62a4edcd0adabcea0fba62846) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Fraction.makeUnsafe` refuses a literal that is not positive, such as `-1n` or `0n`, as the code is written.
+
+- [`d288be3`](https://github.com/falkara/workspace/commit/d288be39de491041f034ab5cb18ad4e9cbe4e034) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Fraction.Fraction` checks that a fraction is in lowest terms, so that `Schema.is(Fraction.Fraction)` refuses a ratio such as `{ numerator: 2n, denominator: 4n }` that was not decoded. Decoding still brings every ratio to lowest terms first.
+
 ## 0.6.0
 
 ### Minor Changes
