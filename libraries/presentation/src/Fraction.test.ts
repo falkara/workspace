@@ -3,6 +3,18 @@ import { Exit, Option, Schema, SchemaIssue } from 'effect';
 
 import * as Fraction from '#src/Fraction';
 
+/** A schema of a ratio of two positive whole numbers, not reduced, from which property tests draw their inputs. */
+const PositiveRatio = Schema.Struct({
+  numerator: Schema.BigInt.check(Schema.isGreaterThanBigInt(0n)),
+  denominator: Schema.BigInt.check(Schema.isGreaterThanBigInt(0n)),
+});
+
+/** A schema of a ratio of two positive whole numbers that a number holds exactly, so that dividing them as numbers rounds once, as IEEE 754 rounds. */
+const ExactRatio = Schema.Struct({
+  numerator: Schema.BigInt.check(Schema.isBetweenBigInt({ minimum: 1n, maximum: 2n ** 53n })),
+  denominator: Schema.BigInt.check(Schema.isBetweenBigInt({ minimum: 1n, maximum: 2n ** 53n })),
+});
+
 describe('Fraction', () => {
   it('is not written by hand, as only its constructors and the schema bring a ratio to lowest terms', () => {
     expectTypeOf<{ numerator: bigint; denominator: bigint }>().not.toExtend<Fraction.Fraction>();
@@ -38,6 +50,21 @@ describe('Fraction', () => {
   it('refuses a ratio that is not in lowest terms as a fraction made otherwise than by decoding', () => {
     expect(Schema.is(Fraction.Fraction)({ numerator: 2n, denominator: 4n })).toBe(false);
   });
+
+  it.prop(
+    'decodes every ratio of two positive whole numbers into a fraction of equal value in lowest terms',
+    [PositiveRatio],
+    ([ratio]) => {
+      const exit = Schema.decodeExit(Fraction.Fraction)(ratio);
+      const fraction = Exit.isSuccess(exit) ? exit.value : undefined;
+
+      expect(fraction !== undefined && Schema.is(Fraction.Fraction)(fraction)).toBe(true);
+      expect(
+        fraction !== undefined &&
+          ratio.numerator * fraction.denominator === fraction.numerator * ratio.denominator,
+      ).toBe(true);
+    },
+  );
 });
 
 describe('make', () => {
@@ -75,6 +102,14 @@ describe('make', () => {
     const exit = Fraction.make(0n, 0n);
 
     expect(Exit.isFailure(exit)).toBe(true);
+  });
+
+  it.prop('agrees with makeUnsafe on positive whole numbers', [PositiveRatio], ([ratio]) => {
+    const exit = Fraction.make(ratio.numerator, ratio.denominator);
+
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual(
+      Fraction.makeUnsafe(ratio.numerator, ratio.denominator),
+    );
   });
 });
 
@@ -125,6 +160,26 @@ describe('sum', () => {
       Fraction.makeUnsafe(4n, 15n),
     );
   });
+
+  it.prop(
+    'keeps every sum a fraction in lowest terms',
+    [Fraction.Fraction, Fraction.Fraction],
+    ([a, b]) => {
+      expect(Schema.is(Fraction.Fraction)(Fraction.sum(a, b))).toBe(true);
+    },
+  );
+
+  it.prop('is commutative', [Fraction.Fraction, Fraction.Fraction], ([a, b]) => {
+    expect(Fraction.sum(a, b)).toEqual(Fraction.sum(b, a));
+  });
+
+  it.prop(
+    'is associative',
+    [Fraction.Fraction, Fraction.Fraction, Fraction.Fraction],
+    ([a, b, c]) => {
+      expect(Fraction.sum(Fraction.sum(a, b), c)).toEqual(Fraction.sum(a, Fraction.sum(b, c)));
+    },
+  );
 });
 
 describe('subtract', () => {
@@ -155,6 +210,14 @@ describe('subtract', () => {
 
     expect(Exit.isFailure(exit)).toBe(true);
   });
+
+  it.prop(
+    'fails exactly when the second fraction is not smaller than the first',
+    [Fraction.Fraction, Fraction.Fraction],
+    ([a, b]) => {
+      expect(Exit.isSuccess(Fraction.subtract(a, b))).toBe(Fraction.isGreaterThan(a, b));
+    },
+  );
 });
 
 describe('subtractUnsafe', () => {
@@ -177,6 +240,22 @@ describe('subtractUnsafe', () => {
       Fraction.subtractUnsafe(Fraction.makeUnsafe(7n, 4n), Fraction.makeUnsafe(5n, 6n)),
     );
   });
+
+  it.prop('undoes a sum, in lowest terms', [Fraction.Fraction, Fraction.Fraction], ([a, b]) => {
+    expect(Fraction.subtractUnsafe(Fraction.sum(a, b), b)).toEqual(a);
+  });
+
+  it.prop(
+    'agrees with subtract on every smaller second fraction',
+    [Fraction.Fraction, Fraction.Fraction],
+    ([a, b]) => {
+      const exit = Fraction.subtract(Fraction.sum(a, b), b);
+
+      expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual(
+        Fraction.subtractUnsafe(Fraction.sum(a, b), b),
+      );
+    },
+  );
 });
 
 describe('multiply', () => {
@@ -191,6 +270,38 @@ describe('multiply', () => {
       Fraction.makeUnsafe(1n, 6n),
     );
   });
+
+  it.prop(
+    'keeps every product a fraction in lowest terms',
+    [Fraction.Fraction, Fraction.Fraction],
+    ([a, b]) => {
+      expect(Schema.is(Fraction.Fraction)(Fraction.multiply(a, b))).toBe(true);
+    },
+  );
+
+  it.prop('is commutative', [Fraction.Fraction, Fraction.Fraction], ([a, b]) => {
+    expect(Fraction.multiply(a, b)).toEqual(Fraction.multiply(b, a));
+  });
+
+  it.prop(
+    'is associative',
+    [Fraction.Fraction, Fraction.Fraction, Fraction.Fraction],
+    ([a, b, c]) => {
+      expect(Fraction.multiply(Fraction.multiply(a, b), c)).toEqual(
+        Fraction.multiply(a, Fraction.multiply(b, c)),
+      );
+    },
+  );
+
+  it.prop(
+    'distributes over a sum',
+    [Fraction.Fraction, Fraction.Fraction, Fraction.Fraction],
+    ([a, b, c]) => {
+      expect(Fraction.multiply(a, Fraction.sum(b, c))).toEqual(
+        Fraction.sum(Fraction.multiply(a, b), Fraction.multiply(a, c)),
+      );
+    },
+  );
 });
 
 describe('divide', () => {
@@ -205,6 +316,26 @@ describe('divide', () => {
       Fraction.makeUnsafe(1n, 6n),
     );
   });
+
+  it.prop(
+    'keeps every quotient a fraction in lowest terms',
+    [Fraction.Fraction, Fraction.Fraction],
+    ([a, b]) => {
+      expect(Schema.is(Fraction.Fraction)(Fraction.divide(a, b))).toBe(true);
+    },
+  );
+
+  it.prop('undoes a product', [Fraction.Fraction, Fraction.Fraction], ([a, b]) => {
+    expect(Fraction.divide(Fraction.multiply(a, b), b)).toEqual(a);
+  });
+
+  it.prop(
+    'multiplies by the inverse of the divisor',
+    [Fraction.Fraction, Fraction.Fraction],
+    ([a, b]) => {
+      expect(Fraction.divide(a, b)).toEqual(Fraction.multiply(a, Fraction.pow(b, -1n)));
+    },
+  );
 });
 
 describe('pow', () => {
@@ -225,6 +356,24 @@ describe('pow', () => {
 
     expect(power.numerator).toBe(59_604_644_775_390_625n);
   });
+
+  it.prop(
+    'keeps every power a fraction in lowest terms',
+    [Fraction.Fraction, Schema.BigInt.check(Schema.isBetweenBigInt({ minimum: -8n, maximum: 8n }))],
+    ([a, exponent]) => {
+      expect(Schema.is(Fraction.Fraction)(Fraction.pow(a, exponent))).toBe(true);
+    },
+  );
+
+  it.prop(
+    'gives 1 for a power times the power of the negated exponent',
+    [Fraction.Fraction, Schema.BigInt.check(Schema.isBetweenBigInt({ minimum: -8n, maximum: 8n }))],
+    ([a, exponent]) => {
+      expect(Fraction.multiply(Fraction.pow(a, exponent), Fraction.pow(a, -exponent))).toEqual(
+        Fraction.one,
+      );
+    },
+  );
 });
 
 describe('order', () => {
@@ -235,6 +384,20 @@ describe('order', () => {
   it('finds fractions of equal value equal', () => {
     expect(Fraction.order(Fraction.makeUnsafe(12n, 10n), Fraction.makeUnsafe(6n, 5n))).toBe(0);
   });
+
+  it.prop('is antisymmetric', [Fraction.Fraction, Fraction.Fraction], ([a, b]) => {
+    expect(Fraction.order(a, b)).toBe(-Fraction.order(b, a) || 0);
+  });
+
+  it.prop(
+    'finds a fraction equal only to itself',
+    [Fraction.Fraction, Fraction.Fraction],
+    ([a, b]) => {
+      expect(Fraction.order(a, b) === 0).toBe(
+        a.numerator === b.numerator && a.denominator === b.denominator,
+      );
+    },
+  );
 });
 
 describe('isGreaterThan', () => {
@@ -371,4 +534,14 @@ describe('toNumber', () => {
       Number.POSITIVE_INFINITY,
     );
   });
+
+  it.prop(
+    'rounds as IEEE 754 divides whole numbers a number holds exactly',
+    [ExactRatio],
+    ([ratio]) => {
+      expect(Fraction.toNumber(Fraction.makeUnsafe(ratio.numerator, ratio.denominator))).toBe(
+        Number(ratio.numerator) / Number(ratio.denominator),
+      );
+    },
+  );
 });
