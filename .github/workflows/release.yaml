@@ -32,6 +32,7 @@ jobs:
       - name: Install the dependencies
         run: npm ci
       - name: Open the Version Packages pull request or publish the packages
+        id: changesets
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           # The action runs the script without a shell, so the shell joins the versioning and the lockfile update.
@@ -42,7 +43,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish the presentation library to JSR
-        # Every run, as JSR never publishes a version it already has, so a version an earlier run left out is published by the next.
+        # Every run without changesets, whose package.json holds the version npm has; JSR never publishes a version it already has, so a version an earlier run left out is published by the next. A run with changesets holds the next version in a Version Packages pull request instead.
+        if: steps.changesets.outputs.has-changesets == 'false'
         working-directory: libraries/presentation
         run: |
           npx vp pack
