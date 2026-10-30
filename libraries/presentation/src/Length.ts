@@ -18,7 +18,7 @@ export const inch = 96;
 export const pointsPerInch = 72;
 
 /** The length of a CSS point, the inch shared by the points in it. Measured in CSS pixels. */
-export const point = Fraction.make(BigInt(inch), BigInt(pointsPerInch));
+export const point = Fraction.makeUnsafe(BigInt(inch), BigInt(pointsPerInch));
 
 /**
  * The number of vw units in the viewport width, as CSS defines 1vw as 1 % of it.

@@ -28,24 +28,27 @@ describe('maximumFontSize', () => {
   it('fits a full-width character into the minimum viewport width when a reader sets the font size up to the maximum page zoom factor', () => {
     const characterWidth = Fraction.multiply(
       Typography.maximumFontSize,
-      Fraction.make(BigInt(Viewport.maximumPageZoomFactor * Typography.ideographAdvanceFactor), 1n),
+      Fraction.makeUnsafe(
+        BigInt(Viewport.maximumPageZoomFactor * Typography.ideographAdvanceFactor),
+        1n,
+      ),
     );
 
-    expect(characterWidth).toEqual(Fraction.make(BigInt(Viewport.minimumViewportWidth), 1n));
+    expect(characterWidth).toEqual(Fraction.makeUnsafe(BigInt(Viewport.minimumViewportWidth), 1n));
   });
 });
 
 describe('minimumStepFactor', () => {
   it('keeps steps at the minimum font size apart by the layout unit', () => {
     const nextSize = Fraction.multiply(
-      Fraction.make(BigInt(Typography.minimumFontSize), 1n),
+      Fraction.makeUnsafe(BigInt(Typography.minimumFontSize), 1n),
       Typography.minimumStepFactor,
     );
 
     expect(nextSize).toEqual(
       Fraction.sum(
-        Fraction.make(BigInt(Typography.minimumFontSize), 1n),
-        Fraction.make(1n, BigInt(1 / Length.layoutUnit)),
+        Fraction.makeUnsafe(BigInt(Typography.minimumFontSize), 1n),
+        Fraction.makeUnsafe(1n, BigInt(1 / Length.layoutUnit)),
       ),
     );
   });
@@ -142,15 +145,18 @@ describe('maximumTextGrowthFactor', () => {
 
   it('lets text that grows by it reach the text scale factor at the maximum page zoom', () => {
     const growth = Typography.maximumTextGrowthFactor;
-    const growthAboveOne = Fraction.make(growth.numerator - growth.denominator, growth.denominator);
-    const zoomedWidthAboveMinimum = Fraction.make(
+    const growthAboveOne = Fraction.makeUnsafe(
+      growth.numerator - growth.denominator,
+      growth.denominator,
+    );
+    const zoomedWidthAboveMinimum = Fraction.makeUnsafe(
       BigInt(
         Viewport.maximumViewportWidth -
           Viewport.maximumPageZoomFactor * Viewport.minimumViewportWidth,
       ),
       BigInt(Viewport.maximumPageZoomFactor),
     );
-    const viewportRange = Fraction.make(
+    const viewportRange = Fraction.makeUnsafe(
       BigInt(Viewport.maximumViewportWidth - Viewport.minimumViewportWidth),
       1n,
     );
@@ -160,29 +166,34 @@ describe('maximumTextGrowthFactor', () => {
     );
 
     expect(
-      Fraction.multiply(Fraction.make(BigInt(Viewport.maximumPageZoomFactor), 1n), zoomedSize),
-    ).toEqual(Fraction.multiply(Fraction.make(BigInt(Typography.textScaleFactor), 1n), growth));
+      Fraction.multiply(
+        Fraction.makeUnsafe(BigInt(Viewport.maximumPageZoomFactor), 1n),
+        zoomedSize,
+      ),
+    ).toEqual(
+      Fraction.multiply(Fraction.makeUnsafe(BigInt(Typography.textScaleFactor), 1n), growth),
+    );
   });
 
   it('lets text that grows by it reach the text scale factor at a font size of the maximum page zoom', () => {
     const growth = Typography.maximumTextGrowthFactor;
     const viewportRange = BigInt(Viewport.maximumViewportWidth - Viewport.minimumViewportWidth);
-    const slope = Fraction.make(
+    const slope = Fraction.makeUnsafe(
       growth.numerator - growth.denominator,
       growth.denominator * viewportRange,
     );
-    const intercept = Fraction.make(
+    const intercept = Fraction.makeUnsafe(
       BigInt(Viewport.maximumViewportWidth) * growth.denominator -
         growth.numerator * BigInt(Viewport.minimumViewportWidth),
       viewportRange * growth.denominator,
     );
     const resizedSize = Fraction.sum(
-      Fraction.multiply(Fraction.make(BigInt(Viewport.maximumPageZoomFactor), 1n), intercept),
-      Fraction.multiply(slope, Fraction.make(BigInt(Viewport.maximumViewportWidth), 1n)),
+      Fraction.multiply(Fraction.makeUnsafe(BigInt(Viewport.maximumPageZoomFactor), 1n), intercept),
+      Fraction.multiply(slope, Fraction.makeUnsafe(BigInt(Viewport.maximumViewportWidth), 1n)),
     );
 
     expect(resizedSize).toEqual(
-      Fraction.multiply(Fraction.make(BigInt(Typography.textScaleFactor), 1n), growth),
+      Fraction.multiply(Fraction.makeUnsafe(BigInt(Typography.textScaleFactor), 1n), growth),
     );
   });
 });
@@ -352,8 +363,8 @@ describe('Step', () => {
   it('rejects a minimum size below the minimum font size', () => {
     const exit = Schema.decodeExit(Typography.Step)({
       position: 0,
-      minimumSize: Fraction.make(12n, 1n),
-      maximumSize: Fraction.make(15n, 1n),
+      minimumSize: Fraction.makeUnsafe(12n, 1n),
+      maximumSize: Fraction.makeUnsafe(15n, 1n),
     });
 
     expect(
@@ -372,8 +383,8 @@ describe('Step', () => {
   it('rejects a minimum size above the maximum font size', () => {
     const exit = Schema.decodeExit(Typography.Step)({
       position: 0,
-      minimumSize: Fraction.make(120n, 1n),
-      maximumSize: Fraction.make(150n, 1n),
+      minimumSize: Fraction.makeUnsafe(120n, 1n),
+      maximumSize: Fraction.makeUnsafe(150n, 1n),
     });
 
     expect(
@@ -392,8 +403,8 @@ describe('Step', () => {
   it('rejects a step that shrinks', () => {
     const exit = Schema.decodeExit(Typography.Step)({
       position: 0,
-      minimumSize: Fraction.make(24n, 1n),
-      maximumSize: Fraction.make(12n, 1n),
+      minimumSize: Fraction.makeUnsafe(24n, 1n),
+      maximumSize: Fraction.makeUnsafe(12n, 1n),
     });
 
     expect(
@@ -412,8 +423,8 @@ describe('Step', () => {
   it('rejects a step that grows by more than 8/5', () => {
     const exit = Schema.decodeExit(Typography.Step)({
       position: 0,
-      minimumSize: Fraction.make(24n, 1n),
-      maximumSize: Fraction.make(40n, 1n),
+      minimumSize: Fraction.makeUnsafe(24n, 1n),
+      maximumSize: Fraction.makeUnsafe(40n, 1n),
     });
 
     expect(
@@ -480,7 +491,7 @@ describe('scale', () => {
       expect(
         Fraction.isGreaterThanOrEqualTo(
           step.minimumSize,
-          Fraction.make(BigInt(Typography.minimumFontSize), 1n),
+          Fraction.makeUnsafe(BigInt(Typography.minimumFontSize), 1n),
         ),
       ).toBe(true);
       expect(Fraction.isLessThanOrEqualTo(step.minimumSize, Typography.maximumFontSize)).toBe(true);

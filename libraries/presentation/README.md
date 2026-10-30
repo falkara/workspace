@@ -13,14 +13,13 @@ Nothing shows the idea better than a fluid type scale. Three choices go in and o
 ```ts
 import { Effect } from 'effect';
 import * as Fluid from '@falkara/presentation/Fluid';
-import * as Fraction from '@falkara/presentation/Fraction';
 import * as Typography from '@falkara/presentation/Typography';
 
 // Intent: how sharply headings rise on narrow and wide screens, and how large body text gets.
 const intent = {
-  minimumFactor: Fraction.make(6n, 5n),
-  maximumFactor: Fraction.make(5n, 4n),
-  maximumBodyFontSize: Fraction.make(20n, 1n), // CSS pixels
+  minimumFactor: { numerator: 6n, denominator: 5n },
+  maximumFactor: { numerator: 5n, denominator: 4n },
+  maximumBodyFontSize: { numerator: 20n, denominator: 1n }, // CSS pixels
 };
 
 Effect.gen(function* () {
@@ -34,7 +33,7 @@ Effect.gen(function* () {
 //   'clamp(2.986rem, 2.3919rem + 2.9706vw, 4.7684rem)', position 6
 // ]
 
-Typography.scale({ ...intent, maximumBodyFontSize: Fraction.make(30n, 1n) });
+Typography.scale({ ...intent, maximumBodyFontSize: { numerator: 30n, denominator: 1n } });
 // Failure: SchemaError(Expected a body font size of at most 25.6 px, so that text can be enlarged
 //   to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires
 //   at ["maximumBodyFontSize"])

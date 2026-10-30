@@ -1,4 +1,4 @@
-import { Order, Schema, SchemaGetter } from 'effect';
+import { Exit, Order, Schema, SchemaGetter } from 'effect';
 
 /** The greatest common divisor, found in a loop rather than by recursion, so that whole numbers of any size never exhaust the call stack. */
 const greatestCommonDivisor = (a: bigint, b: bigint): bigint => {
@@ -43,8 +43,15 @@ export const Fraction = Schema.Struct({
 /** A ratio of two positive whole numbers in lowest terms, which stays positive and in lowest terms under every operation here, so that none of them can fail. */
 export type Fraction = typeof Fraction.Type;
 
-/** The fraction of the numerator over the denominator in lowest terms. Its fields are positive as long as the numerator and the denominator are, which the schema checks wherever a fraction comes from outside. */
-export const make = (numerator: bigint, denominator: bigint): Fraction => {
+/** The fraction of the numerator over the denominator in lowest terms, or a failure with the reason when either is not positive. */
+export const make = (
+  numerator: bigint,
+  denominator: bigint,
+): Exit.Exit<Fraction, Schema.SchemaError> =>
+  Schema.decodeExit(Fraction)({ numerator, denominator }, { errors: 'all' });
+
+/** The fraction of a numerator and a denominator known to be positive, such as the constants of this library, in lowest terms. Nothing is checked, so a numerator or a denominator that is not positive gives a value that breaks every promise of the type; `make` checks them. */
+export const makeUnsafe = (numerator: bigint, denominator: bigint): Fraction => {
   const divisor = greatestCommonDivisor(numerator, denominator);
   return (
     divisor === 0n
@@ -54,7 +61,7 @@ export const make = (numerator: bigint, denominator: bigint): Fraction => {
 };
 
 /** The fraction 1. */
-export const one = make(1n, 1n);
+export const one = makeUnsafe(1n, 1n);
 
 /** The sum of two fractions in lowest terms, reduced only by the common divisor of the denominators, as Knuth gives it, so that no divisor is sought between two large products. */
 export const sum = (self: Fraction, that: Fraction): Fraction => {

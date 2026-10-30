@@ -257,8 +257,8 @@ describe('verify', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 0,
-        minimumSize: Fraction.make(16n, 1n),
-        maximumSize: Fraction.make(20n, 1n),
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
       fontWeight: 400,
     });
@@ -272,8 +272,8 @@ describe('verify', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 0,
-        minimumSize: Fraction.make(16n, 1n),
-        maximumSize: Fraction.make(20n, 1n),
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
       fontWeight: 400,
     });
@@ -297,8 +297,8 @@ describe('verify', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 3,
-        minimumSize: Fraction.make(24n, 1n),
-        maximumSize: Fraction.make(30n, 1n),
+        minimumSize: Fraction.makeUnsafe(24n, 1n),
+        maximumSize: Fraction.makeUnsafe(30n, 1n),
       },
       fontWeight: 400,
     });
@@ -312,8 +312,8 @@ describe('verify', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 3,
-        minimumSize: Fraction.make(24n, 1n),
-        maximumSize: Fraction.make(12n, 1n),
+        minimumSize: Fraction.makeUnsafe(24n, 1n),
+        maximumSize: Fraction.makeUnsafe(12n, 1n),
       },
       fontWeight: 400,
     });
@@ -337,8 +337,8 @@ describe('verify', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 2,
-        minimumSize: Fraction.make(22n, 1n),
-        maximumSize: Fraction.make(28n, 1n),
+        minimumSize: Fraction.makeUnsafe(22n, 1n),
+        maximumSize: Fraction.makeUnsafe(28n, 1n),
       },
       fontWeight: 400,
     });
@@ -352,8 +352,8 @@ describe('verify', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 1,
-        minimumSize: Fraction.make(56n, 3n),
-        maximumSize: Fraction.make(24n, 1n),
+        minimumSize: Fraction.makeUnsafe(56n, 3n),
+        maximumSize: Fraction.makeUnsafe(24n, 1n),
       },
       fontWeight: 700,
     });
@@ -367,8 +367,8 @@ describe('verify', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 1,
-        minimumSize: Fraction.make(56n, 3n),
-        maximumSize: Fraction.make(24n, 1n),
+        minimumSize: Fraction.makeUnsafe(56n, 3n),
+        maximumSize: Fraction.makeUnsafe(24n, 1n),
       },
       fontWeight: 600,
     });
@@ -392,8 +392,8 @@ describe('verify', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 0,
-        minimumSize: Fraction.make(16n, 1n),
-        maximumSize: Fraction.make(20n, 1n),
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
       fontWeight: 400,
     });
@@ -408,8 +408,8 @@ describe('verify', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 0,
-        minimumSize: Fraction.make(16n, 1n),
-        maximumSize: Fraction.make(20n, 1n),
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
       fontWeight: 400,
       minimumContrast: 20.22204598486042,
@@ -424,8 +424,8 @@ describe('verify', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 0,
-        minimumSize: Fraction.make(16n, 1n),
-        maximumSize: Fraction.make(20n, 1n),
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
       fontWeight: 400,
       minimumContrast: 20.2220459849,
@@ -440,8 +440,8 @@ describe('verify', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 0,
-        minimumSize: Fraction.make(16n, 1n),
-        maximumSize: Fraction.make(20n, 1n),
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
       fontWeight: 400,
     });
@@ -455,8 +455,8 @@ describe('verify', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 3,
-        minimumSize: Fraction.make(24n, 1n),
-        maximumSize: Fraction.make(30n, 1n),
+        minimumSize: Fraction.makeUnsafe(24n, 1n),
+        maximumSize: Fraction.makeUnsafe(30n, 1n),
       },
       fontWeight: 400,
       minimumContrast: 13 / 2,
@@ -480,8 +480,8 @@ describe('verify', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 0,
-        minimumSize: Fraction.make(16n, 1n),
-        maximumSize: Fraction.make(20n, 1n),
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
       fontWeight: 400,
       minimumContrast: 5,
@@ -506,8 +506,8 @@ describe('verify', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 0,
-        minimumSize: Fraction.make(16n, 1n),
-        maximumSize: Fraction.make(20n, 1n),
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
       fontWeight: 0,
     });
@@ -532,8 +532,8 @@ describe('shade', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 0,
-        minimumSize: Fraction.make(12n, 1n),
-        maximumSize: Fraction.make(15n, 1n),
+        minimumSize: Fraction.makeUnsafe(12n, 1n),
+        maximumSize: Fraction.makeUnsafe(15n, 1n),
       },
       fontWeight: 400,
     });
@@ -557,8 +557,8 @@ describe('shade', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 0,
-        minimumSize: Fraction.make(16n, 1n),
-        maximumSize: Fraction.make(20n, 1n),
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
       fontWeight: 400,
     });
@@ -569,8 +569,8 @@ describe('shade', () => {
   it('darkens a brand color against a light background to the contrast its text needs', () => {
     const step = {
       position: 0,
-      minimumSize: Fraction.make(16n, 1n),
-      maximumSize: Fraction.make(20n, 1n),
+      minimumSize: Fraction.makeUnsafe(16n, 1n),
+      maximumSize: Fraction.makeUnsafe(20n, 1n),
     };
     const exit = Color.shade({
       color: 'oklch(64% 0.17 147)',
@@ -596,8 +596,8 @@ describe('shade', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 0,
-        minimumSize: Fraction.make(16n, 1n),
-        maximumSize: Fraction.make(20n, 1n),
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
       fontWeight: 400,
     });
@@ -614,8 +614,8 @@ describe('shade', () => {
       background: 'oklch(56.2% 0 0)',
       step: {
         position: 3,
-        minimumSize: Fraction.make(24n, 1n),
-        maximumSize: Fraction.make(30n, 1n),
+        minimumSize: Fraction.makeUnsafe(24n, 1n),
+        maximumSize: Fraction.makeUnsafe(30n, 1n),
       },
       fontWeight: 400,
     });
@@ -667,8 +667,8 @@ describe('shade', () => {
   it('lightens a brand color against a dark background and keeps its chroma where sRGB holds it', () => {
     const step = {
       position: 0,
-      minimumSize: Fraction.make(16n, 1n),
-      maximumSize: Fraction.make(20n, 1n),
+      minimumSize: Fraction.makeUnsafe(16n, 1n),
+      maximumSize: Fraction.makeUnsafe(20n, 1n),
     };
     const exit = Color.shade({
       color: 'oklch(64% 0.17 147)',
@@ -691,8 +691,8 @@ describe('shade', () => {
   it('reaches a stricter contrast the project asks for', () => {
     const step = {
       position: 0,
-      minimumSize: Fraction.make(16n, 1n),
-      maximumSize: Fraction.make(20n, 1n),
+      minimumSize: Fraction.makeUnsafe(16n, 1n),
+      maximumSize: Fraction.makeUnsafe(20n, 1n),
     };
     const exit = Color.shade({
       color: 'oklch(64% 0.17 147)',
@@ -712,8 +712,8 @@ describe('shade', () => {
       background: 'oklch(60% 0 0)',
       step: {
         position: 0,
-        minimumSize: Fraction.make(16n, 1n),
-        maximumSize: Fraction.make(20n, 1n),
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
       fontWeight: 400,
     });
@@ -737,8 +737,8 @@ describe('shade', () => {
       background: 'oklch(100% 0 0)',
       step: {
         position: 0,
-        minimumSize: Fraction.make(16n, 1n),
-        maximumSize: Fraction.make(20n, 1n),
+        minimumSize: Fraction.makeUnsafe(16n, 1n),
+        maximumSize: Fraction.makeUnsafe(20n, 1n),
       },
       fontWeight: 400,
       minimumContrast: 5,

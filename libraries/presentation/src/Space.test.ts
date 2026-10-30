@@ -87,7 +87,9 @@ describe('scale', () => {
 
     expect(steps).not.toHaveLength(0);
     for (const step of steps) {
-      expect(Fraction.divide(step.maximumSize, step.minimumSize)).toEqual(Fraction.make(20n, 16n));
+      expect(Fraction.divide(step.maximumSize, step.minimumSize)).toEqual(
+        Fraction.makeUnsafe(20n, 16n),
+      );
     }
   });
 

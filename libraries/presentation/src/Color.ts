@@ -35,13 +35,13 @@ export const largeBoldTextPointSize = 14;
 
 /** The font size from which text is large-scale, the large text point size in CSS points. Measured in CSS pixels. */
 export const largeTextSize = Fraction.multiply(
-  Fraction.make(BigInt(largeTextPointSize), 1n),
+  Fraction.makeUnsafe(BigInt(largeTextPointSize), 1n),
   Length.point,
 );
 
 /** The font size from which bold text is large-scale, the large bold text point size in CSS points. Measured in CSS pixels. */
 export const largeBoldTextSize = Fraction.multiply(
-  Fraction.make(BigInt(largeBoldTextPointSize), 1n),
+  Fraction.makeUnsafe(BigInt(largeBoldTextPointSize), 1n),
   Length.point,
 );
 

@@ -16,24 +16,24 @@ export const spacingUnit = 8;
  * @see https://designsystem.digital.gov/design-tokens/spacing-units/
  */
 export const spacingUnitCounts: ReadonlyArray<Fraction.Fraction> = [
-  Fraction.make(1n, 2n),
-  Fraction.make(1n, 1n),
-  Fraction.make(3n, 2n),
-  Fraction.make(2n, 1n),
-  Fraction.make(5n, 2n),
-  Fraction.make(3n, 1n),
-  Fraction.make(4n, 1n),
-  Fraction.make(5n, 1n),
-  Fraction.make(6n, 1n),
-  Fraction.make(7n, 1n),
-  Fraction.make(8n, 1n),
-  Fraction.make(9n, 1n),
-  Fraction.make(10n, 1n),
-  Fraction.make(15n, 1n),
+  Fraction.makeUnsafe(1n, 2n),
+  Fraction.makeUnsafe(1n, 1n),
+  Fraction.makeUnsafe(3n, 2n),
+  Fraction.makeUnsafe(2n, 1n),
+  Fraction.makeUnsafe(5n, 2n),
+  Fraction.makeUnsafe(3n, 1n),
+  Fraction.makeUnsafe(4n, 1n),
+  Fraction.makeUnsafe(5n, 1n),
+  Fraction.makeUnsafe(6n, 1n),
+  Fraction.makeUnsafe(7n, 1n),
+  Fraction.makeUnsafe(8n, 1n),
+  Fraction.makeUnsafe(9n, 1n),
+  Fraction.makeUnsafe(10n, 1n),
+  Fraction.makeUnsafe(15n, 1n),
 ];
 
 /** The spacing unit as a factor of body text, the share of the default font size it takes in USWDS, so that spacing grows with body text. */
-export const spacingUnitFactor = Fraction.make(
+export const spacingUnitFactor = Fraction.makeUnsafe(
   BigInt(spacingUnit),
   BigInt(Typography.defaultFontSize),
 );
@@ -58,7 +58,7 @@ export const scale = (
       return {
         factor,
         minimumSize: Fraction.multiply(
-          Fraction.make(BigInt(Typography.defaultFontSize), 1n),
+          Fraction.makeUnsafe(BigInt(Typography.defaultFontSize), 1n),
           factor,
         ),
         maximumSize: Fraction.multiply(options.maximumBodyFontSize, factor),

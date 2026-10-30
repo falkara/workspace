@@ -22,7 +22,7 @@ export const minimumFontSize = 13;
 export const ideographAdvanceFactor = 1;
 
 /** The largest font size at the minimum viewport width, at which a full-width character still fits the minimum viewport width when a reader sets the font size up to the maximum page zoom factor, so that text reflows without scrolling in two dimensions, as WCAG 2.2 Reflow requires. Measured in CSS pixels. */
-export const maximumFontSize = Fraction.make(
+export const maximumFontSize = Fraction.makeUnsafe(
   BigInt(Viewport.minimumViewportWidth),
   BigInt(Viewport.maximumPageZoomFactor * ideographAdvanceFactor),
 );
@@ -30,7 +30,7 @@ export const maximumFontSize = Fraction.make(
 /** The smallest ratio between consecutive steps of a type scale, at which steps at the minimum font size still differ by the layout unit, so that no two steps render alike. */
 export const minimumStepFactor = Fraction.sum(
   Fraction.one,
-  Fraction.make(1n, BigInt(minimumFontSize / Length.layoutUnit)),
+  Fraction.makeUnsafe(1n, BigInt(minimumFontSize / Length.layoutUnit)),
 );
 
 /**
@@ -67,7 +67,7 @@ export const boldFontWeight = 700;
  * @see https://www.w3.org/TR/WCAG22/#visual-presentation
  * @see https://www.w3.org/WAI/WCAG22/Techniques/css/C21
  */
-export const lineHeightFactor = Fraction.make(3n, 2n);
+export const lineHeightFactor = Fraction.makeUnsafe(3n, 2n);
 
 /**
  * The text alignment that keeps text unjustified, as WCAG 2.2 Visual Presentation requires, aligned to the start of each line in every writing direction.
@@ -82,7 +82,7 @@ export const textAlignment = 'start';
  *
  * @see https://www.w3.org/TR/WCAG22/#visual-presentation
  */
-export const paragraphSpacingLineFactor = Fraction.make(3n, 2n);
+export const paragraphSpacingLineFactor = Fraction.makeUnsafe(3n, 2n);
 
 /** The space between paragraphs, the line height grown by the paragraph spacing line factor, as a factor of the font size. Applied in `lh` instead, the paragraph spacing line factor keeps paragraphs apart by the line spacing a reader sets. */
 export const paragraphSpacingFactor = Fraction.multiply(
@@ -95,31 +95,31 @@ export const paragraphSpacingFactor = Fraction.multiply(
  *
  * @see https://www.w3.org/TR/WCAG22/#text-spacing
  */
-export const textSpacingLineHeightFactor = Fraction.make(3n, 2n);
+export const textSpacingLineHeightFactor = Fraction.makeUnsafe(3n, 2n);
 
 /**
  * The spacing following paragraphs, as a factor of the font size, that WCAG 2.2 Text Spacing lets a reader set without loss of content or function.
  *
  * @see https://www.w3.org/TR/WCAG22/#text-spacing
  */
-export const textSpacingParagraphSpacingFactor = Fraction.make(2n, 1n);
+export const textSpacingParagraphSpacingFactor = Fraction.makeUnsafe(2n, 1n);
 
 /**
  * The letter spacing, as a factor of the font size, that WCAG 2.2 Text Spacing lets a reader set without loss of content or function.
  *
  * @see https://www.w3.org/TR/WCAG22/#text-spacing
  */
-export const textSpacingLetterSpacingFactor = Fraction.make(3n, 25n);
+export const textSpacingLetterSpacingFactor = Fraction.makeUnsafe(3n, 25n);
 
 /**
  * The word spacing, as a factor of the font size, that WCAG 2.2 Text Spacing lets a reader set without loss of content or function.
  *
  * @see https://www.w3.org/TR/WCAG22/#text-spacing
  */
-export const textSpacingWordSpacingFactor = Fraction.make(4n, 25n);
+export const textSpacingWordSpacingFactor = Fraction.makeUnsafe(4n, 25n);
 
 /** The maximum text growth factor from the minimum to the maximum viewport width that keeps text resizable by the text scale factor within the maximum page zoom factor, whether a reader zooms the page or sets a larger font size, as both act alike on fluid text. */
-export const maximumTextGrowthFactor = Fraction.make(
+export const maximumTextGrowthFactor = Fraction.makeUnsafe(
   BigInt(Viewport.viewportWidthFactor * (Viewport.maximumPageZoomFactor - 1)),
   BigInt(
     Viewport.viewportWidthFactor * (textScaleFactor - 1) +
@@ -149,13 +149,16 @@ export const ScaleOptions = Schema.Struct({
   /** The font size of body text at the maximum viewport width, from the default font size, so that body text never shrinks, to the size the maximum text growth factor allows. Measured in CSS pixels. */
   maximumBodyFontSize: Fraction.Fraction.pipe(
     Schema.check(
-      Fraction.isGreaterThanOrEqualToFraction(Fraction.make(BigInt(defaultFontSize), 1n), {
+      Fraction.isGreaterThanOrEqualToFraction(Fraction.makeUnsafe(BigInt(defaultFontSize), 1n), {
         message: `Expected a body font size of at least ${defaultFontSize} px, so that body text never shrinks below the default font size of browsers`,
       }),
       Fraction.isLessThanOrEqualToFraction(
-        Fraction.multiply(Fraction.make(BigInt(defaultFontSize), 1n), maximumTextGrowthFactor),
+        Fraction.multiply(
+          Fraction.makeUnsafe(BigInt(defaultFontSize), 1n),
+          maximumTextGrowthFactor,
+        ),
         {
-          message: `Expected a body font size of at most ${Fraction.toNumber(Fraction.multiply(Fraction.make(BigInt(defaultFontSize), 1n), maximumTextGrowthFactor))} px, so that text can be enlarged to ${textScaleFactor * 100} % within the ${Viewport.maximumPageZoomFactor * 100} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
+          message: `Expected a body font size of at most ${Fraction.toNumber(Fraction.multiply(Fraction.makeUnsafe(BigInt(defaultFontSize), 1n), maximumTextGrowthFactor))} px, so that text can be enlarged to ${textScaleFactor * 100} % within the ${Viewport.maximumPageZoomFactor * 100} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
         },
       ),
     ),
@@ -172,7 +175,7 @@ export const Step = Schema.Struct({
   /** The size at the minimum viewport width, its smallest, from the minimum to the maximum font size. Measured in CSS pixels. */
   minimumSize: Fraction.Fraction.pipe(
     Schema.check(
-      Fraction.isGreaterThanOrEqualToFraction(Fraction.make(BigInt(minimumFontSize), 1n), {
+      Fraction.isGreaterThanOrEqualToFraction(Fraction.makeUnsafe(BigInt(minimumFontSize), 1n), {
         message: `Expected a minimum size of at least ${minimumFontSize} px, the smallest size of the USWDS theme type scale`,
       }),
       Fraction.isLessThanOrEqualToFraction(maximumFontSize, {
@@ -209,7 +212,7 @@ export const scale = (
   Exit.map(Schema.decodeExit(ScaleOptions)(options, { errors: 'all' }), (options) => {
     const minimumSize = (position: bigint) =>
       Fraction.multiply(
-        Fraction.make(BigInt(defaultFontSize), 1n),
+        Fraction.makeUnsafe(BigInt(defaultFontSize), 1n),
         Fraction.pow(options.minimumFactor, position),
       );
     const maximumSize = (position: bigint) =>
@@ -224,7 +227,7 @@ export const scale = (
         ) &&
         Fraction.isGreaterThanOrEqualTo(
           minimumSize(position),
-          Fraction.make(BigInt(minimumFontSize), 1n),
+          Fraction.makeUnsafe(BigInt(minimumFontSize), 1n),
         ) &&
         Fraction.isLessThanOrEqualTo(minimumSize(position), maximumFontSize)
       );

@@ -89,7 +89,7 @@ describe('vw', () => {
 
 describe('clamp', () => {
   it('writes a CSS clamp() with the sizes in rem and the growth in vw', () => {
-    const exit = Fluid.clamp(Fraction.make(16n, 1n), Fraction.make(20n, 1n));
+    const exit = Fluid.clamp(Fraction.makeUnsafe(16n, 1n), Fraction.makeUnsafe(20n, 1n));
 
     expect(Exit.isSuccess(exit) ? exit.value : '').toBe(
       'clamp(1rem, 0.9167rem + 0.4167vw, 1.25rem)',
@@ -97,7 +97,7 @@ describe('clamp', () => {
   });
 
   it('takes the minimum size at the minimum viewport width and the maximum size at the maximum viewport width', () => {
-    const exit = Fluid.clamp(Fraction.make(16n, 1n), Fraction.make(20n, 1n));
+    const exit = Fluid.clamp(Fraction.makeUnsafe(16n, 1n), Fraction.makeUnsafe(20n, 1n));
     const [, minimum, intercept, , slope, maximum] =
       /^clamp\((-?[\d.]+)rem, (-?[\d.]+)rem ([+-]) ([\d.]+)vw, (-?[\d.]+)rem\)$/.exec(
         Exit.isSuccess(exit) ? exit.value : '',
@@ -124,7 +124,7 @@ describe('clamp', () => {
   });
 
   it('grows linearly between the minimum and the maximum viewport width', () => {
-    const exit = Fluid.clamp(Fraction.make(16n, 1n), Fraction.make(20n, 1n));
+    const exit = Fluid.clamp(Fraction.makeUnsafe(16n, 1n), Fraction.makeUnsafe(20n, 1n));
     const [, minimum, intercept, , slope, maximum] =
       /^clamp\((-?[\d.]+)rem, (-?[\d.]+)rem ([+-]) ([\d.]+)vw, (-?[\d.]+)rem\)$/.exec(
         Exit.isSuccess(exit) ? exit.value : '',
@@ -143,7 +143,7 @@ describe('clamp', () => {
   });
 
   it('holds its sizes outside the viewport range', () => {
-    const exit = Fluid.clamp(Fraction.make(16n, 1n), Fraction.make(20n, 1n));
+    const exit = Fluid.clamp(Fraction.makeUnsafe(16n, 1n), Fraction.makeUnsafe(20n, 1n));
     const [, minimum, intercept, , slope, maximum] =
       /^clamp\((-?[\d.]+)rem, (-?[\d.]+)rem ([+-]) ([\d.]+)vw, (-?[\d.]+)rem\)$/.exec(
         Exit.isSuccess(exit) ? exit.value : '',
@@ -170,22 +170,22 @@ describe('clamp', () => {
   });
 
   it('accepts a value that holds its size', () => {
-    const exit = Fluid.clamp(Fraction.make(16n, 1n), Fraction.make(16n, 1n));
+    const exit = Fluid.clamp(Fraction.makeUnsafe(16n, 1n), Fraction.makeUnsafe(16n, 1n));
 
     expect(Exit.isSuccess(exit)).toBe(true);
   });
 
   it('accepts a value that grows by the maximum text growth factor', () => {
     const exit = Fluid.clamp(
-      Fraction.make(16n, 1n),
-      Fraction.multiply(Fraction.make(16n, 1n), Typography.maximumTextGrowthFactor),
+      Fraction.makeUnsafe(16n, 1n),
+      Fraction.multiply(Fraction.makeUnsafe(16n, 1n), Typography.maximumTextGrowthFactor),
     );
 
     expect(Exit.isSuccess(exit)).toBe(true);
   });
 
   it('rejects a value that would shrink', () => {
-    const exit = Fluid.clamp(Fraction.make(20n, 1n), Fraction.make(16n, 1n));
+    const exit = Fluid.clamp(Fraction.makeUnsafe(20n, 1n), Fraction.makeUnsafe(16n, 1n));
 
     expect(
       SchemaIssue.makeFormatterStandardSchemaV1()(
@@ -202,10 +202,10 @@ describe('clamp', () => {
 
   it('rejects a value that would grow by more than the maximum text growth factor', () => {
     const exit = Fluid.clamp(
-      Fraction.make(16n, 1n),
+      Fraction.makeUnsafe(16n, 1n),
       Fraction.sum(
-        Fraction.multiply(Fraction.make(16n, 1n), Typography.maximumTextGrowthFactor),
-        Fraction.make(1n, 10n),
+        Fraction.multiply(Fraction.makeUnsafe(16n, 1n), Typography.maximumTextGrowthFactor),
+        Fraction.makeUnsafe(1n, 10n),
       ),
     );
 
