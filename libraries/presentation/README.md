@@ -1,6 +1,6 @@
 # Falkara Presentation
 
-Falkara Presentation is an [Effect-based](https://effect.website/) TypeScript library for interface design. It derives each value from established standards and refuses any that would break them to keep the design consistent as it scales.
+Falkara Presentation is an [Effect-based](https://effect.website/) TypeScript library for interface design. It derives each value from established standards, save one declared choice, the widest viewport its values grow to, and refuses any that would break them to keep the design consistent as it scales.
 
 It has always nagged at us that most interfaces resize in jumps at breakpoints while every screen between them makes do. We tied every value to shared ratios so each one grows smoothly in step with the rest. Every screen up to a desktop gets values of its own, even the ones nobody designed for.
 
