@@ -65,7 +65,7 @@ const exactTransform = (
 const held = (value: Rational): Rational =>
   isBelow(value, [0n, 1n]) ? [0n, 1n] : isBelow([1n, 1n], value) ? [1n, 1n] : value;
 
-/** The relative luminance of a color of the given lightness and chroma at a hue of 0, whose cosine and sine are 1 and 0 exactly, converted by the matrices of CSS Color 4 as they are written, without rounding. */
+/** The relative luminance of a color of the given lightness and chroma at a hue of 0, whose cosine and sine are 1 and 0 exactly, converted by the matrices of CSS Color 4 as JavaScript holds them, without rounding. */
 const exactLuminance = (lightness: number, chroma: number): Rational => {
   const [long, medium, short] = exactTransform(Color.oklabToLms, [
     rational(lightness),
@@ -595,7 +595,7 @@ describe('reaches', () => {
     const white = exactLuminance(1, 0);
 
     expect(isBelow(white, [1n, 1n])).toBe(true);
-    expect(numberBelow(exactContrast(white, exactLuminance(0, 0)))).toBe(20.999999999999986);
+    expect(numberBelow(exactContrast(white, exactLuminance(0, 0)))).toBe(20.99999999999999);
   });
 
   it.prop(
@@ -963,16 +963,16 @@ describe('verify', () => {
   });
 
   it('accepts a pair at the contrast its exact colors have, whatever rounding takes from it', () => {
-    // 20.22204598486041814… at 60 significant digits from the matrices of CSS Color 4, where JavaScript computes 20.222045984860415.
+    // 15.4873380064093659… from the matrices of CSS Color 4 as JavaScript holds them, computed without rounding, where JavaScript computes 15.487338006409363.
     const exit = Color.verify({
-      text: 'oklch(0.132707 0.067688 288.9246)',
+      text: 'oklch(0.262902 0.014207 0)',
       background: 'oklch(100% 0 0)',
       step: {
         minimumSize: Rational.fromBigInt(16n),
         maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
-      minimumContrast: 20.22204598486042,
+      minimumContrast: 15.487338006409365,
     });
 
     expect(Exit.isSuccess(exit)).toBe(true);
@@ -980,14 +980,14 @@ describe('verify', () => {
 
   it('rejects a pair that falls short by more than rounding can account for', () => {
     const exit = Color.verify({
-      text: 'oklch(0.132707 0.067688 288.9246)',
+      text: 'oklch(0.262902 0.014207 0)',
       background: 'oklch(100% 0 0)',
       step: {
         minimumSize: Rational.fromBigInt(16n),
         maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
-      minimumContrast: 20.2220459849,
+      minimumContrast: 15.4873380065,
     });
 
     expect(Exit.isFailure(exit)).toBe(true);
@@ -1280,7 +1280,7 @@ describe('shade', () => {
     });
 
     expect(Exit.isSuccess(exit) ? exit.value : '').toBe(
-      'oklch(0.0869102395243317 0.03523265361195504 0)',
+      'oklch(0.086910239524331 0.03523265361195476 0)',
     );
   });
 

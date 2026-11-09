@@ -85,14 +85,14 @@ export const lmsToXyz: Matrix = [
 ];
 
 /**
- * The matrix from CIE XYZ with the D65 white point to linear sRGB that CSS Color 4 converts through.
+ * The matrix from CIE XYZ with the D65 white point to linear sRGB that CSS Color 4 converts through, each entry the quotient of whole numbers CSS Color 4 writes it as, so that it is the number nearest to the exact entry.
  *
  * @see https://www.w3.org/TR/css-color-4/#color-conversion-code
  */
 export const xyzToLinearSrgb: Matrix = [
-  [3.2409699419045226, -1.537383177570094, -0.4986107602930034],
-  [-0.9692436362808796, 1.8759675015077202, 0.04155505740717559],
-  [0.05563007969699366, -0.20397695888897652, 1.0569715142428786],
+  [12831 / 3959, -329 / 214, -1974 / 3959],
+  [-851781 / 878810, 1648619 / 878810, 36519 / 878810],
+  [705 / 12673, -2585 / 12673, 705 / 667],
 ];
 
 /**
@@ -455,7 +455,7 @@ const contrastRatio = (text: Color, background: Color): number =>
   (Math.min(relativeLuminance(text), relativeLuminance(background)) + contrastFlare);
 
 /**
- * Whether colors of the given relative luminances, each off by at most the given rounding error, may have a contrast ratio of at least the given one, so that a ratio is out of reach only when rounding cannot account for the shortfall. The exact colors are the colors the matrices of CSS Color 4 convert as they are written, computed without rounding: by those matrices white has a relative luminance of 0.99999999999999941 and black against white a contrast ratio of 20.999999999999987, as the matrices hold the conversion of Oklab to sixteen digits.
+ * Whether colors of the given relative luminances, each off by at most the given rounding error, may have a contrast ratio of at least the given one, so that a ratio is out of reach only when rounding cannot account for the shortfall. The exact colors are the colors the matrices of CSS Color 4 convert as JavaScript holds them, computed without rounding: by those matrices white has a relative luminance of 0.99999999999999959 and black against white a contrast ratio of 20.999999999999991, as the matrices hold the conversion of Oklab to sixteen digits.
  *
  * The largest contrast the exact colors may have is the quotient of the largest luminance and the smallest, each moved by its rounding error, with the flare added to both. Computing it rounds five times: the luminance and its error added in the numerator and in the denominator, the flare added to each, and the quotient, so that it lies below the exact quotient by a relative error of at most five unit roundoffs and their products. Raising it by sixteen unit roundoffs, whose product rounds once more, leaves it above the exact quotient with ten unit roundoffs to spare.
  */
@@ -561,7 +561,7 @@ export const Colors = Schema.Struct({
 /** The colors of a piece of text and its background, and the bits per channel they are judged on, as they are written. */
 export type Colors = typeof Colors.Encoded;
 
-/** The contrast ratio of text over its background as WCAG 2.2 defines it, or a failure naming the color that is not opaque or not within sRGB. The ratio is the one JavaScript computes, which may lie a few units in the last place from the ratio of the exact colors, the colors the matrices of CSS Color 4 convert as they are written, computed without rounding: black against white gives 20.999999999999986, the number nearest to the 20.999999999999987 the exact colors give, as the matrices hold the conversion of Oklab to sixteen digits. Whether it meets a ratio is decided by `reaches` or `verify`, which account for that rounding. */
+/** The contrast ratio of text over its background as WCAG 2.2 defines it, or a failure naming the color that is not opaque or not within sRGB. The ratio is the one JavaScript computes, which may lie a few units in the last place from the ratio of the exact colors, the colors the matrices of CSS Color 4 convert as JavaScript holds them, computed without rounding: black against white gives 20.99999999999999, the number nearest to the 20.999999999999991 the exact colors give, as the matrices hold the conversion of Oklab to sixteen digits. Whether it meets a ratio is decided by `reaches` or `verify`, which account for that rounding. */
 export const contrast = (text: string, background: string): Exit.Exit<number, Schema.SchemaError> =>
   Exit.map(Schema.decodeExit(Colors)({ text, background }, { errors: 'all' }), (colors) =>
     contrastRatio(colors.text, colors.background),
@@ -583,7 +583,7 @@ const Threshold = Schema.Struct({
   ),
 });
 
-/** Whether text over its background reaches a contrast ratio as WCAG 2.2 defines it, decided as `verify` decides it: false only when the rounding of the computed ratio cannot account for its shortfall, so that colors whose exact contrast meets the ratio always reach it, the exact colors being the colors the matrices of CSS Color 4 convert as they are written, computed without rounding; or a failure with the reason when a color or the ratio is not valid. With bits per channel, the colors are judged as a display or a tool holding channels in that many bits shows and measures them, each channel rounded to the nearest step, and a channel on the edge between two steps must reach the ratio rounded either way. */
+/** Whether text over its background reaches a contrast ratio as WCAG 2.2 defines it, decided as `verify` decides it: false only when the rounding of the computed ratio cannot account for its shortfall, so that colors whose exact contrast meets the ratio always reach it, the exact colors being the colors the matrices of CSS Color 4 convert as JavaScript holds them, computed without rounding; or a failure with the reason when a color or the ratio is not valid. With bits per channel, the colors are judged as a display or a tool holding channels in that many bits shows and measures them, each channel rounded to the nearest step, and a channel on the edge between two steps must reach the ratio rounded either way. */
 export const reaches: {
   (ratio: number): (colors: Colors) => Exit.Exit<boolean, Schema.SchemaError>;
   (colors: Colors, ratio: number): Exit.Exit<boolean, Schema.SchemaError>;
@@ -680,7 +680,7 @@ export class ContrastShortfall extends Schema.TaggedError<
   message: Schema.String,
 }) {}
 
-/** The contrast ratio of a pair; or a failure with the reason when the input is not valid, or a contrast shortfall when the pair falls short of what WCAG 2.2 Contrast (Enhanced) requires for its text, or of the stricter ratio the project asks for. A pair is refused only when rounding cannot account for its shortfall, so that a pair whose exact colors, the colors the matrices of CSS Color 4 convert as they are written, meet the ratio passes even when the ratio it returns, the one JavaScript computes, lies a few units in the last place below it. With bits per channel, the colors are judged as a display or a tool holding channels in that many bits shows and measures them, each channel rounded to the nearest step, the ratio returned is theirs, and a channel on the edge between two steps must meet the ratio rounded either way. */
+/** The contrast ratio of a pair; or a failure with the reason when the input is not valid, or a contrast shortfall when the pair falls short of what WCAG 2.2 Contrast (Enhanced) requires for its text, or of the stricter ratio the project asks for. A pair is refused only when rounding cannot account for its shortfall, so that a pair whose exact colors, the colors the matrices of CSS Color 4 convert as JavaScript holds them, meet the ratio passes even when the ratio it returns, the one JavaScript computes, lies a few units in the last place below it. With bits per channel, the colors are judged as a display or a tool holding channels in that many bits shows and measures them, each channel rounded to the nearest step, the ratio returned is theirs, and a channel on the edge between two steps must meet the ratio rounded either way. */
 export const verify = (pair: Pair): Exit.Exit<number, Schema.SchemaError | ContrastShortfall> =>
   Exit.match(Schema.decodeExit(Pair)(pair, { errors: 'all' }), {
     onFailure: Exit.failCause,
