@@ -120,7 +120,7 @@ export const contrastFlare = 1 / 20;
 export const maximumContrastRatio = (1 + contrastFlare) / contrastFlare;
 
 /**
- * The unit roundoff of JavaScript numbers, half their machine epsilon: the largest relative error of an arithmetic operation, which ECMAScript rounds to the nearest number as IEEE 754 does. The engines of the Baseline core browsers compute the cosine, the sine and powers within one unit in the last place, twice the unit roundoff.
+ * The unit roundoff of JavaScript numbers, half their machine epsilon: the largest relative error of an arithmetic operation, which ECMAScript rounds to the nearest number as IEEE 754 does.
  *
  * @see https://tc39.es/ecma262/#sec-ecmascript-language-types-number-type
  */
@@ -148,7 +148,7 @@ const transform = ([first, second, third]: Matrix, [x, y, z]: Vector): Vector =>
   third[0] * x + third[1] * y + third[2] * z,
 ];
 
-/** The linear sRGB channels of a color of the given lightness, chroma and hue in its unit of angle, converted as CSS Color 4 does, the hue first reduced to one turn exactly where its unit allows, so that no large hue loses precision in radians. */
+/** The linear sRGB channels of a color of the given lightness, chroma and hue in its unit of angle, converted as CSS Color 4 does, the hue first reduced to one turn exactly where its unit allows, so that no large hue loses precision in radians. Each cube is computed as two products, which IEEE 754 rounds alike in every engine, rather than as a power, whose accuracy ECMAScript leaves to the engines. */
 const linearSrgbOf = (
   lightness: number,
   chroma: number,
@@ -161,7 +161,10 @@ const linearSrgbOf = (
     chroma * Math.cos(h),
     chroma * Math.sin(h),
   ]);
-  return transform(xyzToLinearSrgb, transform(lmsToXyz, [long ** 3, medium ** 3, short ** 3]));
+  return transform(
+    xyzToLinearSrgb,
+    transform(lmsToXyz, [long * long * long, medium * medium * medium, short * short * short]),
+  );
 };
 
 /** The relative luminance of linear sRGB channels as WCAG 2.2 gives it for sRGB, each weighted and held within its range. */
@@ -174,7 +177,7 @@ const luminanceOf = ([red, green, blue]: Vector): number =>
 const gamma = (roundings: number): number =>
   (roundings * unitRoundoff) / (1 - roundings * unitRoundoff);
 
-/** A bound on the absolute rounding error in each linear sRGB channel of a color, carried through every step of its conversion by the rounding error analysis of Higham: each sum of products by the unit roundoff over the absolute values of its terms, each cosine, sine and power by one unit in the last place, and every error already made through the coefficients it meets. */
+/** A bound on the absolute rounding error in each linear sRGB channel of a color, carried through every step of its conversion by the rounding error analysis of Higham: each sum of products by the unit roundoff over the absolute values of its terms, each cube by the two products it is computed as, each cosine and sine by one unit in the last place, and every error already made through the coefficients it meets. The unit in the last place of the cosine and the sine is assumed rather than given, as ECMAScript leaves their accuracy to the engines: Chrome takes them from LLVM libc, which rounds them correctly, and Firefox and Safari from the C library of the system, for which not every system publishes a bound. */
 const channelErrors = ({ lightness, chroma, hue, hueUnit }: Color): Vector => {
   // The error of a row of a matrix product: the error already in the vector through the coefficients it meets, and the rounding of the sum of products.
   const rowError = (row: Vector, [x, y, z]: Vector, [dx, dy, dz]: Vector): number =>
@@ -182,9 +185,10 @@ const channelErrors = ({ lightness, chroma, hue, hueUnit }: Color): Vector => {
     Math.abs(row[1]) * dy +
     Math.abs(row[2]) * dz +
     gamma(4) * (Math.abs(row[0] * x) + Math.abs(row[1] * y) + Math.abs(row[2] * z));
-  // The error of a cube of a value that carries an error, and the rounding of the power.
+  // The error of a cube of a value that carries an error, expanded so that no subtraction cancels, and the rounding of the two products the cube is computed as.
   const cubeError = (value: number, error: number): number =>
-    (Math.abs(value) + error) ** 3 - Math.abs(value) ** 3 + 2 * unitRoundoff * Math.abs(value) ** 3;
+    error * (3 * Math.abs(value) * Math.abs(value) + 3 * Math.abs(value) * error + error * error) +
+    gamma(2) * Math.abs(value) * Math.abs(value) * Math.abs(value);
   const angle = angleOf(hue, hueUnit);
   // A hue in radians is the angle itself, off by the rounding of the number it was read as; a hue in another unit is also off by the rounding of π and of the product and quotient that turn it into radians.
   const angleError =
@@ -210,7 +214,11 @@ const channelErrors = ({ lightness, chroma, hue, hueUnit }: Color): Vector => {
     rowError(oklabToLms[1], lab, labError),
     rowError(oklabToLms[2], lab, labError),
   ];
-  const lms: Vector = [cubeRoots[0] ** 3, cubeRoots[1] ** 3, cubeRoots[2] ** 3];
+  const lms: Vector = [
+    cubeRoots[0] * cubeRoots[0] * cubeRoots[0],
+    cubeRoots[1] * cubeRoots[1] * cubeRoots[1],
+    cubeRoots[2] * cubeRoots[2] * cubeRoots[2],
+  ];
   const lmsError: Vector = [
     cubeError(cubeRoots[0], cubeRootErrors[0]),
     cubeError(cubeRoots[1], cubeRootErrors[1]),
@@ -296,7 +304,7 @@ const decoded = (channel: number): number =>
     ? channel / transferSlope
     : ((channel + transferOffset) / (1 + transferOffset)) ** transferGamma;
 
-/** The relative luminance of a color once each of its gamma-encoded sRGB channels is rounded to the nearest of the given number of steps, as a display or a tool that holds channels in whole steps shows and measures it: the least, as rounded, and the largest it may have. A channel whose encoded value lies within its rounding error of the middle between two steps may round to either, so the least and the largest take both: the error of its linear value, doubled as for the luminance, and sixty-four unit roundoffs of a step, more than encoding the value and scaling it to steps can take from it. */
+/** The relative luminance of a color once each of its gamma-encoded sRGB channels is rounded to the nearest of the given number of steps, as a display or a tool that holds channels in whole steps shows and measures it: the least, as rounded, and the largest it may have. A channel whose encoded value lies within its rounding error of the middle between two steps may round to either, so the least and the largest take both: the error of its linear value, doubled as for the luminance, and sixty-four unit roundoffs of a step, more than encoding the value and scaling it to steps can take from it, even were the power that encodes it off by twenty units in the last place, as ECMAScript leaves its accuracy to the C library of the system in every Baseline core browser. */
 const roundedLuminances = (color: Color, steps: number): Vector => {
   const channels = linearSrgbOf(color.lightness, color.chroma, color.hue, color.hueUnit);
   const errors = channelErrors(color);
@@ -320,7 +328,7 @@ const roundedLuminances = (color: Color, steps: number): Vector => {
   return [luminanceAt(-1), luminanceAt(0), luminanceAt(1)];
 };
 
-/** The relative error of the relative luminance of channels rounded to steps, computed: dividing a step, adding the offset, the offset added to 1 and dividing by it round four times, which the power of 2.4 makes less than ten unit roundoffs and rounds once more by two; weighting and adding the channels round three times more, sixteen in all. */
+/** The relative error of the relative luminance of channels rounded to steps, computed: dividing a step, adding the offset, the offset added to 1 and dividing by it round four times, which the power of 2.4 makes less than ten unit roundoffs and rounds once more by two, assumed within one unit in the last place, as ECMAScript leaves its accuracy to the C library of the system in every Baseline core browser; weighting and adding the channels round three times more, sixteen in all. */
 const roundedLuminanceError = gamma(16);
 
 /** The two luminances, one from each range, closest to each other, at which the contrast of the two ranges is least: the top of the darker range and the bottom of the lighter, or a luminance both ranges hold. */
