@@ -776,7 +776,7 @@ const closestShade = (
       0,
       chroma,
     );
-    // Reduced strictly within sRGB, so that the shade stays within it once written and read again, by the same search over the whole range whatever the estimate: rounding may set a chroma within sRGB just above one outside it at the edge, so another search could stop at another edge. Where the estimate lies within a few units in the last place of the edge, the search takes the chromas away from it as it would find them, within sRGB below it and outside above, and converts only those near it.
+    // Reduced strictly within sRGB rather than within the tolerance a color is read with, as a browser maps a color outside sRGB into it on an sRGB display and shows it outside sRGB on a wider one, so that either way it would not be the color whose contrast was judged, by the same search over the whole range whatever the estimate: rounding may set a chroma within sRGB just above one outside it at the edge, so another search could stop at another edge. Where the estimate lies within a few units in the last place of the edge, the search takes the chromas away from it as it would find them, within sRGB below it and outside above, and converts only those near it.
     return isInGamut(linearSrgbOf(shade, Math.max(estimate - 2 ** -44, 0), hue, hueUnit), 0) &&
       !isInGamut(linearSrgbOf(shade, Math.min(estimate + 2 ** -44, chroma), hue, hueUnit), 0)
       ? boundary(
