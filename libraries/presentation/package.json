@@ -30,8 +30,10 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
+    "#jsr.json": "./jsr.json",
     "#package.json": "./package.json",
-    "#src/*": "./src/*.ts"
+    "#src/*": "./src/*.ts",
+    "#vite.config": "./vite.config.ts"
   },
   "exports": {
     "./Color": {
