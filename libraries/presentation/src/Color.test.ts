@@ -963,7 +963,11 @@ describe('verify', () => {
   });
 
   it('accepts a pair at the contrast its exact colors have, whatever rounding takes from it', () => {
-    // 15.4873380064093659… from the matrices of CSS Color 4 as JavaScript holds them, computed without rounding, where JavaScript computes 15.487338006409363.
+    // A pair whose contrast JavaScript computes below the contrast of its exact colors.
+    const exact = numberBelow(
+      exactContrast(exactLuminance(0.262902, 0.014207), exactLuminance(1, 0)),
+    );
+    const computed = Color.contrast('oklch(0.262902 0.014207 0)', 'oklch(100% 0 0)');
     const exit = Color.verify({
       text: 'oklch(0.262902 0.014207 0)',
       background: 'oklch(100% 0 0)',
@@ -972,9 +976,10 @@ describe('verify', () => {
         maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
-      minimumContrast: 15.487338006409365,
+      minimumContrast: exact,
     });
 
+    expect(Exit.isSuccess(computed) ? computed.value : Infinity).toBeLessThan(exact);
     expect(Exit.isSuccess(exit)).toBe(true);
   });
 
