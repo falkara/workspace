@@ -73,7 +73,7 @@ We build only on what the industry already agrees on and let a handful of them s
 
 ### Web Platform
 
-Facts and opinions come built in. Only facts that hold for every reader in every browser are kept and opinions give way to derived values.
+Facts and opinions come built in. Only facts that hold for every reader in every Baseline core browser are kept, and opinions give way to derived values, save one declared choice: a maximum viewport width of 1280 px, as WCAG sets none and fluid values need one to stay resizable.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../.github/assets/baseline-widely-available-dark.svg">
