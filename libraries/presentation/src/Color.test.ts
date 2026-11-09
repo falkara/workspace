@@ -458,6 +458,20 @@ describe('Color', () => {
     ]);
   });
 
+  it('accepts a color whose channels lie outside sRGB by less than half a step of an 8-bit channel, as hex writes them within it', () => {
+    // Its channels lie at 255.06, -0.39 and -0.14 steps, which hex writes as 255, 0 and 0.
+    const exit = Schema.decodeExit(Color.Color)('oklch(62.8% 0.2578 29.23)');
+
+    expect(Exit.isSuccess(exit)).toBe(true);
+  });
+
+  it('rejects a color whose channel lies outside sRGB by more than half a step of an 8-bit channel', () => {
+    // Its green channel lies at -1.14 steps, which hex cannot write.
+    const exit = Schema.decodeExit(Color.Color)('oklch(62.8% 0.258 29.23)');
+
+    expect(Exit.isFailure(exit)).toBe(true);
+  });
+
   it('rejects a color outside sRGB', () => {
     const exit = Schema.decodeExit(Color.Color)('oklch(70% 0.35 147)');
 

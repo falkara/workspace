@@ -53,7 +53,7 @@ export const largeBoldTextSize = Rational.multiply(largeBoldTextPointSize, Lengt
  */
 export const channelSteps = 255;
 
-/** The distance a gamma-encoded sRGB channel may lie outside its range and still count as inside, half a step of an 8-bit channel, which no display can show. */
+/** The distance a gamma-encoded sRGB channel may lie outside its range and still count as inside, half a step of an 8-bit channel, which rounding it to the 8 bits of a hex color takes back to the edge of its range, so that a color read from hex and written in oklch() with a few decimal places is not refused for leaving sRGB by less than its hex form can tell, nor a color on its edge, such as white, whose red channel the matrices of CSS Color 4 put a few units in the last place above 1. */
 export const gamutTolerance = 1 / (2 * channelSteps);
 
 /** Three numbers in order, such as the components or the channels of a color. */
