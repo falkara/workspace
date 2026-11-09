@@ -88,7 +88,7 @@ Falkara Presentation meets WCAG 2.2 at Level AAA in everything its values touch.
 
 ### USWDS
 
-Conventions earn trust by surviving real use. Values borrow them only where the guidelines fall silent and only from the design system the United States government runs across nearly a hundred of its agencies.
+Conventions earn trust by surviving real use. Values borrow them only where the guidelines fall silent and only from [the design system](https://designsystem.digital.gov/about/) the United States government builds its websites with, which supports dozens of its agencies and nearly 200 of their sites.
 
 ### Utopia
 
