@@ -54,6 +54,17 @@ if (Exit.isSuccess(scale)) {
 }
 ```
 
+Intent kept as JSON reads through the JSON codec of the same schema, each number written in a string as a fraction or a whole number.
+
+```ts
+import { Schema } from 'effect';
+
+Schema.decodeUnknownExit(Schema.toCodecJson(Typography.ScaleOptions))(
+  JSON.parse('{ "minimumFactor": "6/5", "maximumFactor": "5/4", "maximumBodyFontSize": "20" }'),
+);
+// Success: the same intent, ready for Typography.scale
+```
+
 Every schema the modules export, such as `Typography.ScaleOptions`, works with validators outside Effect too once it passes through `Schema.toStandardSchemaV1`.
 
 ## Modules
