@@ -33,22 +33,41 @@ describe('vw', () => {
 
 describe('clamp', () => {
   it('writes a value that never changes as its rem length alone', () => {
-    const exit = Fluid.clamp(Rational.fromBigInt(16n), Rational.fromBigInt(16n));
+    const exit = Fluid.clamp({
+      minimumSize: Rational.fromBigInt(16n),
+      maximumSize: Rational.fromBigInt(16n),
+    });
 
     expect(Exit.isSuccess(exit) ? exit.value : undefined).toBe('1rem');
   });
 
   it('writes a value whose sizes are written alike as their rem length alone', () => {
-    const exit = Fluid.clamp(
-      Rational.fromBigInt(16n),
-      Rational.makeUnsafe(16_000_000_001n, 1_000_000_000n),
-    );
+    const exit = Fluid.clamp({
+      minimumSize: Rational.fromBigInt(16n),
+      maximumSize: Rational.makeUnsafe(16_000_000_001n, 1_000_000_000n),
+    });
 
     expect(Exit.isSuccess(exit) ? exit.value : undefined).toBe('1rem');
   });
 
   it('takes sizes written as plain fractions and reduces them', () => {
-    const exit = Fluid.clamp(Rational.makeUnsafe(32n, 2n), Rational.fromBigInt(20n));
+    const exit = Fluid.clamp({
+      minimumSize: Rational.makeUnsafe(32n, 2n),
+      maximumSize: Rational.fromBigInt(20n),
+    });
+
+    expect(Exit.isSuccess(exit) ? exit.value : '').toBe(
+      'clamp(1rem, 0.91667rem + 0.41667vw, 1.25rem)',
+    );
+  });
+
+  it('takes a step as it is, whatever else it holds besides its sizes', () => {
+    const step = {
+      position: 0,
+      minimumSize: Rational.fromBigInt(16n),
+      maximumSize: Rational.fromBigInt(20n),
+    };
+    const exit = Fluid.clamp(step);
 
     expect(Exit.isSuccess(exit) ? exit.value : '').toBe(
       'clamp(1rem, 0.91667rem + 0.41667vw, 1.25rem)',
@@ -56,7 +75,10 @@ describe('clamp', () => {
   });
 
   it('rejects a minimum size that is not positive, with the reason', () => {
-    const exit = Fluid.clamp(Rational.fromBigInt(0n), Rational.fromBigInt(20n));
+    const exit = Fluid.clamp({
+      minimumSize: Rational.fromBigInt(0n),
+      maximumSize: Rational.fromBigInt(20n),
+    });
 
     expect(
       SchemaIssue.makeFormatterStandardSchemaV1()(
@@ -72,7 +94,10 @@ describe('clamp', () => {
   });
 
   it('writes a CSS clamp() with the sizes in rem and the growth in vw', () => {
-    const exit = Fluid.clamp(Rational.fromBigInt(16n), Rational.fromBigInt(20n));
+    const exit = Fluid.clamp({
+      minimumSize: Rational.fromBigInt(16n),
+      maximumSize: Rational.fromBigInt(20n),
+    });
 
     expect(Exit.isSuccess(exit) ? exit.value : '').toBe(
       'clamp(1rem, 0.91667rem + 0.41667vw, 1.25rem)',
@@ -80,7 +105,10 @@ describe('clamp', () => {
   });
 
   it('takes the minimum size at the minimum viewport width and the maximum size at the maximum viewport width', () => {
-    const exit = Fluid.clamp(Rational.fromBigInt(16n), Rational.fromBigInt(20n));
+    const exit = Fluid.clamp({
+      minimumSize: Rational.fromBigInt(16n),
+      maximumSize: Rational.fromBigInt(20n),
+    });
     const [, minimum, intercept, , slope, maximum] =
       /^clamp\((-?[\d.]+)rem, (-?[\d.]+)rem ([+-]) ([\d.]+)vw, (-?[\d.]+)rem\)$/.exec(
         Exit.isSuccess(exit) ? exit.value : '',
@@ -113,7 +141,10 @@ describe('clamp', () => {
   });
 
   it('grows linearly between the minimum and the maximum viewport width', () => {
-    const exit = Fluid.clamp(Rational.fromBigInt(16n), Rational.fromBigInt(20n));
+    const exit = Fluid.clamp({
+      minimumSize: Rational.fromBigInt(16n),
+      maximumSize: Rational.fromBigInt(20n),
+    });
     const [, minimum, intercept, , slope, maximum] =
       /^clamp\((-?[\d.]+)rem, (-?[\d.]+)rem ([+-]) ([\d.]+)vw, (-?[\d.]+)rem\)$/.exec(
         Exit.isSuccess(exit) ? exit.value : '',
@@ -137,7 +168,10 @@ describe('clamp', () => {
   });
 
   it('holds its sizes outside the viewport range', () => {
-    const exit = Fluid.clamp(Rational.fromBigInt(16n), Rational.fromBigInt(20n));
+    const exit = Fluid.clamp({
+      minimumSize: Rational.fromBigInt(16n),
+      maximumSize: Rational.fromBigInt(20n),
+    });
     const [, minimum, intercept, , slope, maximum] =
       /^clamp\((-?[\d.]+)rem, (-?[\d.]+)rem ([+-]) ([\d.]+)vw, (-?[\d.]+)rem\)$/.exec(
         Exit.isSuccess(exit) ? exit.value : '',
@@ -166,22 +200,28 @@ describe('clamp', () => {
   });
 
   it('accepts a value that holds its size', () => {
-    const exit = Fluid.clamp(Rational.fromBigInt(16n), Rational.fromBigInt(16n));
+    const exit = Fluid.clamp({
+      minimumSize: Rational.fromBigInt(16n),
+      maximumSize: Rational.fromBigInt(16n),
+    });
 
     expect(Exit.isSuccess(exit)).toBe(true);
   });
 
   it('accepts a value that grows by the maximum text growth factor', () => {
-    const exit = Fluid.clamp(
-      Rational.fromBigInt(16n),
-      Rational.multiply(Rational.fromBigInt(16n), Typography.maximumTextGrowthFactor),
-    );
+    const exit = Fluid.clamp({
+      minimumSize: Rational.fromBigInt(16n),
+      maximumSize: Rational.multiply(Rational.fromBigInt(16n), Typography.maximumTextGrowthFactor),
+    });
 
     expect(Exit.isSuccess(exit)).toBe(true);
   });
 
   it('rejects a value that would shrink', () => {
-    const exit = Fluid.clamp(Rational.fromBigInt(20n), Rational.fromBigInt(16n));
+    const exit = Fluid.clamp({
+      minimumSize: Rational.fromBigInt(20n),
+      maximumSize: Rational.fromBigInt(16n),
+    });
 
     expect(
       SchemaIssue.makeFormatterStandardSchemaV1()(
@@ -197,13 +237,13 @@ describe('clamp', () => {
   });
 
   it('rejects a value that would grow by more than the maximum text growth factor', () => {
-    const exit = Fluid.clamp(
-      Rational.fromBigInt(16n),
-      Rational.sum(
+    const exit = Fluid.clamp({
+      minimumSize: Rational.fromBigInt(16n),
+      maximumSize: Rational.sum(
         Rational.multiply(Rational.fromBigInt(16n), Typography.maximumTextGrowthFactor),
         Rational.makeUnsafe(1n, 10n),
       ),
-    );
+    });
 
     expect(
       SchemaIssue.makeFormatterStandardSchemaV1()(

@@ -24,7 +24,7 @@ const intent = {
 
 Effect.gen(function* () {
   const steps = yield* Typography.scale(intent);
-  return yield* Effect.forEach(steps, (step) => Fluid.clamp(step.minimumSize, step.maximumSize));
+  return yield* Effect.forEach(steps, Fluid.clamp);
 });
 // Success: [
 //   'clamp(0.83333rem, 0.77778rem + 0.27778vw, 1rem)',       position −1

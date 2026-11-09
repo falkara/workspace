@@ -12,8 +12,8 @@ export const rem = (size: number): string =>
 export const vw = (share: number): string =>
   `${Math.round(share * Rational.toNumberUnsafe(Length.viewportWidthUnits) * 10 ** Typography.decimalPlaces) / 10 ** Typography.decimalPlaces}vw`;
 
-/** A schema of the sizes a fluid value takes at the minimum and at the maximum viewport width. Sizes measured in CSS pixels. */
-const Sizes = Schema.Struct({
+/** A schema of the sizes a fluid value takes at the minimum and at the maximum viewport width, as every step of the type scale and of the space scale holds them, so that a step passes as it is. Sizes measured in CSS pixels. */
+export const Sizes = Schema.Struct({
   /** The size at the minimum viewport width, positive, as the growth of the value is bounded as a factor of it. */
   minimumSize: Schema.Rational.pipe(
     Schema.check(
@@ -45,12 +45,12 @@ const Sizes = Schema.Struct({
   ),
 );
 
+/** The sizes a fluid value takes at the minimum and at the maximum viewport width, as they are written. */
+export type Sizes = typeof Sizes.Encoded;
+
 /** The CSS clamp() value that changes linearly from the minimum size at the minimum viewport width to the maximum size at the maximum viewport width, or the rem length alone when both sizes are written alike and the value never changes; or a failure when the minimum size is not positive or when the value would shrink or grow by more than the maximum text growth factor. Sizes measured in CSS pixels. */
-export const clamp = (
-  minimumSize: Rational.Rational,
-  maximumSize: Rational.Rational,
-): Exit.Exit<string, Schema.SchemaError> =>
-  Exit.map(Schema.decodeExit(Sizes)({ minimumSize, maximumSize }, { errors: 'all' }), (sizes) => {
+export const clamp = (sizes: Sizes): Exit.Exit<string, Schema.SchemaError> =>
+  Exit.map(Schema.decodeExit(Sizes)(sizes, { errors: 'all' }), (sizes) => {
     if (
       rem(Rational.toNumberUnsafe(sizes.minimumSize)) ===
       rem(Rational.toNumberUnsafe(sizes.maximumSize))
