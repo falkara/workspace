@@ -84,7 +84,7 @@ Facts and opinions come built in. Only facts that hold for every reader in every
 
 Promises to readers are on record. Values keep every promise within their reach and that goes well past what the European Accessibility Act in the EU and Section 508 of the Rehabilitation Act in the United States demand.
 
-Falkara Presentation meets WCAG 2.2 at Level AAA in everything its values touch.
+Values meet the success criteria of WCAG 2.2 up to Level AAA that they decide: Contrast (Enhanced) for text, Resize Text, Reflow, Text Spacing and Visual Presentation. Criteria they feed without deciding, such as the contrast of interface components and focus indicators or the size of targets, rest with the interface that uses them.
 
 ### USWDS
 
