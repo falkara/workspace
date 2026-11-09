@@ -855,7 +855,7 @@ const closestShade = (
 };
 
 /**
- * The shade of a brand color, written in oklch(), that is closest to it by deltaEOK, the color difference CSS Color 4 defines, and reaches the contrast WCAG 2.2 Contrast (Enhanced) requires for its text against the background, or the stricter ratio the project asks for, both exactly and once it and the background are written in hex, rounded to the 8-bit channels most displays show and tools measure; or a failure with the reason when the input is not valid, or no legible shade when no shade within sRGB reaches it. Its hue is kept and its chroma is reduced only where sRGB cannot hold it, at constant lightness and hue as CSS Color 4 gamut mapping aims to reduce it.
+ * The shade of a brand color, written in oklch(), that is closest to it by deltaEOK, the color difference CSS Color 4 defines, among the colors that keep its hue and differ from it only in lightness, its chroma reduced at constant lightness and hue only where sRGB cannot hold it, as CSS Color 4 gamut mapping aims to reduce it, and that reaches the contrast WCAG 2.2 Contrast (Enhanced) requires for its text against the background, or the stricter ratio the project asks for, both exactly and once it and the background are written in hex, rounded to the 8-bit channels most displays show and tools measure; or a failure with the reason when the input is not valid, or no legible shade when no shade within sRGB reaches it. Colors of another hue or of less chroma are not searched.
  *
  * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#color-difference-OK
  * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#css-gamut-mapping-algorithms
