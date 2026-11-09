@@ -50,7 +50,7 @@ const scale = Typography.scale(intent);
 if (Exit.isSuccess(scale)) {
   scale.value; // the steps
 } else {
-  Option.getOrUndefined(Exit.findErrorOption(scale))?.message; // every reason, one per line
+  Option.getOrUndefined(Exit.findErrorOption(scale))?.message; // every reason, each followed by its path
 }
 ```
 
