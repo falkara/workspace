@@ -31,6 +31,11 @@ jobs:
         run: npm install --global npm@12
       - name: Install the dependencies
         run: npm ci
+      - name: Format, lint and type check
+        # Nothing is versioned or published that fails the checks, even when pushed to main without a pull request.
+        run: npx vp check
+      - name: Test
+        run: npx vp test
       - name: Open the Version Packages pull request or publish the packages
         id: changesets
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
