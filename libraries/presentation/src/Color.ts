@@ -597,7 +597,7 @@ const TextStep = Typography.Step.mapFields(Struct.omit(['position']), {
   unsafePreserveChecks: true,
 });
 
-/** The contrast ratio a piece of text needs as WCAG 2.2 Contrast (Enhanced) sets it, from its size at the minimum viewport width, its smallest, and its font weight. */
+/** The contrast ratio a piece of text needs as WCAG 2.2 Contrast (Enhanced) sets it, from its size at the minimum viewport width, its smallest, and its font weight, counted as bold from the weight CSS Fonts gives the bold keyword, as WCAG 2.2 counts 14 point bold text as large-scale without saying which weight is bold. */
 const requiredContrast = (step: typeof TextStep.Type, fontWeight: number): number =>
   Rational.isGreaterThanOrEqualTo(step.minimumSize, largeTextSize) ||
   (fontWeight >= Typography.boldFontWeight &&
@@ -648,7 +648,7 @@ export const Pair = Schema.Struct({
   background: Color,
   /** The step of the type scale the text is set in, its position aside. */
   step: TextStep,
-  /** The font weight of the text. */
+  /** The font weight of the text, bold from the weight CSS Fonts gives the bold keyword, which WCAG 2.2 leaves unsaid. */
   fontWeight: FontWeight,
   /** A contrast ratio stricter than the standards that the project may ask for. */
   minimumContrast: Schema.optional(MinimumContrast),
@@ -720,7 +720,7 @@ export const Brand = Schema.Struct({
   background: Color,
   /** The step of the type scale the text is set in, its position aside. */
   step: TextStep,
-  /** The font weight of the text. */
+  /** The font weight of the text, bold from the weight CSS Fonts gives the bold keyword, which WCAG 2.2 leaves unsaid. */
   fontWeight: FontWeight,
   /** A contrast ratio stricter than the standards that the project may ask for. */
   minimumContrast: Schema.optional(MinimumContrast),
