@@ -40,7 +40,7 @@ export const decimalPlaces =
   ) + 1;
 
 /**
- * The smallest font size of the USWDS theme type scale in its default settings. Measured in CSS pixels.
+ * The smallest size of the USWDS theme type scale in its default settings, taken as a CSS font size. USWDS sets it as a target for a typeface whose capitals are 0.362 em high and writes the font size of each typeface scaled to that cap height: 13 px for its system typefaces and Public Sans, about 13.84 px for Source Sans Pro, its default for body text, and about 12.68 px for Merriweather, its default for headings. Measured in CSS pixels.
  *
  * @see https://designsystem.digital.gov/design-tokens/typesetting/font-size/#theme-tokens
  */
