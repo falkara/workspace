@@ -88,7 +88,7 @@ Values meet the success criteria of WCAG 2.2 up to Level AAA that they decide: C
 
 ### USWDS
 
-Conventions earn trust by surviving real use. Values borrow them only where the guidelines fall silent and only from [the design system](https://designsystem.digital.gov/about/) the United States government builds its websites with, which supports dozens of its agencies and nearly 200 of their sites.
+Conventions earn trust by surviving real use. Values borrow them only where the guidelines fall silent and only from USWDS 3, [the design system](https://designsystem.digital.gov/about/) the United States government builds its websites with, which supports dozens of its agencies and nearly 200 of their sites.
 
 ### Utopia
 

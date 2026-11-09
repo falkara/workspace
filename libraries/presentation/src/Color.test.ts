@@ -1201,7 +1201,7 @@ describe('shade', () => {
       {
         path: ['step', 'minimumSize'],
         message:
-          'Expected a minimum size of at least 13 px, the smallest size of the USWDS theme type scale',
+          'Expected a minimum size of at least 13 px, the smallest size of the USWDS 3 theme type scale',
       },
     ]);
   });

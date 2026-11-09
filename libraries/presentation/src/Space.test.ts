@@ -4,13 +4,13 @@ import { Exit, Option, Rational, SchemaIssue } from 'effect';
 import * as Space from '#src/Space';
 
 describe('spacingUnit', () => {
-  it('is 8 CSS pixels, the spacing unit of the USWDS spacing scale', () => {
+  it('is 8 CSS pixels, the spacing unit of the USWDS 3 spacing scale', () => {
     expect(Space.spacingUnit).toEqual(Rational.fromBigInt(8n));
   });
 });
 
 describe('spacingUnitCounts', () => {
-  it('are 1/2 to 3 by halves, 4 to 10 and 15, the counts of the small and medium tokens of the USWDS spacing scale', () => {
+  it('are 1/2 to 3 by halves, 4 to 10 and 15, the counts of the small and medium tokens of the USWDS 3 spacing scale', () => {
     expect(Space.spacingUnitCounts).toEqual([
       Rational.makeUnsafe(1n, 2n),
       Rational.fromBigInt(1n),
@@ -63,7 +63,7 @@ describe('scale', () => {
     ]);
   });
 
-  it('takes the USWDS sizes at the minimum viewport width', () => {
+  it('takes the USWDS 3 sizes at the minimum viewport width', () => {
     const exit = Space.scale({ maximumBodyFontSize: Rational.fromBigInt(20n) });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 

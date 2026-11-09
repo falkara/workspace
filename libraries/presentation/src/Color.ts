@@ -49,7 +49,7 @@ export const largeBoldTextSize = Rational.multiply(largeBoldTextPointSize, Lengt
 /**
  * The number of steps between the darkest and the lightest level of an 8-bit sRGB channel.
  *
- * @see https://www.w3.org/TR/css-color-4/#hex-notation
+ * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#hex-notation
  */
 export const channelSteps = 255;
 
@@ -65,7 +65,7 @@ type Matrix = readonly [Vector, Vector, Vector];
 /**
  * The matrix from Oklab to the LMS cone responses that CSS Color 4 converts through.
  *
- * @see https://www.w3.org/TR/css-color-4/#color-conversion-code
+ * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#color-conversion-code
  */
 export const oklabToLms: Matrix = [
   [1, 0.3963377773761749, 0.2158037573099136],
@@ -76,7 +76,7 @@ export const oklabToLms: Matrix = [
 /**
  * The matrix from LMS cone responses to CIE XYZ with the D65 white point that CSS Color 4 converts through.
  *
- * @see https://www.w3.org/TR/css-color-4/#color-conversion-code
+ * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#color-conversion-code
  */
 export const lmsToXyz: Matrix = [
   [1.2268798758459243, -0.5578149944602171, 0.2813910456659647],
@@ -87,7 +87,7 @@ export const lmsToXyz: Matrix = [
 /**
  * The matrix from CIE XYZ with the D65 white point to linear sRGB that CSS Color 4 converts through, each entry the quotient of whole numbers CSS Color 4 writes it as, so that it is the number nearest to the exact entry.
  *
- * @see https://www.w3.org/TR/css-color-4/#color-conversion-code
+ * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#color-conversion-code
  */
 export const xyzToLinearSrgb: Matrix = [
   [12831 / 3959, -329 / 214, -1974 / 3959],
@@ -98,7 +98,7 @@ export const xyzToLinearSrgb: Matrix = [
 /**
  * The chroma that CSS Color 4 sets as 100 % in oklch().
  *
- * @see https://www.w3.org/TR/css-color-4/#specifying-oklab-oklch
+ * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#specifying-oklab-oklch
  */
 export const fullChroma = 2 / 5;
 
@@ -122,14 +122,14 @@ export const maximumContrastRatio = (1 + contrastFlare) / contrastFlare;
 /**
  * The unit roundoff of JavaScript numbers, half their machine epsilon: the largest relative error of an arithmetic operation, which ECMAScript rounds to the nearest number as IEEE 754 does.
  *
- * @see https://tc39.es/ecma262/#sec-ecmascript-language-types-number-type
+ * @see https://262.ecma-international.org/17.0/#sec-ecmascript-language-types-number-type
  */
 export const unitRoundoff = Number.EPSILON / 2;
 
 /**
  * The half turn in each unit of angle CSS Values 4 defines but the radian, whose half turn, π, no number holds exactly, so that a hue in these units is reduced to one turn exactly.
  *
- * @see https://www.w3.org/TR/css-values-4/#angles
+ * @see https://www.w3.org/TR/2024/WD-css-values-4-20240312/#angles
  */
 export const halfTurns: { readonly deg: number; readonly grad: number; readonly turn: number } = {
   deg: 180,
@@ -255,28 +255,28 @@ const luminanceError = (color: Color): number => {
 /**
  * The linear sRGB value up to which the sRGB transfer function is linear.
  *
- * @see https://www.w3.org/TR/css-color-4/#predefined-sRGB
+ * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#predefined-sRGB
  */
 export const transferThreshold = 0.0031308;
 
 /**
  * The slope of the linear part of the sRGB transfer function.
  *
- * @see https://www.w3.org/TR/css-color-4/#predefined-sRGB
+ * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#predefined-sRGB
  */
 export const transferSlope = 12.92;
 
 /**
  * The exponent of the curved part of the sRGB transfer function.
  *
- * @see https://www.w3.org/TR/css-color-4/#predefined-sRGB
+ * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#predefined-sRGB
  */
 export const transferGamma = 2.4;
 
 /**
  * The offset of the curved part of the sRGB transfer function.
  *
- * @see https://www.w3.org/TR/css-color-4/#predefined-sRGB
+ * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#predefined-sRGB
  */
 export const transferOffset = 0.055;
 
@@ -294,7 +294,7 @@ const isInGamut = (channels: ReadonlyArray<number>, tolerance: number): boolean 
 /**
  * The gamma-encoded sRGB value up to which the sRGB transfer function reads a channel as linear.
  *
- * @see https://www.w3.org/TR/css-color-4/#color-conversion-code
+ * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#color-conversion-code
  */
 export const encodedTransferThreshold = 0.04045;
 
@@ -857,8 +857,8 @@ const closestShade = (
 /**
  * The shade of a brand color, written in oklch(), that is closest to it by deltaEOK, the color difference CSS Color 4 defines, and reaches the contrast WCAG 2.2 Contrast (Enhanced) requires for its text against the background, or the stricter ratio the project asks for, both exactly and once it and the background are written in hex, rounded to the 8-bit channels most displays show and tools measure; or a failure with the reason when the input is not valid, or no legible shade when no shade within sRGB reaches it. Its hue is kept and its chroma is reduced only where sRGB cannot hold it, at constant lightness and hue as CSS Color 4 gamut mapping aims to reduce it.
  *
- * @see https://www.w3.org/TR/css-color-4/#color-difference-OK
- * @see https://www.w3.org/TR/css-color-4/#css-gamut-mapping-algorithms
+ * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#color-difference-OK
+ * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#css-gamut-mapping-algorithms
  */
 export const shade = (brand: Brand): Exit.Exit<string, Schema.SchemaError | NoLegibleShade> =>
   Exit.match(Schema.decodeExit(Brand)(brand, { errors: 'all' }), {

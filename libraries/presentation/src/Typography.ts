@@ -40,7 +40,7 @@ export const decimalPlaces =
   ) + 1;
 
 /**
- * The smallest size of the USWDS theme type scale in its default settings, taken as a CSS font size. USWDS sets it as a target for a typeface whose capitals are 0.362 em high and writes the font size of each typeface scaled to that cap height: 13 px for its system typefaces and Public Sans, about 13.84 px for Source Sans Pro, its default for body text, and about 12.68 px for Merriweather, its default for headings. Measured in CSS pixels.
+ * The smallest size of the USWDS 3 theme type scale in its default settings, taken as a CSS font size. USWDS 3 sets it as a target for a typeface whose capitals are 0.362 em high and writes the font size of each typeface scaled to that cap height: 13 px for its system typefaces and Public Sans, about 13.84 px for Source Sans Pro, its default for body text, and about 12.68 px for Merriweather, its default for headings. Measured in CSS pixels.
  *
  * @see https://designsystem.digital.gov/design-tokens/typesetting/font-size/#theme-tokens
  */
@@ -49,7 +49,7 @@ export const minimumFontSize = Rational.fromBigInt(13n);
 /**
  * The advance of an ideograph, as a factor of the font size, that CSS Values 4 assumes for the ic unit when it cannot be measured: a full-width character, which no line break can split.
  *
- * @see https://www.w3.org/TR/css-values-4/#ic
+ * @see https://www.w3.org/TR/2024/WD-css-values-4-20240312/#ic
  */
 export const ideographAdvanceFactor = Rational.fromBigInt(1n);
 
@@ -77,21 +77,21 @@ export const textScaleFactor = Rational.fromBigInt(2n);
 /**
  * The lightest font weight that CSS Fonts allows.
  *
- * @see https://www.w3.org/TR/css-fonts-4/#font-weight-prop
+ * @see https://www.w3.org/TR/2026/WD-css-fonts-4-20261104/#font-weight-prop
  */
 export const minimumFontWeight = 1;
 
 /**
  * The heaviest font weight that CSS Fonts allows.
  *
- * @see https://www.w3.org/TR/css-fonts-4/#font-weight-prop
+ * @see https://www.w3.org/TR/2026/WD-css-fonts-4-20261104/#font-weight-prop
  */
 export const maximumFontWeight = 1000;
 
 /**
  * The font weight that CSS Fonts gives the bold keyword.
  *
- * @see https://www.w3.org/TR/css-fonts-4/#font-weight-prop
+ * @see https://www.w3.org/TR/2026/WD-css-fonts-4-20261104/#font-weight-prop
  */
 export const boldFontWeight = 700;
 
@@ -107,7 +107,7 @@ export const lineHeightFactor = Rational.makeUnsafe(3n, 2n);
  * The text alignment that keeps text unjustified, as WCAG 2.2 Visual Presentation requires, aligned to the start of each line in every writing direction.
  *
  * @see https://www.w3.org/TR/WCAG22/#visual-presentation
- * @see https://www.w3.org/TR/css-text-3/#text-align-property
+ * @see https://www.w3.org/TR/2026/CRD-css-text-3-20260814/#text-align-property
  */
 export const textAlignment = 'start';
 
@@ -224,7 +224,7 @@ export const Step = Schema.Struct({
       Schema.makeIsGreaterThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
         minimumFontSize,
         {
-          message: `Expected a minimum size of at least ${Math.round(Rational.toNumberUnsafe(minimumFontSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, the smallest size of the USWDS theme type scale`,
+          message: `Expected a minimum size of at least ${Math.round(Rational.toNumberUnsafe(minimumFontSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, the smallest size of the USWDS 3 theme type scale`,
         },
       ),
       Schema.makeIsLessThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(

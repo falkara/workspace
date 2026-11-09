@@ -3,14 +3,14 @@ import { Exit, Rational, Schema } from 'effect';
 import * as Typography from '#src/Typography';
 
 /**
- * The spacing unit of the USWDS spacing scale. Measured in CSS pixels.
+ * The spacing unit of the USWDS 3 spacing scale. Measured in CSS pixels.
  *
  * @see https://designsystem.digital.gov/design-tokens/spacing-units/
  */
 export const spacingUnit = Rational.fromBigInt(8n);
 
 /**
- * The counts of the spacing unit in the small and medium tokens of the USWDS spacing scale, from the smallest to the largest: the tokens its margin and padding utilities space content with, save the smaller tokens of 1 and 2 px, which USWDS gives as fixed lengths rather than counts of the unit. Left out too are the negative tokens, which mirror these, zero, and the large named tokens from card to widescreen, with which USWDS sizes widths and heights rather than spacing.
+ * The counts of the spacing unit in the small and medium tokens of the USWDS 3 spacing scale, from the smallest to the largest: the tokens its margin and padding utilities space content with, save the smaller tokens of 1 and 2 px, which USWDS 3 gives as fixed lengths rather than counts of the unit. Left out too are the negative tokens, which mirror these, zero, and the large named tokens from card to widescreen, with which USWDS 3 sizes widths and heights rather than spacing.
  *
  * @see https://designsystem.digital.gov/design-tokens/spacing-units/
  */
@@ -31,7 +31,7 @@ export const spacingUnitCounts: ReadonlyArray<Rational.Rational> = [
   Rational.fromBigInt(15n),
 ];
 
-/** The spacing unit as a factor of body text, the share of the default font size it takes in USWDS, so that spacing grows with body text. */
+/** The spacing unit as a factor of body text, the share of the default font size it takes in USWDS 3, so that spacing grows with body text. */
 export const spacingUnitFactor = Rational.divideUnsafe(
   // The default font size is a positive constant, so the division never divides by zero.
   spacingUnit,
