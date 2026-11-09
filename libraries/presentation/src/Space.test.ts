@@ -4,13 +4,13 @@ import { Exit, Option, Rational, SchemaIssue } from 'effect';
 import * as Space from '#src/Space';
 
 describe('spacingUnit', () => {
-  it('is the spacing unit of the USWDS spacing scale', () => {
+  it('is 8 CSS pixels, the spacing unit of the USWDS spacing scale', () => {
     expect(Space.spacingUnit).toEqual(Rational.fromBigInt(8n));
   });
 });
 
 describe('spacingUnitCounts', () => {
-  it('are the counts the USWDS spacing scale spaces content with', () => {
+  it('are 1/2 to 3 by halves, 4 to 10 and 15, the counts of the small and medium tokens of the USWDS spacing scale', () => {
     expect(Space.spacingUnitCounts).toEqual([
       Rational.makeUnsafe(1n, 2n),
       Rational.fromBigInt(1n),

@@ -6,13 +6,13 @@ import * as Typography from '#src/Typography';
 import * as Viewport from '#src/Viewport';
 
 describe('defaultFontSize', () => {
-  it('is the font size the Baseline core browsers give the root element', () => {
+  it('is 16 CSS pixels, the font size the Baseline core browsers give the root element', () => {
     expect(Typography.defaultFontSize).toEqual(Rational.fromBigInt(16n));
   });
 });
 
 describe('highestMaximumDefaultFontSize', () => {
-  it('is the largest default font size Chromium and Firefox let a reader set', () => {
+  it('is 72 CSS pixels, the largest default font size Chromium and Firefox let a reader set', () => {
     expect(Typography.highestMaximumDefaultFontSize).toEqual(Rational.fromBigInt(72n));
   });
 });
@@ -110,13 +110,13 @@ describe('decimalPlaces', () => {
 });
 
 describe('minimumFontSize', () => {
-  it('is the smallest size of the USWDS theme type scale in its default settings', () => {
+  it('is 13 CSS pixels, the smallest size of the USWDS theme type scale in its default settings', () => {
     expect(Typography.minimumFontSize).toEqual(Rational.fromBigInt(13n));
   });
 });
 
 describe('ideographAdvanceFactor', () => {
-  it('is the advance CSS Values 4 assumes for an ideograph it cannot measure', () => {
+  it('is 1, the advance CSS Values 4 assumes for an ideograph it cannot measure', () => {
     expect(Typography.ideographAdvanceFactor).toEqual(Rational.fromBigInt(1n));
   });
 });
@@ -153,37 +153,37 @@ describe('minimumStepFactor', () => {
 });
 
 describe('textScaleFactor', () => {
-  it('is the text resize WCAG 2.2 Resize Text requires content to support', () => {
+  it('is 2, the text resize WCAG 2.2 Resize Text requires content to support', () => {
     expect(Typography.textScaleFactor).toEqual(Rational.fromBigInt(2n));
   });
 });
 
 describe('minimumFontWeight', () => {
-  it('is the lightest font weight CSS Fonts allows', () => {
+  it('is 1, the lightest font weight CSS Fonts allows', () => {
     expect(Typography.minimumFontWeight).toBe(1);
   });
 });
 
 describe('maximumFontWeight', () => {
-  it('is the heaviest font weight CSS Fonts allows', () => {
+  it('is 1000, the heaviest font weight CSS Fonts allows', () => {
     expect(Typography.maximumFontWeight).toBe(1000);
   });
 });
 
 describe('boldFontWeight', () => {
-  it('is the font weight CSS Fonts gives the bold keyword', () => {
+  it('is 700, the font weight CSS Fonts gives the bold keyword', () => {
     expect(Typography.boldFontWeight).toBe(700);
   });
 });
 
 describe('lineHeightFactor', () => {
-  it('is the space-and-a-half WCAG 2.2 Visual Presentation requires within paragraphs', () => {
+  it('is 3/2, the space-and-a-half WCAG 2.2 Visual Presentation requires within paragraphs', () => {
     expect(Typography.lineHeightFactor).toEqual(Rational.makeUnsafe(3n, 2n));
   });
 });
 
 describe('paragraphSpacingLineFactor', () => {
-  it('is how much larger than the line spacing WCAG 2.2 Visual Presentation requires paragraph spacing to be', () => {
+  it('is 3/2, how much larger than the line spacing WCAG 2.2 Visual Presentation requires paragraph spacing to be', () => {
     expect(Typography.paragraphSpacingLineFactor).toEqual(Rational.makeUnsafe(3n, 2n));
   });
 });
@@ -214,13 +214,13 @@ describe('textAlignment', () => {
 });
 
 describe('textSpacingLineHeightFactor', () => {
-  it('is the line height WCAG 2.2 Text Spacing lets a reader set', () => {
+  it('is 3/2, the line height WCAG 2.2 Text Spacing lets a reader set', () => {
     expect(Typography.textSpacingLineHeightFactor).toEqual(Rational.makeUnsafe(3n, 2n));
   });
 });
 
 describe('textSpacingParagraphSpacingFactor', () => {
-  it('is the spacing following paragraphs WCAG 2.2 Text Spacing lets a reader set', () => {
+  it('is 2, the spacing following paragraphs WCAG 2.2 Text Spacing lets a reader set', () => {
     expect(Typography.textSpacingParagraphSpacingFactor).toEqual({
       numerator: 2n,
       denominator: 1n,
@@ -229,13 +229,13 @@ describe('textSpacingParagraphSpacingFactor', () => {
 });
 
 describe('textSpacingLetterSpacingFactor', () => {
-  it('is the letter spacing WCAG 2.2 Text Spacing lets a reader set', () => {
+  it('is 3/25, the letter spacing WCAG 2.2 Text Spacing lets a reader set', () => {
     expect(Typography.textSpacingLetterSpacingFactor).toEqual(Rational.makeUnsafe(3n, 25n));
   });
 });
 
 describe('textSpacingWordSpacingFactor', () => {
-  it('is the word spacing WCAG 2.2 Text Spacing lets a reader set', () => {
+  it('is 4/25, the word spacing WCAG 2.2 Text Spacing lets a reader set', () => {
     expect(Typography.textSpacingWordSpacingFactor).toEqual(Rational.makeUnsafe(4n, 25n));
   });
 });

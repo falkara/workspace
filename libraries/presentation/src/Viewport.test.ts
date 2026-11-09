@@ -4,13 +4,13 @@ import { Rational } from 'effect';
 import * as Viewport from '#src/Viewport';
 
 describe('minimumViewportWidth', () => {
-  it('is the width WCAG 2.2 Reflow requires content to support', () => {
+  it('is 320 CSS pixels, the width WCAG 2.2 Reflow requires content to support', () => {
     expect(Viewport.minimumViewportWidth).toEqual(Rational.fromBigInt(320n));
   });
 });
 
 describe('viewportWidthFactor', () => {
-  it('is the page zoom by which an informative note of WCAG 2.2 Reflow equates a desktop viewport with the minimum viewport width', () => {
+  it('is 4, the page zoom by which an informative note of WCAG 2.2 Reflow equates a desktop viewport with the minimum viewport width', () => {
     expect(Viewport.viewportWidthFactor).toEqual(Rational.fromBigInt(4n));
   });
 });
@@ -20,7 +20,7 @@ describe('maximumViewportWidth', () => {
     expect(Rational.isPositive(Viewport.maximumViewportWidth)).toBe(true);
   });
 
-  it('is the desktop viewport an informative note of WCAG 2.2 Reflow pairs with the minimum viewport width', () => {
+  it('is 1280 CSS pixels, the desktop viewport an informative note of WCAG 2.2 Reflow pairs with the minimum viewport width', () => {
     expect(Viewport.maximumViewportWidth).toEqual(Rational.fromBigInt(1280n));
   });
 
@@ -32,7 +32,7 @@ describe('maximumViewportWidth', () => {
 });
 
 describe('lowestMaximumPageZoomFactor', () => {
-  it('is the maximum page zoom of Safari, the lowest maximum among the Baseline core browsers', () => {
+  it('is 3, the maximum page zoom of Safari, the lowest maximum among the Baseline core browsers', () => {
     expect(Viewport.lowestMaximumPageZoomFactor).toEqual(Rational.fromBigInt(3n));
   });
 
@@ -47,7 +47,7 @@ describe('lowestMaximumPageZoomFactor', () => {
 });
 
 describe('highestMaximumPageZoomFactor', () => {
-  it('is the maximum page zoom of Chromium and Firefox, the highest maximum among the Baseline core browsers', () => {
+  it('is 5, the maximum page zoom of Chromium and Firefox, the highest maximum among the Baseline core browsers', () => {
     expect(Viewport.highestMaximumPageZoomFactor).toEqual(Rational.fromBigInt(5n));
   });
 

@@ -142,25 +142,25 @@ const hexContrast = (text: string, background: string): number => {
 };
 
 describe('enhancedContrastRatio', () => {
-  it('is the contrast WCAG 2.2 Contrast (Enhanced) requires for text', () => {
+  it('is 7, the contrast WCAG 2.2 Contrast (Enhanced) requires for text', () => {
     expect(Color.enhancedContrastRatio).toBe(7);
   });
 });
 
 describe('largeTextEnhancedContrastRatio', () => {
-  it('is the contrast WCAG 2.2 Contrast (Enhanced) requires for large-scale text', () => {
+  it('is 9/2, the contrast WCAG 2.2 Contrast (Enhanced) requires for large-scale text', () => {
     expect(Color.largeTextEnhancedContrastRatio).toBe(9 / 2);
   });
 });
 
 describe('largeTextPointSize', () => {
-  it('is the size from which WCAG 2.2 counts text as large-scale', () => {
+  it('is 18 CSS points, the size from which WCAG 2.2 counts text as large-scale', () => {
     expect(Color.largeTextPointSize).toEqual(Rational.fromBigInt(18n));
   });
 });
 
 describe('largeBoldTextPointSize', () => {
-  it('is the size from which WCAG 2.2 counts bold text as large-scale', () => {
+  it('is 14 CSS points, the size from which WCAG 2.2 counts bold text as large-scale', () => {
     expect(Color.largeBoldTextPointSize).toEqual(Rational.fromBigInt(14n));
   });
 });
@@ -186,7 +186,7 @@ describe('largeBoldTextSize', () => {
 });
 
 describe('channelSteps', () => {
-  it('is the number of steps of an 8-bit sRGB channel', () => {
+  it('is 255, the number of steps of an 8-bit sRGB channel', () => {
     expect(Color.channelSteps).toBe(255);
   });
 });
@@ -198,7 +198,7 @@ describe('gamutTolerance', () => {
 });
 
 describe('fullChroma', () => {
-  it('is the chroma CSS Color 4 sets as 100 % in oklch()', () => {
+  it('is 2/5, the chroma CSS Color 4 sets as 100 % in oklch()', () => {
     expect(Color.fullChroma).toBe(2 / 5);
   });
 });
@@ -220,7 +220,7 @@ describe('luminanceWeights', () => {
 });
 
 describe('contrastFlare', () => {
-  it('is the flare WCAG 2.2 adds to both relative luminances of a contrast ratio', () => {
+  it('is 1/20, the flare WCAG 2.2 adds to both relative luminances of a contrast ratio', () => {
     expect(Color.contrastFlare).toBe(1 / 20);
   });
 });
@@ -232,31 +232,31 @@ describe('maximumContrastRatio', () => {
 });
 
 describe('transferThreshold', () => {
-  it('is where the sRGB transfer function stops being linear', () => {
+  it('is 0.0031308, where the sRGB transfer function stops being linear', () => {
     expect(Color.transferThreshold).toBe(0.0031308);
   });
 });
 
 describe('transferSlope', () => {
-  it('is the slope of the linear part of the sRGB transfer function', () => {
+  it('is 12.92, the slope of the linear part of the sRGB transfer function', () => {
     expect(Color.transferSlope).toBe(12.92);
   });
 });
 
 describe('transferGamma', () => {
-  it('is the exponent of the curved part of the sRGB transfer function', () => {
+  it('is 2.4, the exponent of the curved part of the sRGB transfer function', () => {
     expect(Color.transferGamma).toBe(2.4);
   });
 });
 
 describe('transferOffset', () => {
-  it('is the offset of the curved part of the sRGB transfer function', () => {
+  it('is 0.055, the offset of the curved part of the sRGB transfer function', () => {
     expect(Color.transferOffset).toBe(0.055);
   });
 });
 
 describe('encodedTransferThreshold', () => {
-  it('is the encoded value up to which CSS Color 4 reads an sRGB channel as linear', () => {
+  it('is 0.04045, the encoded value up to which CSS Color 4 reads an sRGB channel as linear', () => {
     expect(Color.encodedTransferThreshold).toBe(0.04045);
   });
 });
@@ -276,7 +276,7 @@ describe('oklabToLms, lmsToXyz and xyzToLinearSrgb', () => {
 });
 
 describe('unitRoundoff', () => {
-  it('is half the machine epsilon', () => {
+  it('is 2 ** -53, half the machine epsilon', () => {
     expect(Color.unitRoundoff).toBe(2 ** -53);
   });
 
