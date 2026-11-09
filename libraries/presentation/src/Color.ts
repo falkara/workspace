@@ -744,18 +744,55 @@ const closestShade = (
   target: number,
 ): readonly [number, number, number] | undefined => {
   const { lightness, chroma, hue, hueUnit } = color;
-  const chromaAt = (shade: number): number =>
-    // Reduced strictly within sRGB, so that the shade stays within it once written and read again.
-    isInGamut(linearSrgbOf(shade, chroma, hue, hueUnit), 0)
-      ? chroma
+  // How fast each cone response grows with chroma at the hue of the color, before it is cubed: at a constant lightness and hue each cone response is linear in chroma, so each linear sRGB channel is a cubic in it.
+  const coneSlopes = transform(oklabToLms, [
+    0,
+    Math.cos(angleOf(hue, hueUnit)),
+    Math.sin(angleOf(hue, hueUnit)),
+  ]);
+  const chromaAt = (shade: number): number => {
+    if (isInGamut(linearSrgbOf(shade, chroma, hue, hueUnit), 0)) {
+      return chroma;
+    }
+    // The edge of sRGB at this lightness and hue, first estimated on the cubics of the linear channels, which lie within sRGB exactly when their encoded values do, as the transfer function keeps 0 and 1 and rises between them: the estimate spares the angle and the powers of the encoding in every step and differs from the edge only by rounding.
+    const estimate = boundary(
+      (reduced) =>
+        transform(
+          xyzToLinearSrgb,
+          transform(lmsToXyz, [
+            (shade + coneSlopes[0] * reduced) ** 3,
+            (shade + coneSlopes[1] * reduced) ** 3,
+            (shade + coneSlopes[2] * reduced) ** 3,
+          ]),
+        ).every((channel) => channel >= 0 && channel <= 1),
+      0,
+      chroma,
+    );
+    // Reduced strictly within sRGB, so that the shade stays within it once written and read again, by the same search over the whole range whatever the estimate: rounding may set a chroma within sRGB just above one outside it at the edge, so another search could stop at another edge. Where the estimate lies within a few units in the last place of the edge, the search takes the chromas away from it as it would find them, within sRGB below it and outside above, and converts only those near it.
+    return isInGamut(linearSrgbOf(shade, Math.max(estimate - 2 ** -44, 0), hue, hueUnit), 0) &&
+      !isInGamut(linearSrgbOf(shade, Math.min(estimate + 2 ** -44, chroma), hue, hueUnit), 0)
+      ? boundary(
+          (reduced) =>
+            reduced <= estimate - 2 ** -44 ||
+            (reduced < estimate + 2 ** -44 &&
+              isInGamut(linearSrgbOf(shade, reduced, hue, hueUnit), 0)),
+          0,
+          chroma,
+        )
       : boundary((reduced) => isInGamut(linearSrgbOf(shade, reduced, hue, hueUnit), 0), 0, chroma);
+  };
   const luminanceAt = (shade: number): number =>
     luminanceOf(linearSrgbOf(shade, chromaAt(shade), hue, hueUnit));
   const backgroundLuminance = relativeLuminance(background);
-  const reaches = (shade: number): boolean =>
-    (Math.max(luminanceAt(shade), backgroundLuminance) + contrastFlare) /
-      (Math.min(luminanceAt(shade), backgroundLuminance) + contrastFlare) >=
-    target;
+  const reaches = (shade: number): boolean => {
+    // Found once, as finding it searches for the edge of sRGB.
+    const luminance = luminanceAt(shade);
+    return (
+      (Math.max(luminance, backgroundLuminance) + contrastFlare) /
+        (Math.min(luminance, backgroundLuminance) + contrastFlare) >=
+      target
+    );
+  };
   // A shade passes when it reaches the contrast exactly and certainly once rounded to 8-bit channels.
   const passes = (shade: number): boolean =>
     reaches(shade) &&
