@@ -10,7 +10,7 @@ import * as Typography from '#src/Typography';
 export const spacingUnit = Rational.fromBigInt(8n);
 
 /**
- * The counts of the spacing unit that the USWDS spacing scale spaces content with, from the smallest to the largest.
+ * The counts of the spacing unit in the small and medium tokens of the USWDS spacing scale, from the smallest to the largest: the tokens its margin and padding utilities space content with, save the smaller tokens of 1 and 2 px, which USWDS gives as fixed lengths rather than counts of the unit. Left out too are the negative tokens, which mirror these, zero, and the large named tokens from card to widescreen, with which USWDS sizes widths and heights rather than spacing.
  *
  * @see https://designsystem.digital.gov/design-tokens/spacing-units/
  */
@@ -57,7 +57,7 @@ export const ScaleOptions = Schema.Struct({
 /** The size body text reaches at the maximum viewport width, which the space scale grows with. */
 export type ScaleOptions = typeof ScaleOptions.Type;
 
-/** The space scale from its smallest to its largest step: every count of the spacing unit as a multiple of body text, so that each step grows exactly as body text does. It spaces the layout; spacing that belongs to a piece of text follows that text through the factors of typography in `em` and `lh`. */
+/** The space scale from its smallest to its largest step: every count of the spacing unit in `spacingUnitCounts` as a multiple of body text, so that each step grows exactly as body text does. It spaces the layout; spacing that belongs to a piece of text follows that text through the factors of typography in `em` and `lh`. */
 export const scale = (
   options: typeof ScaleOptions.Encoded,
 ): Exit.Exit<ReadonlyArray<Step>, Schema.SchemaError> =>
