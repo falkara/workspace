@@ -438,7 +438,7 @@ describe('ScaleOptions', () => {
       {
         path: ['maximumBodyFontSize'],
         message:
-          'Expected a body font size of at most 25.6 px, so that text can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+          'Expected a body font size of at most 25.6 px, so that text can be enlarged to 200 %, as WCAG 2.2 Resize Text requires, within the 300 % page zoom of Safari, the lowest maximum among the Baseline core browsers',
       },
     ]);
   });
@@ -521,7 +521,7 @@ describe('Step', () => {
       {
         path: ['maximumSize'],
         message:
-          'Expected a maximum size of 24 px to 38.4 px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+          'Expected a maximum size of 24 px to 38.4 px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to 200 %, as WCAG 2.2 Resize Text requires, within the 300 % page zoom of Safari, the lowest maximum among the Baseline core browsers',
       },
     ]);
   });
@@ -541,7 +541,7 @@ describe('Step', () => {
       {
         path: ['maximumSize'],
         message:
-          'Expected a maximum size of 18.66667 px to 29.86667 px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+          'Expected a maximum size of 18.66667 px to 29.86667 px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to 200 %, as WCAG 2.2 Resize Text requires, within the 300 % page zoom of Safari, the lowest maximum among the Baseline core browsers',
       },
     ]);
   });
@@ -561,7 +561,7 @@ describe('Step', () => {
       {
         path: ['maximumSize'],
         message:
-          'Expected a maximum size of 24 px to 38.4 px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+          'Expected a maximum size of 24 px to 38.4 px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to 200 %, as WCAG 2.2 Resize Text requires, within the 300 % page zoom of Safari, the lowest maximum among the Baseline core browsers',
       },
     ]);
   });
@@ -744,7 +744,7 @@ describe('scale', () => {
       {
         path: ['maximumBodyFontSize'],
         message:
-          'Expected a body font size of at most 25.6 px, so that text can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+          'Expected a body font size of at most 25.6 px, so that text can be enlarged to 200 %, as WCAG 2.2 Resize Text requires, within the 300 % page zoom of Safari, the lowest maximum among the Baseline core browsers',
       },
     ]);
   });

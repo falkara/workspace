@@ -191,7 +191,7 @@ describe('clamp', () => {
       {
         path: ['maximumSize'],
         message:
-          'Expected a maximum size of 20 px to 32 px, so that the value never shrinks and grows no faster than text that can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+          'Expected a maximum size of 20 px to 32 px, so that the value never shrinks and grows no faster than text that can be enlarged to 200 %, as WCAG 2.2 Resize Text requires, within the 300 % page zoom of Safari, the lowest maximum among the Baseline core browsers',
       },
     ]);
   });
@@ -213,7 +213,7 @@ describe('clamp', () => {
       {
         path: ['maximumSize'],
         message:
-          'Expected a maximum size of 16 px to 25.6 px, so that the value never shrinks and grows no faster than text that can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+          'Expected a maximum size of 16 px to 25.6 px, so that the value never shrinks and grows no faster than text that can be enlarged to 200 %, as WCAG 2.2 Resize Text requires, within the 300 % page zoom of Safari, the lowest maximum among the Baseline core browsers',
       },
     ]);
   });

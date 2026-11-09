@@ -39,7 +39,7 @@ const Sizes = Schema.Struct({
             Rational.multiply(sizes.minimumSize, Typography.maximumTextGrowthFactor),
           )) || {
           path: ['maximumSize'],
-          issue: `Expected a maximum size of ${Math.round(Rational.toNumberUnsafe(sizes.minimumSize) * 10 ** Typography.decimalPlaces) / 10 ** Typography.decimalPlaces} px to ${Math.round(Rational.toNumberUnsafe(Rational.multiply(sizes.minimumSize, Typography.maximumTextGrowthFactor)) * 10 ** Typography.decimalPlaces) / 10 ** Typography.decimalPlaces} px, so that the value never shrinks and grows no faster than text that can be enlarged to ${Rational.toNumberUnsafe(Rational.multiply(Typography.textScaleFactor, Rational.fromBigInt(100n)))} % within the ${Rational.toNumberUnsafe(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
+          issue: `Expected a maximum size of ${Math.round(Rational.toNumberUnsafe(sizes.minimumSize) * 10 ** Typography.decimalPlaces) / 10 ** Typography.decimalPlaces} px to ${Math.round(Rational.toNumberUnsafe(Rational.multiply(sizes.minimumSize, Typography.maximumTextGrowthFactor)) * 10 ** Typography.decimalPlaces) / 10 ** Typography.decimalPlaces} px, so that the value never shrinks and grows no faster than text that can be enlarged to ${Rational.toNumberUnsafe(Rational.multiply(Typography.textScaleFactor, Rational.fromBigInt(100n)))} %, as WCAG 2.2 Resize Text requires, within the ${Rational.toNumberUnsafe(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)))} % page zoom of Safari, the lowest maximum among the Baseline core browsers`,
         },
     ),
   ),

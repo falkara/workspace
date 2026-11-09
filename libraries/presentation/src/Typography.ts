@@ -204,7 +204,7 @@ export const ScaleOptions = Schema.Struct({
       Schema.makeIsLessThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
         Rational.multiply(defaultFontSize, maximumTextGrowthFactor),
         {
-          message: `Expected a body font size of at most ${Math.round(Rational.toNumberUnsafe(Rational.multiply(defaultFontSize, maximumTextGrowthFactor)) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that text can be enlarged to ${Rational.toNumberUnsafe(Rational.multiply(textScaleFactor, Rational.fromBigInt(100n)))} % within the ${Rational.toNumberUnsafe(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
+          message: `Expected a body font size of at most ${Math.round(Rational.toNumberUnsafe(Rational.multiply(defaultFontSize, maximumTextGrowthFactor)) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that text can be enlarged to ${Rational.toNumberUnsafe(Rational.multiply(textScaleFactor, Rational.fromBigInt(100n)))} %, as WCAG 2.2 Resize Text requires, within the ${Rational.toNumberUnsafe(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)))} % page zoom of Safari, the lowest maximum among the Baseline core browsers`,
         },
       ),
     ),
@@ -248,7 +248,7 @@ export const Step = Schema.Struct({
             Rational.multiply(step.minimumSize, maximumTextGrowthFactor),
           )) || {
           path: ['maximumSize'],
-          issue: `Expected a maximum size of ${Math.round(Rational.toNumberUnsafe(step.minimumSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px to ${Math.round(Rational.toNumberUnsafe(Rational.multiply(step.minimumSize, maximumTextGrowthFactor)) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to ${Rational.toNumberUnsafe(Rational.multiply(textScaleFactor, Rational.fromBigInt(100n)))} % within the ${Rational.toNumberUnsafe(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
+          issue: `Expected a maximum size of ${Math.round(Rational.toNumberUnsafe(step.minimumSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px to ${Math.round(Rational.toNumberUnsafe(Rational.multiply(step.minimumSize, maximumTextGrowthFactor)) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to ${Rational.toNumberUnsafe(Rational.multiply(textScaleFactor, Rational.fromBigInt(100n)))} %, as WCAG 2.2 Resize Text requires, within the ${Rational.toNumberUnsafe(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)))} % page zoom of Safari, the lowest maximum among the Baseline core browsers`,
         },
     ),
   ),

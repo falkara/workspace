@@ -116,7 +116,7 @@ describe('scale', () => {
       {
         path: ['maximumBodyFontSize'],
         message:
-          'Expected a body font size of at most 25.6 px, so that text can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+          'Expected a body font size of at most 25.6 px, so that text can be enlarged to 200 %, as WCAG 2.2 Resize Text requires, within the 300 % page zoom of Safari, the lowest maximum among the Baseline core browsers',
       },
     ]);
   });
