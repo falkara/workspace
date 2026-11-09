@@ -1,7 +1,15 @@
-import { Effect, Exit, Function, Schema, SchemaIssue, SchemaTransformation, Struct } from 'effect';
+import {
+  Effect,
+  Exit,
+  Function,
+  Rational,
+  Schema,
+  SchemaIssue,
+  SchemaTransformation,
+  Struct,
+} from 'effect';
 
 import * as Fluid from '#src/Fluid';
-import * as Fraction from '#src/Fraction';
 import * as Length from '#src/Length';
 import * as Typography from '#src/Typography';
 
@@ -24,20 +32,20 @@ export const largeTextEnhancedContrastRatio = 9 / 2;
  *
  * @see https://www.w3.org/TR/WCAG22/#dfn-large-scale
  */
-export const largeTextPointSize = Fraction.makeUnsafe(18n, 1n);
+export const largeTextPointSize = Rational.fromBigInt(18n);
 
 /**
  * The font size from which WCAG 2.2 counts bold text as large-scale. Measured in CSS points.
  *
  * @see https://www.w3.org/TR/WCAG22/#dfn-large-scale
  */
-export const largeBoldTextPointSize = Fraction.makeUnsafe(14n, 1n);
+export const largeBoldTextPointSize = Rational.fromBigInt(14n);
 
 /** The font size from which text is large-scale, the large text point size in CSS points. Measured in CSS pixels. */
-export const largeTextSize = Fraction.multiply(largeTextPointSize, Length.point);
+export const largeTextSize = Rational.multiply(largeTextPointSize, Length.point);
 
 /** The font size from which bold text is large-scale, the large bold text point size in CSS points. Measured in CSS pixels. */
-export const largeBoldTextSize = Fraction.multiply(largeBoldTextPointSize, Length.point);
+export const largeBoldTextSize = Rational.multiply(largeBoldTextPointSize, Length.point);
 
 /**
  * The number of steps between the darkest and the lightest level of an 8-bit sRGB channel.
@@ -591,9 +599,9 @@ const TextStep = Typography.Step.mapFields(Struct.omit(['position']), {
 
 /** The contrast ratio a piece of text needs as WCAG 2.2 Contrast (Enhanced) sets it, from its size at the minimum viewport width, its smallest, and its font weight. */
 const requiredContrast = (step: typeof TextStep.Type, fontWeight: number): number =>
-  Fraction.isGreaterThanOrEqualTo(step.minimumSize, largeTextSize) ||
+  Rational.isGreaterThanOrEqualTo(step.minimumSize, largeTextSize) ||
   (fontWeight >= Typography.boldFontWeight &&
-    Fraction.isGreaterThanOrEqualTo(step.minimumSize, largeBoldTextSize))
+    Rational.isGreaterThanOrEqualTo(step.minimumSize, largeBoldTextSize))
     ? largeTextEnhancedContrastRatio
     : enhancedContrastRatio;
 
@@ -628,7 +636,7 @@ const isAtLeastRequiredContrast = Schema.makeFilter(
     text.minimumContrast === undefined ||
     text.minimumContrast >= requiredContrast(text.step, text.fontWeight) || {
       path: ['minimumContrast'],
-      issue: `Expected a minimum contrast of at least ${requiredContrast(text.step, text.fontWeight)}:1, the ratio WCAG 2.2 Contrast (Enhanced) requires for text of ${Math.round(Fraction.toNumber(text.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${text.fontWeight}`,
+      issue: `Expected a minimum contrast of at least ${requiredContrast(text.step, text.fontWeight)}:1, the ratio WCAG 2.2 Contrast (Enhanced) requires for text of ${Math.round(Rational.toNumberUnsafe(text.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${text.fontWeight}`,
     },
 );
 
@@ -686,7 +694,7 @@ export const verify = (pair: Pair): Exit.Exit<number, Schema.SchemaError | Contr
               requiredContrast: target,
               message:
                 colors.minimumContrast === undefined
-                  ? `Expected a contrast of at least ${target}:1 for text of ${Math.round(Fraction.toNumber(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${colors.fontWeight}, as WCAG 2.2 Contrast (Enhanced) requires`
+                  ? `Expected a contrast of at least ${target}:1 for text of ${Math.round(Rational.toNumberUnsafe(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${colors.fontWeight}, as WCAG 2.2 Contrast (Enhanced) requires`
                   : `Expected a contrast of at least ${target}:1, the ratio the project asks for`,
             }),
           );
@@ -818,7 +826,7 @@ export const shade = (brand: Brand): Exit.Exit<string, Schema.SchemaError | NoLe
         ? Exit.fail(
             new NoLegibleShade({
               requiredContrast: target,
-              message: `Expected a background against which a shade of the color within sRGB reaches ${target}:1, the contrast ${colors.minimumContrast === undefined ? `WCAG 2.2 Contrast (Enhanced) requires for text of ${Math.round(Fraction.toNumber(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${colors.fontWeight}` : 'the project asks for'}`,
+              message: `Expected a background against which a shade of the color within sRGB reaches ${target}:1, the contrast ${colors.minimumContrast === undefined ? `WCAG 2.2 Contrast (Enhanced) requires for text of ${Math.round(Rational.toNumberUnsafe(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${colors.fontWeight}` : 'the project asks for'}`,
             }),
           )
         : // Written as JavaScript writes each number, the shortest form that reads back as the same number, with an exponent for a small one, which CSS reads as well, so that the shade read back is the one found.

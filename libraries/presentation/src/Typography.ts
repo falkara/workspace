@@ -1,48 +1,50 @@
-import { Array, Exit, Option, Schema } from 'effect';
+import { Array, Exit, Option, Rational, Schema } from 'effect';
 
-import * as Fraction from '#src/Fraction';
 import * as Length from '#src/Length';
 import * as Viewport from '#src/Viewport';
 
 /** The default font size that the Baseline core browsers implement for the root element until a reader sets their own. Measured in CSS pixels. */
-export const defaultFontSize = Fraction.makeUnsafe(16n, 1n);
+export const defaultFontSize = Rational.fromBigInt(16n);
 
 /** The largest default font size that Chromium and Firefox let a reader set, the highest maximum among the Baseline core browsers, as Safari lets a reader set none. Measured in CSS pixels. */
-export const highestMaximumDefaultFontSize = Fraction.makeUnsafe(72n, 1n);
+export const highestMaximumDefaultFontSize = Rational.fromBigInt(72n);
 
 /** The factor by which a reader enlarges the default font size at most in any Baseline core browser, the highest maximum default font size over the default font size. What must hold however large a reader sets the font size rests on it. */
-export const highestMaximumFontSizeFactor = Fraction.divide(
+export const highestMaximumFontSizeFactor = Rational.divideUnsafe(
+  // The default font size is a positive constant, so the division never divides by zero.
   highestMaximumDefaultFontSize,
   defaultFontSize,
 );
 
 /** The factor by which a reader enlarges the default font size at most in every Baseline core browser: 1, as Safari lets a reader set no default font size, so that nothing a reader must be able to reach can rest on setting a larger font size, and resizing text rests on page zoom alone. */
-export const lowestMaximumFontSizeFactor = Fraction.one;
+export const lowestMaximumFontSizeFactor = Rational.fromBigInt(1n);
 
 /**
  * The smallest font size of the USWDS theme type scale in its default settings. Measured in CSS pixels.
  *
  * @see https://designsystem.digital.gov/design-tokens/typesetting/font-size/#theme-tokens
  */
-export const minimumFontSize = Fraction.makeUnsafe(13n, 1n);
+export const minimumFontSize = Rational.fromBigInt(13n);
 
 /**
  * The advance of an ideograph, as a factor of the font size, that CSS Values 4 assumes for the ic unit when it cannot be measured: a full-width character, which no line break can split.
  *
  * @see https://www.w3.org/TR/css-values-4/#ic
  */
-export const ideographAdvanceFactor = Fraction.makeUnsafe(1n, 1n);
+export const ideographAdvanceFactor = Rational.fromBigInt(1n);
 
 /** The largest font size at the minimum viewport width, at which a full-width character still fits the minimum viewport width when a reader sets the largest default font size any Baseline core browser allows, so that text reflows without scrolling in two dimensions, as WCAG 2.2 Reflow requires. Page zoom needs no share of it, as WCAG 2.2 Reflow already counts the minimum viewport width in zoomed CSS pixels. Measured in CSS pixels. */
-export const maximumFontSize = Fraction.divide(
+export const maximumFontSize = Rational.divideUnsafe(
+  // Both factors are positive constants, so the division by their product never divides by zero.
   Viewport.minimumViewportWidth,
-  Fraction.multiply(highestMaximumFontSizeFactor, ideographAdvanceFactor),
+  Rational.multiply(highestMaximumFontSizeFactor, ideographAdvanceFactor),
 );
 
 /** The smallest ratio between consecutive steps of a type scale, at which steps at the minimum font size still differ by the coarsest layout unit, so that a length of at least 1 em, such as the line height, falls on a different point of the layout grid in consecutive steps in every Baseline core browser and no two steps lay out alike. It promises nothing about how glyphs render, as the browsers keep the font size itself unrounded. */
-export const minimumStepFactor = Fraction.sum(
-  Fraction.one,
-  Fraction.divide(Length.coarsestLayoutUnit, minimumFontSize),
+export const minimumStepFactor = Rational.sum(
+  Rational.fromBigInt(1n),
+  // The minimum font size is a positive constant, so the division never divides by zero.
+  Rational.divideUnsafe(Length.coarsestLayoutUnit, minimumFontSize),
 );
 
 /**
@@ -50,7 +52,7 @@ export const minimumStepFactor = Fraction.sum(
  *
  * @see https://www.w3.org/TR/WCAG22/#resize-text
  */
-export const textScaleFactor = Fraction.makeUnsafe(2n, 1n);
+export const textScaleFactor = Rational.fromBigInt(2n);
 
 /**
  * The lightest font weight that CSS Fonts allows.
@@ -79,7 +81,7 @@ export const boldFontWeight = 700;
  * @see https://www.w3.org/TR/WCAG22/#visual-presentation
  * @see https://www.w3.org/WAI/WCAG22/Techniques/css/C21
  */
-export const lineHeightFactor = Fraction.makeUnsafe(3n, 2n);
+export const lineHeightFactor = Rational.makeUnsafe(3n, 2n);
 
 /**
  * The text alignment that keeps text unjustified, as WCAG 2.2 Visual Presentation requires, aligned to the start of each line in every writing direction.
@@ -94,10 +96,10 @@ export const textAlignment = 'start';
  *
  * @see https://www.w3.org/TR/WCAG22/#visual-presentation
  */
-export const paragraphSpacingLineFactor = Fraction.makeUnsafe(3n, 2n);
+export const paragraphSpacingLineFactor = Rational.makeUnsafe(3n, 2n);
 
 /** The space between paragraphs, the line height grown by the paragraph spacing line factor, as a factor of the font size. Applied in `lh` instead, the paragraph spacing line factor keeps paragraphs apart by the line spacing a reader sets. */
-export const paragraphSpacingFactor = Fraction.multiply(
+export const paragraphSpacingFactor = Rational.multiply(
   lineHeightFactor,
   paragraphSpacingLineFactor,
 );
@@ -107,72 +109,82 @@ export const paragraphSpacingFactor = Fraction.multiply(
  *
  * @see https://www.w3.org/TR/WCAG22/#text-spacing
  */
-export const textSpacingLineHeightFactor = Fraction.makeUnsafe(3n, 2n);
+export const textSpacingLineHeightFactor = Rational.makeUnsafe(3n, 2n);
 
 /**
  * The spacing following paragraphs, as a factor of the font size, that WCAG 2.2 Text Spacing lets a reader set without loss of content or function.
  *
  * @see https://www.w3.org/TR/WCAG22/#text-spacing
  */
-export const textSpacingParagraphSpacingFactor = Fraction.makeUnsafe(2n, 1n);
+export const textSpacingParagraphSpacingFactor = Rational.fromBigInt(2n);
 
 /**
  * The letter spacing, as a factor of the font size, that WCAG 2.2 Text Spacing lets a reader set without loss of content or function.
  *
  * @see https://www.w3.org/TR/WCAG22/#text-spacing
  */
-export const textSpacingLetterSpacingFactor = Fraction.makeUnsafe(3n, 25n);
+export const textSpacingLetterSpacingFactor = Rational.makeUnsafe(3n, 25n);
 
 /**
  * The word spacing, as a factor of the font size, that WCAG 2.2 Text Spacing lets a reader set without loss of content or function.
  *
  * @see https://www.w3.org/TR/WCAG22/#text-spacing
  */
-export const textSpacingWordSpacingFactor = Fraction.makeUnsafe(4n, 25n);
+export const textSpacingWordSpacingFactor = Rational.makeUnsafe(4n, 25n);
 
 /** The maximum text growth factor from the minimum to the maximum viewport width that keeps text resizable by the text scale factor within the lowest maximum page zoom factor, so that a reader in every Baseline core browser reaches it by zooming, as setting a larger font size reaches nothing in Safari. A larger font size acts on fluid text as page zoom does. Each factor enters less 1, as its growth beyond 1, so that every difference is positive while every factor is above 1. */
-export const maximumTextGrowthFactor = Fraction.divide(
-  Fraction.multiply(
+export const maximumTextGrowthFactor = Rational.divideUnsafe(
+  // Every factor is a constant above 1, so the sum of their growths is positive and the division never divides by zero.
+  Rational.multiply(
     Viewport.viewportWidthFactor,
-    Fraction.subtractUnsafe(Viewport.lowestMaximumPageZoomFactor, Fraction.one),
+    Rational.subtract(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(1n)),
   ),
-  Fraction.sum(
-    Fraction.multiply(
-      Fraction.subtractUnsafe(Viewport.viewportWidthFactor, Fraction.one),
-      Fraction.subtractUnsafe(textScaleFactor, Fraction.one),
+  Rational.sum(
+    Rational.multiply(
+      Rational.subtract(Viewport.viewportWidthFactor, Rational.fromBigInt(1n)),
+      Rational.subtract(textScaleFactor, Rational.fromBigInt(1n)),
     ),
-    Fraction.subtractUnsafe(Viewport.lowestMaximumPageZoomFactor, Fraction.one),
+    Rational.subtract(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(1n)),
   ),
 );
 
 /** A schema of the ratios of a type scale and the size its body text reaches at the maximum viewport width. */
 export const ScaleOptions = Schema.Struct({
   /** The ratio between consecutive steps at the minimum viewport width, at least the minimum step factor so that every step is larger than the one below and no two steps lay out alike. */
-  minimumFactor: Fraction.Fraction.pipe(
+  minimumFactor: Schema.Rational.pipe(
     Schema.check(
-      Fraction.isGreaterThanOrEqualToFraction(minimumStepFactor, {
-        message: `Expected a minimum factor of at least ${Fraction.format(minimumStepFactor)}, so that every step is larger than the one below and lengths of at least 1 em in consecutive steps never fall on the same point of the layout grid of a browser`,
-      }),
+      Schema.makeIsGreaterThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
+        minimumStepFactor,
+        {
+          message: `Expected a minimum factor of at least ${Rational.format(minimumStepFactor)}, so that every step is larger than the one below and lengths of at least 1 em in consecutive steps never fall on the same point of the layout grid of a browser`,
+        },
+      ),
     ),
   ),
   /** The ratio between consecutive steps at the maximum viewport width, at least the minimum step factor so that every step is larger than the one below and no two steps lay out alike. */
-  maximumFactor: Fraction.Fraction.pipe(
+  maximumFactor: Schema.Rational.pipe(
     Schema.check(
-      Fraction.isGreaterThanOrEqualToFraction(minimumStepFactor, {
-        message: `Expected a maximum factor of at least ${Fraction.format(minimumStepFactor)}, so that every step is larger than the one below and lengths of at least 1 em in consecutive steps never fall on the same point of the layout grid of a browser`,
-      }),
+      Schema.makeIsGreaterThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
+        minimumStepFactor,
+        {
+          message: `Expected a maximum factor of at least ${Rational.format(minimumStepFactor)}, so that every step is larger than the one below and lengths of at least 1 em in consecutive steps never fall on the same point of the layout grid of a browser`,
+        },
+      ),
     ),
   ),
   /** The font size of body text at the maximum viewport width, from the default font size, so that body text never shrinks, to the size the maximum text growth factor allows. Measured in CSS pixels. */
-  maximumBodyFontSize: Fraction.Fraction.pipe(
+  maximumBodyFontSize: Schema.Rational.pipe(
     Schema.check(
-      Fraction.isGreaterThanOrEqualToFraction(defaultFontSize, {
-        message: `Expected a body font size of at least ${Fraction.format(defaultFontSize)} px, so that body text never shrinks below the default font size of browsers`,
-      }),
-      Fraction.isLessThanOrEqualToFraction(
-        Fraction.multiply(defaultFontSize, maximumTextGrowthFactor),
+      Schema.makeIsGreaterThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
+        defaultFontSize,
         {
-          message: `Expected a body font size of at most ${Fraction.toNumber(Fraction.multiply(defaultFontSize, maximumTextGrowthFactor))} px, so that text can be enlarged to ${Fraction.format(Fraction.multiply(textScaleFactor, Fraction.makeUnsafe(100n, 1n)))} % within the ${Fraction.format(Fraction.multiply(Viewport.lowestMaximumPageZoomFactor, Fraction.makeUnsafe(100n, 1n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
+          message: `Expected a body font size of at least ${Rational.toNumberUnsafe(defaultFontSize)} px, so that body text never shrinks below the default font size of browsers`,
+        },
+      ),
+      Schema.makeIsLessThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
+        Rational.multiply(defaultFontSize, maximumTextGrowthFactor),
+        {
+          message: `Expected a body font size of at most ${Rational.toNumberUnsafe(Rational.multiply(defaultFontSize, maximumTextGrowthFactor))} px, so that text can be enlarged to ${Rational.toNumberUnsafe(Rational.multiply(textScaleFactor, Rational.fromBigInt(100n)))} % within the ${Rational.toNumberUnsafe(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
         },
       ),
     ),
@@ -187,30 +199,36 @@ export const Step = Schema.Struct({
   /** The position of the step, 0 for body text, positive above it and negative below. */
   position: Schema.Int,
   /** The size at the minimum viewport width, its smallest, from the minimum to the maximum font size. Measured in CSS pixels. */
-  minimumSize: Fraction.Fraction.pipe(
+  minimumSize: Schema.Rational.pipe(
     Schema.check(
-      Fraction.isGreaterThanOrEqualToFraction(minimumFontSize, {
-        message: `Expected a minimum size of at least ${Fraction.format(minimumFontSize)} px, the smallest size of the USWDS theme type scale`,
-      }),
-      Fraction.isLessThanOrEqualToFraction(maximumFontSize, {
-        message: `Expected a minimum size of at most ${Fraction.format(maximumFontSize)} px, so that a full-width character fits the minimum viewport width of ${Fraction.format(Viewport.minimumViewportWidth)} px at a font size of ${Fraction.format(Fraction.multiply(highestMaximumFontSizeFactor, Fraction.makeUnsafe(100n, 1n)))} %, as WCAG 2.2 Reflow requires`,
-      }),
+      Schema.makeIsGreaterThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
+        minimumFontSize,
+        {
+          message: `Expected a minimum size of at least ${Rational.toNumberUnsafe(minimumFontSize)} px, the smallest size of the USWDS theme type scale`,
+        },
+      ),
+      Schema.makeIsLessThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
+        maximumFontSize,
+        {
+          message: `Expected a minimum size of at most ${Rational.format(maximumFontSize)} px, so that a full-width character fits the minimum viewport width of ${Rational.toNumberUnsafe(Viewport.minimumViewportWidth)} px at a font size of ${Rational.toNumberUnsafe(Rational.multiply(highestMaximumFontSizeFactor, Rational.fromBigInt(100n)))} %, as WCAG 2.2 Reflow requires`,
+        },
+      ),
     ),
   ),
   /** The size at the maximum viewport width. Measured in CSS pixels. */
-  maximumSize: Fraction.Fraction,
+  maximumSize: Schema.Rational,
 }).pipe(
   Schema.check(
     /** The maximum size from the minimum size, so that the step never shrinks and its smallest size is the one at the minimum viewport width, to the minimum size grown by the maximum text growth factor, so that its text stays resizable. */
     Schema.makeFilter(
       (step) =>
-        (Fraction.isGreaterThanOrEqualTo(step.maximumSize, step.minimumSize) &&
-          Fraction.isLessThanOrEqualTo(
+        (Rational.isGreaterThanOrEqualTo(step.maximumSize, step.minimumSize) &&
+          Rational.isLessThanOrEqualTo(
             step.maximumSize,
-            Fraction.multiply(step.minimumSize, maximumTextGrowthFactor),
+            Rational.multiply(step.minimumSize, maximumTextGrowthFactor),
           )) || {
           path: ['maximumSize'],
-          issue: `Expected a maximum size of ${Fraction.toNumber(step.minimumSize)} px to ${Fraction.toNumber(Fraction.multiply(step.minimumSize, maximumTextGrowthFactor))} px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to ${Fraction.format(Fraction.multiply(textScaleFactor, Fraction.makeUnsafe(100n, 1n)))} % within the ${Fraction.format(Fraction.multiply(Viewport.lowestMaximumPageZoomFactor, Fraction.makeUnsafe(100n, 1n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
+          issue: `Expected a maximum size of ${Rational.toNumberUnsafe(step.minimumSize)} px to ${Rational.toNumberUnsafe(Rational.multiply(step.minimumSize, maximumTextGrowthFactor))} px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to ${Rational.toNumberUnsafe(Rational.multiply(textScaleFactor, Rational.fromBigInt(100n)))} % within the ${Rational.toNumberUnsafe(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
         },
     ),
   ),
@@ -226,19 +244,20 @@ export const scale = (
   Exit.map(Schema.decodeExit(ScaleOptions)(options, { errors: 'all' }), (options) => {
     // A step never shrinks, so that it is at its smallest at the minimum viewport width, grows by no more than the maximum text growth factor, and lies at that width between the minimum and the maximum font size. The growth is bounded by comparing the sizes, so that no divisor is sought between two large numerators.
     const isAdmitted = (step: Step): boolean =>
-      Fraction.isGreaterThanOrEqualTo(step.maximumSize, step.minimumSize) &&
-      Fraction.isLessThanOrEqualTo(
+      Rational.isGreaterThanOrEqualTo(step.maximumSize, step.minimumSize) &&
+      Rational.isLessThanOrEqualTo(
         step.maximumSize,
-        Fraction.multiply(step.minimumSize, maximumTextGrowthFactor),
+        Rational.multiply(step.minimumSize, maximumTextGrowthFactor),
       ) &&
-      Fraction.isGreaterThanOrEqualTo(step.minimumSize, minimumFontSize) &&
-      Fraction.isLessThanOrEqualTo(step.minimumSize, maximumFontSize);
+      Rational.isGreaterThanOrEqualTo(step.minimumSize, minimumFontSize) &&
+      Rational.isLessThanOrEqualTo(step.minimumSize, maximumFontSize);
     // Size rises with the position and growth rises or falls with it, so the admitted steps run unbroken from body text, which the options admit, down to the lowest and up to the highest, and the font sizes bound them on both sides. Each step is the one before it divided or multiplied by the factors once, rather than a power of the factors worked out again for every step.
+    // The factors decode only from the minimum step factor up, so they are above 1 and no division by them divides by zero.
     const below = Array.unfold(
       {
         position: -1,
-        minimumSize: Fraction.divide(defaultFontSize, options.minimumFactor),
-        maximumSize: Fraction.divide(options.maximumBodyFontSize, options.maximumFactor),
+        minimumSize: Rational.divideUnsafe(defaultFontSize, options.minimumFactor),
+        maximumSize: Rational.divideUnsafe(options.maximumBodyFontSize, options.maximumFactor),
       },
       (step): Option.Option<readonly [Step, Step]> =>
         isAdmitted(step)
@@ -246,8 +265,8 @@ export const scale = (
               step,
               {
                 position: step.position - 1,
-                minimumSize: Fraction.divide(step.minimumSize, options.minimumFactor),
-                maximumSize: Fraction.divide(step.maximumSize, options.maximumFactor),
+                minimumSize: Rational.divideUnsafe(step.minimumSize, options.minimumFactor),
+                maximumSize: Rational.divideUnsafe(step.maximumSize, options.maximumFactor),
               },
             ])
           : Option.none(),
@@ -255,8 +274,8 @@ export const scale = (
     const above = Array.unfold(
       {
         position: 1,
-        minimumSize: Fraction.multiply(defaultFontSize, options.minimumFactor),
-        maximumSize: Fraction.multiply(options.maximumBodyFontSize, options.maximumFactor),
+        minimumSize: Rational.multiply(defaultFontSize, options.minimumFactor),
+        maximumSize: Rational.multiply(options.maximumBodyFontSize, options.maximumFactor),
       },
       (step): Option.Option<readonly [Step, Step]> =>
         isAdmitted(step)
@@ -264,8 +283,8 @@ export const scale = (
               step,
               {
                 position: step.position + 1,
-                minimumSize: Fraction.multiply(step.minimumSize, options.minimumFactor),
-                maximumSize: Fraction.multiply(step.maximumSize, options.maximumFactor),
+                minimumSize: Rational.multiply(step.minimumSize, options.minimumFactor),
+                maximumSize: Rational.multiply(step.maximumSize, options.maximumFactor),
               },
             ])
           : Option.none(),

@@ -42,10 +42,6 @@
       "types": "./dist/Fluid.d.mts",
       "default": "./dist/Fluid.mjs"
     },
-    "./Fraction": {
-      "types": "./dist/Fraction.d.mts",
-      "default": "./dist/Fraction.mjs"
-    },
     "./Layout": {
       "types": "./dist/Layout.d.mts",
       "default": "./dist/Layout.mjs"
@@ -75,7 +71,7 @@
   },
   "devDependencies": {
     "@effect/vitest": "4.1.0",
-    "effect": "4.1.0"
+    "effect": "https://pkg.pr.new/effect@7d3e441"
   },
   "peerDependencies": {
     "effect": "^4.1.0"

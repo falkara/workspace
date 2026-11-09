@@ -1,92 +1,91 @@
 import { describe, expect, it } from '@effect/vitest';
-import { Exit, Option, Schema, SchemaIssue } from 'effect';
+import { Exit, Option, Rational, SchemaIssue } from 'effect';
 
-import * as Fraction from '#src/Fraction';
 import * as Space from '#src/Space';
 
 describe('spacingUnit', () => {
   it('is the spacing unit of the USWDS spacing scale', () => {
-    expect(Space.spacingUnit).toEqual({ numerator: 8n, denominator: 1n });
+    expect(Space.spacingUnit).toEqual(Rational.fromBigInt(8n));
   });
 });
 
 describe('spacingUnitCounts', () => {
   it('are the counts the USWDS spacing scale spaces content with', () => {
-    expect(Space.spacingUnitCounts.map(Fraction.format)).toEqual([
-      '1/2',
-      '1',
-      '3/2',
-      '2',
-      '5/2',
-      '3',
-      '4',
-      '5',
-      '6',
-      '7',
-      '8',
-      '9',
-      '10',
-      '15',
+    expect(Space.spacingUnitCounts).toEqual([
+      Rational.makeUnsafe(1n, 2n),
+      Rational.fromBigInt(1n),
+      Rational.makeUnsafe(3n, 2n),
+      Rational.fromBigInt(2n),
+      Rational.makeUnsafe(5n, 2n),
+      Rational.fromBigInt(3n),
+      Rational.fromBigInt(4n),
+      Rational.fromBigInt(5n),
+      Rational.fromBigInt(6n),
+      Rational.fromBigInt(7n),
+      Rational.fromBigInt(8n),
+      Rational.fromBigInt(9n),
+      Rational.fromBigInt(10n),
+      Rational.fromBigInt(15n),
     ]);
   });
 });
 
 describe('spacingUnitFactor', () => {
-  it('is a valid fraction', () => {
-    expect(Schema.is(Fraction.Fraction)(Space.spacingUnitFactor)).toBe(true);
+  it('is positive', () => {
+    expect(Rational.isPositive(Space.spacingUnitFactor)).toBe(true);
   });
 
   it('is 1/2', () => {
-    expect(Space.spacingUnitFactor).toEqual({ numerator: 1n, denominator: 2n });
+    expect(Space.spacingUnitFactor).toEqual(Rational.makeUnsafe(1n, 2n));
   });
 });
 
 describe('scale', () => {
   it('runs from a quarter to seven and a half times body text', () => {
-    const exit = Space.scale({ maximumBodyFontSize: { numerator: 20n, denominator: 1n } });
+    const exit = Space.scale({ maximumBodyFontSize: Rational.fromBigInt(20n) });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 
-    expect(steps.map((step) => Fraction.format(step.factor))).toEqual([
-      '1/4',
-      '1/2',
-      '3/4',
-      '1',
-      '5/4',
-      '3/2',
-      '2',
-      '5/2',
-      '3',
-      '7/2',
-      '4',
-      '9/2',
-      '5',
-      '15/2',
+    expect(steps.map((step) => step.factor)).toEqual([
+      Rational.makeUnsafe(1n, 4n),
+      Rational.makeUnsafe(1n, 2n),
+      Rational.makeUnsafe(3n, 4n),
+      Rational.fromBigInt(1n),
+      Rational.makeUnsafe(5n, 4n),
+      Rational.makeUnsafe(3n, 2n),
+      Rational.fromBigInt(2n),
+      Rational.makeUnsafe(5n, 2n),
+      Rational.fromBigInt(3n),
+      Rational.makeUnsafe(7n, 2n),
+      Rational.fromBigInt(4n),
+      Rational.makeUnsafe(9n, 2n),
+      Rational.fromBigInt(5n),
+      Rational.makeUnsafe(15n, 2n),
     ]);
   });
 
   it('takes the USWDS sizes at the minimum viewport width', () => {
-    const exit = Space.scale({ maximumBodyFontSize: { numerator: 20n, denominator: 1n } });
+    const exit = Space.scale({ maximumBodyFontSize: Rational.fromBigInt(20n) });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 
-    expect(steps.map((step) => Fraction.toNumber(step.minimumSize))).toEqual([
+    expect(steps.map((step) => Rational.toNumberUnsafe(step.minimumSize))).toEqual([
       4, 8, 12, 16, 20, 24, 32, 40, 48, 56, 64, 72, 80, 120,
     ]);
   });
 
   it('grows every step exactly as body text grows', () => {
-    const exit = Space.scale({ maximumBodyFontSize: { numerator: 20n, denominator: 1n } });
+    const exit = Space.scale({ maximumBodyFontSize: Rational.fromBigInt(20n) });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 
     expect(steps).not.toHaveLength(0);
     for (const step of steps) {
-      expect(Fraction.divide(step.maximumSize, step.minimumSize)).toEqual(
-        Fraction.makeUnsafe(20n, 16n),
+      expect(Rational.divideUnsafe(step.maximumSize, step.minimumSize)).toEqual(
+        Rational.makeUnsafe(20n, 16n),
       );
     }
   });
 
   it('keeps every step on every screen when body text keeps the default font size', () => {
-    const exit = Space.scale({ maximumBodyFontSize: { numerator: 16n, denominator: 1n } });
+    const exit = Space.scale({ maximumBodyFontSize: Rational.fromBigInt(16n) });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 
     expect(steps).toHaveLength(14);
@@ -97,9 +96,9 @@ describe('scale', () => {
 
   it('takes the options of a type scale as they are, refused by none of its ratios', () => {
     const intent = {
-      minimumFactor: { numerator: 1n, denominator: 1n },
-      maximumFactor: { numerator: 1n, denominator: 2n },
-      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+      minimumFactor: Rational.fromBigInt(1n),
+      maximumFactor: Rational.makeUnsafe(1n, 2n),
+      maximumBodyFontSize: Rational.fromBigInt(20n),
     };
     const exit = Space.scale(intent);
 
@@ -107,7 +106,7 @@ describe('scale', () => {
   });
 
   it('rejects a body font size the type scale would reject, with the same reason', () => {
-    const exit = Space.scale({ maximumBodyFontSize: { numerator: 40n, denominator: 1n } });
+    const exit = Space.scale({ maximumBodyFontSize: Rational.fromBigInt(40n) });
 
     expect(
       SchemaIssue.makeFormatterStandardSchemaV1()(

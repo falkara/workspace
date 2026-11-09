@@ -1,64 +1,63 @@
 import { describe, expect, expectTypeOf, it } from '@effect/vitest';
-import { Exit, Option, Schema, SchemaIssue } from 'effect';
+import { Exit, Option, Rational, Schema, SchemaIssue } from 'effect';
 
-import * as Fraction from '#src/Fraction';
 import * as Length from '#src/Length';
 import * as Typography from '#src/Typography';
 import * as Viewport from '#src/Viewport';
 
 describe('defaultFontSize', () => {
   it('is the font size the Baseline core browsers give the root element', () => {
-    expect(Typography.defaultFontSize).toEqual({ numerator: 16n, denominator: 1n });
+    expect(Typography.defaultFontSize).toEqual(Rational.fromBigInt(16n));
   });
 });
 
 describe('highestMaximumDefaultFontSize', () => {
   it('is the largest default font size Chromium and Firefox let a reader set', () => {
-    expect(Typography.highestMaximumDefaultFontSize).toEqual({ numerator: 72n, denominator: 1n });
+    expect(Typography.highestMaximumDefaultFontSize).toEqual(Rational.fromBigInt(72n));
   });
 });
 
 describe('highestMaximumFontSizeFactor', () => {
-  it('is a valid fraction', () => {
-    expect(Schema.is(Fraction.Fraction)(Typography.highestMaximumFontSizeFactor)).toBe(true);
+  it('is positive', () => {
+    expect(Rational.isPositive(Typography.highestMaximumFontSizeFactor)).toBe(true);
   });
 
   it('is 9/2, the largest default font size over the default font size', () => {
-    expect(Typography.highestMaximumFontSizeFactor).toEqual({ numerator: 9n, denominator: 2n });
+    expect(Typography.highestMaximumFontSizeFactor).toEqual(Rational.makeUnsafe(9n, 2n));
   });
 });
 
 describe('lowestMaximumFontSizeFactor', () => {
   it('is 1, as Safari lets a reader set no default font size', () => {
-    expect(Typography.lowestMaximumFontSizeFactor).toEqual(Fraction.one);
+    expect(Typography.lowestMaximumFontSizeFactor).toEqual(Rational.fromBigInt(1n));
   });
 });
 
 describe('minimumFontSize', () => {
   it('is the smallest size of the USWDS theme type scale in its default settings', () => {
-    expect(Typography.minimumFontSize).toEqual({ numerator: 13n, denominator: 1n });
+    expect(Typography.minimumFontSize).toEqual(Rational.fromBigInt(13n));
   });
 });
 
 describe('ideographAdvanceFactor', () => {
   it('is the advance CSS Values 4 assumes for an ideograph it cannot measure', () => {
-    expect(Typography.ideographAdvanceFactor).toEqual({ numerator: 1n, denominator: 1n });
+    expect(Typography.ideographAdvanceFactor).toEqual(Rational.fromBigInt(1n));
   });
 });
 
 describe('maximumFontSize', () => {
-  it('is a valid fraction', () => {
-    expect(Schema.is(Fraction.Fraction)(Typography.maximumFontSize)).toBe(true);
+  it('is positive', () => {
+    expect(Rational.isPositive(Typography.maximumFontSize)).toBe(true);
   });
 
   it('is 640/9 CSS pixels', () => {
-    expect(Typography.maximumFontSize).toEqual({ numerator: 640n, denominator: 9n });
+    expect(Typography.maximumFontSize).toEqual(Rational.makeUnsafe(640n, 9n));
   });
 
   it('fits a full-width character into the minimum viewport width when a reader sets the largest default font size a browser allows', () => {
-    const characterWidth = Fraction.multiply(
+    const characterWidth = Rational.multiply(
       Typography.maximumFontSize,
-      Fraction.multiply(Typography.highestMaximumFontSizeFactor, Typography.ideographAdvanceFactor),
+      Rational.multiply(Typography.highestMaximumFontSizeFactor, Typography.ideographAdvanceFactor),
     );
 
     expect(characterWidth).toEqual(Viewport.minimumViewportWidth);
@@ -66,20 +65,20 @@ describe('maximumFontSize', () => {
 });
 
 describe('minimumStepFactor', () => {
-  it('is a valid fraction', () => {
-    expect(Schema.is(Fraction.Fraction)(Typography.minimumStepFactor)).toBe(true);
+  it('is positive', () => {
+    expect(Rational.isPositive(Typography.minimumStepFactor)).toBe(true);
   });
 
   it('keeps steps at the minimum font size apart by the coarsest layout unit', () => {
-    const nextSize = Fraction.multiply(Typography.minimumFontSize, Typography.minimumStepFactor);
+    const nextSize = Rational.multiply(Typography.minimumFontSize, Typography.minimumStepFactor);
 
-    expect(nextSize).toEqual(Fraction.sum(Typography.minimumFontSize, Length.coarsestLayoutUnit));
+    expect(nextSize).toEqual(Rational.sum(Typography.minimumFontSize, Length.coarsestLayoutUnit));
   });
 });
 
 describe('textScaleFactor', () => {
   it('is the text resize WCAG 2.2 Resize Text requires content to support', () => {
-    expect(Typography.textScaleFactor).toEqual({ numerator: 2n, denominator: 1n });
+    expect(Typography.textScaleFactor).toEqual(Rational.fromBigInt(2n));
   });
 });
 
@@ -103,28 +102,28 @@ describe('boldFontWeight', () => {
 
 describe('lineHeightFactor', () => {
   it('is the space-and-a-half WCAG 2.2 Visual Presentation requires within paragraphs', () => {
-    expect(Typography.lineHeightFactor).toEqual({ numerator: 3n, denominator: 2n });
+    expect(Typography.lineHeightFactor).toEqual(Rational.makeUnsafe(3n, 2n));
   });
 });
 
 describe('paragraphSpacingLineFactor', () => {
   it('is how much larger than the line spacing WCAG 2.2 Visual Presentation requires paragraph spacing to be', () => {
-    expect(Typography.paragraphSpacingLineFactor).toEqual({ numerator: 3n, denominator: 2n });
+    expect(Typography.paragraphSpacingLineFactor).toEqual(Rational.makeUnsafe(3n, 2n));
   });
 });
 
 describe('paragraphSpacingFactor', () => {
-  it('is a valid fraction', () => {
-    expect(Schema.is(Fraction.Fraction)(Typography.paragraphSpacingFactor)).toBe(true);
+  it('is positive', () => {
+    expect(Rational.isPositive(Typography.paragraphSpacingFactor)).toBe(true);
   });
 
   it('is 9/4', () => {
-    expect(Typography.paragraphSpacingFactor).toEqual({ numerator: 9n, denominator: 4n });
+    expect(Typography.paragraphSpacingFactor).toEqual(Rational.makeUnsafe(9n, 4n));
   });
 
   it('is at least the paragraph spacing a reader may set under WCAG 2.2 Text Spacing', () => {
     expect(
-      Fraction.isGreaterThanOrEqualTo(
+      Rational.isGreaterThanOrEqualTo(
         Typography.paragraphSpacingFactor,
         Typography.textSpacingParagraphSpacingFactor,
       ),
@@ -140,7 +139,7 @@ describe('textAlignment', () => {
 
 describe('textSpacingLineHeightFactor', () => {
   it('is the line height WCAG 2.2 Text Spacing lets a reader set', () => {
-    expect(Typography.textSpacingLineHeightFactor).toEqual({ numerator: 3n, denominator: 2n });
+    expect(Typography.textSpacingLineHeightFactor).toEqual(Rational.makeUnsafe(3n, 2n));
   });
 });
 
@@ -155,80 +154,86 @@ describe('textSpacingParagraphSpacingFactor', () => {
 
 describe('textSpacingLetterSpacingFactor', () => {
   it('is the letter spacing WCAG 2.2 Text Spacing lets a reader set', () => {
-    expect(Typography.textSpacingLetterSpacingFactor).toEqual({ numerator: 3n, denominator: 25n });
+    expect(Typography.textSpacingLetterSpacingFactor).toEqual(Rational.makeUnsafe(3n, 25n));
   });
 });
 
 describe('textSpacingWordSpacingFactor', () => {
   it('is the word spacing WCAG 2.2 Text Spacing lets a reader set', () => {
-    expect(Typography.textSpacingWordSpacingFactor).toEqual({ numerator: 4n, denominator: 25n });
+    expect(Typography.textSpacingWordSpacingFactor).toEqual(Rational.makeUnsafe(4n, 25n));
   });
 });
 
 describe('maximumTextGrowthFactor', () => {
-  it('is a valid fraction', () => {
-    expect(Schema.is(Fraction.Fraction)(Typography.maximumTextGrowthFactor)).toBe(true);
+  it('is positive', () => {
+    expect(Rational.isPositive(Typography.maximumTextGrowthFactor)).toBe(true);
   });
 
   it('is 8/5 for the viewport range, the page zoom and the text scale it follows from', () => {
-    expect(Typography.maximumTextGrowthFactor).toEqual({ numerator: 8n, denominator: 5n });
+    expect(Typography.maximumTextGrowthFactor).toEqual(Rational.makeUnsafe(8n, 5n));
   });
 
   it('lets text that grows by it reach the text scale factor at the maximum page zoom', () => {
     const growth = Typography.maximumTextGrowthFactor;
-    const zoomedWidthAboveMinimum = Fraction.divide(
-      Fraction.subtractUnsafe(
+    const zoomedWidthAboveMinimum = Rational.divideUnsafe(
+      Rational.subtract(
         Viewport.maximumViewportWidth,
-        Fraction.multiply(Viewport.lowestMaximumPageZoomFactor, Viewport.minimumViewportWidth),
+        Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Viewport.minimumViewportWidth),
       ),
       Viewport.lowestMaximumPageZoomFactor,
     );
-    const viewportRange = Fraction.subtractUnsafe(
+    const viewportRange = Rational.subtract(
       Viewport.maximumViewportWidth,
       Viewport.minimumViewportWidth,
     );
-    const zoomedSize = Fraction.sum(
-      Fraction.one,
-      Fraction.divide(
-        Fraction.multiply(Fraction.subtractUnsafe(growth, Fraction.one), zoomedWidthAboveMinimum),
+    const zoomedSize = Rational.sum(
+      Rational.fromBigInt(1n),
+      Rational.divideUnsafe(
+        Rational.multiply(
+          Rational.subtract(growth, Rational.fromBigInt(1n)),
+          zoomedWidthAboveMinimum,
+        ),
         viewportRange,
       ),
     );
 
-    expect(Fraction.multiply(Viewport.lowestMaximumPageZoomFactor, zoomedSize)).toEqual(
-      Fraction.multiply(Typography.textScaleFactor, growth),
+    expect(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, zoomedSize)).toEqual(
+      Rational.multiply(Typography.textScaleFactor, growth),
     );
   });
 
   it('lets text that grows by it reach the text scale factor at a font size of the maximum page zoom', () => {
     const growth = Typography.maximumTextGrowthFactor;
-    const viewportRange = Fraction.subtractUnsafe(
+    const viewportRange = Rational.subtract(
       Viewport.maximumViewportWidth,
       Viewport.minimumViewportWidth,
     );
-    const slope = Fraction.divide(Fraction.subtractUnsafe(growth, Fraction.one), viewportRange);
-    const intercept = Fraction.divide(
-      Fraction.subtractUnsafe(
+    const slope = Rational.divideUnsafe(
+      Rational.subtract(growth, Rational.fromBigInt(1n)),
+      viewportRange,
+    );
+    const intercept = Rational.divideUnsafe(
+      Rational.subtract(
         Viewport.maximumViewportWidth,
-        Fraction.multiply(growth, Viewport.minimumViewportWidth),
+        Rational.multiply(growth, Viewport.minimumViewportWidth),
       ),
       viewportRange,
     );
-    const resizedSize = Fraction.sum(
-      Fraction.multiply(Viewport.lowestMaximumPageZoomFactor, intercept),
-      Fraction.multiply(slope, Viewport.maximumViewportWidth),
+    const resizedSize = Rational.sum(
+      Rational.multiply(Viewport.lowestMaximumPageZoomFactor, intercept),
+      Rational.multiply(slope, Viewport.maximumViewportWidth),
     );
 
-    expect(resizedSize).toEqual(Fraction.multiply(Typography.textScaleFactor, growth));
+    expect(resizedSize).toEqual(Rational.multiply(Typography.textScaleFactor, growth));
   });
 });
 
 describe('ScaleOptions', () => {
   it('accepts ratios above 1 that rise from the minimum to the maximum and a body size in range', () => {
     const exit = Schema.decodeExit(Typography.ScaleOptions)({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+      minimumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumFactor: Rational.makeUnsafe(5n, 4n),
+      maximumBodyFontSize: Rational.fromBigInt(20n),
     });
 
     expect(Exit.isSuccess(exit)).toBe(true);
@@ -236,9 +241,9 @@ describe('ScaleOptions', () => {
 
   it('accepts a maximum factor below the minimum factor', () => {
     const exit = Schema.decodeExit(Typography.ScaleOptions)({
-      minimumFactor: { numerator: 5n, denominator: 4n },
-      maximumFactor: { numerator: 6n, denominator: 5n },
-      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+      minimumFactor: Rational.makeUnsafe(5n, 4n),
+      maximumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumBodyFontSize: Rational.fromBigInt(20n),
     });
 
     expect(Exit.isSuccess(exit)).toBe(true);
@@ -246,9 +251,9 @@ describe('ScaleOptions', () => {
 
   it('rejects a minimum factor of 1', () => {
     const exit = Schema.decodeExit(Typography.ScaleOptions)({
-      minimumFactor: { numerator: 1n, denominator: 1n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+      minimumFactor: Rational.fromBigInt(1n),
+      maximumFactor: Rational.makeUnsafe(5n, 4n),
+      maximumBodyFontSize: Rational.fromBigInt(20n),
     });
 
     expect(
@@ -266,9 +271,9 @@ describe('ScaleOptions', () => {
 
   it('accepts a maximum factor equal to the minimum factor', () => {
     const exit = Schema.decodeExit(Typography.ScaleOptions)({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 6n, denominator: 5n },
-      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+      minimumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumBodyFontSize: Rational.fromBigInt(20n),
     });
 
     expect(Exit.isSuccess(exit)).toBe(true);
@@ -277,9 +282,9 @@ describe('ScaleOptions', () => {
   it('reports an invalid minimum factor and an invalid maximum factor at once', () => {
     const exit = Schema.decodeExit(Typography.ScaleOptions)(
       {
-        minimumFactor: { numerator: 1n, denominator: 1n },
-        maximumFactor: { numerator: 1n, denominator: 2n },
-        maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+        minimumFactor: Rational.fromBigInt(1n),
+        maximumFactor: Rational.makeUnsafe(1n, 2n),
+        maximumBodyFontSize: Rational.fromBigInt(20n),
       },
       { errors: 'all' },
     );
@@ -304,9 +309,9 @@ describe('ScaleOptions', () => {
 
   it('accepts a body size of the default font size', () => {
     const exit = Schema.decodeExit(Typography.ScaleOptions)({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 16n, denominator: 1n },
+      minimumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumFactor: Rational.makeUnsafe(5n, 4n),
+      maximumBodyFontSize: Rational.fromBigInt(16n),
     });
 
     expect(Exit.isSuccess(exit)).toBe(true);
@@ -314,9 +319,9 @@ describe('ScaleOptions', () => {
 
   it('accepts a body size of the default font size grown by the maximum text growth factor', () => {
     const exit = Schema.decodeExit(Typography.ScaleOptions)({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 128n, denominator: 5n },
+      minimumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumFactor: Rational.makeUnsafe(5n, 4n),
+      maximumBodyFontSize: Rational.makeUnsafe(128n, 5n),
     });
 
     expect(Exit.isSuccess(exit)).toBe(true);
@@ -324,9 +329,9 @@ describe('ScaleOptions', () => {
 
   it('rejects a body size below the default font size', () => {
     const exit = Schema.decodeExit(Typography.ScaleOptions)({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 159n, denominator: 10n },
+      minimumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumFactor: Rational.makeUnsafe(5n, 4n),
+      maximumBodyFontSize: Rational.makeUnsafe(159n, 10n),
     });
 
     expect(
@@ -344,9 +349,9 @@ describe('ScaleOptions', () => {
 
   it('rejects a body size above the default font size grown by the maximum text growth factor', () => {
     const exit = Schema.decodeExit(Typography.ScaleOptions)({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 257n, denominator: 10n },
+      minimumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumFactor: Rational.makeUnsafe(5n, 4n),
+      maximumBodyFontSize: Rational.makeUnsafe(257n, 10n),
     });
 
     expect(
@@ -373,9 +378,9 @@ describe('Step', () => {
 
   it('accepts every step of a scale', () => {
     const exit = Typography.scale({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+      minimumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumFactor: Rational.makeUnsafe(5n, 4n),
+      maximumBodyFontSize: Rational.fromBigInt(20n),
     });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 
@@ -388,8 +393,8 @@ describe('Step', () => {
   it('rejects a minimum size below the minimum font size', () => {
     const exit = Schema.decodeExit(Typography.Step)({
       position: 0,
-      minimumSize: Fraction.makeUnsafe(12n, 1n),
-      maximumSize: Fraction.makeUnsafe(15n, 1n),
+      minimumSize: Rational.fromBigInt(12n),
+      maximumSize: Rational.fromBigInt(15n),
     });
 
     expect(
@@ -408,8 +413,8 @@ describe('Step', () => {
   it('rejects a minimum size above the maximum font size', () => {
     const exit = Schema.decodeExit(Typography.Step)({
       position: 0,
-      minimumSize: Fraction.makeUnsafe(120n, 1n),
-      maximumSize: Fraction.makeUnsafe(150n, 1n),
+      minimumSize: Rational.fromBigInt(120n),
+      maximumSize: Rational.fromBigInt(150n),
     });
 
     expect(
@@ -428,8 +433,8 @@ describe('Step', () => {
   it('rejects a step that shrinks', () => {
     const exit = Schema.decodeExit(Typography.Step)({
       position: 0,
-      minimumSize: Fraction.makeUnsafe(24n, 1n),
-      maximumSize: Fraction.makeUnsafe(12n, 1n),
+      minimumSize: Rational.fromBigInt(24n),
+      maximumSize: Rational.fromBigInt(12n),
     });
 
     expect(
@@ -448,8 +453,8 @@ describe('Step', () => {
   it('rejects a step that grows by more than 8/5', () => {
     const exit = Schema.decodeExit(Typography.Step)({
       position: 0,
-      minimumSize: Fraction.makeUnsafe(24n, 1n),
-      maximumSize: Fraction.makeUnsafe(40n, 1n),
+      minimumSize: Rational.fromBigInt(24n),
+      maximumSize: Rational.fromBigInt(40n),
     });
 
     expect(
@@ -469,28 +474,28 @@ describe('Step', () => {
 describe('scale', () => {
   it('sizes every step as body text times each factor to the power of its position', () => {
     for (const [minimumFactor, maximumFactor] of [
-      [Fraction.makeUnsafe(6n, 5n), Fraction.makeUnsafe(5n, 4n)],
+      [Rational.makeUnsafe(6n, 5n), Rational.makeUnsafe(5n, 4n)],
       [Typography.minimumStepFactor, Typography.minimumStepFactor],
     ] as const) {
       const exit = Typography.scale({
         minimumFactor,
         maximumFactor,
-        maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+        maximumBodyFontSize: Rational.fromBigInt(20n),
       });
       const steps = Exit.isSuccess(exit) ? exit.value : [];
 
       expect(steps).not.toHaveLength(0);
       for (const step of steps) {
         expect(step.minimumSize).toEqual(
-          Fraction.multiply(
+          Rational.multiply(
             Typography.defaultFontSize,
-            Fraction.pow(minimumFactor, BigInt(step.position)),
+            Rational.powUnsafe(minimumFactor, step.position),
           ),
         );
         expect(step.maximumSize).toEqual(
-          Fraction.multiply(
-            Fraction.makeUnsafe(20n, 1n),
-            Fraction.pow(maximumFactor, BigInt(step.position)),
+          Rational.multiply(
+            Rational.fromBigInt(20n),
+            Rational.powUnsafe(maximumFactor, step.position),
           ),
         );
       }
@@ -499,30 +504,30 @@ describe('scale', () => {
 
   it('runs from small print to the largest heading that keeps text resizable', () => {
     const exit = Typography.scale({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+      minimumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumFactor: Rational.makeUnsafe(5n, 4n),
+      maximumBodyFontSize: Rational.fromBigInt(20n),
     });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 
     expect(steps.map((step) => step.position)).toEqual([-1, 0, 1, 2, 3, 4, 5, 6]);
     expect(steps.at(0)).toEqual({
       position: -1,
-      minimumSize: { numerator: 40n, denominator: 3n },
-      maximumSize: { numerator: 16n, denominator: 1n },
+      minimumSize: Rational.makeUnsafe(40n, 3n),
+      maximumSize: Rational.fromBigInt(16n),
     });
     expect(steps.at(-1)).toEqual({
       position: 6,
-      minimumSize: { numerator: 746_496n, denominator: 15_625n },
-      maximumSize: { numerator: 78_125n, denominator: 1024n },
+      minimumSize: Rational.makeUnsafe(746_496n, 15_625n),
+      maximumSize: Rational.makeUnsafe(78_125n, 1024n),
     });
   });
 
   it('starts at body text when body text keeps the default font size on every screen', () => {
     const exit = Typography.scale({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 16n, denominator: 1n },
+      minimumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumFactor: Rational.makeUnsafe(5n, 4n),
+      maximumBodyFontSize: Rational.fromBigInt(16n),
     });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 
@@ -531,30 +536,30 @@ describe('scale', () => {
 
   it('keeps every step growing by 1 to 8/5 and between the minimum and the maximum font size', () => {
     const exit = Typography.scale({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+      minimumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumFactor: Rational.makeUnsafe(5n, 4n),
+      maximumBodyFontSize: Rational.fromBigInt(20n),
     });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
 
     expect(steps).not.toHaveLength(0);
     for (const step of steps) {
-      const growth = Fraction.divide(step.maximumSize, step.minimumSize);
+      const growth = Rational.divideUnsafe(step.maximumSize, step.minimumSize);
 
-      expect(Fraction.isGreaterThanOrEqualTo(growth, Fraction.one)).toBe(true);
-      expect(Fraction.isLessThanOrEqualTo(growth, Typography.maximumTextGrowthFactor)).toBe(true);
-      expect(Fraction.isGreaterThanOrEqualTo(step.minimumSize, Typography.minimumFontSize)).toBe(
+      expect(Rational.isGreaterThanOrEqualTo(growth, Rational.fromBigInt(1n))).toBe(true);
+      expect(Rational.isLessThanOrEqualTo(growth, Typography.maximumTextGrowthFactor)).toBe(true);
+      expect(Rational.isGreaterThanOrEqualTo(step.minimumSize, Typography.minimumFontSize)).toBe(
         true,
       );
-      expect(Fraction.isLessThanOrEqualTo(step.minimumSize, Typography.maximumFontSize)).toBe(true);
+      expect(Rational.isLessThanOrEqualTo(step.minimumSize, Typography.maximumFontSize)).toBe(true);
     }
   });
 
   it('ends where the next step would grow by more than 8/5', () => {
     const exit = Typography.scale({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+      minimumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumFactor: Rational.makeUnsafe(5n, 4n),
+      maximumBodyFontSize: Rational.fromBigInt(20n),
     });
     const highest = Exit.isSuccess(exit) ? exit.value.at(-1) : undefined;
     const nextGrowth = (20 * (5 / 4) ** 7) / (16 * (6 / 5) ** 7);
@@ -565,9 +570,9 @@ describe('scale', () => {
 
   it('ends where the next step would shrink when the maximum factor is below the minimum factor', () => {
     const exit = Typography.scale({
-      minimumFactor: { numerator: 5n, denominator: 4n },
-      maximumFactor: { numerator: 6n, denominator: 5n },
-      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+      minimumFactor: Rational.makeUnsafe(5n, 4n),
+      maximumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumBodyFontSize: Rational.fromBigInt(20n),
     });
     const highest = Exit.isSuccess(exit) ? exit.value.at(-1) : undefined;
     const nextGrowth = (20 * (6 / 5) ** 6) / (16 * (5 / 4) ** 6);
@@ -578,35 +583,35 @@ describe('scale', () => {
 
   it('starts where the next step down would be smaller than the minimum font size', () => {
     const exit = Typography.scale({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+      minimumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumFactor: Rational.makeUnsafe(5n, 4n),
+      maximumBodyFontSize: Rational.fromBigInt(20n),
     });
     const lowest = Exit.isSuccess(exit) ? exit.value.at(0) : undefined;
     const nextMinimumSize = 16 * (5 / 6) ** 2;
 
     expect(lowest?.position).toBe(-1);
-    expect(nextMinimumSize).toBeLessThan(Fraction.toNumber(Typography.minimumFontSize));
+    expect(nextMinimumSize).toBeLessThan(Rational.toNumberUnsafe(Typography.minimumFontSize));
   });
 
   it('ends where the next step would be larger than the maximum font size when the factors are equal', () => {
     const exit = Typography.scale({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 6n, denominator: 5n },
-      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+      minimumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumBodyFontSize: Rational.fromBigInt(20n),
     });
     const highest = Exit.isSuccess(exit) ? exit.value.at(-1) : undefined;
     const nextMinimumSize = 16 * (6 / 5) ** 9;
 
     expect(highest?.position).toBe(8);
-    expect(nextMinimumSize).toBeGreaterThan(Fraction.toNumber(Typography.maximumFontSize));
+    expect(nextMinimumSize).toBeGreaterThan(Rational.toNumberUnsafe(Typography.maximumFontSize));
   });
 
   it('ends on both sides at the minimum step factor', () => {
     const exit = Typography.scale({
       minimumFactor: Typography.minimumStepFactor,
       maximumFactor: Typography.minimumStepFactor,
-      maximumBodyFontSize: { numerator: 16n, denominator: 1n },
+      maximumBodyFontSize: Rational.fromBigInt(16n),
     });
     const steps = Exit.isSuccess(exit) ? exit.value : [];
     const previousMinimumSize = 16 * (780 / 781) ** 163;
@@ -614,15 +619,15 @@ describe('scale', () => {
 
     expect(steps.at(0)?.position).toBe(-162);
     expect(steps.at(-1)?.position).toBe(1164);
-    expect(previousMinimumSize).toBeLessThan(Fraction.toNumber(Typography.minimumFontSize));
-    expect(nextMinimumSize).toBeGreaterThan(Fraction.toNumber(Typography.maximumFontSize));
+    expect(previousMinimumSize).toBeLessThan(Rational.toNumberUnsafe(Typography.minimumFontSize));
+    expect(nextMinimumSize).toBeGreaterThan(Rational.toNumberUnsafe(Typography.maximumFontSize));
   });
 
   it('reports every invalid option at once', () => {
     const exit = Typography.scale({
-      minimumFactor: { numerator: 1n, denominator: 1n },
-      maximumFactor: { numerator: 1n, denominator: 2n },
-      maximumBodyFontSize: { numerator: 40n, denominator: 1n },
+      minimumFactor: Rational.fromBigInt(1n),
+      maximumFactor: Rational.makeUnsafe(1n, 2n),
+      maximumBodyFontSize: Rational.fromBigInt(40n),
     });
 
     expect(

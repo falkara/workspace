@@ -1,6 +1,5 @@
-import { Exit, Schema } from 'effect';
+import { Exit, Rational, Schema } from 'effect';
 
-import * as Fraction from '#src/Fraction';
 import * as Typography from '#src/Typography';
 
 /**
@@ -8,41 +7,45 @@ import * as Typography from '#src/Typography';
  *
  * @see https://designsystem.digital.gov/design-tokens/spacing-units/
  */
-export const spacingUnit = Fraction.makeUnsafe(8n, 1n);
+export const spacingUnit = Rational.fromBigInt(8n);
 
 /**
  * The counts of the spacing unit that the USWDS spacing scale spaces content with, from the smallest to the largest.
  *
  * @see https://designsystem.digital.gov/design-tokens/spacing-units/
  */
-export const spacingUnitCounts: ReadonlyArray<Fraction.Fraction> = [
-  Fraction.makeUnsafe(1n, 2n),
-  Fraction.makeUnsafe(1n, 1n),
-  Fraction.makeUnsafe(3n, 2n),
-  Fraction.makeUnsafe(2n, 1n),
-  Fraction.makeUnsafe(5n, 2n),
-  Fraction.makeUnsafe(3n, 1n),
-  Fraction.makeUnsafe(4n, 1n),
-  Fraction.makeUnsafe(5n, 1n),
-  Fraction.makeUnsafe(6n, 1n),
-  Fraction.makeUnsafe(7n, 1n),
-  Fraction.makeUnsafe(8n, 1n),
-  Fraction.makeUnsafe(9n, 1n),
-  Fraction.makeUnsafe(10n, 1n),
-  Fraction.makeUnsafe(15n, 1n),
+export const spacingUnitCounts: ReadonlyArray<Rational.Rational> = [
+  Rational.makeUnsafe(1n, 2n),
+  Rational.fromBigInt(1n),
+  Rational.makeUnsafe(3n, 2n),
+  Rational.fromBigInt(2n),
+  Rational.makeUnsafe(5n, 2n),
+  Rational.fromBigInt(3n),
+  Rational.fromBigInt(4n),
+  Rational.fromBigInt(5n),
+  Rational.fromBigInt(6n),
+  Rational.fromBigInt(7n),
+  Rational.fromBigInt(8n),
+  Rational.fromBigInt(9n),
+  Rational.fromBigInt(10n),
+  Rational.fromBigInt(15n),
 ];
 
 /** The spacing unit as a factor of body text, the share of the default font size it takes in USWDS, so that spacing grows with body text. */
-export const spacingUnitFactor = Fraction.divide(spacingUnit, Typography.defaultFontSize);
+export const spacingUnitFactor = Rational.divideUnsafe(
+  // The default font size is a positive constant, so the division never divides by zero.
+  spacingUnit,
+  Typography.defaultFontSize,
+);
 
 /** A step of the space scale, with its size at the minimum and at the maximum viewport width. */
 export interface Step {
   /** The multiple of body text the step is. */
-  readonly factor: Fraction.Fraction;
+  readonly factor: Rational.Rational;
   /** The size at the minimum viewport width. Measured in CSS pixels. */
-  readonly minimumSize: Fraction.Fraction;
+  readonly minimumSize: Rational.Rational;
   /** The size at the maximum viewport width. Measured in CSS pixels. */
-  readonly maximumSize: Fraction.Fraction;
+  readonly maximumSize: Rational.Rational;
 }
 
 /** A schema of the size body text reaches at the maximum viewport width, the one part of the intent of a type scale that the space scale grows with, so that the options of a type scale serve it as they are and no ratio of the type scale refuses the space scale. */
@@ -60,11 +63,11 @@ export const scale = (
 ): Exit.Exit<ReadonlyArray<Step>, Schema.SchemaError> =>
   Exit.map(Schema.decodeExit(ScaleOptions)(options, { errors: 'all' }), (options) =>
     spacingUnitCounts.map((count) => {
-      const factor = Fraction.multiply(count, spacingUnitFactor);
+      const factor = Rational.multiply(count, spacingUnitFactor);
       return {
         factor,
-        minimumSize: Fraction.multiply(Typography.defaultFontSize, factor),
-        maximumSize: Fraction.multiply(options.maximumBodyFontSize, factor),
+        minimumSize: Rational.multiply(Typography.defaultFontSize, factor),
+        maximumSize: Rational.multiply(options.maximumBodyFontSize, factor),
       };
     }),
   );

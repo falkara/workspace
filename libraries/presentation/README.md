@@ -11,15 +11,15 @@ Decisions shift from numbers to intent. Everything that follows from that intent
 Nothing shows the idea better than a fluid type scale. Three choices go in and out comes either a whole scale or a precise no for anything past the standards.
 
 ```ts
-import { Effect } from 'effect';
+import { Effect, Rational } from 'effect';
 import * as Fluid from '@falkara/presentation/Fluid';
 import * as Typography from '@falkara/presentation/Typography';
 
 // Intent: how sharply headings rise on narrow and wide screens, and how large body text gets.
 const intent = {
-  minimumFactor: { numerator: 6n, denominator: 5n },
-  maximumFactor: { numerator: 5n, denominator: 4n },
-  maximumBodyFontSize: { numerator: 20n, denominator: 1n }, // CSS pixels
+  minimumFactor: Rational.makeUnsafe(6n, 5n),
+  maximumFactor: Rational.makeUnsafe(5n, 4n),
+  maximumBodyFontSize: Rational.fromBigInt(20n), // CSS pixels
 };
 
 Effect.gen(function* () {
@@ -33,7 +33,7 @@ Effect.gen(function* () {
 //   'clamp(2.98598rem, 2.39185rem + 2.97065vw, 4.76837rem)', position 6
 // ]
 
-Typography.scale({ ...intent, maximumBodyFontSize: { numerator: 30n, denominator: 1n } });
+Typography.scale({ ...intent, maximumBodyFontSize: Rational.fromBigInt(30n) });
 // Failure: SchemaError(Expected a body font size of at most 25.6 px, so that text can be enlarged
 //   to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires
 //   at ["maximumBodyFontSize"])
@@ -62,7 +62,7 @@ Every schema the modules export, such as `Typography.ScaleOptions`, works with v
 - **Color** measures each pair against the size of the text it carries and finds the closest legible shade of a brand color.
 - **Layout** holds lines to lengths that follow the font.
 
-Viewport, Length, Fluid and Fraction hold the facts and the exact arithmetic the rest stands on.
+Viewport, Length and Fluid hold the facts the rest stands on, worked out exactly in the `Rational` numbers of Effect.
 
 ## Groundwork
 
