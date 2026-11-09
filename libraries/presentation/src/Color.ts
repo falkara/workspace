@@ -103,7 +103,7 @@ export const xyzToLinearSrgb: Matrix = [
 export const fullChroma = 2 / 5;
 
 /**
- * The weights of the linear sRGB channels in relative luminance as WCAG 2.2 defines it.
+ * The weights of the linear sRGB channels in relative luminance as WCAG 2.2 gives it for sRGB.
  *
  * @see https://www.w3.org/TR/WCAG22/#dfn-relative-luminance
  */
@@ -164,7 +164,7 @@ const linearSrgbOf = (
   return transform(xyzToLinearSrgb, transform(lmsToXyz, [long ** 3, medium ** 3, short ** 3]));
 };
 
-/** The relative luminance of linear sRGB channels as WCAG 2.2 defines it, each weighted and held within its range. */
+/** The relative luminance of linear sRGB channels as WCAG 2.2 gives it for sRGB, each weighted and held within its range. */
 const luminanceOf = ([red, green, blue]: Vector): number =>
   luminanceWeights[0] * Math.min(Math.max(red, 0), 1) +
   luminanceWeights[1] * Math.min(Math.max(green, 0), 1) +
@@ -331,7 +331,7 @@ const leastApart = (text: Vector, background: Vector): readonly [number, number]
       ? [text[0], background[2]]
       : [Math.max(text[0], background[0]), Math.max(text[0], background[0])];
 
-/** A schema of the components of an oklch() color as CSS Color 4 defines them, opaque and within sRGB, where WCAG 2.2 defines contrast. */
+/** A schema of the components of an oklch() color as CSS Color 4 defines them, opaque and within sRGB, the color space whose relative luminance WCAG 2.2 gives and in which it asks authors to evaluate contrast. */
 const Components = Schema.Struct({
   /** The lightness, from 0 for black to 1 for white. */
   lightness: Schema.Finite,
@@ -355,7 +355,8 @@ const Components = Schema.Struct({
         isInGamut(
           linearSrgbOf(color.lightness, color.chroma, color.hue, color.hueUnit),
           gamutTolerance,
-        ) || 'Expected a color within sRGB, as WCAG 2.2 defines contrast only there',
+        ) ||
+        'Expected a color within sRGB, the color space whose relative luminance WCAG 2.2 gives and in which it asks authors to evaluate contrast unless another is known to be used',
     ),
   ),
 );
@@ -436,7 +437,7 @@ export const Color = Schema.String.pipe(
 /** A color with its lightness, chroma, hue in its unit of angle and alpha, opaque and within sRGB. */
 export type Color = typeof Color.Type;
 
-/** The relative luminance of a color as WCAG 2.2 defines it, its linear sRGB channels weighted and held within their range. */
+/** The relative luminance of a color as WCAG 2.2 gives it for sRGB, its linear sRGB channels weighted and held within their range. */
 const relativeLuminance = (color: Color): number =>
   luminanceOf(linearSrgbOf(color.lightness, color.chroma, color.hue, color.hueUnit));
 
@@ -552,7 +553,7 @@ export const Colors = Schema.Struct({
 /** The colors of a piece of text and its background, and the bits per channel they are judged on, as they are written. */
 export type Colors = typeof Colors.Encoded;
 
-/** The contrast ratio of text over its background as WCAG 2.2 defines it, or a failure naming the color that WCAG 2.2 gives no contrast. The ratio is the one JavaScript computes, which may lie a few units in the last place from the ratio of the exact colors, the colors the matrices of CSS Color 4 convert as they are written, computed without rounding: black against white gives 20.999999999999986, the number nearest to the 20.999999999999987 the exact colors give, as the matrices hold the conversion of Oklab to sixteen digits. Whether it meets a ratio is decided by `reaches` or `verify`, which account for that rounding. */
+/** The contrast ratio of text over its background as WCAG 2.2 defines it, or a failure naming the color that is not opaque or not within sRGB. The ratio is the one JavaScript computes, which may lie a few units in the last place from the ratio of the exact colors, the colors the matrices of CSS Color 4 convert as they are written, computed without rounding: black against white gives 20.999999999999986, the number nearest to the 20.999999999999987 the exact colors give, as the matrices hold the conversion of Oklab to sixteen digits. Whether it meets a ratio is decided by `reaches` or `verify`, which account for that rounding. */
 export const contrast = (text: string, background: string): Exit.Exit<number, Schema.SchemaError> =>
   Exit.map(Schema.decodeExit(Colors)({ text, background }, { errors: 'all' }), (colors) =>
     contrastRatio(colors.text, colors.background),

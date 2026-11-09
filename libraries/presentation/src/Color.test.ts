@@ -468,7 +468,8 @@ describe('Color', () => {
     ).toEqual([
       {
         path: [],
-        message: 'Expected a color within sRGB, as WCAG 2.2 defines contrast only there',
+        message:
+          'Expected a color within sRGB, the color space whose relative luminance WCAG 2.2 gives and in which it asks authors to evaluate contrast unless another is known to be used',
       },
     ]);
   });
@@ -529,7 +530,8 @@ describe('contrast', () => {
       },
       {
         path: ['background'],
-        message: 'Expected a color within sRGB, as WCAG 2.2 defines contrast only there',
+        message:
+          'Expected a color within sRGB, the color space whose relative luminance WCAG 2.2 gives and in which it asks authors to evaluate contrast unless another is known to be used',
       },
     ]);
   });
