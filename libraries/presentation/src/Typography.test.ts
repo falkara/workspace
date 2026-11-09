@@ -221,10 +221,7 @@ describe('textSpacingLineHeightFactor', () => {
 
 describe('textSpacingParagraphSpacingFactor', () => {
   it('is 2, the spacing following paragraphs WCAG 2.2 Text Spacing lets a reader set', () => {
-    expect(Typography.textSpacingParagraphSpacingFactor).toEqual({
-      numerator: 2n,
-      denominator: 1n,
-    });
+    expect(Typography.textSpacingParagraphSpacingFactor).toEqual(Rational.fromBigInt(2n));
   });
 });
 
