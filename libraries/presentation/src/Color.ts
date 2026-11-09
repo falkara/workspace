@@ -9,7 +9,6 @@ import {
   Struct,
 } from 'effect';
 
-import * as Fluid from '#src/Fluid';
 import * as Length from '#src/Length';
 import * as Typography from '#src/Typography';
 
@@ -636,7 +635,7 @@ const isAtLeastRequiredContrast = Schema.makeFilter(
     text.minimumContrast === undefined ||
     text.minimumContrast >= requiredContrast(text.step, text.fontWeight) || {
       path: ['minimumContrast'],
-      issue: `Expected a minimum contrast of at least ${requiredContrast(text.step, text.fontWeight)}:1, the ratio WCAG 2.2 Contrast (Enhanced) requires for text of ${Math.round(Rational.toNumberUnsafe(text.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${text.fontWeight}`,
+      issue: `Expected a minimum contrast of at least ${requiredContrast(text.step, text.fontWeight)}:1, the ratio WCAG 2.2 Contrast (Enhanced) requires for text of ${Math.round(Rational.toNumberUnsafe(text.step.minimumSize) * 10 ** Typography.decimalPlaces) / 10 ** Typography.decimalPlaces} px at weight ${text.fontWeight}`,
     },
 );
 
@@ -694,7 +693,7 @@ export const verify = (pair: Pair): Exit.Exit<number, Schema.SchemaError | Contr
               requiredContrast: target,
               message:
                 colors.minimumContrast === undefined
-                  ? `Expected a contrast of at least ${target}:1 for text of ${Math.round(Rational.toNumberUnsafe(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${colors.fontWeight}, as WCAG 2.2 Contrast (Enhanced) requires`
+                  ? `Expected a contrast of at least ${target}:1 for text of ${Math.round(Rational.toNumberUnsafe(colors.step.minimumSize) * 10 ** Typography.decimalPlaces) / 10 ** Typography.decimalPlaces} px at weight ${colors.fontWeight}, as WCAG 2.2 Contrast (Enhanced) requires`
                   : `Expected a contrast of at least ${target}:1, the ratio the project asks for`,
             }),
           );
@@ -863,7 +862,7 @@ export const shade = (brand: Brand): Exit.Exit<string, Schema.SchemaError | NoLe
         ? Exit.fail(
             new NoLegibleShade({
               requiredContrast: target,
-              message: `Expected a background against which a shade of the color within sRGB reaches ${target}:1, the contrast ${colors.minimumContrast === undefined ? `WCAG 2.2 Contrast (Enhanced) requires for text of ${Math.round(Rational.toNumberUnsafe(colors.step.minimumSize) * 10 ** Fluid.decimalPlaces) / 10 ** Fluid.decimalPlaces} px at weight ${colors.fontWeight}` : 'the project asks for'}`,
+              message: `Expected a background against which a shade of the color within sRGB reaches ${target}:1, the contrast ${colors.minimumContrast === undefined ? `WCAG 2.2 Contrast (Enhanced) requires for text of ${Math.round(Rational.toNumberUnsafe(colors.step.minimumSize) * 10 ** Typography.decimalPlaces) / 10 ** Typography.decimalPlaces} px at weight ${colors.fontWeight}` : 'the project asks for'}`,
             }),
           )
         : // Written as JavaScript writes each number, the shortest form that reads back as the same number, with an exponent for a small one, which CSS reads as well, so that the shade read back is the one found.

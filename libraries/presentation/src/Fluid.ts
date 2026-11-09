@@ -4,36 +4,13 @@ import * as Length from '#src/Length';
 import * as Typography from '#src/Typography';
 import * as Viewport from '#src/Viewport';
 
-/** The fewest decimal places that keep the rounding of a CSS length below the finest layout unit, for a reader who both zooms the page as far as any Baseline core browser allows and sets the largest default font size any of them allows, as the finest layout unit counts zoomed pixels. */
-export const decimalPlaces =
-  Math.floor(
-    Math.log10(
-      Rational.toNumberUnsafe(
-        // The finest layout unit and the vw units are positive constants, so neither division divides by zero.
-        Rational.divideUnsafe(
-          Rational.multiply(
-            Viewport.highestMaximumPageZoomFactor,
-            Rational.sum(
-              Rational.multiply(
-                Typography.defaultFontSize,
-                Typography.highestMaximumFontSizeFactor,
-              ),
-              Rational.divideUnsafe(Viewport.maximumViewportWidth, Length.viewportWidthUnits),
-            ),
-          ),
-          Rational.multiply(Rational.fromBigInt(2n), Length.finestLayoutUnit),
-        ),
-      ),
-    ),
-  ) + 1;
-
-/** The CSS rem length of a size, rounded to the decimal places. Measured in CSS pixels. */
+/** The CSS rem length of a size, rounded to the decimal places of a CSS length. Measured in CSS pixels. */
 export const rem = (size: number): string =>
-  `${Math.round((size / Rational.toNumberUnsafe(Typography.defaultFontSize)) * 10 ** decimalPlaces) / 10 ** decimalPlaces}rem`;
+  `${Math.round((size / Rational.toNumberUnsafe(Typography.defaultFontSize)) * 10 ** Typography.decimalPlaces) / 10 ** Typography.decimalPlaces}rem`;
 
-/** The CSS vw length of a share of the viewport width, rounded to the decimal places. The share measured in viewport widths, so that 1 is the whole width. */
+/** The CSS vw length of a share of the viewport width, rounded to the decimal places of a CSS length. The share measured in viewport widths, so that 1 is the whole width. */
 export const vw = (share: number): string =>
-  `${Math.round(share * Rational.toNumberUnsafe(Length.viewportWidthUnits) * 10 ** decimalPlaces) / 10 ** decimalPlaces}vw`;
+  `${Math.round(share * Rational.toNumberUnsafe(Length.viewportWidthUnits) * 10 ** Typography.decimalPlaces) / 10 ** Typography.decimalPlaces}vw`;
 
 /** A schema of the sizes a fluid value takes at the minimum and at the maximum viewport width. Sizes measured in CSS pixels. */
 const Sizes = Schema.Struct({
@@ -62,7 +39,7 @@ const Sizes = Schema.Struct({
             Rational.multiply(sizes.minimumSize, Typography.maximumTextGrowthFactor),
           )) || {
           path: ['maximumSize'],
-          issue: `Expected a maximum size of ${Math.round(Rational.toNumberUnsafe(sizes.minimumSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px to ${Math.round(Rational.toNumberUnsafe(Rational.multiply(sizes.minimumSize, Typography.maximumTextGrowthFactor)) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that the value never shrinks and grows no faster than text that can be enlarged to ${Rational.toNumberUnsafe(Rational.multiply(Typography.textScaleFactor, Rational.fromBigInt(100n)))} % within the ${Rational.toNumberUnsafe(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
+          issue: `Expected a maximum size of ${Math.round(Rational.toNumberUnsafe(sizes.minimumSize) * 10 ** Typography.decimalPlaces) / 10 ** Typography.decimalPlaces} px to ${Math.round(Rational.toNumberUnsafe(Rational.multiply(sizes.minimumSize, Typography.maximumTextGrowthFactor)) * 10 ** Typography.decimalPlaces) / 10 ** Typography.decimalPlaces} px, so that the value never shrinks and grows no faster than text that can be enlarged to ${Rational.toNumberUnsafe(Rational.multiply(Typography.textScaleFactor, Rational.fromBigInt(100n)))} % within the ${Rational.toNumberUnsafe(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
         },
     ),
   ),

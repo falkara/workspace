@@ -19,6 +19,26 @@ export const highestMaximumFontSizeFactor = Rational.divideUnsafe(
 /** The factor by which a reader enlarges the default font size at most in every Baseline core browser: 1, as Safari lets a reader set no default font size, so that nothing a reader must be able to reach can rest on setting a larger font size, and resizing text rests on page zoom alone. */
 export const lowestMaximumFontSizeFactor = Rational.fromBigInt(1n);
 
+/** The fewest decimal places that keep the rounding of a CSS length below the finest layout unit, for a reader who both zooms the page as far as any Baseline core browser allows and sets the largest default font size any of them allows, as the finest layout unit counts zoomed pixels. Every length a message gives is rounded to them too, so that it reads as CSS writes it. */
+export const decimalPlaces =
+  Math.floor(
+    Math.log10(
+      Rational.toNumberUnsafe(
+        // The finest layout unit and the vw units are positive constants, so neither division divides by zero.
+        Rational.divideUnsafe(
+          Rational.multiply(
+            Viewport.highestMaximumPageZoomFactor,
+            Rational.sum(
+              Rational.multiply(defaultFontSize, highestMaximumFontSizeFactor),
+              Rational.divideUnsafe(Viewport.maximumViewportWidth, Length.viewportWidthUnits),
+            ),
+          ),
+          Rational.multiply(Rational.fromBigInt(2n), Length.finestLayoutUnit),
+        ),
+      ),
+    ),
+  ) + 1;
+
 /**
  * The smallest font size of the USWDS theme type scale in its default settings. Measured in CSS pixels.
  *
@@ -178,13 +198,13 @@ export const ScaleOptions = Schema.Struct({
       Schema.makeIsGreaterThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
         defaultFontSize,
         {
-          message: `Expected a body font size of at least ${Rational.toNumberUnsafe(defaultFontSize)} px, so that body text never shrinks below the default font size of browsers`,
+          message: `Expected a body font size of at least ${Math.round(Rational.toNumberUnsafe(defaultFontSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that body text never shrinks below the default font size of browsers`,
         },
       ),
       Schema.makeIsLessThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
         Rational.multiply(defaultFontSize, maximumTextGrowthFactor),
         {
-          message: `Expected a body font size of at most ${Rational.toNumberUnsafe(Rational.multiply(defaultFontSize, maximumTextGrowthFactor))} px, so that text can be enlarged to ${Rational.toNumberUnsafe(Rational.multiply(textScaleFactor, Rational.fromBigInt(100n)))} % within the ${Rational.toNumberUnsafe(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
+          message: `Expected a body font size of at most ${Math.round(Rational.toNumberUnsafe(Rational.multiply(defaultFontSize, maximumTextGrowthFactor)) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that text can be enlarged to ${Rational.toNumberUnsafe(Rational.multiply(textScaleFactor, Rational.fromBigInt(100n)))} % within the ${Rational.toNumberUnsafe(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
         },
       ),
     ),
@@ -204,13 +224,13 @@ export const Step = Schema.Struct({
       Schema.makeIsGreaterThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
         minimumFontSize,
         {
-          message: `Expected a minimum size of at least ${Rational.toNumberUnsafe(minimumFontSize)} px, the smallest size of the USWDS theme type scale`,
+          message: `Expected a minimum size of at least ${Math.round(Rational.toNumberUnsafe(minimumFontSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, the smallest size of the USWDS theme type scale`,
         },
       ),
       Schema.makeIsLessThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
         maximumFontSize,
         {
-          message: `Expected a minimum size of at most ${Rational.format(maximumFontSize)} px, so that a full-width character fits the minimum viewport width of ${Rational.toNumberUnsafe(Viewport.minimumViewportWidth)} px at a font size of ${Rational.toNumberUnsafe(Rational.multiply(highestMaximumFontSizeFactor, Rational.fromBigInt(100n)))} %, as WCAG 2.2 Reflow requires`,
+          message: `Expected a minimum size of at most ${Math.round(Rational.toNumberUnsafe(maximumFontSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that a full-width character fits the minimum viewport width of ${Math.round(Rational.toNumberUnsafe(Viewport.minimumViewportWidth) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px at a font size of ${Rational.toNumberUnsafe(Rational.multiply(highestMaximumFontSizeFactor, Rational.fromBigInt(100n)))} %, as WCAG 2.2 Reflow requires`,
         },
       ),
     ),
@@ -228,7 +248,7 @@ export const Step = Schema.Struct({
             Rational.multiply(step.minimumSize, maximumTextGrowthFactor),
           )) || {
           path: ['maximumSize'],
-          issue: `Expected a maximum size of ${Rational.toNumberUnsafe(step.minimumSize)} px to ${Rational.toNumberUnsafe(Rational.multiply(step.minimumSize, maximumTextGrowthFactor))} px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to ${Rational.toNumberUnsafe(Rational.multiply(textScaleFactor, Rational.fromBigInt(100n)))} % within the ${Rational.toNumberUnsafe(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
+          issue: `Expected a maximum size of ${Math.round(Rational.toNumberUnsafe(step.minimumSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px to ${Math.round(Rational.toNumberUnsafe(Rational.multiply(step.minimumSize, maximumTextGrowthFactor)) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to ${Rational.toNumberUnsafe(Rational.multiply(textScaleFactor, Rational.fromBigInt(100n)))} % within the ${Rational.toNumberUnsafe(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)))} % page zoom of Safari, as WCAG 2.2 Resize Text requires`,
         },
     ),
   ),

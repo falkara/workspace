@@ -33,6 +33,82 @@ describe('lowestMaximumFontSizeFactor', () => {
   });
 });
 
+describe('decimalPlaces', () => {
+  it('keeps the rendered rounding below the finest layout unit for a reader at the highest maximum page zoom and font size', () => {
+    const sizes = Array.from({ length: 100_000 }, (_, index) => index / 1000);
+    const shares = Array.from({ length: 100_000 }, (_, index) => index / 10_000_000);
+    const remError = Math.max(
+      ...sizes.map((size) =>
+        Math.abs(
+          Math.round(
+            (size / Rational.toNumberUnsafe(Typography.defaultFontSize)) *
+              10 ** Typography.decimalPlaces,
+          ) /
+            10 ** Typography.decimalPlaces -
+            size / Rational.toNumberUnsafe(Typography.defaultFontSize),
+        ),
+      ),
+    );
+    const vwError = Math.max(
+      ...shares.map((share) =>
+        Math.abs(
+          Math.round(
+            share *
+              Rational.toNumberUnsafe(Length.viewportWidthUnits) *
+              10 ** Typography.decimalPlaces,
+          ) /
+            10 ** Typography.decimalPlaces -
+            share * Rational.toNumberUnsafe(Length.viewportWidthUnits),
+        ),
+      ),
+    );
+    const renderedError =
+      Rational.toNumberUnsafe(Viewport.highestMaximumPageZoomFactor) *
+      (remError *
+        Rational.toNumberUnsafe(Typography.defaultFontSize) *
+        Rational.toNumberUnsafe(Typography.highestMaximumFontSizeFactor) +
+        (vwError * Rational.toNumberUnsafe(Viewport.maximumViewportWidth)) /
+          Rational.toNumberUnsafe(Length.viewportWidthUnits));
+
+    expect(renderedError).toBeLessThan(Rational.toNumberUnsafe(Length.finestLayoutUnit));
+  });
+
+  it('is the fewest decimal places that do', () => {
+    const fewer = 10 ** (Typography.decimalPlaces - 1);
+    const sizes = Array.from({ length: 100_000 }, (_, index) => index / 1000);
+    const shares = Array.from({ length: 100_000 }, (_, index) => index / 10_000_000);
+    const remError = Math.max(
+      ...sizes.map((size) =>
+        Math.abs(
+          Math.round((size / Rational.toNumberUnsafe(Typography.defaultFontSize)) * fewer) / fewer -
+            size / Rational.toNumberUnsafe(Typography.defaultFontSize),
+        ),
+      ),
+    );
+    const vwError = Math.max(
+      ...shares.map((share) =>
+        Math.abs(
+          Math.round(share * Rational.toNumberUnsafe(Length.viewportWidthUnits) * fewer) / fewer -
+            share * Rational.toNumberUnsafe(Length.viewportWidthUnits),
+        ),
+      ),
+    );
+    const renderedError =
+      Rational.toNumberUnsafe(Viewport.highestMaximumPageZoomFactor) *
+      (remError *
+        Rational.toNumberUnsafe(Typography.defaultFontSize) *
+        Rational.toNumberUnsafe(Typography.highestMaximumFontSizeFactor) +
+        (vwError * Rational.toNumberUnsafe(Viewport.maximumViewportWidth)) /
+          Rational.toNumberUnsafe(Length.viewportWidthUnits));
+
+    expect(renderedError).toBeGreaterThanOrEqual(Rational.toNumberUnsafe(Length.finestLayoutUnit));
+  });
+
+  it('is 5', () => {
+    expect(Typography.decimalPlaces).toBe(5);
+  });
+});
+
 describe('minimumFontSize', () => {
   it('is the smallest size of the USWDS theme type scale in its default settings', () => {
     expect(Typography.minimumFontSize).toEqual(Rational.fromBigInt(13n));
@@ -425,7 +501,7 @@ describe('Step', () => {
       {
         path: ['minimumSize'],
         message:
-          'Expected a minimum size of at most 640/9 px, so that a full-width character fits the minimum viewport width of 320 px at a font size of 450 %, as WCAG 2.2 Reflow requires',
+          'Expected a minimum size of at most 71.11111 px, so that a full-width character fits the minimum viewport width of 320 px at a font size of 450 %, as WCAG 2.2 Reflow requires',
       },
     ]);
   });
@@ -446,6 +522,26 @@ describe('Step', () => {
         path: ['maximumSize'],
         message:
           'Expected a maximum size of 24 px to 38.4 px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+      },
+    ]);
+  });
+
+  it('gives sizes that are not whole rounded to the decimal places of a CSS length', () => {
+    const exit = Schema.decodeExit(Typography.Step)({
+      position: 0,
+      minimumSize: Rational.makeUnsafe(56n, 3n),
+      maximumSize: Rational.fromBigInt(16n),
+    });
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['maximumSize'],
+        message:
+          'Expected a maximum size of 18.66667 px to 29.86667 px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
       },
     ]);
   });
