@@ -2,128 +2,97 @@ import { describe, expect, expectTypeOf, it } from '@effect/vitest';
 import { Effect, Exit, Option, pipe, Rational, Schema, SchemaIssue } from 'effect';
 
 import * as Color from '#src/Color';
+import * as Colorimetry from '#src/Colorimetry';
 import * as Typography from '#src/Typography';
 
-/** The product of one of the matrices of Color and a vector, each row summed from left to right as CSS Color 4 sums it. */
-const transform = (
-  [first, second, third]: typeof Color.oklabToLms,
-  [x, y, z]: readonly [number, number, number],
-): readonly [number, number, number] => [
-  first[0] * x + first[1] * y + first[2] * z,
-  second[0] * x + second[1] * y + second[2] * z,
-  third[0] * x + third[1] * y + third[2] * z,
-];
-
-/** A rational number, a numerator over a positive denominator, both big integers, so that the conversion of CSS Color 4 is followed without rounding. */
-type Rational = readonly [bigint, bigint];
-
-/** The number JavaScript holds, exactly as the rational its bits encode. */
-const rational = (value: number): Rational => {
-  const view = new DataView(new ArrayBuffer(8));
-  view.setFloat64(0, value);
-  const bits = view.getBigUint64(0);
-  const sign = bits >> 63n === 0n ? 1n : -1n;
-  const exponent = Number((bits >> 52n) & 0x7ffn);
-  const fraction = bits & ((1n << 52n) - 1n);
-  // A subnormal number has no hidden bit and the exponent of the smallest normal one.
-  const significand = exponent === 0 ? fraction : fraction | (1n << 52n);
-  const power = (exponent === 0 ? 1 : exponent) - 1075;
-  return power >= 0
-    ? [sign * (significand << BigInt(power)), 1n]
-    : [sign * significand, 1n << BigInt(-power)];
-};
-
-/** The sum of two rationals. */
-const plus = ([a, b]: Rational, [c, d]: Rational): Rational => [a * d + c * b, b * d];
-
-/** The product of two rationals. */
-const times = ([a, b]: Rational, [c, d]: Rational): Rational => [a * c, b * d];
-
-/** Whether the first rational is smaller than the second. */
-const isBelow = ([a, b]: Rational, [c, d]: Rational): boolean => a * d < c * b;
-
-/** The product of one of the matrices of Color and a vector of rationals, without rounding. */
+/** The product of one of the matrices of Color and a vector of rationals, worked out exactly. */
 const exactTransform = (
-  [first, second, third]: typeof Color.oklabToLms,
-  [x, y, z]: readonly [Rational, Rational, Rational],
-): readonly [Rational, Rational, Rational] => [
-  plus(
-    plus(times(rational(first[0]), x), times(rational(first[1]), y)),
-    times(rational(first[2]), z),
+  matrix: Colorimetry.Matrix,
+  vector: readonly [Rational.Rational, Rational.Rational, Rational.Rational],
+): readonly [Rational.Rational, Rational.Rational, Rational.Rational] => [
+  Rational.sumAll(
+    matrix[0].map((entry, index) => Rational.multiply(entry, vector[index] ?? entry)),
   ),
-  plus(
-    plus(times(rational(second[0]), x), times(rational(second[1]), y)),
-    times(rational(second[2]), z),
+  Rational.sumAll(
+    matrix[1].map((entry, index) => Rational.multiply(entry, vector[index] ?? entry)),
   ),
-  plus(
-    plus(times(rational(third[0]), x), times(rational(third[1]), y)),
-    times(rational(third[2]), z),
+  Rational.sumAll(
+    matrix[2].map((entry, index) => Rational.multiply(entry, vector[index] ?? entry)),
   ),
 ];
 
-/** A rational held within the range of a channel, from 0 to 1. */
-const held = (value: Rational): Rational =>
-  isBelow(value, [0n, 1n]) ? [0n, 1n] : isBelow([1n, 1n], value) ? [1n, 1n] : value;
-
-/** The relative luminance of a color of the given lightness and chroma at a hue of 0, whose cosine and sine are 1 and 0 exactly, converted by the matrices of CSS Color 4 as JavaScript holds them, without rounding. */
-const exactLuminance = (lightness: number, chroma: number): Rational => {
-  const [long, medium, short] = exactTransform(Color.oklabToLms, [
-    rational(lightness),
-    rational(chroma),
-    [0n, 1n],
-  ]);
-  const [red, green, blue] = exactTransform(
-    Color.xyzToLinearSrgb,
+/** The relative luminance of a color of the given lightness and chroma at a hue of 0, whose cosine and sine are 1 and 0 exactly, converted by the matrices of CSS Color 4 exactly, apart from the code of Color. */
+const exactLuminance = (
+  lightness: Rational.Rational,
+  chroma: Rational.Rational,
+): Rational.Rational => {
+  const roots = exactTransform(Color.oklabToLms, [lightness, chroma, Rational.fromBigInt(0n)]);
+  const channels = exactTransform(
+    Colorimetry.srgb.xyzToLinear,
     exactTransform(Color.lmsToXyz, [
-      times(times(long, long), long),
-      times(times(medium, medium), medium),
-      times(times(short, short), short),
+      Rational.multiply(roots[0], Rational.multiply(roots[0], roots[0])),
+      Rational.multiply(roots[1], Rational.multiply(roots[1], roots[1])),
+      Rational.multiply(roots[2], Rational.multiply(roots[2], roots[2])),
     ]),
   );
-  return plus(
-    plus(
-      times(rational(Color.luminanceWeights[0]), held(red)),
-      times(rational(Color.luminanceWeights[1]), held(green)),
+  return Rational.sumAll(
+    channels.map((channel, index) =>
+      Rational.multiply(
+        Color.luminanceWeights[index] ?? channel,
+        Rational.min(Rational.max(channel, Rational.fromBigInt(0n)), Rational.fromBigInt(1n)),
+      ),
     ),
-    times(rational(Color.luminanceWeights[2]), held(blue)),
   );
 };
 
-/** The contrast ratio of two relative luminances as WCAG 2.2 defines it, without rounding. */
-const exactContrast = (first: Rational, second: Rational): Rational => {
-  const [lighter, darker] = isBelow(first, second) ? [second, first] : [first, second];
-  const [numerator, denominator] = plus(lighter, rational(Color.contrastFlare));
-  const [darkNumerator, darkDenominator] = plus(darker, rational(Color.contrastFlare));
-  return [numerator * darkDenominator, denominator * darkNumerator];
-};
+/** The contrast ratio of two relative luminances as WCAG 2.2 defines it, exactly. */
+const exactContrast = (first: Rational.Rational, second: Rational.Rational): Rational.Rational =>
+  Rational.divideUnsafe(
+    Rational.sum(Rational.max(first, second), Color.contrastFlare),
+    Rational.sum(Rational.min(first, second), Color.contrastFlare),
+  );
 
-/** The largest number JavaScript holds that is at most the given positive rational, so that a ratio taken from it is one the exact colors meet. */
-const numberBelow = (value: Rational): number => {
-  const view = new DataView(new ArrayBuffer(8));
-  view.setFloat64(0, Number((value[0] * 10n ** 30n) / value[1]) / 1e30);
-  // Stepping down by one unit in the last place until the number no longer lies above the rational.
-  while (isBelow(value, rational(view.getFloat64(0)))) {
-    view.setBigUint64(0, view.getBigUint64(0) - 1n);
-  }
-  return view.getFloat64(0);
-};
+/** A number of hundred-thousandths written with five decimal places, as a test writes it in oklch(). */
+const fifths = (hundredThousandths: number): string => (hundredThousandths / 100000).toFixed(5);
 
-/** The contrast ratio of two colors written in oklch() with a hue in degrees as a tool measures it from hex: each linear sRGB channel encoded, rounded to 8 bits, and read back as WCAG 2.2 reads it, apart from the code of Color. */
+/** A matrix of Color in the numbers JavaScript holds, for the checks that follow a tool computing in them. */
+const numbers = (exact: Colorimetry.Matrix): ReadonlyArray<ReadonlyArray<number>> =>
+  exact.map((row) => row.map((entry) => Rational.toNumberUnsafe(entry)));
+
+/** The matrices of Color in the numbers JavaScript holds. */
+const [oklabToLms, lmsToXyz, xyzToLinearSrgb] = [
+  numbers(Color.oklabToLms),
+  numbers(Color.lmsToXyz),
+  numbers(Colorimetry.srgb.xyzToLinear),
+];
+
+/** The product of a matrix and a vector in the numbers JavaScript holds. */
+const transform = (
+  rows: ReadonlyArray<ReadonlyArray<number>>,
+  vector: ReadonlyArray<number>,
+): ReadonlyArray<number> =>
+  rows.map((row) => row.reduce((sum, entry, index) => sum + entry * (vector[index] ?? 0), 0));
+
+/** The contrast ratio of two colors written in oklch() with a hue in degrees as a tool measures it from hex, in the numbers JavaScript holds: each linear sRGB channel encoded, rounded to 8 bits, and read back as WCAG 2.2 reads it, apart from the code of Color. */
 const hexContrast = (text: string, background: string): number => {
   const luminance = (written: string): number => {
-    const exit = Schema.decodeExit(Color.Color)(written);
-    const color = Exit.isSuccess(exit)
-      ? exit.value
-      : { lightness: 0, chroma: 0, hue: 0, hueUnit: 'deg', alpha: 1 };
-    const angle = (color.hue * Math.PI) / 180;
-    const [long, medium, short] = transform(Color.oklabToLms, [
-      color.lightness,
-      color.chroma * Math.cos(angle),
-      color.chroma * Math.sin(angle),
+    const [, lightness, chroma, hue] = /^oklch\((\S+) (\S+) (\S+)\)$/.exec(written) ?? [];
+    // A lightness written as a percentage, a share of 1.
+    const lightnessNumber = lightness?.endsWith('%')
+      ? Number(lightness.slice(0, -1)) / 100
+      : Number(lightness);
+    const angle = (Number(hue) * Math.PI) / 180;
+    const roots = transform(oklabToLms, [
+      lightnessNumber,
+      Number(chroma) * Math.cos(angle),
+      Number(chroma) * Math.sin(angle),
     ]);
-    const [red, green, blue] = transform(
-      Color.xyzToLinearSrgb,
-      transform(Color.lmsToXyz, [long ** 3, medium ** 3, short ** 3]),
+    const channels = transform(
+      xyzToLinearSrgb,
+      transform(
+        lmsToXyz,
+        roots.map((root) => root ** 3),
+      ),
     );
     // Encoded, rounded to 8 bits and read back, each channel held within its range first.
     const read = (channel: number): number => {
@@ -133,7 +102,11 @@ const hexContrast = (text: string, background: string): number => {
         255;
       return hex <= 0.04045 ? hex / 12.92 : ((hex + 0.055) / 1.055) ** 2.4;
     };
-    return 0.2126 * read(red) + 0.7152 * read(green) + 0.0722 * read(blue);
+    return (
+      0.2126 * read(channels[0] ?? 0) +
+      0.7152 * read(channels[1] ?? 0) +
+      0.0722 * read(channels[2] ?? 0)
+    );
   };
   return (
     (Math.max(luminance(text), luminance(background)) + 0.05) /
@@ -141,15 +114,18 @@ const hexContrast = (text: string, background: string): number => {
   );
 };
 
+/** A step of the type scale for body text, smaller than large-scale text. */
+const bodyStep = { minimumSize: Rational.fromBigInt(16n), maximumSize: Rational.fromBigInt(20n) };
+
 describe('enhancedContrastRatio', () => {
   it('is 7, the contrast WCAG 2.2 Contrast (Enhanced) requires for text', () => {
-    expect(Color.enhancedContrastRatio).toBe(7);
+    expect(Color.enhancedContrastRatio).toEqual(Rational.fromBigInt(7n));
   });
 });
 
 describe('largeTextEnhancedContrastRatio', () => {
   it('is 9/2, the contrast WCAG 2.2 Contrast (Enhanced) requires for large-scale text', () => {
-    expect(Color.largeTextEnhancedContrastRatio).toBe(9 / 2);
+    expect(Color.largeTextEnhancedContrastRatio).toEqual(Rational.makeUnsafe(9n, 2n));
   });
 });
 
@@ -166,20 +142,12 @@ describe('largeBoldTextPointSize', () => {
 });
 
 describe('largeTextSize', () => {
-  it('is positive', () => {
-    expect(Rational.isPositive(Color.largeTextSize)).toBe(true);
-  });
-
   it('is 24 CSS pixels', () => {
     expect(Color.largeTextSize).toEqual(Rational.fromBigInt(24n));
   });
 });
 
 describe('largeBoldTextSize', () => {
-  it('is positive', () => {
-    expect(Rational.isPositive(Color.largeBoldTextSize)).toBe(true);
-  });
-
   it('is 56/3 CSS pixels', () => {
     expect(Color.largeBoldTextSize).toEqual(Rational.makeUnsafe(56n, 3n));
   });
@@ -193,121 +161,115 @@ describe('channelSteps', () => {
 
 describe('gamutTolerance', () => {
   it('is half a step of an 8-bit sRGB channel', () => {
-    expect(Color.gamutTolerance * 2 * Color.channelSteps).toBe(1);
+    expect(
+      Rational.multiply(Color.gamutTolerance, Rational.fromBigInt(BigInt(2 * Color.channelSteps))),
+    ).toEqual(Rational.fromBigInt(1n));
   });
 });
 
 describe('fullChroma', () => {
   it('is 2/5, the chroma CSS Color 4 sets as 100 % in oklch()', () => {
-    expect(Color.fullChroma).toBe(2 / 5);
+    expect(Color.fullChroma).toEqual(Rational.makeUnsafe(2n, 5n));
   });
 });
 
 describe('halfTurns', () => {
   it('are the half turns of the units of angle CSS Values 4 defines but the radian', () => {
-    expect(Color.halfTurns).toEqual({ deg: 180, grad: 200, turn: 1 / 2 });
+    expect(Color.halfTurns).toEqual({
+      deg: Rational.fromBigInt(180n),
+      grad: Rational.fromBigInt(200n),
+      turn: Rational.makeUnsafe(1n, 2n),
+    });
   });
 });
 
 describe('luminanceWeights', () => {
   it('are the weights of the linear sRGB channels in WCAG 2.2 relative luminance', () => {
-    expect(Color.luminanceWeights).toEqual([0.2126, 0.7152, 0.0722]);
+    expect(Color.luminanceWeights).toEqual([
+      Rational.makeUnsafe(2126n, 10000n),
+      Rational.makeUnsafe(7152n, 10000n),
+      Rational.makeUnsafe(722n, 10000n),
+    ]);
   });
 
-  it('add up to 1, so that white has a relative luminance of 1', () => {
-    expect(Color.luminanceWeights.reduce((sum, weight) => sum + weight, 0)).toBeCloseTo(1, 12);
+  it('add up to 1, so that a white with every channel at 1 has a relative luminance of 1', () => {
+    expect(Rational.sumAll(Color.luminanceWeights)).toEqual(Rational.fromBigInt(1n));
   });
 });
 
 describe('contrastFlare', () => {
   it('is 1/20, the flare WCAG 2.2 adds to both relative luminances of a contrast ratio', () => {
-    expect(Color.contrastFlare).toBe(1 / 20);
+    expect(Color.contrastFlare).toEqual(Rational.makeUnsafe(1n, 20n));
   });
 });
 
 describe('maximumContrastRatio', () => {
   it('is 21, the contrast of black against white', () => {
-    expect(Color.maximumContrastRatio).toBe(21);
-  });
-});
-
-describe('transferThreshold', () => {
-  it('is 0.0031308, where the sRGB transfer function stops being linear', () => {
-    expect(Color.transferThreshold).toBe(0.0031308);
-  });
-});
-
-describe('transferSlope', () => {
-  it('is 12.92, the slope of the linear part of the sRGB transfer function', () => {
-    expect(Color.transferSlope).toBe(12.92);
-  });
-});
-
-describe('transferGamma', () => {
-  it('is 2.4, the exponent of the curved part of the sRGB transfer function', () => {
-    expect(Color.transferGamma).toBe(2.4);
-  });
-});
-
-describe('transferOffset', () => {
-  it('is 0.055, the offset of the curved part of the sRGB transfer function', () => {
-    expect(Color.transferOffset).toBe(0.055);
+    expect(Color.maximumContrastRatio).toEqual(Rational.fromBigInt(21n));
   });
 });
 
 describe('encodedTransferThreshold', () => {
   it('is 0.04045, the encoded value up to which CSS Color 4 reads an sRGB channel as linear', () => {
-    expect(Color.encodedTransferThreshold).toBe(0.04045);
+    expect(Color.encodedTransferThreshold).toEqual(Rational.makeUnsafe(4045n, 100000n));
   });
 });
 
-describe('oklabToLms, lmsToXyz and xyzToLinearSrgb', () => {
-  it('turn the white of Oklab into the white of sRGB', () => {
-    const [long, medium, short] = transform(Color.oklabToLms, [1, 0, 0]);
-    const srgb = transform(
-      Color.xyzToLinearSrgb,
-      transform(Color.lmsToXyz, [long ** 3, medium ** 3, short ** 3]),
+describe('oklabToLms and lmsToXyz', () => {
+  it('turn the white of Oklab into the white of sRGB, within the sixteen digits CSS Color 4 writes them to', () => {
+    const roots = exactTransform(Color.oklabToLms, [
+      Rational.fromBigInt(1n),
+      Rational.fromBigInt(0n),
+      Rational.fromBigInt(0n),
+    ]);
+    const channels = exactTransform(
+      Colorimetry.srgb.xyzToLinear,
+      exactTransform(Color.lmsToXyz, [
+        Rational.multiply(roots[0], Rational.multiply(roots[0], roots[0])),
+        Rational.multiply(roots[1], Rational.multiply(roots[1], roots[1])),
+        Rational.multiply(roots[2], Rational.multiply(roots[2], roots[2])),
+      ]),
     );
 
-    for (const channel of srgb) {
-      expect(channel).toBeCloseTo(1, 6);
+    for (const channel of channels) {
+      expect(
+        Rational.isLessThan(
+          Rational.abs(Rational.subtract(channel, Rational.fromBigInt(1n))),
+          Rational.makeUnsafe(1n, 10n ** 15n),
+        ),
+      ).toBe(true);
     }
-  });
-});
-
-describe('unitRoundoff', () => {
-  it('is 2 ** -53, half the machine epsilon', () => {
-    expect(Color.unitRoundoff).toBe(2 ** -53);
-  });
-
-  it('is the largest relative error of rounding to the nearest number', () => {
-    expect(1 + Color.unitRoundoff).toBe(1);
-    expect(1 + Color.unitRoundoff * (1 + Number.EPSILON)).toBeGreaterThan(1);
   });
 });
 
 describe('Color', () => {
   it('accepts an oklch() color within sRGB', () => {
-    const exit = Schema.decodeExit(Color.Color)('oklch(64% 0.17 147)');
-
-    expect(Exit.isSuccess(exit)).toBe(true);
+    expect(Exit.isSuccess(Schema.decodeExit(Color.Color)('oklch(64% 0.17 147)'))).toBe(true);
   });
 
   it('accepts lightness and chroma written as numbers and a hue written in degrees', () => {
-    const exit = Schema.decodeExit(Color.Color)('oklch(0.64 0.17 147deg)');
-
-    expect(Exit.isSuccess(exit)).toBe(true);
+    expect(Exit.isSuccess(Schema.decodeExit(Color.Color)('oklch(0.64 0.17 147deg)'))).toBe(true);
   });
 
   it('decodes a color into its components, its percentages read as CSS Color 4 reads them', () => {
     const exit = Schema.decodeExit(Color.Color)('oklch(64% 25% 147)');
 
     expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual({
-      lightness: 0.64,
-      chroma: 0.1,
-      hue: 147,
+      lightness: Rational.makeUnsafe(16n, 25n),
+      chroma: Rational.makeUnsafe(1n, 10n),
+      hue: Rational.fromBigInt(147n),
       hueUnit: 'deg',
-      alpha: 1,
+      alpha: Rational.fromBigInt(1n),
+    });
+  });
+
+  it('reads every number exactly as the decimal it is written as', () => {
+    const exit = Schema.decodeExit(Color.Color)('oklch(0.1 0.01 0.1)');
+
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).toMatchObject({
+      lightness: Rational.makeUnsafe(1n, 10n),
+      chroma: Rational.makeUnsafe(1n, 100n),
+      hue: Rational.makeUnsafe(1n, 10n),
     });
   });
 
@@ -315,15 +277,15 @@ describe('Color', () => {
     const exit = Schema.decodeExit(Color.Color)('oklch(150% 0 0 / 1.5)');
 
     expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual({
-      lightness: 1,
-      chroma: 0,
-      hue: 0,
+      lightness: Rational.fromBigInt(1n),
+      chroma: Rational.fromBigInt(0n),
+      hue: Rational.fromBigInt(0n),
       hueUnit: 'deg',
-      alpha: 1,
+      alpha: Rational.fromBigInt(1n),
     });
   });
 
-  it('encodes a color as JavaScript writes each number, which it decodes again into the same components', () => {
+  it('encodes a color with each number written exactly in decimal, which it decodes again into the same components', () => {
     const decoded = Schema.decodeExit(Color.Color)('oklch(50% 0.0000001 1.5rad)');
     const encoded = Exit.isSuccess(decoded)
       ? Schema.encodeExit(Color.Color)(decoded.value)
@@ -334,22 +296,43 @@ describe('Color', () => {
         : undefined;
 
     expect(encoded !== undefined && Exit.isSuccess(encoded) ? encoded.value : undefined).toBe(
-      'oklch(0.5 1e-7 1.5rad / 1)',
+      'oklch(0.5 0.0000001 1.5rad / 1)',
     );
     expect(
       redecoded !== undefined && Exit.isSuccess(redecoded) ? redecoded.value : undefined,
     ).toEqual(Exit.isSuccess(decoded) ? decoded.value : undefined);
   });
 
+  it('refuses to encode a component whose decimal expansion never ends, which CSS cannot write', () => {
+    const exit = Schema.encodeExit(Color.Color)({
+      lightness: Rational.makeUnsafe(1n, 3n),
+      chroma: Rational.fromBigInt(0n),
+      hue: Rational.fromBigInt(0n),
+      hueUnit: 'deg',
+      alpha: Rational.fromBigInt(1n),
+    });
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: ['lightness'],
+        message: 'Expected a number whose decimal expansion ends, as CSS writes numbers in decimal',
+      },
+    ]);
+  });
+
   it('reads the name of the function in any case, as CSS reads it', () => {
     const exit = Schema.decodeExit(Color.Color)('OKLCH(64% 0.17 147DEG)');
 
     expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual({
-      lightness: 0.64,
-      chroma: 0.17,
-      hue: 147,
+      lightness: Rational.makeUnsafe(16n, 25n),
+      chroma: Rational.makeUnsafe(17n, 100n),
+      hue: Rational.fromBigInt(147n),
       hueUnit: 'deg',
-      alpha: 1,
+      alpha: Rational.fromBigInt(1n),
     });
   });
 
@@ -357,23 +340,39 @@ describe('Color', () => {
     const exit = Schema.decodeExit(Color.Color)('oklch(+6.4e1% 1.7E-1 +147 / 1e0)');
 
     expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual({
-      lightness: 0.64,
-      chroma: 0.17,
-      hue: 147,
+      lightness: Rational.makeUnsafe(16n, 25n),
+      chroma: Rational.makeUnsafe(17n, 100n),
+      hue: Rational.fromBigInt(147n),
       hueUnit: 'deg',
-      alpha: 1,
+      alpha: Rational.fromBigInt(1n),
     });
+  });
+
+  it('rejects an exponent beyond the range BigDecimal reads exactly, with the reason', () => {
+    const exit = Schema.decodeExit(Color.Color)('oklch(50% 0 1e99999)');
+
+    expect(
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+      ).issues,
+    ).toEqual([
+      {
+        path: [],
+        message:
+          'Expected each number within the range BigDecimal reads exactly, an exponent of at most 10000 either way',
+      },
+    ]);
   });
 
   it('reads none as 0, as CSS Color 4 reads a missing component', () => {
     const exit = Schema.decodeExit(Color.Color)('oklch(none none none)');
 
     expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual({
-      lightness: 0,
-      chroma: 0,
-      hue: 0,
+      lightness: Rational.fromBigInt(0n),
+      chroma: Rational.fromBigInt(0n),
+      hue: Rational.fromBigInt(0n),
       hueUnit: 'deg',
-      alpha: 1,
+      alpha: Rational.fromBigInt(1n),
     });
   });
 
@@ -381,11 +380,11 @@ describe('Color', () => {
     const exit = Schema.decodeExit(Color.Color)('oklch(-10% -0.1 20)');
 
     expect(Exit.isSuccess(exit) ? exit.value : undefined).toEqual({
-      lightness: 0,
-      chroma: 0,
-      hue: 20,
+      lightness: Rational.fromBigInt(0n),
+      chroma: Rational.fromBigInt(0n),
+      hue: Rational.fromBigInt(20n),
       hueUnit: 'deg',
-      alpha: 1,
+      alpha: Rational.fromBigInt(1n),
     });
   });
 
@@ -410,15 +409,16 @@ describe('Color', () => {
   it('reads a hue in every unit of angle CSS Values 4 defines, each the same angle', () => {
     const reference = Color.contrast('oklch(70% 0.1 180)', 'oklch(100% 0 0)');
 
-    expect(Exit.isSuccess(reference)).toBe(true);
-    for (const hue of ['180deg', '200grad', '0.5turn', `${Math.PI}rad`]) {
-      const exit = Color.contrast(`oklch(70% 0.1 ${hue})`, 'oklch(100% 0 0)');
-
-      expect(Exit.isSuccess(exit) ? exit.value : undefined).toBeCloseTo(
-        Exit.isSuccess(reference) ? reference.value : 0,
-        12,
-      );
+    for (const hue of ['180deg', '200grad', '0.5turn']) {
+      expect(Color.contrast(`oklch(70% 0.1 ${hue})`, 'oklch(100% 0 0)')).toEqual(reference);
     }
+    // π written to the digits JavaScript prints it with lies a little off a half turn.
+    const radians = Color.contrast(`oklch(70% 0.1 ${Math.PI}rad)`, 'oklch(100% 0 0)');
+
+    expect(Exit.isSuccess(radians) ? radians.value : undefined).toBeCloseTo(
+      Exit.isSuccess(reference) ? reference.value : 0,
+      12,
+    );
   });
 
   it('rejects a color written otherwise', () => {
@@ -460,16 +460,12 @@ describe('Color', () => {
 
   it('accepts a color whose channels lie outside sRGB by less than half a step of an 8-bit channel, as hex writes them within it', () => {
     // Its channels lie at 255.06, -0.39 and -0.14 steps, which hex writes as 255, 0 and 0.
-    const exit = Schema.decodeExit(Color.Color)('oklch(62.8% 0.2578 29.23)');
-
-    expect(Exit.isSuccess(exit)).toBe(true);
+    expect(Exit.isSuccess(Schema.decodeExit(Color.Color)('oklch(62.8% 0.2578 29.23)'))).toBe(true);
   });
 
   it('rejects a color whose channel lies outside sRGB by more than half a step of an 8-bit channel', () => {
     // Its green channel lies at -1.14 steps, which hex cannot write.
-    const exit = Schema.decodeExit(Color.Color)('oklch(62.8% 0.258 29.23)');
-
-    expect(Exit.isFailure(exit)).toBe(true);
+    expect(Exit.isFailure(Schema.decodeExit(Color.Color)('oklch(62.8% 0.258 29.23)'))).toBe(true);
   });
 
   it('rejects a color outside sRGB', () => {
@@ -496,38 +492,66 @@ describe('contrast', () => {
     );
   });
 
-  it('reduces the hue to one turn, so that a large hue keeps its precision', () => {
+  it('reduces the hue to one turn exactly, so that a large hue is the same angle', () => {
     expect(Color.contrast('oklch(50% 0.1 360000000000030)', 'oklch(100% 0 0)')).toEqual(
       Color.contrast('oklch(50% 0.1 30)', 'oklch(100% 0 0)'),
     );
   });
 
-  it('is 21 for black on white', () => {
-    const exit = Color.contrast('oklch(0% 0 0)', 'oklch(100% 0 0)');
+  it('gives black on white the number nearest to its exact contrast, 20.999999999999993, as white falls a little short of a relative luminance of 1 by the matrices of CSS Color 4', () => {
+    const white = exactLuminance(Rational.fromBigInt(1n), Rational.fromBigInt(0n));
 
-    expect(Exit.isSuccess(exit) ? exit.value : 0).toBeCloseTo(21, 12);
+    expect(Rational.isLessThan(white, Rational.fromBigInt(1n))).toBe(true);
+    expect(Color.contrast('oklch(0% 0 0)', 'oklch(100% 0 0)')).toEqual(
+      Exit.succeed(
+        Rational.toNumberUnsafe(
+          exactContrast(exactLuminance(Rational.fromBigInt(0n), Rational.fromBigInt(0n)), white),
+        ),
+      ),
+    );
+    expect(Color.contrast('oklch(0% 0 0)', 'oklch(100% 0 0)')).toEqual(
+      Exit.succeed(20.999999999999993),
+    );
   });
 
   it('is 1 for a color on itself', () => {
-    const exit = Color.contrast('oklch(64% 0.17 147)', 'oklch(64% 0.17 147)');
-
-    expect(Exit.isSuccess(exit) ? exit.value : 0).toBe(1);
-  });
-
-  it('is 6 for the gray of half lightness on white, whose relative luminance is 1/8', () => {
-    const exit = Color.contrast('oklch(50% 0 0)', 'oklch(100% 0 0)');
-
-    expect(Exit.isSuccess(exit) ? exit.value : 0).toBeCloseTo(6, 12);
+    expect(Color.contrast('oklch(64% 0.17 147)', 'oklch(64% 0.17 147)')).toEqual(Exit.succeed(1));
   });
 
   it('is the same whichever color is the text', () => {
-    const forward = Color.contrast('oklch(64% 0.17 147)', 'oklch(100% 0 0)');
-    const backward = Color.contrast('oklch(100% 0 0)', 'oklch(64% 0.17 147)');
-
-    expect(Exit.isSuccess(forward) ? forward.value : 0).toBe(
-      Exit.isSuccess(backward) ? backward.value : 1,
+    expect(Color.contrast('oklch(64% 0.17 147)', 'oklch(100% 0 0)')).toEqual(
+      Color.contrast('oklch(100% 0 0)', 'oklch(64% 0.17 147)'),
     );
   });
+
+  it.prop(
+    'is the number nearest to the exact contrast of a color at a hue of 0 against white',
+    [
+      Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 100000 })),
+      Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 10000 })),
+    ],
+    ([lightness, chroma]) => {
+      const exit = Color.contrast(
+        `oklch(${fifths(lightness)} ${fifths(chroma)} 0)`,
+        'oklch(1 0 0)',
+      );
+
+      // A color outside sRGB is refused before any contrast.
+      expect(
+        Exit.isFailure(exit) ||
+          exit.value ===
+            Rational.toNumberUnsafe(
+              exactContrast(
+                exactLuminance(
+                  Rational.makeUnsafe(BigInt(lightness), 100000n),
+                  Rational.makeUnsafe(BigInt(chroma), 100000n),
+                ),
+                exactLuminance(Rational.fromBigInt(1n), Rational.fromBigInt(0n)),
+              ),
+            ),
+      ).toBe(true);
+    },
+  );
 
   it('reports every invalid color at once', () => {
     const exit = Color.contrast('#000000', 'oklch(70% 0.35 147)');
@@ -553,30 +577,38 @@ describe('contrast', () => {
 
 describe('reaches', () => {
   it('judges colors rounded to the bits per channel of a display or a tool apart from the exact colors', () => {
-    const colors = {
-      text: 'oklch(0.4503768287010991 0.1338540582986573 147)',
-      background: 'oklch(100% 0 0)',
-    };
-    const exact = Color.reaches(colors, 7);
-    const rounded = Color.reaches({ ...colors, channelBits: 8 }, 7);
+    const colors = { text: 'oklch(0.47317 0.07 0)', background: 'oklch(100% 0 0)' };
 
+    expect(
+      Rational.isGreaterThanOrEqualTo(
+        exactContrast(
+          exactLuminance(Rational.makeUnsafe(47317n, 100000n), Rational.makeUnsafe(7n, 100n)),
+          exactLuminance(Rational.fromBigInt(1n), Rational.fromBigInt(0n)),
+        ),
+        Rational.fromBigInt(7n),
+      ),
+    ).toBe(true);
     expect(hexContrast(colors.text, colors.background)).toBeLessThan(7);
-    expect(Exit.isSuccess(exact) ? exact.value : undefined).toBe(true);
-    expect(Exit.isSuccess(rounded) ? rounded.value : undefined).toBe(false);
+    expect(Color.reaches(colors, Rational.fromBigInt(7n))).toEqual(Exit.succeed(true));
+    expect(Color.reaches({ ...colors, channelBits: 8 }, Rational.fromBigInt(7n))).toEqual(
+      Exit.succeed(false),
+    );
   });
 
   it('rejects bits per channel no display or image format holds, with the reason', () => {
     for (const channelBits of [0, 17, 7.5]) {
-      const exit = Color.reaches(
-        { text: 'oklch(0% 0 0)', background: 'oklch(100% 0 0)', channelBits },
-        7,
-      );
-
-      expect(Exit.isFailure(exit)).toBe(true);
+      expect(
+        Exit.isFailure(
+          Color.reaches(
+            { text: 'oklch(0% 0 0)', background: 'oklch(100% 0 0)', channelBits },
+            Rational.fromBigInt(7n),
+          ),
+        ),
+      ).toBe(true);
     }
     const exit = Color.reaches(
       { text: 'oklch(0% 0 0)', background: 'oklch(100% 0 0)', channelBits: 17 },
-      7,
+      Rational.fromBigInt(7n),
     );
 
     expect(
@@ -591,109 +623,188 @@ describe('reaches', () => {
     ]);
   });
 
-  it('rests on the exact colors, by which white falls short of a relative luminance of 1', () => {
-    const white = exactLuminance(1, 0);
-
-    expect(isBelow(white, [1n, 1n])).toBe(true);
-    expect(numberBelow(exactContrast(white, exactLuminance(0, 0)))).toBe(20.99999999999999);
-  });
-
   it.prop(
-    'reaches the exact contrast of every two grays',
+    'reaches the exact contrast of every two grays and falls short of a ratio a millionth above it',
     [
-      Schema.Finite.check(Schema.isBetween({ minimum: 0, maximum: 1 })),
-      Schema.Finite.check(Schema.isBetween({ minimum: 0, maximum: 1 })),
+      Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 100000 })),
+      Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 100000 })),
     ],
     ([textLightness, backgroundLightness]) => {
-      const exit = Color.reaches(
-        { text: `oklch(${textLightness} 0 0)`, background: `oklch(${backgroundLightness} 0 0)` },
-        numberBelow(
-          exactContrast(exactLuminance(textLightness, 0), exactLuminance(backgroundLightness, 0)),
+      const colors = {
+        text: `oklch(${fifths(textLightness)} 0 0)`,
+        background: `oklch(${fifths(backgroundLightness)} 0 0)`,
+      };
+      const exact = exactContrast(
+        exactLuminance(
+          Rational.makeUnsafe(BigInt(textLightness), 100000n),
+          Rational.fromBigInt(0n),
+        ),
+        exactLuminance(
+          Rational.makeUnsafe(BigInt(backgroundLightness), 100000n),
+          Rational.fromBigInt(0n),
         ),
       );
+      const above = Rational.sum(exact, Rational.makeUnsafe(1n, 1000000n));
+      const aboveReached = Color.reaches(colors, above);
 
-      expect(Exit.isSuccess(exit) ? exit.value : undefined).toBe(true);
+      expect(Color.reaches(colors, exact)).toEqual(Exit.succeed(true));
+      // A ratio above the largest contrast is refused before any contrast.
+      expect(
+        Rational.isGreaterThan(above, Color.maximumContrastRatio) ||
+          (Exit.isSuccess(aboveReached) && !aboveReached.value),
+      ).toBe(true);
     },
   );
 
   it.prop(
-    'reaches the exact contrast of every two colors within sRGB at a hue of 0',
+    'reaches the exact contrast of every two colors within sRGB at a hue of 0 and falls short of a ratio a millionth above it',
     [
-      Schema.Finite.check(Schema.isBetween({ minimum: 0, maximum: 1 })),
-      Schema.Finite.check(Schema.isBetween({ minimum: 0, maximum: 1 / 10 })),
-      Schema.Finite.check(Schema.isBetween({ minimum: 0, maximum: 1 })),
-      Schema.Finite.check(Schema.isBetween({ minimum: 0, maximum: 1 / 10 })),
+      Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 100000 })),
+      Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 10000 })),
+      Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 100000 })),
+      Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 10000 })),
     ],
     ([textLightness, textChroma, backgroundLightness, backgroundChroma]) => {
-      const exit = Color.reaches(
-        {
-          text: `oklch(${textLightness} ${textChroma} 0)`,
-          background: `oklch(${backgroundLightness} ${backgroundChroma} 0)`,
-        },
-        numberBelow(
-          exactContrast(
-            exactLuminance(textLightness, textChroma),
-            exactLuminance(backgroundLightness, backgroundChroma),
-          ),
+      const colors = {
+        text: `oklch(${fifths(textLightness)} ${fifths(textChroma)} 0)`,
+        background: `oklch(${fifths(backgroundLightness)} ${fifths(backgroundChroma)} 0)`,
+      };
+      const exact = exactContrast(
+        exactLuminance(
+          Rational.makeUnsafe(BigInt(textLightness), 100000n),
+          Rational.makeUnsafe(BigInt(textChroma), 100000n),
+        ),
+        exactLuminance(
+          Rational.makeUnsafe(BigInt(backgroundLightness), 100000n),
+          Rational.makeUnsafe(BigInt(backgroundChroma), 100000n),
         ),
       );
+      const reached = Color.reaches(colors, exact);
+      const above = Rational.sum(exact, Rational.makeUnsafe(1n, 1000000n));
+      const aboveReached = Color.reaches(colors, above);
 
       // A color outside sRGB is refused before any contrast, so that only colors within it are held to it.
-      expect(Exit.isFailure(exit) || exit.value).toBe(true);
+      expect(Exit.isFailure(reached) || reached.value).toBe(true);
+      expect(
+        Exit.isFailure(reached) ||
+          Rational.isGreaterThan(above, Color.maximumContrastRatio) ||
+          (Exit.isSuccess(aboveReached) && !aboveReached.value),
+      ).toBe(true);
     },
   );
 
-  it('reaches a ratio the exact colors meet, though the ratio JavaScript computes lies below it', () => {
-    const colors = { text: `oklch(${Math.cbrt(1 / 10)} 0 0)`, background: 'oklch(100% 0 0)' };
-    const contrast = Color.contrast(colors.text, colors.background);
-    const exit = Color.reaches(colors, 7);
-
-    expect(Exit.isSuccess(contrast) ? contrast.value : undefined).toBeLessThan(7);
-    expect(Exit.isSuccess(exit) ? exit.value : undefined).toBe(true);
-  });
-
-  it('reaches the largest contrast with black against white', () => {
-    const exit = Color.reaches(
-      { text: 'oklch(0% 0 0)', background: 'oklch(100% 0 0)' },
-      Color.maximumContrastRatio,
+  it('counts a contrast within the smallest change a 16-bit channel shows of a ratio as meeting it, as no display can tell them apart', () => {
+    const colors = { text: 'oklch(0.4 0 0)', background: 'oklch(100% 0 0)' };
+    const exact = exactContrast(
+      exactLuminance(Rational.makeUnsafe(2n, 5n), Rational.fromBigInt(0n)),
+      exactLuminance(Rational.fromBigInt(1n), Rational.fromBigInt(0n)),
     );
 
-    expect(Exit.isSuccess(exit) ? exit.value : undefined).toBe(true);
+    expect(Color.reaches(colors, Rational.sum(exact, Rational.makeUnsafe(1n, 10n ** 9n)))).toEqual(
+      Exit.succeed(true),
+    );
+    expect(Color.reaches(colors, Rational.sum(exact, Rational.makeUnsafe(1n, 10n ** 6n)))).toEqual(
+      Exit.succeed(false),
+    );
   });
 
-  it('falls short of a ratio by more than rounding can account for', () => {
-    const exit = Color.reaches({ text: 'oklch(50% 0 0)', background: 'oklch(100% 0 0)' }, 7);
+  it('reaches the largest contrast with black against white, which their exact contrast falls short of by less than any display shows', () => {
+    expect(
+      Color.reaches(
+        { text: 'oklch(0% 0 0)', background: 'oklch(100% 0 0)' },
+        Color.maximumContrastRatio,
+      ),
+    ).toEqual(Exit.succeed(true));
+    expect(
+      Color.reaches(
+        { text: 'oklch(0% 0 0)', background: 'oklch(100% 0 0)', channelBits: 8 },
+        Color.maximumContrastRatio,
+      ),
+    ).toEqual(Exit.succeed(true));
+  });
 
-    expect(Exit.isSuccess(exit) ? exit.value : undefined).toBe(false);
+  it('decides the contrast of rounded colors exactly, however close the ratio', () => {
+    const colors = {
+      text: 'oklch(0.47317 0.07 0)',
+      background: 'oklch(98% 0.01 250)',
+      channelBits: 8,
+    };
+    const verified = Color.verify({
+      ...colors,
+      step: bodyStep,
+      fontWeight: 400,
+      minimumContrast: Rational.fromBigInt(7n),
+    });
+    const contrast = Exit.isSuccess(verified)
+      ? verified.value
+      : Option.getOrThrow(Exit.findErrorOption(verified)).pipe((error) =>
+          error._tag === 'ContrastShortfall' ? error.contrast : 0,
+        );
+
+    expect(
+      Color.reaches(
+        colors,
+        Rational.subtract(Rational.fromNumberUnsafe(contrast), Rational.makeUnsafe(1n, 10n ** 12n)),
+      ),
+    ).toEqual(Exit.succeed(true));
+    expect(
+      Color.reaches(
+        colors,
+        Rational.sum(Rational.fromNumberUnsafe(contrast), Rational.makeUnsafe(1n, 10n ** 12n)),
+      ),
+    ).toEqual(Exit.succeed(false));
+  });
+
+  it('falls short of a ratio the colors do not meet', () => {
+    expect(
+      Color.reaches(
+        { text: 'oklch(50% 0 0)', background: 'oklch(100% 0 0)' },
+        Rational.fromBigInt(7n),
+      ),
+    ).toEqual(Exit.succeed(false));
   });
 
   it('decides as verify decides', () => {
-    const step = {
-      minimumSize: Rational.fromBigInt(16n),
-      maximumSize: Rational.fromBigInt(20n),
-    };
-
     for (const text of [
       'oklch(0% 0 0)',
       'oklch(40% 0 0)',
       'oklch(50% 0 0)',
       'oklch(45% 0.1 250)',
+      'oklch(0.47317 0.07 0)',
     ]) {
-      const reached = Color.reaches({ text, background: 'oklch(100% 0 0)' }, 7);
-      const verified = Color.verify({ text, background: 'oklch(100% 0 0)', step, fontWeight: 400 });
+      for (const channelBits of [undefined, 8]) {
+        const bits = channelBits === undefined ? {} : { channelBits };
+        const reached = Color.reaches(
+          { text, background: 'oklch(100% 0 0)', ...bits },
+          Rational.fromBigInt(7n),
+        );
+        const verified = Color.verify({
+          text,
+          background: 'oklch(100% 0 0)',
+          step: bodyStep,
+          fontWeight: 400,
+          ...bits,
+        });
 
-      expect(Exit.isSuccess(reached) ? reached.value : undefined).toBe(Exit.isSuccess(verified));
+        expect(Exit.isSuccess(reached) ? reached.value : undefined).toBe(Exit.isSuccess(verified));
+      }
     }
   });
 
   it('takes the ratio alone too, as pipe calls it', () => {
-    const exit = pipe({ text: 'oklch(0% 0 0)', background: 'oklch(100% 0 0)' }, Color.reaches(7));
-
-    expect(Exit.isSuccess(exit) ? exit.value : undefined).toBe(true);
+    expect(
+      pipe(
+        { text: 'oklch(0% 0 0)', background: 'oklch(100% 0 0)' },
+        Color.reaches(Rational.fromBigInt(7n)),
+      ),
+    ).toEqual(Exit.succeed(true));
   });
 
   it('rejects a ratio outside the range of the contrast WCAG 2.2 defines, with the reason', () => {
-    const exit = Color.reaches({ text: 'oklch(0% 0 0)', background: 'oklch(100% 0 0)' }, 25);
+    const exit = Color.reaches(
+      { text: 'oklch(0% 0 0)', background: 'oklch(100% 0 0)' },
+      Rational.fromBigInt(25n),
+    );
 
     expect(
       SchemaIssue.makeFormatterStandardSchemaV1()(
@@ -718,12 +829,9 @@ describe('Pair', () => {
     const exit = Schema.decodeExit(Color.Pair)({
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
+      step: bodyStep,
       fontWeight: 400,
-      minimumContrast: 10,
+      minimumContrast: Rational.fromBigInt(10n),
     });
 
     expect(Exit.isSuccess(exit)).toBe(true);
@@ -733,12 +841,9 @@ describe('Pair', () => {
     const exit = Schema.decodeExit(Color.Pair)({
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
+      step: bodyStep,
       fontWeight: 400,
-      minimumContrast: 5,
+      minimumContrast: Rational.fromBigInt(5n),
     });
 
     expect(Exit.isFailure(exit)).toBe(true);
@@ -748,21 +853,17 @@ describe('Pair', () => {
 describe('verify', () => {
   it('reports the contrast of the rounded colors and refuses a pair that falls short of it in hex', () => {
     const pair = {
-      text: 'oklch(0.4503768287010991 0.1338540582986573 147)',
+      text: 'oklch(0.47317 0.07 0)',
       background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
+      step: bodyStep,
       fontWeight: 400,
     };
-    const exact = Color.verify(pair);
     const rounded = Color.verify({ ...pair, channelBits: 8 });
 
-    expect(Exit.isSuccess(exact)).toBe(true);
+    expect(Exit.isSuccess(Color.verify(pair))).toBe(true);
     expect(Option.getOrThrow(Exit.findErrorOption(rounded))).toMatchObject({
       _tag: 'ContrastShortfall',
-      requiredContrast: 7,
+      requiredContrast: Rational.fromBigInt(7n),
     });
     expect(
       Option.getOrThrow(Exit.findErrorOption(rounded)).pipe((error) =>
@@ -796,33 +897,29 @@ describe('verify', () => {
   });
 
   it('accepts a pair whose contrast meets what text of its size and weight needs', () => {
-    const exit = Color.verify({
-      text: 'oklch(0% 0 0)',
-      background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
-      fontWeight: 400,
-    });
-
-    expect(Exit.isSuccess(exit)).toBe(true);
+    expect(
+      Exit.isSuccess(
+        Color.verify({
+          text: 'oklch(0% 0 0)',
+          background: 'oklch(100% 0 0)',
+          step: bodyStep,
+          fontWeight: 400,
+        }),
+      ),
+    ).toBe(true);
   });
 
   it('rejects a pair below 7:1 for text smaller than large-scale text', () => {
     const exit = Color.verify({
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
+      step: bodyStep,
       fontWeight: 400,
     });
 
     expect(Option.getOrThrow(Exit.findErrorOption(exit))).toMatchObject({
       _tag: 'ContrastShortfall',
-      requiredContrast: 7,
+      requiredContrast: Rational.fromBigInt(7n),
       message:
         'Expected a contrast of at least 7:1 for text of 16 px at weight 400, as WCAG 2.2 Contrast (Enhanced) requires',
     });
@@ -832,10 +929,7 @@ describe('verify', () => {
     const exit = Color.verify({
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
+      step: bodyStep,
       fontWeight: 400,
     });
     const contrast = Color.contrast('oklch(50% 0 0)', 'oklch(100% 0 0)');
@@ -850,41 +944,34 @@ describe('verify', () => {
       const requiredContrast = yield* Color.verify({
         text: 'oklch(50% 0 0)',
         background: 'oklch(100% 0 0)',
-        step: {
-          minimumSize: Rational.fromBigInt(16n),
-          maximumSize: Rational.fromBigInt(20n),
-        },
+        step: bodyStep,
         fontWeight: 400,
       }).pipe(
         Effect.catchTag('ContrastShortfall', (error) => Effect.succeed(error.requiredContrast)),
       );
 
-      expect(requiredContrast).toBe(7);
+      expect(requiredContrast).toEqual(Rational.fromBigInt(7n));
     }),
   );
 
   it('accepts 9/2 for text that is large-scale at its smallest', () => {
-    const exit = Color.verify({
-      text: 'oklch(50% 0 0)',
-      background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(24n),
-        maximumSize: Rational.fromBigInt(30n),
-      },
-      fontWeight: 400,
-    });
-
-    expect(Exit.isSuccess(exit)).toBe(true);
+    expect(
+      Exit.isSuccess(
+        Color.verify({
+          text: 'oklch(50% 0 0)',
+          background: 'oklch(100% 0 0)',
+          step: { minimumSize: Rational.fromBigInt(24n), maximumSize: Rational.fromBigInt(30n) },
+          fontWeight: 400,
+        }),
+      ),
+    ).toBe(true);
   });
 
   it('rejects a step that shrinks, which would earn its text the ratio of large text', () => {
     const exit = Color.verify({
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(24n),
-        maximumSize: Rational.fromBigInt(12n),
-      },
+      step: { minimumSize: Rational.fromBigInt(24n), maximumSize: Rational.fromBigInt(12n) },
       fontWeight: 400,
     });
 
@@ -902,131 +989,113 @@ describe('verify', () => {
   });
 
   it('asks for 7:1 when text is large-scale only on wider screens', () => {
-    const exit = Color.verify({
-      text: 'oklch(50% 0 0)',
-      background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(22n),
-        maximumSize: Rational.fromBigInt(28n),
-      },
-      fontWeight: 400,
-    });
-
-    expect(Exit.isFailure(exit)).toBe(true);
+    expect(
+      Exit.isFailure(
+        Color.verify({
+          text: 'oklch(50% 0 0)',
+          background: 'oklch(100% 0 0)',
+          step: { minimumSize: Rational.fromBigInt(22n), maximumSize: Rational.fromBigInt(28n) },
+          fontWeight: 400,
+        }),
+      ),
+    ).toBe(true);
   });
 
   it('accepts 9/2 for bold text of the large bold text size', () => {
-    const exit = Color.verify({
-      text: 'oklch(50% 0 0)',
-      background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.makeUnsafe(56n, 3n),
-        maximumSize: Rational.fromBigInt(24n),
-      },
-      fontWeight: 700,
-    });
-
-    expect(Exit.isSuccess(exit)).toBe(true);
+    expect(
+      Exit.isSuccess(
+        Color.verify({
+          text: 'oklch(50% 0 0)',
+          background: 'oklch(100% 0 0)',
+          step: {
+            minimumSize: Rational.makeUnsafe(56n, 3n),
+            maximumSize: Rational.fromBigInt(24n),
+          },
+          fontWeight: 700,
+        }),
+      ),
+    ).toBe(true);
   });
 
   it('asks for 7:1 for text of the large bold text size below the bold font weight', () => {
     const exit = Color.verify({
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.makeUnsafe(56n, 3n),
-        maximumSize: Rational.fromBigInt(24n),
-      },
+      step: { minimumSize: Rational.makeUnsafe(56n, 3n), maximumSize: Rational.fromBigInt(24n) },
       fontWeight: 600,
     });
 
     expect(Option.getOrThrow(Exit.findErrorOption(exit))).toMatchObject({
       _tag: 'ContrastShortfall',
-      requiredContrast: 7,
+      requiredContrast: Rational.fromBigInt(7n),
       message:
         'Expected a contrast of at least 7:1 for text of 18.66667 px at weight 600, as WCAG 2.2 Contrast (Enhanced) requires',
     });
   });
 
-  it('accepts a pair whose contrast is exactly 7:1', () => {
-    const exit = Color.verify({
-      text: `oklch(${Math.cbrt(1 / 10)} 0 0)`,
-      background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
-      fontWeight: 400,
-    });
-
-    expect(Exit.isSuccess(exit)).toBe(true);
-  });
-
-  it('accepts a pair at the contrast its exact colors have, whatever rounding takes from it', () => {
-    // A pair whose contrast JavaScript computes below the contrast of its exact colors.
-    const exact = numberBelow(
-      exactContrast(exactLuminance(0.262902, 0.014207), exactLuminance(1, 0)),
+  it('accepts a pair at the exact contrast of its colors', () => {
+    const exact = exactContrast(
+      exactLuminance(Rational.makeUnsafe(262902n, 1000000n), Rational.makeUnsafe(14207n, 1000000n)),
+      exactLuminance(Rational.fromBigInt(1n), Rational.fromBigInt(0n)),
     );
-    const computed = Color.contrast('oklch(0.262902 0.014207 0)', 'oklch(100% 0 0)');
-    const exit = Color.verify({
-      text: 'oklch(0.262902 0.014207 0)',
-      background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
-      fontWeight: 400,
-      minimumContrast: exact,
-    });
 
-    expect(Exit.isSuccess(computed) ? computed.value : Infinity).toBeLessThan(exact);
-    expect(Exit.isSuccess(exit)).toBe(true);
+    expect(
+      Exit.isSuccess(
+        Color.verify({
+          text: 'oklch(0.262902 0.014207 0)',
+          background: 'oklch(100% 0 0)',
+          step: bodyStep,
+          fontWeight: 400,
+          minimumContrast: exact,
+        }),
+      ),
+    ).toBe(true);
   });
 
-  it('rejects a pair that falls short by more than rounding can account for', () => {
-    const exit = Color.verify({
-      text: 'oklch(0.262902 0.014207 0)',
-      background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
-      fontWeight: 400,
-      minimumContrast: 15.4873380065,
-    });
+  it('rejects a pair that falls short of a ratio by more than any display shows', () => {
+    const exact = exactContrast(
+      exactLuminance(Rational.makeUnsafe(262902n, 1000000n), Rational.makeUnsafe(14207n, 1000000n)),
+      exactLuminance(Rational.fromBigInt(1n), Rational.fromBigInt(0n)),
+    );
 
-    expect(Exit.isFailure(exit)).toBe(true);
+    expect(
+      Exit.isFailure(
+        Color.verify({
+          text: 'oklch(0.262902 0.014207 0)',
+          background: 'oklch(100% 0 0)',
+          step: bodyStep,
+          fontWeight: 400,
+          minimumContrast: Rational.sum(exact, Rational.makeUnsafe(1n, 1000000n)),
+        }),
+      ),
+    ).toBe(true);
   });
 
   it('rejects a pair just below 7:1', () => {
-    const exit = Color.verify({
-      text: 'oklch(0.4642 0 0)',
-      background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
-      fontWeight: 400,
-    });
-
-    expect(Exit.isFailure(exit)).toBe(true);
+    expect(
+      Exit.isFailure(
+        Color.verify({
+          text: 'oklch(0.4642 0 0)',
+          background: 'oklch(100% 0 0)',
+          step: bodyStep,
+          fontWeight: 400,
+        }),
+      ),
+    ).toBe(true);
   });
 
   it('holds a pair to a stricter contrast the project asks for', () => {
     const exit = Color.verify({
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(24n),
-        maximumSize: Rational.fromBigInt(30n),
-      },
+      step: { minimumSize: Rational.fromBigInt(24n), maximumSize: Rational.fromBigInt(30n) },
       fontWeight: 400,
-      minimumContrast: 13 / 2,
+      minimumContrast: Rational.makeUnsafe(13n, 2n),
     });
 
     expect(Option.getOrThrow(Exit.findErrorOption(exit))).toMatchObject({
       _tag: 'ContrastShortfall',
-      requiredContrast: 6.5,
+      requiredContrast: Rational.makeUnsafe(13n, 2n),
       message: 'Expected a contrast of at least 6.5:1, the ratio the project asks for',
     });
   });
@@ -1035,12 +1104,9 @@ describe('verify', () => {
     const exit = Color.verify({
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
+      step: bodyStep,
       fontWeight: 400,
-      minimumContrast: 5,
+      minimumContrast: Rational.fromBigInt(5n),
     });
 
     expect(
@@ -1060,12 +1126,9 @@ describe('verify', () => {
     const exit = Color.verify({
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
+      step: bodyStep,
       fontWeight: 400,
-      minimumContrast: 25,
+      minimumContrast: Rational.fromBigInt(25n),
     });
 
     expect(
@@ -1082,28 +1145,24 @@ describe('verify', () => {
   });
 
   it('accepts the largest contrast for black against white', () => {
-    const exit = Color.verify({
-      text: 'oklch(0% 0 0)',
-      background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
-      fontWeight: 400,
-      minimumContrast: Color.maximumContrastRatio,
-    });
-
-    expect(Exit.isSuccess(exit)).toBe(true);
+    expect(
+      Exit.isSuccess(
+        Color.verify({
+          text: 'oklch(0% 0 0)',
+          background: 'oklch(100% 0 0)',
+          step: bodyStep,
+          fontWeight: 400,
+          minimumContrast: Color.maximumContrastRatio,
+        }),
+      ),
+    ).toBe(true);
   });
 
   it('rejects a font weight CSS Fonts does not allow', () => {
     const exit = Color.verify({
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
+      step: bodyStep,
       fontWeight: 0,
     });
 
@@ -1126,27 +1185,21 @@ describe('Brand', () => {
   });
 
   it('rejects a font weight CSS Fonts does not allow', () => {
-    const exit = Schema.decodeExit(Color.Brand)({
-      color: 'oklch(64% 0.17 147)',
-      background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
-      fontWeight: 1200,
-    });
-
-    expect(Exit.isFailure(exit)).toBe(true);
+    expect(
+      Exit.isFailure(
+        Schema.decodeExit(Color.Brand)({
+          color: 'oklch(64% 0.17 147)',
+          background: 'oklch(100% 0 0)',
+          step: bodyStep,
+          fontWeight: 1200,
+        }),
+      ),
+    ).toBe(true);
   });
 });
 
 describe('shade', () => {
-  it('writes a shade that reaches the contrast in hex too, as tools measure it', () => {
-    const step = {
-      minimumSize: Rational.fromBigInt(16n),
-      maximumSize: Rational.fromBigInt(20n),
-    };
-
+  it('writes a shade that reaches the contrast exactly and in hex, as tools measure it', () => {
     for (const [color, background] of [
       ['oklch(64% 0.17 147)', 'oklch(100% 0 0)'],
       ['oklch(55% 0.18 300)', 'oklch(98% 0.01 90)'],
@@ -1155,35 +1208,42 @@ describe('shade', () => {
       ['oklch(70% 0.12 90)', 'oklch(100% 0 0)'],
       ['oklch(50% 0.08 200)', 'oklch(20% 0 0)'],
     ] as const) {
-      const exit = Color.shade({ color, background, step, fontWeight: 400 });
+      const exit = Color.shade({ color, background, step: bodyStep, fontWeight: 400 });
+      const shade = Exit.isSuccess(exit) ? exit.value : '';
 
-      expect(Exit.isSuccess(exit) ? hexContrast(exit.value, background) : 0).toBeGreaterThanOrEqual(
-        7,
-      );
+      expect(hexContrast(shade, background)).toBeGreaterThanOrEqual(7);
+      expect(
+        Exit.isSuccess(Color.verify({ text: shade, background, step: bodyStep, fontWeight: 400 })),
+      ).toBe(true);
+      expect(
+        Exit.isSuccess(
+          Color.verify({
+            text: shade,
+            background,
+            step: bodyStep,
+            fontWeight: 400,
+            channelBits: 8,
+          }),
+        ),
+      ).toBe(true);
     }
   });
 
-  it('writes the shade with the hue in the unit of angle of the brand color', () => {
+  it('writes the shade with the hue of the brand color exactly, in its unit of angle', () => {
     const inDegrees = Color.shade({
-      color: 'oklch(64% 0.17 147)',
+      color: 'oklch(64% 0.17 147.123456)',
       background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
+      step: bodyStep,
       fontWeight: 400,
     });
     const inTurns = Color.shade({
       color: 'oklch(64% 0.17 0.4turn)',
       background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
+      step: bodyStep,
       fontWeight: 400,
     });
 
-    expect(Exit.isSuccess(inDegrees) ? inDegrees.value : undefined).toMatch(/ 147\)$/);
+    expect(Exit.isSuccess(inDegrees) ? inDegrees.value : undefined).toMatch(/ 147\.123456\)$/);
     expect(Exit.isSuccess(inTurns) ? inTurns.value : undefined).toMatch(/ 0\.4turn\)$/);
   });
 
@@ -1191,10 +1251,7 @@ describe('shade', () => {
     const exit = Color.shade({
       color: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(12n),
-        maximumSize: Rational.fromBigInt(15n),
-      },
+      step: { minimumSize: Rational.fromBigInt(12n), maximumSize: Rational.fromBigInt(15n) },
       fontWeight: 400,
     });
 
@@ -1211,96 +1268,91 @@ describe('shade', () => {
     ]);
   });
 
-  it('keeps a brand color that already reaches the contrast', () => {
-    const exit = Color.shade({
-      color: 'oklch(0% 0 0)',
-      background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
-      fontWeight: 400,
-    });
-
-    expect(Exit.isSuccess(exit) ? exit.value : '').toBe('oklch(0 0 0)');
+  it('keeps a brand color that already reaches the contrast, written exactly', () => {
+    expect(
+      Color.shade({
+        color: 'oklch(0.1234567 0.01 30)',
+        background: 'oklch(100% 0 0)',
+        step: bodyStep,
+        fontWeight: 400,
+      }),
+    ).toEqual(Exit.succeed('oklch(0.1234567 0.01 30)'));
   });
 
-  it('darkens a brand color against a light background to the contrast its text needs', () => {
-    const step = {
-      minimumSize: Rational.fromBigInt(16n),
-      maximumSize: Rational.fromBigInt(20n),
+  it('darkens a brand color against a light background to the contrast its text needs, its chroma reduced where sRGB cannot hold it', () => {
+    expect(
+      Color.shade({
+        color: 'oklch(64% 0.17 147)',
+        background: 'oklch(100% 0 0)',
+        step: bodyStep,
+        fontWeight: 400,
+      }),
+    ).toEqual(Exit.succeed('oklch(0.4491 0.13347 147)'));
+  });
+
+  it('lightens a brand color against a dark background and keeps its chroma where sRGB holds it', () => {
+    expect(
+      Color.shade({
+        color: 'oklch(64% 0.17 147)',
+        background: 'oklch(0% 0 0)',
+        step: bodyStep,
+        fontWeight: 400,
+      }),
+    ).toEqual(Exit.succeed('oklch(0.65288 0.17 147)'));
+  });
+
+  it('passes over a lightness with a channel on the edge between two 8-bit steps, which a tool computing in rounded numbers may round either way', () => {
+    const brand = {
+      color: 'oklch(40% 0.1 250)',
+      background: 'oklch(15% 0.02 250)',
+      step: bodyStep,
+      fontWeight: 400,
     };
-    const exit = Color.shade({
-      color: 'oklch(64% 0.17 147)',
-      background: 'oklch(100% 0 0)',
-      step,
-      fontWeight: 400,
-    });
-    const shade = Exit.isSuccess(exit) ? exit.value : '';
-    const verified = Color.verify({
-      text: shade,
-      background: 'oklch(100% 0 0)',
-      step,
-      fontWeight: 400,
-    });
-    const rounded = Color.verify({
-      text: shade,
-      background: 'oklch(100% 0 0)',
-      step,
-      fontWeight: 400,
-      channelBits: 8,
-    });
+    const exit = Color.shade(brand);
 
-    expect(shade).toMatch(/^oklch\(0\.4\d* 0\.1\d* 147\)$/);
-    expect(Exit.isSuccess(verified) ? verified.value : 0).toBeGreaterThanOrEqual(7);
-    expect(Exit.isSuccess(rounded) ? rounded.value : 0).toBeGreaterThanOrEqual(7);
-  });
-
-  it('reduces the chroma where sRGB cannot hold it at the lightness the contrast needs', () => {
-    const exit = Color.shade({
-      color: 'oklch(64% 0.17 147)',
-      background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
-      fontWeight: 400,
-    });
-    const chroma = Number(
-      /^oklch\(\S+ (\S+) \S+\)$/.exec(Exit.isSuccess(exit) ? exit.value : '')?.[1],
-    );
-
-    expect(chroma).toBeLessThan(0.17);
+    // Its green channel lies a few ten-thousandths of a step below the edge, and reaches the contrast in hex only rounded up.
+    expect(
+      Exit.isSuccess(
+        Color.verify({
+          text: 'oklch(0.6856 0.1 250)',
+          background: brand.background,
+          step: bodyStep,
+          fontWeight: 400,
+          channelBits: 8,
+        }),
+      ),
+    ).toBe(true);
+    expect(hexContrast('oklch(0.6856 0.1 250)', brand.background)).toBeLessThan(7);
+    expect(Exit.isSuccess(exit) ? exit.value : undefined).not.toBe('oklch(0.6856 0.1 250)');
+    expect(
+      hexContrast(Exit.isSuccess(exit) ? exit.value : '', brand.background),
+    ).toBeGreaterThanOrEqual(7);
   });
 
   it('picks the shade closest by deltaEOK over one nearer in lightness that loses more chroma', () => {
-    const exit = Color.shade({
-      color: 'oklch(54% 0.16 0)',
-      background: 'oklch(56.2% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(24n),
-        maximumSize: Rational.fromBigInt(30n),
-      },
-      fontWeight: 400,
-    });
-
-    expect(Exit.isSuccess(exit) ? exit.value : '').toBe(
-      'oklch(0.086910239524331 0.03523265361195476 0)',
-    );
+    expect(
+      Color.shade({
+        color: 'oklch(54% 0.16 0)',
+        background: 'oklch(56.2% 0 0)',
+        step: { minimumSize: Rational.fromBigInt(24n), maximumSize: Rational.fromBigInt(30n) },
+        fontWeight: 400,
+      }),
+    ).toEqual(Exit.succeed('oklch(0.0869 0.03524 0)'));
   });
 
   it('rests on a largest chroma within sRGB that rises with lightness to one peak and falls after it', () => {
-    const isInSrgb = (lightness: number, chroma: number, hue: number): boolean => {
-      const [long, medium, short] = transform(Color.oklabToLms, [
-        lightness,
-        chroma * Math.cos((hue * Math.PI) / 180),
-        chroma * Math.sin((hue * Math.PI) / 180),
-      ]);
-      return transform(
-        Color.xyzToLinearSrgb,
-        transform(Color.lmsToXyz, [long ** 3, medium ** 3, short ** 3]),
+    const isInSrgb = (lightness: number, chroma: number, hue: number): boolean =>
+      transform(
+        xyzToLinearSrgb,
+        transform(
+          lmsToXyz,
+          transform(oklabToLms, [
+            lightness,
+            chroma * Math.cos((hue * Math.PI) / 180),
+            chroma * Math.sin((hue * Math.PI) / 180),
+          ]).map((root) => root ** 3),
+        ),
       ).every((channel) => channel >= 0 && channel <= 1);
-    };
     const largestChromas = Array.from({ length: 360 }, (_, hue) =>
       Array.from(
         { length: 199 },
@@ -1310,7 +1362,7 @@ describe('shade', () => {
               isInSrgb((lightnessIndex + 1) / 200, (inside + outside) / 2, hue)
                 ? [(inside + outside) / 2, outside]
                 : [inside, (inside + outside) / 2],
-            [0, Color.fullChroma],
+            [0, Rational.toNumberUnsafe(Color.fullChroma)],
           )[0],
       ),
     );
@@ -1323,80 +1375,33 @@ describe('shade', () => {
     }
   });
 
-  it('lightens a brand color against a dark background and keeps its chroma where sRGB holds it', () => {
-    const step = {
-      minimumSize: Rational.fromBigInt(16n),
-      maximumSize: Rational.fromBigInt(20n),
-    };
-    const exit = Color.shade({
-      color: 'oklch(64% 0.17 147)',
-      background: 'oklch(0% 0 0)',
-      step,
-      fontWeight: 400,
-    });
-    const shade = Exit.isSuccess(exit) ? exit.value : '';
-    const verified = Color.verify({
-      text: shade,
-      background: 'oklch(0% 0 0)',
-      step,
-      fontWeight: 400,
-    });
-    const rounded = Color.verify({
-      text: shade,
-      background: 'oklch(0% 0 0)',
-      step,
-      fontWeight: 400,
-      channelBits: 8,
-    });
-
-    expect(shade).toMatch(/^oklch\(0\.6\d* 0\.17 147\)$/);
-    expect(Exit.isSuccess(verified) ? verified.value : 0).toBeGreaterThanOrEqual(7);
-    expect(Exit.isSuccess(rounded) ? rounded.value : 0).toBeGreaterThanOrEqual(7);
-  });
-
   it('reaches a stricter contrast the project asks for', () => {
-    const step = {
-      minimumSize: Rational.fromBigInt(16n),
-      maximumSize: Rational.fromBigInt(20n),
-    };
     const exit = Color.shade({
       color: 'oklch(64% 0.17 147)',
       background: 'oklch(100% 0 0)',
-      step,
+      step: bodyStep,
       fontWeight: 400,
-      minimumContrast: 10,
+      minimumContrast: Rational.fromBigInt(10n),
     });
-    const rounded = Color.reaches(
-      {
-        text: Exit.isSuccess(exit) ? exit.value : '',
-        background: 'oklch(100% 0 0)',
-        channelBits: 8,
-      },
-      10,
-    );
-    const exact = Color.reaches(
-      { text: Exit.isSuccess(exit) ? exit.value : '', background: 'oklch(100% 0 0)' },
-      10,
-    );
+    const colors = { text: Exit.isSuccess(exit) ? exit.value : '', background: 'oklch(100% 0 0)' };
 
-    expect(Exit.isSuccess(exact) ? exact.value : undefined).toBe(true);
-    expect(Exit.isSuccess(rounded) ? rounded.value : undefined).toBe(true);
+    expect(Color.reaches(colors, Rational.fromBigInt(10n))).toEqual(Exit.succeed(true));
+    expect(Color.reaches({ ...colors, channelBits: 8 }, Rational.fromBigInt(10n))).toEqual(
+      Exit.succeed(true),
+    );
   });
 
   it('rejects a background against which no shade within sRGB reaches the contrast', () => {
     const exit = Color.shade({
       color: 'oklch(64% 0.17 147)',
       background: 'oklch(60% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
+      step: bodyStep,
       fontWeight: 400,
     });
 
     expect(Option.getOrThrow(Exit.findErrorOption(exit))).toMatchObject({
       _tag: 'NoLegibleShade',
-      requiredContrast: 7,
+      requiredContrast: Rational.fromBigInt(7n),
       message:
         'Expected a background against which a shade of the color within sRGB reaches 7:1, the contrast WCAG 2.2 Contrast (Enhanced) requires for text of 16 px at weight 400',
     });
@@ -1407,14 +1412,11 @@ describe('shade', () => {
       const requiredContrast = yield* Color.shade({
         color: 'oklch(64% 0.17 147)',
         background: 'oklch(60% 0 0)',
-        step: {
-          minimumSize: Rational.fromBigInt(16n),
-          maximumSize: Rational.fromBigInt(20n),
-        },
+        step: bodyStep,
         fontWeight: 400,
       }).pipe(Effect.catchTag('NoLegibleShade', (error) => Effect.succeed(error.requiredContrast)));
 
-      expect(requiredContrast).toBe(7);
+      expect(requiredContrast).toEqual(Rational.fromBigInt(7n));
     }),
   );
 
@@ -1422,12 +1424,9 @@ describe('shade', () => {
     const exit = Color.shade({
       color: 'oklch(64% 0.17 147)',
       background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
+      step: bodyStep,
       fontWeight: 400,
-      minimumContrast: 5,
+      minimumContrast: Rational.fromBigInt(5n),
     });
 
     expect(
@@ -1447,12 +1446,9 @@ describe('shade', () => {
     const exit = Color.shade({
       color: 'oklch(64% 0.17 147)',
       background: 'oklch(100% 0 0)',
-      step: {
-        minimumSize: Rational.fromBigInt(16n),
-        maximumSize: Rational.fromBigInt(20n),
-      },
+      step: bodyStep,
       fontWeight: 400,
-      minimumContrast: 25,
+      minimumContrast: Rational.fromBigInt(25n),
     });
 
     expect(
@@ -1466,5 +1462,30 @@ describe('shade', () => {
           'Expected a minimum contrast of at most 21:1, the largest contrast WCAG 2.2 defines, of black against white',
       },
     ]);
+  });
+});
+
+describe('build time', () => {
+  it('verifies a pair and finds a shade within a second each, the budget of a build that works every value out once', () => {
+    for (const [color, background] of [
+      ['oklch(64% 0.17 147)', 'oklch(100% 0 0)'],
+      ['oklch(64% 0.17 147)', 'oklch(0% 0 0)'],
+      ['oklch(55% 0.18 300)', 'oklch(98% 0.01 90)'],
+      ['oklch(54% 0.16 0)', 'oklch(56.2% 0 0)'],
+    ] as const) {
+      const start = performance.now();
+      Color.verify({
+        text: color,
+        background,
+        step: bodyStep,
+        fontWeight: 400,
+        channelBits: 8,
+      });
+      const verifying = performance.now() - start;
+      Color.shade({ color, background, step: bodyStep, fontWeight: 400 });
+
+      expect(verifying, color).toBeLessThan(1000);
+      expect(performance.now() - start - verifying, color).toBeLessThan(1000);
+    }
   });
 });

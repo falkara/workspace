@@ -8,26 +8,33 @@ import * as Viewport from '#src/Viewport';
 
 describe('rem', () => {
   it('writes a size in rem of the default font size', () => {
-    expect(Fluid.rem(16)).toBe('1rem');
-    expect(Fluid.rem(20)).toBe('1.25rem');
+    expect(Fluid.rem(Rational.fromBigInt(16n))).toBe('1rem');
+    expect(Fluid.rem(Rational.fromBigInt(20n))).toBe('1.25rem');
   });
 
   it('rounds to the decimal places', () => {
-    expect(Fluid.rem(40 / 3)).toBe('0.83333rem');
+    expect(Fluid.rem(Rational.makeUnsafe(40n, 3n))).toBe('0.83333rem');
+  });
+
+  it('rounds a size exactly halfway between two decimal places toward +∞, as CSS rounds', () => {
+    expect(Fluid.rem(Rational.makeUnsafe(8n, 100000n))).toBe('0.00001rem');
+    expect(Fluid.rem(Rational.makeUnsafe(-8n, 100000n))).toBe('0rem');
   });
 
   it('writes a negative size with its sign', () => {
-    expect(Fluid.rem(-8)).toBe('-0.5rem');
+    expect(Fluid.rem(Rational.fromBigInt(-8n))).toBe('-0.5rem');
   });
 });
 
 describe('vw', () => {
   it('writes a share of the viewport width in vw', () => {
-    expect(Fluid.vw(1 / Rational.toNumberUnsafe(Length.viewportWidthUnits))).toBe('1vw');
+    expect(
+      Fluid.vw(Rational.divideUnsafe(Rational.fromBigInt(1n), Length.viewportWidthUnits)),
+    ).toBe('1vw');
   });
 
   it('rounds to the decimal places', () => {
-    expect(Fluid.vw(1 / 240)).toBe('0.41667vw');
+    expect(Fluid.vw(Rational.makeUnsafe(1n, 240n))).toBe('0.41667vw');
   });
 });
 

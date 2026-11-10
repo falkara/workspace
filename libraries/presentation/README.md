@@ -74,7 +74,9 @@ Every schema the modules export, such as `Typography.ScaleOptions`, works with v
 - **Color** measures each pair against the size of the text it carries and finds the closest legible shade of a brand color.
 - **Layout** holds lines to lengths that follow the font.
 
-Viewport, Length and Colorimetry hold the facts the rest stands on, worked out exactly in the `Rational` numbers of Effect, and Fluid writes the values as CSS lengths that grow with the viewport.
+Viewport, Length and Colorimetry hold the facts the rest stands on, and Fluid writes the values as CSS lengths that grow with the viewport.
+
+Every module works exactly, with no floating point: in the `Rational` numbers of Effect, and for an irrational number such as a root, a logarithm or a cosine, in bounds that narrow until each decision is certain. Exactness costs time, milliseconds where floating point takes microseconds, so the library is meant for build time, working each value out once and writing it as CSS, not for the browser.
 
 ## Groundwork
 

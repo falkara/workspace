@@ -1,6 +1,7 @@
 import { Array, Exit, Option, Rational, Schema } from 'effect';
 
 import * as Length from '#src/Length';
+import * as Real from '#src/Real';
 import * as Viewport from '#src/Viewport';
 
 /** The default font size that the Baseline core browsers implement for the root element until a reader sets their own. Measured in CSS pixels. */
@@ -20,24 +21,27 @@ export const highestMaximumFontSizeFactor = Rational.divideUnsafe(
 export const lowestMaximumFontSizeFactor = Rational.fromBigInt(1n);
 
 /** The fewest decimal places that keep the rounding of a CSS length below the finest layout unit, for a reader who both zooms the page as far as any Baseline core browser allows and sets the largest default font size any of them allows, as the finest layout unit counts zoomed pixels. Every length a message gives is rounded to them too, so that it reads as CSS writes it. */
-export const decimalPlaces =
-  Math.floor(
-    Math.log10(
-      Rational.toNumberUnsafe(
-        // The finest layout unit and the vw units are positive constants, so neither division divides by zero.
-        Rational.divideUnsafe(
-          Rational.multiply(
-            Viewport.highestMaximumPageZoomFactor,
-            Rational.sum(
-              Rational.multiply(defaultFontSize, highestMaximumFontSizeFactor),
-              Rational.divideUnsafe(Viewport.maximumViewportWidth, Length.viewportWidthUnits),
-            ),
-          ),
-          Rational.multiply(Rational.fromBigInt(2n), Length.finestLayoutUnit),
-        ),
+export const decimalPlaces = ((): number => {
+  // The finest layout unit and the vw units are positive constants, so neither division divides by zero.
+  const halfLayoutUnits = Rational.divideUnsafe(
+    Rational.multiply(
+      Viewport.highestMaximumPageZoomFactor,
+      Rational.sum(
+        Rational.multiply(defaultFontSize, highestMaximumFontSizeFactor),
+        Rational.divideUnsafe(Viewport.maximumViewportWidth, Length.viewportWidthUnits),
       ),
     ),
-  ) + 1;
+    Rational.multiply(Rational.fromBigInt(2n), Length.finestLayoutUnit),
+  );
+  let places = 0;
+  // The fewest decimal places d with 10^d above the number of half finest layout units a length reaches.
+  while (
+    Rational.isLessThanOrEqualTo(Rational.fromBigInt(10n ** BigInt(places)), halfLayoutUnits)
+  ) {
+    places++;
+  }
+  return places;
+})();
 
 /**
  * The smallest size of the USWDS 3 theme type scale in its default settings, taken as a CSS font size. USWDS 3 sets it as a target for a typeface whose capitals are 0.362 em high and writes the font size of each typeface scaled to that cap height: 13 px for its system typefaces and Public Sans, about 13.84 px for Source Sans Pro, its default for body text, and about 12.68 px for Merriweather, its default for headings. Measured in CSS pixels.
@@ -198,13 +202,13 @@ export const ScaleOptions = Schema.Struct({
       Schema.makeIsGreaterThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
         defaultFontSize,
         {
-          message: `Expected a body font size of at least ${Math.round(Rational.toNumberUnsafe(defaultFontSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that body text never shrinks below the default font size of browsers`,
+          message: `Expected a body font size of at least ${Real.writeDecimals(defaultFontSize, decimalPlaces)} px, so that body text never shrinks below the default font size of browsers`,
         },
       ),
       Schema.makeIsLessThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
         Rational.multiply(defaultFontSize, maximumTextGrowthFactor),
         {
-          message: `Expected a body font size of at most ${Math.round(Rational.toNumberUnsafe(Rational.multiply(defaultFontSize, maximumTextGrowthFactor)) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that text can be enlarged to ${Rational.toNumberUnsafe(Rational.multiply(textScaleFactor, Rational.fromBigInt(100n)))} %, as WCAG 2.2 Resize Text requires, within the ${Rational.toNumberUnsafe(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)))} % page zoom of Safari, the lowest maximum among the Baseline core browsers`,
+          message: `Expected a body font size of at most ${Real.writeDecimals(Rational.multiply(defaultFontSize, maximumTextGrowthFactor), decimalPlaces)} px, so that text can be enlarged to ${Real.writeDecimals(Rational.multiply(textScaleFactor, Rational.fromBigInt(100n)), decimalPlaces)} %, as WCAG 2.2 Resize Text requires, within the ${Real.writeDecimals(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)), decimalPlaces)} % page zoom of Safari, the lowest maximum among the Baseline core browsers`,
         },
       ),
     ),
@@ -224,13 +228,13 @@ export const Step = Schema.Struct({
       Schema.makeIsGreaterThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
         minimumFontSize,
         {
-          message: `Expected a minimum size of at least ${Math.round(Rational.toNumberUnsafe(minimumFontSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, the smallest size of the USWDS 3 theme type scale`,
+          message: `Expected a minimum size of at least ${Real.writeDecimals(minimumFontSize, decimalPlaces)} px, the smallest size of the USWDS 3 theme type scale`,
         },
       ),
       Schema.makeIsLessThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
         maximumFontSize,
         {
-          message: `Expected a minimum size of at most ${Math.round(Rational.toNumberUnsafe(maximumFontSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that a full-width character fits the minimum viewport width of ${Math.round(Rational.toNumberUnsafe(Viewport.minimumViewportWidth) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px at a font size of ${Rational.toNumberUnsafe(Rational.multiply(highestMaximumFontSizeFactor, Rational.fromBigInt(100n)))} %, as WCAG 2.2 Reflow requires`,
+          message: `Expected a minimum size of at most ${Real.writeDecimals(maximumFontSize, decimalPlaces)} px, so that a full-width character fits the minimum viewport width of ${Real.writeDecimals(Viewport.minimumViewportWidth, decimalPlaces)} px at a font size of ${Real.writeDecimals(Rational.multiply(highestMaximumFontSizeFactor, Rational.fromBigInt(100n)), decimalPlaces)} %, as WCAG 2.2 Reflow requires`,
         },
       ),
     ),
@@ -248,7 +252,7 @@ export const Step = Schema.Struct({
             Rational.multiply(step.minimumSize, maximumTextGrowthFactor),
           )) || {
           path: ['maximumSize'],
-          issue: `Expected a maximum size of ${Math.round(Rational.toNumberUnsafe(step.minimumSize) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px to ${Math.round(Rational.toNumberUnsafe(Rational.multiply(step.minimumSize, maximumTextGrowthFactor)) * 10 ** decimalPlaces) / 10 ** decimalPlaces} px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to ${Rational.toNumberUnsafe(Rational.multiply(textScaleFactor, Rational.fromBigInt(100n)))} %, as WCAG 2.2 Resize Text requires, within the ${Rational.toNumberUnsafe(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)))} % page zoom of Safari, the lowest maximum among the Baseline core browsers`,
+          issue: `Expected a maximum size of ${Real.writeDecimals(step.minimumSize, decimalPlaces)} px to ${Real.writeDecimals(Rational.multiply(step.minimumSize, maximumTextGrowthFactor), decimalPlaces)} px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to ${Real.writeDecimals(Rational.multiply(textScaleFactor, Rational.fromBigInt(100n)), decimalPlaces)} %, as WCAG 2.2 Resize Text requires, within the ${Real.writeDecimals(Rational.multiply(Viewport.lowestMaximumPageZoomFactor, Rational.fromBigInt(100n)), decimalPlaces)} % page zoom of Safari, the lowest maximum among the Baseline core browsers`,
         },
     ),
   ),

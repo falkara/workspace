@@ -1,5 +1,7 @@
 import { Array, Exit, Predicate, Rational, Schema } from 'effect';
 
+import * as Real from '#src/Real';
+
 /** The tristimulus values of a color, relative to the white, whose Y is 1. */
 export interface Tristimulus {
   readonly X: Rational.Rational;
@@ -638,48 +640,125 @@ export const isInGamut = (medium: Medium, color: Tristimulus): boolean =>
       Rational.isLessThanOrEqualTo(channel, medium.peak),
   );
 
-/** A color written in the CSS syntax of a medium, such as `color(srgb 1 0.5 0)`. Its linear channels are exact; each is rounded once to the nearest number and encoded in floating point by the medium's transfer function, as CSS Color 4 and CSS Color HDR encode it, including how they extend it to negative channels. The powers, logarithms and exponentials of the transfer functions are assumed accurate to one unit in the last place, since ECMAScript leaves their accuracy to the engines. For sRGB and Display P3, each encoded channel then lies within 32 units in the last place of the exact encoding, as subtracting the offset amplifies the error of the power at most 2.4-fold; the other transfer functions amplify the errors of their powers by their exponents, that of PQ by its m2 of 78.84375. Each channel is written as the shortest number that reads back as the same value. */
+/**
+ * The deepest channel the library judges colors in: 16 bits, the most an image format such as PNG holds, so that its steps are whole numbers.
+ *
+ * @see https://www.w3.org/TR/png-3/#11IHDR
+ */
+export const deepestChannelBits = 16;
+
+/** The decimal places every number of a color is written with: the fewest that tell apart every step of the deepest channel, 1 / (2^16 − 1), and read back as the same step, as two steps a decimal place apart can round alike only when the decimal place is at least the step, and rounding moves a number by at most half of it. */
+export const decimalPlaces = ((): number => {
+  let places = 0;
+  // 10^−d below a step of the deepest channel: 10^d above its number of steps.
+  while (10n ** BigInt(places) <= (1n << BigInt(deepestChannelBits)) - 1n) {
+    places++;
+  }
+  return places;
+})();
+
+/**
+ * A color written in the CSS syntax of a medium, such as `color(srgb 1 0.5 0)`: its linear channels exactly, encoded exactly by the medium's transfer function, as CSS Color 4 and CSS Color HDR define it, including how they extend it to negative channels, and each rounded to `decimalPlaces` decimal places, to the nearest, a number exactly halfway toward +∞, as CSS Color 4 rounds the values it serializes.
+ *
+ * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#serializing-color-function-values
+ */
 export const write = (medium: Medium, color: Tristimulus): string => {
   const encoded = transform(medium.xyzToLinear, [color.X, color.Y, color.Z]).map((channel) => {
-    // A linear channel of a color lies far within the range of a number, so the conversion is finite.
-    const linear = Rational.toNumberUnsafe(channel);
-    return medium.colorSpace === 'srgb' || medium.colorSpace === 'display-p3'
-      ? Math.abs(linear) <= Rational.toNumberUnsafe(srgbTransfer.linearThreshold)
-        ? Rational.toNumberUnsafe(srgbTransfer.slope) * linear
-        : Math.sign(linear) *
-          ((1 + Rational.toNumberUnsafe(srgbTransfer.offset)) *
-            Math.abs(linear) ** (1 / Rational.toNumberUnsafe(srgbTransfer.exponent)) -
-            Rational.toNumberUnsafe(srgbTransfer.offset))
-      : medium.colorSpace === 'rec2020'
-        ? Math.sign(linear) *
-          Math.abs(linear) ** (1 / Rational.toNumberUnsafe(rec2020TransferExponent))
-        : medium.colorSpace === 'rec2100-pq'
-          ? ((Rational.toNumberUnsafe(pqTransfer.c1) +
-              Rational.toNumberUnsafe(pqTransfer.c2) *
-                Math.max(
-                  (linear * Rational.toNumberUnsafe(referenceWhiteLuminance)) /
-                    Rational.toNumberUnsafe(pqPeakLuminance),
-                  0,
-                ) **
-                  Rational.toNumberUnsafe(pqTransfer.m1)) /
-              (1 +
-                Rational.toNumberUnsafe(pqTransfer.c3) *
-                  Math.max(
-                    (linear * Rational.toNumberUnsafe(referenceWhiteLuminance)) /
-                      Rational.toNumberUnsafe(pqPeakLuminance),
-                    0,
-                  ) **
-                    Rational.toNumberUnsafe(pqTransfer.m1))) **
-            Rational.toNumberUnsafe(pqTransfer.m2)
-          : linear / Rational.toNumberUnsafe(hlgScale) <= 1 / 12
-            ? Math.sign(linear) *
-              Math.sqrt((3 * Math.abs(linear)) / Rational.toNumberUnsafe(hlgScale))
-            : Rational.toNumberUnsafe(hlgTransfer.a) *
-                Math.log(
-                  (12 * linear) / Rational.toNumberUnsafe(hlgScale) -
-                    Rational.toNumberUnsafe(hlgTransfer.b),
-                ) +
-              Rational.toNumberUnsafe(hlgTransfer.c);
+    const magnitude = Real.fromRational(Rational.abs(channel));
+    const sign = Real.fromRational(Rational.fromBigInt(Rational.isNegative(channel) ? -1n : 1n));
+    const value =
+      medium.colorSpace === 'srgb' || medium.colorSpace === 'display-p3'
+        ? Rational.isLessThanOrEqualTo(Rational.abs(channel), srgbTransfer.linearThreshold)
+          ? Real.fromRational(Rational.multiply(srgbTransfer.slope, channel))
+          : Real.multiply(
+              sign,
+              Real.subtract(
+                Real.multiply(
+                  Real.fromRational(Rational.sum(Rational.fromBigInt(1n), srgbTransfer.offset)),
+                  Real.power(
+                    magnitude,
+                    // The exponent is positive, so its reciprocal is defined.
+                    Rational.divideUnsafe(Rational.fromBigInt(1n), srgbTransfer.exponent),
+                  ),
+                ),
+                Real.fromRational(srgbTransfer.offset),
+              ),
+            )
+        : medium.colorSpace === 'rec2020'
+          ? Real.multiply(
+              sign,
+              Real.power(
+                magnitude,
+                // The exponent is positive, so its reciprocal is defined.
+                Rational.divideUnsafe(Rational.fromBigInt(1n), rec2020TransferExponent),
+              ),
+            )
+          : medium.colorSpace === 'rec2100-pq'
+            ? ((): Real.Real => {
+                // The luminance relative to the peak, held at 0 below, as CSS Color HDR holds it; the peak luminance is positive, so the division cannot fail.
+                const relative = Rational.max(
+                  Rational.divideUnsafe(
+                    Rational.multiply(channel, referenceWhiteLuminance),
+                    pqPeakLuminance,
+                  ),
+                  Rational.fromBigInt(0n),
+                );
+                const raised = Real.power(Real.fromRational(relative), pqTransfer.m1);
+                const value = Real.power(
+                  Real.divide(
+                    Real.add(
+                      Real.fromRational(pqTransfer.c1),
+                      Real.multiply(Real.fromRational(pqTransfer.c2), raised),
+                    ),
+                    Real.add(
+                      Real.fromRational(Rational.fromBigInt(1n)),
+                      Real.multiply(Real.fromRational(pqTransfer.c3), raised),
+                    ),
+                  ),
+                  pqTransfer.m2,
+                );
+                // Irrational whenever u = y^m1 is: the base g = (c1 + c2 u) / (1 + c3 u) and u determine each other by a fractional linear map with rational coefficients, so they generate the same field; the degree of u divides 8192, a power of 2, and if g^m2 were rational, the degree of g would divide the odd 2523, so both degrees would be 1 and u rational.
+                return { ...value, irrational: value.irrational || raised.irrational };
+              })()
+            : // HLG: the channel over its scale, a square root up to 1/12, below 0 included, and a logarithm above, whose argument is then above 1 − b, which is positive; the scale is positive, so the division cannot fail.
+              Rational.isLessThanOrEqualTo(
+                  Rational.divideUnsafe(channel, hlgScale),
+                  Rational.makeUnsafe(1n, 12n),
+                )
+              ? Real.multiply(
+                  sign,
+                  Real.root(
+                    Real.fromRational(
+                      Rational.divideUnsafe(
+                        Rational.multiply(Rational.fromBigInt(3n), Rational.abs(channel)),
+                        hlgScale,
+                      ),
+                    ),
+                    2,
+                  ),
+                )
+              : Real.add(
+                  Real.multiply(
+                    Real.fromRational(hlgTransfer.a),
+                    Real.ln(
+                      Real.fromRational(
+                        Rational.subtract(
+                          Rational.divideUnsafe(
+                            Rational.multiply(Rational.fromBigInt(12n), channel),
+                            hlgScale,
+                          ),
+                          hlgTransfer.b,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Real.fromRational(hlgTransfer.c),
+                );
+    // Every encoded channel is known to be rational or irrational, as each step above states, so no bounds are ever taken as a halfway point and the width given is never used.
+    return Real.writeDecimals(
+      Real.roundToDecimals(value, decimalPlaces, Rational.fromBigInt(0n)),
+      decimalPlaces,
+    );
   });
   return `color(${medium.colorSpace} ${encoded[0]} ${encoded[1]} ${encoded[2]})`;
 };

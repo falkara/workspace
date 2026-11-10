@@ -589,19 +589,17 @@ describe('media', () => {
         '0',
         '0',
       ]);
-      for (const channel of channelsOf(medium, Rational.fromBigInt(1n))?.slice(1) ?? []) {
-        expect(
-          Math.abs(Number(channel) - 1),
-          `${medium.colorSpace} full channel`,
-        ).toBeLessThanOrEqual(Number.EPSILON);
-      }
+      expect(channelsOf(medium, Rational.fromBigInt(1n)), `${medium.colorSpace} full`).toEqual([
+        medium.colorSpace,
+        '1',
+        '1',
+        '1',
+      ]);
     }
-    for (const channel of channelsOf(Colorimetry.rec2100Pq, Colorimetry.rec2100Pq.peak)?.slice(1) ??
-      []) {
-      expect(Math.abs(Number(channel) - 1), 'PQ at 10 000 cd/m²').toBeLessThanOrEqual(
-        Number.EPSILON,
-      );
-    }
+    expect(
+      channelsOf(Colorimetry.rec2100Pq, Colorimetry.rec2100Pq.peak),
+      'PQ at 10 000 cd/m²',
+    ).toEqual(['rec2100-pq', '1', '1', '1']);
   });
 
   it('write the white of BT.2100 where CSS Color HDR and ITU-R BT.2408-9 place it: PQ at 0.58 and HLG at 0.75', () => {
@@ -761,7 +759,7 @@ describe('purestColor', () => {
     }
   });
 
-  it('gives 518 nm in sRGB a red of 1, a green of 0 and a blue between them, written within the bound write states', () => {
+  it('gives 518 nm in sRGB a red of 1, a green of 0 and a blue between them, written correctly rounded', () => {
     const hue = Colorimetry.complementaryWavelength({
       wavelength: 518,
       xBar: Rational.makeUnsafe(4798504n, 100000000n),
@@ -781,16 +779,25 @@ describe('purestColor', () => {
           ])
         : Rational.fromBigInt(-1n),
     );
-    const written = Number(
-      color
-        ? /^color\(srgb \S+ \S+ (\S+)\)$/.exec(Colorimetry.write(Colorimetry.srgb, color))?.[1]
-        : NaN,
-    );
-    // The linear channels the written blue and the numbers 32 units in the last place to either side of it read back as, by the sRGB transfer function.
-    const readBack = [
-      written - 32 * written * Number.EPSILON,
-      written + 32 * written * Number.EPSILON,
-    ].map((encoded) => ((encoded + 0.055) / 1.055) ** 2.4);
+    const written = color
+      ? /^color\(srgb \S+ \S+ (\S+)\)$/.exec(Colorimetry.write(Colorimetry.srgb, color))?.[1]
+      : undefined;
+    const digits = written === undefined ? undefined : /^0\.(\d{1,5})$/.exec(written)?.[1];
+    // The written blue w as an exact fraction, read digit by digit.
+    const w =
+      digits === undefined
+        ? undefined
+        : Rational.makeUnsafe(BigInt(digits), 10n ** BigInt(digits.length));
+    // Half of the fifth decimal place: rounding to the nearest moves a number by at most it.
+    const half = Rational.makeUnsafe(1n, 200000n);
+    // The linear channel B a written number e reads back as is ((e + 0.055) / 1.055)^(12/5), so w − h ≤ 1.055 B^(5/12) − 0.055 < w + h, ties rounding up, holds exactly when ((w − h + 0.055) / 1.055)^12 ≤ B^5 < ((w + h + 0.055) / 1.055)^12.
+    const readBack = (encoded: Rational.Rational) => {
+      const base = Rational.divideUnsafe(
+        Rational.sum(encoded, Rational.makeUnsafe(55n, 1000n)),
+        Rational.makeUnsafe(1055n, 1000n),
+      );
+      return Rational.makeUnsafe(base.numerator ** 12n, base.denominator ** 12n);
+    };
 
     expect(red).toEqual(Rational.fromBigInt(1n));
     expect(green).toEqual(Rational.fromBigInt(0n));
@@ -798,11 +805,17 @@ describe('purestColor', () => {
       blue && Rational.isPositive(blue) && Rational.isLessThan(blue, Rational.fromBigInt(1n)),
     ).toBe(true);
     expect(
-      blue &&
-        // The numbers read back are finite, so they convert to rationals.
-        Rational.isGreaterThan(blue, Rational.fromNumberUnsafe(readBack[0] ?? 1)) &&
-        Rational.isLessThan(blue, Rational.fromNumberUnsafe(readBack[1] ?? 0)),
-      'the exact blue lies within 32 units in the last place of the written one',
+      w !== undefined &&
+        blue !== undefined &&
+        Rational.isLessThanOrEqualTo(
+          readBack(Rational.subtract(w, half)),
+          Rational.makeUnsafe(blue.numerator ** 5n, blue.denominator ** 5n),
+        ) &&
+        Rational.isLessThan(
+          Rational.makeUnsafe(blue.numerator ** 5n, blue.denominator ** 5n),
+          readBack(Rational.sum(w, half)),
+        ),
+      'the written blue is the exact blue rounded to the nearest fifth decimal place',
     ).toBe(true);
   });
 
@@ -883,5 +896,35 @@ describe('purestColor', () => {
           'Expected a positive headroom, so that the color gives off light, as the purest color of a hue is not black',
       },
     ]);
+  });
+});
+
+describe('build time', () => {
+  it('finds the purest color of a hue and writes it in every medium within a second each, the budget of a build that works every value out once', () => {
+    const hue = Colorimetry.complementaryWavelength({
+      wavelength: 518,
+      xBar: Rational.makeUnsafe(4798504n, 100000000n),
+      yBar: Rational.makeUnsafe(6708752n, 10000000n),
+      zBar: Rational.makeUnsafe(8998272n, 100000000n),
+    });
+
+    for (const medium of [
+      Colorimetry.srgb,
+      Colorimetry.displayP3,
+      Colorimetry.rec2020,
+      Colorimetry.rec2100Pq,
+      Colorimetry.rec2100Hlg,
+    ]) {
+      for (const headroom of [Rational.fromBigInt(1n), medium.peak]) {
+        const start = performance.now();
+        const exit = Exit.isSuccess(hue)
+          ? Colorimetry.purestColor({ hue: hue.value, medium, headroom })
+          : undefined;
+        const written = exit && Exit.isSuccess(exit) ? Colorimetry.write(medium, exit.value) : '';
+
+        expect(written, medium.colorSpace).toMatch(/^color\(/);
+        expect(performance.now() - start, medium.colorSpace).toBeLessThan(1000);
+      }
+    }
   });
 });
