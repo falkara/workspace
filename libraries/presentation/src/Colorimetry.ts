@@ -1,4 +1,4 @@
-import { Array, Exit, Predicate, Rational, Schema } from 'effect';
+import { Array, Exit, Option, Predicate, Rational, Schema } from 'effect';
 
 import * as Real from '#src/Real';
 
@@ -24,31 +24,43 @@ export const whiteTristimulus: Tristimulus = {
   Z: Rational.makeUnsafe(10272984088266781770n, 9434894345525109127n),
 };
 
-/** The chromaticity coordinates of a color: its position in the chromaticity plane. */
+/** The chromaticity coordinates of a color: its position in the chromaticity plane, a view of its tristimulus values for people and diagrams. Dividing by X + Y + Z drops the intensity and mixes lights non-linearly, so nothing is computed in it. */
 export interface Chromaticity {
   readonly x: Rational.Rational;
   readonly y: Rational.Rational;
 }
 
+/** The chromaticity coordinates of a color, X and Y over X + Y + Z; none for a color whose X + Y + Z is 0, such as black, which has no chromaticity. */
+export const chromaticityOf = (color: Tristimulus): Option.Option<Chromaticity> =>
+  Option.zipWith(
+    Rational.divide(color.X, Rational.sumAll([color.X, color.Y, color.Z])),
+    Rational.divide(color.Y, Rational.sumAll([color.X, color.Y, color.Z])),
+    (x, y) => ({ x, y }),
+  );
+
 /** The chromaticity coordinates of the library's white. */
 export const whiteChromaticity: Chromaticity = {
   x: Rational.divideUnsafe(
     whiteTristimulus.X,
+    // The tristimulus values of the white are positive, so their sum is and the division cannot fail.
     Rational.sumAll([whiteTristimulus.X, whiteTristimulus.Y, whiteTristimulus.Z]),
   ),
   y: Rational.divideUnsafe(
     whiteTristimulus.Y,
+    // The tristimulus values of the white are positive, so their sum is and the division cannot fail.
     Rational.sumAll([whiteTristimulus.X, whiteTristimulus.Y, whiteTristimulus.Z]),
   ),
 };
 
-/** A hue given by a wavelength: a direction in the chromaticity plane, starting at the library's white, along which every color of the hue lies. The direction is not scaled to unit length, which would take a square root; this keeps it exact, so the ray can be intersected exactly. */
+/**
+ * A hue given by a wavelength, as a mixture of two lights, which add as vectors in XYZ: the library's white, W, `whiteTristimulus`, and a direction, D, the spectral light S = (x̄, ȳ, z̄) of the wavelength for a dominant wavelength and its opposite, −S, for a complementary one. Its colors are α·W + β·D with α > 0 and β ≥ 0. The colors of a dominant wavelength mix the white with its spectral light, and a color of a complementary wavelength, mixed with its spectral light, gives white, as CIE S 017 defines the two. Every operation of colorimetry is linear in XYZ, so the hue is held there; the chromaticity of its spectral light, `chromaticityOf(direction)`, is only a view.
+ *
+ * @see https://cie.co.at/eilvterm/17-23-062
+ * @see https://cie.co.at/eilvterm/17-23-063
+ */
 export interface Hue {
-  readonly spectralChromaticity: Chromaticity;
-  readonly direction: {
-    readonly x: Rational.Rational;
-    readonly y: Rational.Rational;
-  };
+  /** The light mixed with the white: S for a dominant wavelength and −S for a complementary one, a vector in XYZ rather than a color, so that its values may be negative. */
+  readonly direction: Tristimulus;
 }
 
 /**
@@ -108,20 +120,32 @@ export const DominantWavelengthOptions = Schema.Struct({
     Schema.makeFilter(
       (row) =>
         !Rational.isZero(Rational.sumAll([row.xBar, row.yBar, row.zBar])) ||
-        'Expected x̄, ȳ and z̄ not to be all 0, so that the spectral light has a chromaticity, as its chromaticity divides each of them by their sum',
+        'Expected x̄, ȳ and z̄ not to be all 0, so that there is a spectral light to mix with the white',
     ),
     Schema.makeFilter(
       (row) =>
+        // A row of 0 is refused by the check above, with its own reason.
         Rational.isZero(Rational.sumAll([row.xBar, row.yBar, row.zBar])) ||
-        !Rational.equals(
-          row.xBar,
-          Rational.multiply(whiteChromaticity.x, Rational.sumAll([row.xBar, row.yBar, row.zBar])),
+        // Parallel exactly when every component of the cross product of the spectral light and the white is 0.
+        !Rational.isZero(
+          Rational.subtract(
+            Rational.multiply(row.yBar, whiteTristimulus.Z),
+            Rational.multiply(row.zBar, whiteTristimulus.Y),
+          ),
         ) ||
-        !Rational.equals(
-          row.yBar,
-          Rational.multiply(whiteChromaticity.y, Rational.sumAll([row.xBar, row.yBar, row.zBar])),
+        !Rational.isZero(
+          Rational.subtract(
+            Rational.multiply(row.zBar, whiteTristimulus.X),
+            Rational.multiply(row.xBar, whiteTristimulus.Z),
+          ),
         ) ||
-        'Expected spectral light whose chromaticity differs from that of the white, so that the hue has a direction, as no spectral light of the observer has the chromaticity of the white',
+        !Rational.isZero(
+          Rational.subtract(
+            Rational.multiply(row.xBar, whiteTristimulus.Y),
+            Rational.multiply(row.yBar, whiteTristimulus.X),
+          ),
+        ) ||
+        'Expected a spectral light not parallel to the white, so that mixing it with the white changes the hue, as no spectral light of the observer has the chromaticity of the white',
     ),
   ),
 );
@@ -130,7 +154,7 @@ export const DominantWavelengthOptions = Schema.Struct({
 export type DominantWavelengthOptions = typeof DominantWavelengthOptions.Encoded;
 
 /**
- * The hue of a dominant wavelength, as CIE S 017 defines it: the colors of the hue lie on the line from the white toward the spectral light of that wavelength. Worked out exactly; or a failure with the reason when the wavelength is out of range or the values cannot be a row of the observer.
+ * The hue of a dominant wavelength, as CIE S 017 defines it: the mixtures of the white with the spectral light of that wavelength, its values of the observer taken as they are published. Worked out exactly; or a failure with the reason when the wavelength is out of range or the values cannot be a row of the observer.
  *
  * @see https://cie.co.at/eilvterm/17-23-062
  */
@@ -138,36 +162,7 @@ export const dominantWavelength = (
   options: DominantWavelengthOptions,
 ): Exit.Exit<Hue, Schema.SchemaError> =>
   Exit.map(Schema.decodeExit(DominantWavelengthOptions)(options, { errors: 'all' }), (row) => ({
-    spectralChromaticity: {
-      x: Rational.divideUnsafe(
-        row.xBar,
-        // The schema checks that x̄, ȳ and z̄ are not negative and not all 0, so their sum is positive and the division cannot fail.
-        Rational.sumAll([row.xBar, row.yBar, row.zBar]),
-      ),
-      y: Rational.divideUnsafe(
-        row.yBar,
-        // The schema checks that x̄, ȳ and z̄ are not negative and not all 0, so their sum is positive and the division cannot fail.
-        Rational.sumAll([row.xBar, row.yBar, row.zBar]),
-      ),
-    },
-    direction: {
-      x: Rational.subtract(
-        Rational.divideUnsafe(
-          row.xBar,
-          // The schema checks that x̄, ȳ and z̄ are not negative and not all 0, so their sum is positive and the division cannot fail.
-          Rational.sumAll([row.xBar, row.yBar, row.zBar]),
-        ),
-        whiteChromaticity.x,
-      ),
-      y: Rational.subtract(
-        Rational.divideUnsafe(
-          row.yBar,
-          // The schema checks that x̄, ȳ and z̄ are not negative and not all 0, so their sum is positive and the division cannot fail.
-          Rational.sumAll([row.xBar, row.yBar, row.zBar]),
-        ),
-        whiteChromaticity.y,
-      ),
-    },
+    direction: { X: row.xBar, Y: row.yBar, Z: row.zBar },
   }));
 
 /**
@@ -227,20 +222,32 @@ export const ComplementaryWavelengthOptions = Schema.Struct({
     Schema.makeFilter(
       (row) =>
         !Rational.isZero(Rational.sumAll([row.xBar, row.yBar, row.zBar])) ||
-        'Expected x̄, ȳ and z̄ not to be all 0, so that the spectral light has a chromaticity, as its chromaticity divides each of them by their sum',
+        'Expected x̄, ȳ and z̄ not to be all 0, so that there is a spectral light to mix with the white',
     ),
     Schema.makeFilter(
       (row) =>
+        // A row of 0 is refused by the check above, with its own reason.
         Rational.isZero(Rational.sumAll([row.xBar, row.yBar, row.zBar])) ||
-        !Rational.equals(
-          row.xBar,
-          Rational.multiply(whiteChromaticity.x, Rational.sumAll([row.xBar, row.yBar, row.zBar])),
+        // Parallel exactly when every component of the cross product of the spectral light and the white is 0.
+        !Rational.isZero(
+          Rational.subtract(
+            Rational.multiply(row.yBar, whiteTristimulus.Z),
+            Rational.multiply(row.zBar, whiteTristimulus.Y),
+          ),
         ) ||
-        !Rational.equals(
-          row.yBar,
-          Rational.multiply(whiteChromaticity.y, Rational.sumAll([row.xBar, row.yBar, row.zBar])),
+        !Rational.isZero(
+          Rational.subtract(
+            Rational.multiply(row.zBar, whiteTristimulus.X),
+            Rational.multiply(row.xBar, whiteTristimulus.Z),
+          ),
         ) ||
-        'Expected spectral light whose chromaticity differs from that of the white, so that the hue has a direction, as no spectral light of the observer has the chromaticity of the white',
+        !Rational.isZero(
+          Rational.subtract(
+            Rational.multiply(row.xBar, whiteTristimulus.Y),
+            Rational.multiply(row.yBar, whiteTristimulus.X),
+          ),
+        ) ||
+        'Expected a spectral light not parallel to the white, so that mixing it with the white changes the hue, as no spectral light of the observer has the chromaticity of the white',
     ),
   ),
 );
@@ -249,7 +256,7 @@ export const ComplementaryWavelengthOptions = Schema.Struct({
 export type ComplementaryWavelengthOptions = typeof ComplementaryWavelengthOptions.Encoded;
 
 /**
- * The hue of a complementary wavelength, as CIE S 017 defines it for purples, which no single wavelength produces: the colors of the hue lie on the line through the white, on the opposite side of it from the spectral light of that wavelength. Worked out exactly; or a failure with the reason when the wavelength is out of range or the values cannot be a row of the observer.
+ * The hue of a complementary wavelength, as CIE S 017 defines it for purples, which no single wavelength produces: the mixtures of the white with the opposite of the spectral light of that wavelength, so that each, mixed with that spectral light, gives white. Its values of the observer are taken as they are published. Worked out exactly; or a failure with the reason when the wavelength is out of range or the values cannot be a row of the observer.
  *
  * @see https://cie.co.at/eilvterm/17-23-063
  */
@@ -259,35 +266,10 @@ export const complementaryWavelength = (
   Exit.map(
     Schema.decodeExit(ComplementaryWavelengthOptions)(options, { errors: 'all' }),
     (row) => ({
-      spectralChromaticity: {
-        x: Rational.divideUnsafe(
-          row.xBar,
-          // The schema checks that x̄, ȳ and z̄ are not negative and not all 0, so their sum is positive and the division cannot fail.
-          Rational.sumAll([row.xBar, row.yBar, row.zBar]),
-        ),
-        y: Rational.divideUnsafe(
-          row.yBar,
-          // The schema checks that x̄, ȳ and z̄ are not negative and not all 0, so their sum is positive and the division cannot fail.
-          Rational.sumAll([row.xBar, row.yBar, row.zBar]),
-        ),
-      },
       direction: {
-        x: Rational.subtract(
-          whiteChromaticity.x,
-          Rational.divideUnsafe(
-            row.xBar,
-            // The schema checks that x̄, ȳ and z̄ are not negative and not all 0, so their sum is positive and the division cannot fail.
-            Rational.sumAll([row.xBar, row.yBar, row.zBar]),
-          ),
-        ),
-        y: Rational.subtract(
-          whiteChromaticity.y,
-          Rational.divideUnsafe(
-            row.yBar,
-            // The schema checks that x̄, ȳ and z̄ are not negative and not all 0, so their sum is positive and the division cannot fail.
-            Rational.sumAll([row.xBar, row.yBar, row.zBar]),
-          ),
-        ),
+        X: Rational.negate(row.xBar),
+        Y: Rational.negate(row.yBar),
+        Z: Rational.negate(row.zBar),
       },
     }),
   );
@@ -774,11 +756,7 @@ export const write = (medium: Medium, color: Tristimulus): string => {
  */
 export const PurestColorOptions = Schema.Struct({
   /** The hue, as `dominantWavelength` or `complementaryWavelength` gives it. */
-  hue: Schema.declare(
-    (input): input is Hue =>
-      Predicate.hasProperty(input, 'spectralChromaticity') &&
-      Predicate.hasProperty(input, 'direction'),
-  ),
+  hue: Schema.declare((input): input is Hue => Predicate.hasProperty(input, 'direction')),
   /** The medium, one of the media of the library or one `onExactWhite` builds. */
   medium: Schema.declare(
     (input): input is Medium =>
@@ -823,46 +801,50 @@ export const PurestColorOptions = Schema.Struct({
 export type PurestColorOptions = typeof PurestColorOptions.Encoded;
 
 /**
- * The purest color of a hue that a medium shows, at the highest luminance the headroom allows, as tristimulus values relative to the white, worked out exactly; or a failure with the reason when the headroom is not positive or exceeds the peak of the medium. Along the line of the hue from the library's white, it takes the point where the line leaves the gamut of the medium, where the first linear channel reaches 0. Every measure of purity CIE defines, such as excitation purity and colorimetric purity, grows along that line, so the point does not depend on which one is meant. At that chromaticity it scales the color until its largest linear channel reaches the headroom.
+ * The purest color of a hue that a medium shows, at the highest luminance the headroom allows, as tristimulus values relative to the white, worked out exactly; or a failure with the reason when the headroom is not positive or exceeds the peak of the medium. In the medium, the linear channels of a color α·W + β·D of the hue are α·w + β·d, with w and d those of the white and of the direction. The purest is the one with the largest β/α at which no channel is below 0: with α = 1, the smallest w_i / (−d_i) over the channels the direction lowers. Where the direction lowers none, the gamut holds the spectral light itself, and the purest color is the direction alone, α = 0, as Rec. 2020 and BT.2100 hold 532 nm and 630 nm, which their rounded primaries enclose. Every measure of purity CIE defines, such as excitation purity and colorimetric purity, grows with β/α along a hue, so the result does not depend on which one is meant. The color is then scaled until its largest linear channel reaches the headroom. Every step is rational, so the result is exact.
  */
 export const purestColor = (
   options: PurestColorOptions,
 ): Exit.Exit<Tristimulus, Schema.SchemaError> =>
   Exit.map(Schema.decodeExit(PurestColorOptions)(options, { errors: 'all' }), (options) => {
-    // The linear channels of the chromaticity (x, y, 1 − x − y) of the point at t along the line, which are those of its color divided by its x + y + z, a positive number that changes no sign: at the white, and their change for each unit of t.
-    const atWhite = transform(options.medium.xyzToLinear, [
-      whiteChromaticity.x,
-      whiteChromaticity.y,
-      Rational.subtract(
-        Rational.fromBigInt(1n),
-        Rational.sum(whiteChromaticity.x, whiteChromaticity.y),
-      ),
+    const white = transform(options.medium.xyzToLinear, [
+      whiteTristimulus.X,
+      whiteTristimulus.Y,
+      whiteTristimulus.Z,
     ]);
-    const slope = transform(options.medium.xyzToLinear, [
-      options.hue.direction.x,
-      options.hue.direction.y,
-      Rational.negate(Rational.sum(options.hue.direction.x, options.hue.direction.y)),
+    const direction = transform(options.medium.xyzToLinear, [
+      options.hue.direction.X,
+      options.hue.direction.Y,
+      options.hue.direction.Z,
     ]);
-    // The t at which each channel with a negative slope reaches 0, its positive value at the white divided by its fall.
-    const edges = [0, 1, 2]
-      .filter((channel) => Rational.isNegative(slope[channel] ?? Rational.fromBigInt(0n)))
+    // The β at which each channel the direction lowers reaches 0, with α = 1: every channel of the white is positive, as the white lies inside every gamut, so only a channel the direction lowers ever reaches 0.
+    const limits = [0, 1, 2]
+      .filter((channel) => Rational.isNegative(direction[channel] ?? Rational.fromBigInt(0n)))
       .map((channel) =>
         Rational.divideUnsafe(
-          Rational.negate(atWhite[channel] ?? Rational.fromBigInt(0n)),
-          // Only channels with a negative slope reach this division, so the divisor is never zero.
-          slope[channel] ?? Rational.fromBigInt(-1n),
+          white[channel] ?? Rational.fromBigInt(0n),
+          // Only a channel the direction lowers reaches this division, so the divisor is never 0.
+          Rational.negate(direction[channel] ?? Rational.fromBigInt(-1n)),
         ),
       );
-    // At least one channel has a negative slope: the direction changes x and y but not x + y + z, so its channels, weighted by the positive x + y + z of each primary, add up to 0, and they are not all 0, as the direction is not zero. The white is therefore never the result.
-    const edge = Array.isArrayNonEmpty(edges)
-      ? Array.min(edges, Rational.Order)
-      : Rational.fromBigInt(0n);
-    const channels = [
-      Rational.sum(atWhite[0], Rational.multiply(edge, slope[0])),
-      Rational.sum(atWhite[1], Rational.multiply(edge, slope[1])),
-      Rational.sum(atWhite[2], Rational.multiply(edge, slope[2])),
-    ] as const;
-    // The channels of the edge are not negative and not all 0, as its chromaticity is that of a color, so the largest is positive and the division cannot fail.
+    // Where the direction lowers no channel, the direction alone, which only a dominant wavelength can give: the opposite of a light lowers a channel, as the Y of a light and of every primary is positive.
+    const channels = Array.isArrayNonEmpty(limits)
+      ? ([
+          Rational.sum(
+            white[0],
+            Rational.multiply(Array.min(limits, Rational.Order), direction[0]),
+          ),
+          Rational.sum(
+            white[1],
+            Rational.multiply(Array.min(limits, Rational.Order), direction[1]),
+          ),
+          Rational.sum(
+            white[2],
+            Rational.multiply(Array.min(limits, Rational.Order), direction[2]),
+          ),
+        ] as const)
+      : direction;
+    // No channel is negative, and they are not all 0: the direction is not 0, and not parallel to the white, so no mixture of the two is black. The largest is positive and the division cannot fail.
     const scale = Rational.divideUnsafe(
       options.headroom ?? Rational.fromBigInt(1n),
       Rational.max(Rational.max(channels[0], channels[1]), channels[2]),
