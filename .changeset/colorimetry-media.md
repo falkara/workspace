@@ -1,0 +1,5 @@
+---
+'@falkara/presentation': minor
+---
+
+`Colorimetry` holds the media a color is written in: `srgb` and `displayP3` after CSS Color 4, `rec2020` after ITU-R BT.2020-2 with the display curve of ITU-R BT.1886-0, and `rec2100Pq` and `rec2100Hlg` after ITU-R BT.2100-3 and CSS Color HDR. Each is a `Medium`, plain data compared by value: its primaries and its white as the standard writes them, and the matrices between its linear channels and XYZ derived from them exactly in `Rational`, which for sRGB, Display P3 and Rec. 2020 equal those of CSS Color 4 entry for entry. `onExactWhite` builds any medium on the exact white of the library instead, for physical exactness, at the cost of differing from the browsers in the fifth decimal place. `isInGamut` decides exactly whether a color lies within a medium, and `write` writes it in the CSS syntax of the medium through its transfer function. BT.2100 maps the library's white to HDR Reference White, 203 cd/m² after ITU-R BT.2408-9, and with PQ reaches up to 10 000 cd/m²; how far HLG reaches above the white is left to the rule for luminance.
