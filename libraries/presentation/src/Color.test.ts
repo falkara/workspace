@@ -5,31 +5,19 @@ import * as Color from '#src/Color';
 import * as Colorimetry from '#src/Colorimetry';
 import * as Typography from '#src/Typography';
 
-/** The product of one of the matrices of Color and a vector of rationals, worked out exactly. */
-const exactTransform = (
-  matrix: Colorimetry.Matrix,
-  vector: readonly [Rational.Rational, Rational.Rational, Rational.Rational],
-): readonly [Rational.Rational, Rational.Rational, Rational.Rational] => [
-  Rational.sumAll(
-    matrix[0].map((entry, index) => Rational.multiply(entry, vector[index] ?? entry)),
-  ),
-  Rational.sumAll(
-    matrix[1].map((entry, index) => Rational.multiply(entry, vector[index] ?? entry)),
-  ),
-  Rational.sumAll(
-    matrix[2].map((entry, index) => Rational.multiply(entry, vector[index] ?? entry)),
-  ),
-];
-
 /** The relative luminance of a color of the given lightness and chroma at a hue of 0, whose cosine and sine are 1 and 0 exactly, converted by the matrices of CSS Color 4 exactly, apart from the code of Color. */
 const exactLuminance = (
   lightness: Rational.Rational,
   chroma: Rational.Rational,
 ): Rational.Rational => {
-  const roots = exactTransform(Color.oklabToLms, [lightness, chroma, Rational.fromBigInt(0n)]);
-  const channels = exactTransform(
+  const roots = Colorimetry.transform(Color.oklabToLms, [
+    lightness,
+    chroma,
+    Rational.fromBigInt(0n),
+  ]);
+  const channels = Colorimetry.transform(
     Colorimetry.srgb.xyzToLinear,
-    exactTransform(Color.lmsToXyz, [
+    Colorimetry.transform(Color.lmsToXyz, [
       Rational.multiply(roots[0], Rational.multiply(roots[0], roots[0])),
       Rational.multiply(roots[1], Rational.multiply(roots[1], roots[1])),
       Rational.multiply(roots[2], Rational.multiply(roots[2], roots[2])),
@@ -56,7 +44,9 @@ const exactContrast = (first: Rational.Rational, second: Rational.Rational): Rat
 const fifths = (hundredThousandths: number): string => (hundredThousandths / 100000).toFixed(5);
 
 /** A matrix of Color in the numbers JavaScript holds, for the checks that follow a tool computing in them. */
-const numbers = (exact: Colorimetry.Matrix): ReadonlyArray<ReadonlyArray<number>> =>
+const numbers = <From extends string, To extends string>(
+  exact: Colorimetry.Matrix<From, To>,
+): ReadonlyArray<ReadonlyArray<number>> =>
   exact.map((row) => row.map((entry) => Rational.toNumberUnsafe(entry)));
 
 /** The matrices of Color in the numbers JavaScript holds. */
@@ -217,14 +207,14 @@ describe('encodedTransferThreshold', () => {
 
 describe('oklabToLms and lmsToXyz', () => {
   it('turn the white of Oklab into the white of sRGB, within the sixteen digits CSS Color 4 writes them to', () => {
-    const roots = exactTransform(Color.oklabToLms, [
+    const roots = Colorimetry.transform(Color.oklabToLms, [
       Rational.fromBigInt(1n),
       Rational.fromBigInt(0n),
       Rational.fromBigInt(0n),
     ]);
-    const channels = exactTransform(
+    const channels = Colorimetry.transform(
       Colorimetry.srgb.xyzToLinear,
-      exactTransform(Color.lmsToXyz, [
+      Colorimetry.transform(Color.lmsToXyz, [
         Rational.multiply(roots[0], Rational.multiply(roots[0], roots[0])),
         Rational.multiply(roots[1], Rational.multiply(roots[1], roots[1])),
         Rational.multiply(roots[2], Rational.multiply(roots[2], roots[2])),
@@ -1487,5 +1477,23 @@ describe('build time', () => {
       expect(verifying, color).toBeLessThan(1000);
       expect(performance.now() - start - verifying, color).toBeLessThan(1000);
     }
+  });
+});
+
+describe('types', () => {
+  it('give the matrices of Oklab their spaces, so that the cube roots of the cone responses are cubed before they reach XYZ', () => {
+    const roots = Colorimetry.transform(Color.oklabToLms, [
+      Rational.fromBigInt(1n),
+      Rational.fromBigInt(0n),
+      Rational.fromBigInt(0n),
+    ]);
+
+    expectTypeOf(roots).toEqualTypeOf<Colorimetry.Vector<'cube roots of LMS'>>();
+    // @ts-expect-error The cube roots of the cone responses are not the responses, which they must first be cubed into.
+    Colorimetry.transform(Color.lmsToXyz, roots);
+    // @ts-expect-error The matrix of the cone responses converts to XYZ, not from it.
+    Colorimetry.transform(Color.lmsToXyz, Colorimetry.xyzOf(Colorimetry.whiteTristimulus));
+    // @ts-expect-error The matrix of Oklab is not one of a medium.
+    Colorimetry.transform(Colorimetry.srgb.xyzToLinear, roots);
   });
 });

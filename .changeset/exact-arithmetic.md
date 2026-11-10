@@ -16,6 +16,6 @@ What changes for consumers:
 
 - The components of a decoded `Color` are `Rational`, and encoding writes them exactly in decimal, refusing a number whose decimal expansion never ends. A number whose exponent exceeds 10000 either way is refused, as `BigDecimal` reads no further.
 - The ratio of `reaches`, the `minimumContrast` of `Pair` and `Brand`, and the `requiredContrast` of `ContrastShortfall` and `NoLegibleShade` are `Rational`.
-- `enhancedContrastRatio`, `largeTextEnhancedContrastRatio`, `gamutTolerance`, `oklabToLms`, `lmsToXyz`, `fullChroma`, `luminanceWeights`, `contrastFlare`, `maximumContrastRatio`, `halfTurns` and `encodedTransferThreshold` are `Rational`; the matrices are `Colorimetry.Matrix`.
+- `enhancedContrastRatio`, `largeTextEnhancedContrastRatio`, `gamutTolerance`, `oklabToLms`, `lmsToXyz`, `fullChroma`, `luminanceWeights`, `contrastFlare`, `maximumContrastRatio`, `halfTurns` and `encodedTransferThreshold` are `Rational`; the matrices are `Colorimetry.Matrix`, `oklabToLms` from Oklab to the cube roots of LMS and `lmsToXyz` from LMS to XYZ, so that a vector of cube roots is refused by `lmsToXyz` until it is cubed.
 - `unitRoundoff` is removed, as nothing rounds. `xyzToLinearSrgb` is removed in favor of `Colorimetry.srgb.xyzToLinear`, which equals it entry for entry, and `transferThreshold`, `transferSlope`, `transferGamma` and `transferOffset` in favor of `Colorimetry.srgbTransfer`.
 - `Fluid.rem` and `Fluid.vw` take a `Rational`, as `Fluid.clamp` does.

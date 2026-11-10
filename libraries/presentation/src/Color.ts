@@ -66,7 +66,7 @@ export const gamutTolerance = Rational.makeUnsafe(1n, BigInt(2 * channelSteps));
  *
  * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#color-conversion-code
  */
-export const oklabToLms: Colorimetry.Matrix = [
+export const oklabToLms: Colorimetry.Matrix<'Oklab', 'cube roots of LMS'> = [
   [
     Rational.fromBigInt(1n),
     Rational.makeUnsafe(3963377773761749n, 10n ** 16n),
@@ -89,7 +89,7 @@ export const oklabToLms: Colorimetry.Matrix = [
  *
  * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#color-conversion-code
  */
-export const lmsToXyz: Colorimetry.Matrix = [
+export const lmsToXyz: Colorimetry.Matrix<'LMS', 'XYZ'> = [
   [
     Rational.makeUnsafe(12268798758459243n, 10n ** 16n),
     Rational.makeUnsafe(-5578149944602171n, 10n ** 16n),
@@ -186,12 +186,20 @@ const indistinguishableContrast = Rational.divideUnsafe(
   Rational.sum(Rational.fromBigInt(1n), contrastFlare),
 );
 
-/** Three real numbers in order, such as the components or the channels of a color. */
-type Vector = readonly [Real.Real, Real.Real, Real.Real];
+/** Three real numbers in a space, such as the components or the channels of a color, the space a phantom parameter as for a vector of `Colorimetry`. */
+type Vector<Space extends string> = readonly [Real.Real, Real.Real, Real.Real] & {
+  readonly '~space'?: Space;
+};
 
-/** The product of a matrix and a vector of real numbers. */
-const transform = ([first, second, third]: Colorimetry.Matrix, [x, y, z]: Vector): Vector => {
-  const row = (entries: Colorimetry.Matrix[number]): Real.Real =>
+/** The linear channels of a color in sRGB on the white its standard writes, in which WCAG 2.2 gives relative luminance. */
+type LinearSrgb = Vector<Colorimetry.LinearSpace<'srgb', 'standard'>>;
+
+/** The product of a matrix and a vector of real numbers of the space it converts from. */
+const transform = <From extends string, To extends string>(
+  [first, second, third]: Colorimetry.Matrix<From, To>,
+  [x, y, z]: Vector<NoInfer<From>>,
+): Vector<To> => {
+  const row = (entries: Colorimetry.Matrix<From, To>[number]): Real.Real =>
     Real.add(
       Real.add(
         Real.multiply(Real.fromRational(entries[0]), x),
@@ -232,7 +240,7 @@ const linearSrgbOf = (
   lightness: Rational.Rational,
   chroma: Rational.Rational,
   [cosine, sine]: readonly [Real.Real, Real.Real],
-): Vector => {
+): LinearSrgb => {
   const [long, medium, short] = transform(oklabToLms, [
     Real.fromRational(lightness),
     Real.multiply(Real.fromRational(chroma), cosine),
@@ -249,7 +257,7 @@ const linearSrgbOf = (
 };
 
 /** Whether linear sRGB channels lie within sRGB once encoded, up to a tolerance of an encoded value: from the tolerance below 0, read back on the linear segment of the transfer function, as the tolerance lies far within it, to the tolerance above 1, read back on its power, each decided by the rule of `indistinguishableChannel`. */
-const isInGamut = (channels: Vector, tolerance: Rational.Rational): boolean => {
+const isInGamut = (channels: LinearSrgb, tolerance: Rational.Rational): boolean => {
   // The slope and the offset added to 1 are positive, so neither division can fail.
   const lowest = Real.fromRational(
     Rational.negate(Rational.divideUnsafe(tolerance, Colorimetry.srgbTransfer.slope)),
@@ -271,7 +279,7 @@ const isInGamut = (channels: Vector, tolerance: Rational.Rational): boolean => {
 };
 
 /** The relative luminance of linear sRGB channels as WCAG 2.2 gives it for sRGB, each weighted and held within its range. */
-const luminanceOf = (channels: Vector): Real.Real =>
+const luminanceOf = (channels: LinearSrgb): Real.Real =>
   channels
     .map((channel, index) =>
       Real.multiply(
@@ -308,7 +316,7 @@ interface RoundedLuminance {
 
 /** The relative luminances of linear sRGB channels once each is held within its range, encoded, rounded to the nearest of a number of steps and read back: one for each step a channel rounds to once its encoded value is moved by each of the given shifts, so that every rounding a display or a tool may make within them is judged. A channel is rounded to the nearest step, a channel exactly halfway toward +∞, as CSS Color 4 rounds, by the rule of `indistinguishableChannel` carried to an encoded value, a step of the deepest channel. */
 const roundedLuminancesOf = (
-  channels: Vector,
+  channels: LinearSrgb,
   steps: bigint,
   shifts: Array.NonEmptyReadonlyArray<Rational.Rational>,
 ): Array.NonEmptyReadonlyArray<RoundedLuminance> =>
@@ -945,7 +953,7 @@ const closestShade = (
     return chromas.get(key);
   };
   // The channels of the shade at a lightness, the gray where sRGB holds no chroma there.
-  const channelsAt = (lightness: Rational.Rational): Vector =>
+  const channelsAt = (lightness: Rational.Rational): LinearSrgb =>
     linearSrgbOf(lightness, chromaAt(lightness) ?? Rational.fromBigInt(0n), angle);
   const reaches = (lightness: Rational.Rational): boolean =>
     chromaAt(lightness) !== undefined &&
