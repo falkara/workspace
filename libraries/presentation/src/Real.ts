@@ -1,4 +1,4 @@
-import { Rational } from 'effect';
+import { BigDecimal, Rational } from 'effect';
 
 /** The bounds of a real number at a precision, a number of bits: two whole numbers over 2 to the precision, the lower at most the number and the upper at least it. */
 export interface Bounds {
@@ -675,17 +675,12 @@ export const exactDecimalPlaces = (value: Rational.Rational): number => {
 };
 
 /**
- * A rational number written in decimal as CSS writes a number: rounded to a number of decimal places, to the nearest, a number exactly halfway toward +∞, as CSS Color 4 rounds the values it serializes, and without the zeros that end its fraction.
+ * A rational number written in decimal as CSS writes a number: rounded to a number of decimal places, to the nearest, a number exactly halfway toward +∞, as CSS Color 4 rounds the values it serializes, and without the zeros that end its fraction, as Effect's `BigDecimal` writes a number. From 16 decimal places on, which only a number written exactly reaches, it is written with an exponent, which CSS reads as well.
  *
  * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#serializing-color-function-values
  */
-export const writeDecimals = (value: Rational.Rational, places: number): string => {
-  // floor(v · 10^d + 1/2): the nearest whole number of 10^−d, ties toward +∞.
-  const scaled = floorDivide(
-    2n * value.numerator * 10n ** BigInt(places) + value.denominator,
-    2n * value.denominator,
+export const writeDecimals = (value: Rational.Rational, places: number): string =>
+  BigDecimal.format(
+    // Every number of places the library writes with is a small whole number, a safe integer, so the conversion cannot fail.
+    Rational.toBigDecimal(value, { scale: places, mode: 'half-ceil' }),
   );
-  const digits = (scaled < 0n ? -scaled : scaled).toString().padStart(places + 1, '0');
-  const fraction = digits.slice(digits.length - places).replace(/0+$/, '');
-  return `${scaled < 0n ? '-' : ''}${digits.slice(0, digits.length - places)}${fraction === '' ? '' : `.${fraction}`}`;
-};

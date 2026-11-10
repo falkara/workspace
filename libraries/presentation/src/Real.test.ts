@@ -230,6 +230,11 @@ describe('writeDecimals', () => {
     expect(Real.writeDecimals(Rational.makeUnsafe(-4n, 1000000n), 5)).toBe('0');
     expect(Real.writeDecimals(Rational.makeUnsafe(2n, 3n), 5)).toBe('0.66667');
   });
+
+  it('writes a number of 16 decimal places or more with an exponent, which CSS reads too', () => {
+    expect(Real.writeDecimals(Rational.makeUnsafe(1n, 10n ** 15n), 15)).toBe('0.000000000000001');
+    expect(Real.writeDecimals(Rational.makeUnsafe(1n, 10n ** 17n), 17)).toBe('1e-17');
+  });
 });
 
 describe('irrational', () => {
