@@ -1,5 +1,11 @@
 # falkara
 
+## 0.0.3
+
+### Patch Changes
+
+- [`23fa443`](https://github.com/falkara/workspace/commit/23fa4433e633dfb789df4a4b05f70cf236ef8f00) Thanks [@filipfalcon](https://github.com/filipfalcon)! - Built on Effect 4.1.3, the first release with `Rational` and `Schema.Rational`, on which every exact value of `@falkara/presentation` rests. `@falkara/presentation` asks for Effect `^4.1.3` as its peer, where it accepted any Effect from 4.1.0 before, which has no `Rational`.
+
 ## 0.0.2
 
 ### Patch Changes
