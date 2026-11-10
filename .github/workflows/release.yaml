@@ -40,8 +40,8 @@ jobs:
         id: changesets
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
-          # The action runs the script without a shell, so the shell joins the versioning and the lockfile update.
-          version-script: sh -c "npx changeset version && npm install --package-lock-only"
+          # The action runs the script without a shell, so the shell joins the versioning, the lockfile update and the formatting of what they write, as changesets indents the blank lines of a changeset of several paragraphs with spaces that the check refuses.
+          version-script: sh -c "npx changeset version && npm install --package-lock-only && npx vp fmt"
           publish-script: npx changeset publish
           commit-message: 'chore: version packages'
           pr-title: 'chore: version packages'
