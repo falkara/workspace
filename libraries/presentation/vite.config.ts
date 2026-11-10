@@ -5,7 +5,6 @@ export default defineConfig({
     entry: [
       'src/Color.ts',
       'src/Fluid.ts',
-      'src/Fraction.ts',
       'src/Layout.ts',
       'src/Length.ts',
       'src/Space.ts',

@@ -3,7 +3,7 @@ import { describe, expect, it } from '@effect/vitest';
 import * as Layout from '#src/Layout';
 
 describe('measures', () => {
-  it('are the line lengths of the USWDS measure tokens', () => {
+  it('are the line lengths of the USWDS 3 measure tokens', () => {
     expect(Layout.measures).toEqual([44, 60, 64, 68, 72, 88]);
   });
 

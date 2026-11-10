@@ -1,8 +1,7 @@
 import { describe, expect, expectTypeOf, it } from '@effect/vitest';
-import { Effect, Exit, Option, pipe, Schema, SchemaIssue } from 'effect';
+import { Effect, Exit, Option, pipe, Rational, Schema, SchemaIssue } from 'effect';
 
 import * as Color from '#src/Color';
-import * as Fraction from '#src/Fraction';
 import * as Typography from '#src/Typography';
 
 /** The product of one of the matrices of Color and a vector, each row summed from left to right as CSS Color 4 sums it. */
@@ -66,7 +65,7 @@ const exactTransform = (
 const held = (value: Rational): Rational =>
   isBelow(value, [0n, 1n]) ? [0n, 1n] : isBelow([1n, 1n], value) ? [1n, 1n] : value;
 
-/** The relative luminance of a color of the given lightness and chroma at a hue of 0, whose cosine and sine are 1 and 0 exactly, converted by the matrices of CSS Color 4 as they are written, without rounding. */
+/** The relative luminance of a color of the given lightness and chroma at a hue of 0, whose cosine and sine are 1 and 0 exactly, converted by the matrices of CSS Color 4 as JavaScript holds them, without rounding. */
 const exactLuminance = (lightness: number, chroma: number): Rational => {
   const [long, medium, short] = exactTransform(Color.oklabToLms, [
     rational(lightness),
@@ -143,51 +142,51 @@ const hexContrast = (text: string, background: string): number => {
 };
 
 describe('enhancedContrastRatio', () => {
-  it('is the contrast WCAG 2.2 Contrast (Enhanced) requires for text', () => {
+  it('is 7, the contrast WCAG 2.2 Contrast (Enhanced) requires for text', () => {
     expect(Color.enhancedContrastRatio).toBe(7);
   });
 });
 
 describe('largeTextEnhancedContrastRatio', () => {
-  it('is the contrast WCAG 2.2 Contrast (Enhanced) requires for large-scale text', () => {
+  it('is 9/2, the contrast WCAG 2.2 Contrast (Enhanced) requires for large-scale text', () => {
     expect(Color.largeTextEnhancedContrastRatio).toBe(9 / 2);
   });
 });
 
 describe('largeTextPointSize', () => {
-  it('is the size from which WCAG 2.2 counts text as large-scale', () => {
-    expect(Color.largeTextPointSize).toEqual({ numerator: 18n, denominator: 1n });
+  it('is 18 CSS points, the size from which WCAG 2.2 counts text as large-scale', () => {
+    expect(Color.largeTextPointSize).toEqual(Rational.fromBigInt(18n));
   });
 });
 
 describe('largeBoldTextPointSize', () => {
-  it('is the size from which WCAG 2.2 counts bold text as large-scale', () => {
-    expect(Color.largeBoldTextPointSize).toEqual({ numerator: 14n, denominator: 1n });
+  it('is 14 CSS points, the size from which WCAG 2.2 counts bold text as large-scale', () => {
+    expect(Color.largeBoldTextPointSize).toEqual(Rational.fromBigInt(14n));
   });
 });
 
 describe('largeTextSize', () => {
-  it('is a valid fraction', () => {
-    expect(Schema.is(Fraction.Fraction)(Color.largeTextSize)).toBe(true);
+  it('is positive', () => {
+    expect(Rational.isPositive(Color.largeTextSize)).toBe(true);
   });
 
   it('is 24 CSS pixels', () => {
-    expect(Color.largeTextSize).toEqual({ numerator: 24n, denominator: 1n });
+    expect(Color.largeTextSize).toEqual(Rational.fromBigInt(24n));
   });
 });
 
 describe('largeBoldTextSize', () => {
-  it('is a valid fraction', () => {
-    expect(Schema.is(Fraction.Fraction)(Color.largeBoldTextSize)).toBe(true);
+  it('is positive', () => {
+    expect(Rational.isPositive(Color.largeBoldTextSize)).toBe(true);
   });
 
   it('is 56/3 CSS pixels', () => {
-    expect(Color.largeBoldTextSize).toEqual({ numerator: 56n, denominator: 3n });
+    expect(Color.largeBoldTextSize).toEqual(Rational.makeUnsafe(56n, 3n));
   });
 });
 
 describe('channelSteps', () => {
-  it('is the number of steps of an 8-bit sRGB channel', () => {
+  it('is 255, the number of steps of an 8-bit sRGB channel', () => {
     expect(Color.channelSteps).toBe(255);
   });
 });
@@ -199,7 +198,7 @@ describe('gamutTolerance', () => {
 });
 
 describe('fullChroma', () => {
-  it('is the chroma CSS Color 4 sets as 100 % in oklch()', () => {
+  it('is 2/5, the chroma CSS Color 4 sets as 100 % in oklch()', () => {
     expect(Color.fullChroma).toBe(2 / 5);
   });
 });
@@ -221,7 +220,7 @@ describe('luminanceWeights', () => {
 });
 
 describe('contrastFlare', () => {
-  it('is the flare WCAG 2.2 adds to both relative luminances of a contrast ratio', () => {
+  it('is 1/20, the flare WCAG 2.2 adds to both relative luminances of a contrast ratio', () => {
     expect(Color.contrastFlare).toBe(1 / 20);
   });
 });
@@ -233,31 +232,31 @@ describe('maximumContrastRatio', () => {
 });
 
 describe('transferThreshold', () => {
-  it('is where the sRGB transfer function stops being linear', () => {
+  it('is 0.0031308, where the sRGB transfer function stops being linear', () => {
     expect(Color.transferThreshold).toBe(0.0031308);
   });
 });
 
 describe('transferSlope', () => {
-  it('is the slope of the linear part of the sRGB transfer function', () => {
+  it('is 12.92, the slope of the linear part of the sRGB transfer function', () => {
     expect(Color.transferSlope).toBe(12.92);
   });
 });
 
 describe('transferGamma', () => {
-  it('is the exponent of the curved part of the sRGB transfer function', () => {
+  it('is 2.4, the exponent of the curved part of the sRGB transfer function', () => {
     expect(Color.transferGamma).toBe(2.4);
   });
 });
 
 describe('transferOffset', () => {
-  it('is the offset of the curved part of the sRGB transfer function', () => {
+  it('is 0.055, the offset of the curved part of the sRGB transfer function', () => {
     expect(Color.transferOffset).toBe(0.055);
   });
 });
 
 describe('encodedTransferThreshold', () => {
-  it('is the encoded value up to which CSS Color 4 reads an sRGB channel as linear', () => {
+  it('is 0.04045, the encoded value up to which CSS Color 4 reads an sRGB channel as linear', () => {
     expect(Color.encodedTransferThreshold).toBe(0.04045);
   });
 });
@@ -277,7 +276,7 @@ describe('oklabToLms, lmsToXyz and xyzToLinearSrgb', () => {
 });
 
 describe('unitRoundoff', () => {
-  it('is half the machine epsilon', () => {
+  it('is 2 ** -53, half the machine epsilon', () => {
     expect(Color.unitRoundoff).toBe(2 ** -53);
   });
 
@@ -459,6 +458,20 @@ describe('Color', () => {
     ]);
   });
 
+  it('accepts a color whose channels lie outside sRGB by less than half a step of an 8-bit channel, as hex writes them within it', () => {
+    // Its channels lie at 255.06, -0.39 and -0.14 steps, which hex writes as 255, 0 and 0.
+    const exit = Schema.decodeExit(Color.Color)('oklch(62.8% 0.2578 29.23)');
+
+    expect(Exit.isSuccess(exit)).toBe(true);
+  });
+
+  it('rejects a color whose channel lies outside sRGB by more than half a step of an 8-bit channel', () => {
+    // Its green channel lies at -1.14 steps, which hex cannot write.
+    const exit = Schema.decodeExit(Color.Color)('oklch(62.8% 0.258 29.23)');
+
+    expect(Exit.isFailure(exit)).toBe(true);
+  });
+
   it('rejects a color outside sRGB', () => {
     const exit = Schema.decodeExit(Color.Color)('oklch(70% 0.35 147)');
 
@@ -469,7 +482,8 @@ describe('Color', () => {
     ).toEqual([
       {
         path: [],
-        message: 'Expected a color within sRGB, as WCAG 2.2 defines contrast only there',
+        message:
+          'Expected a color within sRGB, the color space whose relative luminance WCAG 2.2 gives and in which it asks authors to evaluate contrast unless another is known to be used',
       },
     ]);
   });
@@ -530,7 +544,8 @@ describe('contrast', () => {
       },
       {
         path: ['background'],
-        message: 'Expected a color within sRGB, as WCAG 2.2 defines contrast only there',
+        message:
+          'Expected a color within sRGB, the color space whose relative luminance WCAG 2.2 gives and in which it asks authors to evaluate contrast unless another is known to be used',
       },
     ]);
   });
@@ -580,7 +595,7 @@ describe('reaches', () => {
     const white = exactLuminance(1, 0);
 
     expect(isBelow(white, [1n, 1n])).toBe(true);
-    expect(numberBelow(exactContrast(white, exactLuminance(0, 0)))).toBe(20.999999999999986);
+    expect(numberBelow(exactContrast(white, exactLuminance(0, 0)))).toBe(20.99999999999999);
   });
 
   it.prop(
@@ -654,8 +669,8 @@ describe('reaches', () => {
 
   it('decides as verify decides', () => {
     const step = {
-      minimumSize: Fraction.makeUnsafe(16n, 1n),
-      maximumSize: Fraction.makeUnsafe(20n, 1n),
+      minimumSize: Rational.fromBigInt(16n),
+      maximumSize: Rational.fromBigInt(20n),
     };
 
     for (const text of [
@@ -704,8 +719,8 @@ describe('Pair', () => {
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
       minimumContrast: 10,
@@ -719,8 +734,8 @@ describe('Pair', () => {
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
       minimumContrast: 5,
@@ -736,8 +751,8 @@ describe('verify', () => {
       text: 'oklch(0.4503768287010991 0.1338540582986573 147)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
     };
@@ -758,9 +773,9 @@ describe('verify', () => {
 
   it('takes a step of a type scale as it is, its position aside', () => {
     const scale = Typography.scale({
-      minimumFactor: { numerator: 6n, denominator: 5n },
-      maximumFactor: { numerator: 5n, denominator: 4n },
-      maximumBodyFontSize: { numerator: 20n, denominator: 1n },
+      minimumFactor: Rational.makeUnsafe(6n, 5n),
+      maximumFactor: Rational.makeUnsafe(5n, 4n),
+      maximumBodyFontSize: Rational.fromBigInt(20n),
     });
     const step = Exit.isSuccess(scale)
       ? scale.value.find((step) => step.position === 0)
@@ -785,8 +800,8 @@ describe('verify', () => {
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
     });
@@ -799,8 +814,8 @@ describe('verify', () => {
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
     });
@@ -818,8 +833,8 @@ describe('verify', () => {
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
     });
@@ -836,8 +851,8 @@ describe('verify', () => {
         text: 'oklch(50% 0 0)',
         background: 'oklch(100% 0 0)',
         step: {
-          minimumSize: Fraction.makeUnsafe(16n, 1n),
-          maximumSize: Fraction.makeUnsafe(20n, 1n),
+          minimumSize: Rational.fromBigInt(16n),
+          maximumSize: Rational.fromBigInt(20n),
         },
         fontWeight: 400,
       }).pipe(
@@ -853,8 +868,8 @@ describe('verify', () => {
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(24n, 1n),
-        maximumSize: Fraction.makeUnsafe(30n, 1n),
+        minimumSize: Rational.fromBigInt(24n),
+        maximumSize: Rational.fromBigInt(30n),
       },
       fontWeight: 400,
     });
@@ -867,8 +882,8 @@ describe('verify', () => {
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(24n, 1n),
-        maximumSize: Fraction.makeUnsafe(12n, 1n),
+        minimumSize: Rational.fromBigInt(24n),
+        maximumSize: Rational.fromBigInt(12n),
       },
       fontWeight: 400,
     });
@@ -881,7 +896,7 @@ describe('verify', () => {
       {
         path: ['step', 'maximumSize'],
         message:
-          'Expected a maximum size of 24 px to 38.4 px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires',
+          'Expected a maximum size of 24 px to 38.4 px, so that the step never shrinks below its size at the minimum viewport width and grows no faster than text that can be enlarged to 200 %, as WCAG 2.2 Resize Text requires, within the 300 % page zoom of Safari, the lowest maximum among the Baseline core browsers',
       },
     ]);
   });
@@ -891,8 +906,8 @@ describe('verify', () => {
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(22n, 1n),
-        maximumSize: Fraction.makeUnsafe(28n, 1n),
+        minimumSize: Rational.fromBigInt(22n),
+        maximumSize: Rational.fromBigInt(28n),
       },
       fontWeight: 400,
     });
@@ -905,8 +920,8 @@ describe('verify', () => {
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(56n, 3n),
-        maximumSize: Fraction.makeUnsafe(24n, 1n),
+        minimumSize: Rational.makeUnsafe(56n, 3n),
+        maximumSize: Rational.fromBigInt(24n),
       },
       fontWeight: 700,
     });
@@ -919,8 +934,8 @@ describe('verify', () => {
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(56n, 3n),
-        maximumSize: Fraction.makeUnsafe(24n, 1n),
+        minimumSize: Rational.makeUnsafe(56n, 3n),
+        maximumSize: Rational.fromBigInt(24n),
       },
       fontWeight: 600,
     });
@@ -938,8 +953,8 @@ describe('verify', () => {
       text: `oklch(${Math.cbrt(1 / 10)} 0 0)`,
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
     });
@@ -948,31 +963,36 @@ describe('verify', () => {
   });
 
   it('accepts a pair at the contrast its exact colors have, whatever rounding takes from it', () => {
-    // 20.22204598486041814… at 60 significant digits from the matrices of CSS Color 4, where JavaScript computes 20.222045984860415.
+    // A pair whose contrast JavaScript computes below the contrast of its exact colors.
+    const exact = numberBelow(
+      exactContrast(exactLuminance(0.262902, 0.014207), exactLuminance(1, 0)),
+    );
+    const computed = Color.contrast('oklch(0.262902 0.014207 0)', 'oklch(100% 0 0)');
     const exit = Color.verify({
-      text: 'oklch(0.132707 0.067688 288.9246)',
+      text: 'oklch(0.262902 0.014207 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
-      minimumContrast: 20.22204598486042,
+      minimumContrast: exact,
     });
 
+    expect(Exit.isSuccess(computed) ? computed.value : Infinity).toBeLessThan(exact);
     expect(Exit.isSuccess(exit)).toBe(true);
   });
 
   it('rejects a pair that falls short by more than rounding can account for', () => {
     const exit = Color.verify({
-      text: 'oklch(0.132707 0.067688 288.9246)',
+      text: 'oklch(0.262902 0.014207 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
-      minimumContrast: 20.2220459849,
+      minimumContrast: 15.4873380065,
     });
 
     expect(Exit.isFailure(exit)).toBe(true);
@@ -983,8 +1003,8 @@ describe('verify', () => {
       text: 'oklch(0.4642 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
     });
@@ -997,8 +1017,8 @@ describe('verify', () => {
       text: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(24n, 1n),
-        maximumSize: Fraction.makeUnsafe(30n, 1n),
+        minimumSize: Rational.fromBigInt(24n),
+        maximumSize: Rational.fromBigInt(30n),
       },
       fontWeight: 400,
       minimumContrast: 13 / 2,
@@ -1016,8 +1036,8 @@ describe('verify', () => {
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
       minimumContrast: 5,
@@ -1041,8 +1061,8 @@ describe('verify', () => {
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
       minimumContrast: 25,
@@ -1066,8 +1086,8 @@ describe('verify', () => {
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
       minimumContrast: Color.maximumContrastRatio,
@@ -1081,8 +1101,8 @@ describe('verify', () => {
       text: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 0,
     });
@@ -1110,8 +1130,8 @@ describe('Brand', () => {
       color: 'oklch(64% 0.17 147)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 1200,
     });
@@ -1123,8 +1143,8 @@ describe('Brand', () => {
 describe('shade', () => {
   it('writes a shade that reaches the contrast in hex too, as tools measure it', () => {
     const step = {
-      minimumSize: Fraction.makeUnsafe(16n, 1n),
-      maximumSize: Fraction.makeUnsafe(20n, 1n),
+      minimumSize: Rational.fromBigInt(16n),
+      maximumSize: Rational.fromBigInt(20n),
     };
 
     for (const [color, background] of [
@@ -1148,8 +1168,8 @@ describe('shade', () => {
       color: 'oklch(64% 0.17 147)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
     });
@@ -1157,8 +1177,8 @@ describe('shade', () => {
       color: 'oklch(64% 0.17 0.4turn)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
     });
@@ -1172,8 +1192,8 @@ describe('shade', () => {
       color: 'oklch(50% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(12n, 1n),
-        maximumSize: Fraction.makeUnsafe(15n, 1n),
+        minimumSize: Rational.fromBigInt(12n),
+        maximumSize: Rational.fromBigInt(15n),
       },
       fontWeight: 400,
     });
@@ -1186,7 +1206,7 @@ describe('shade', () => {
       {
         path: ['step', 'minimumSize'],
         message:
-          'Expected a minimum size of at least 13 px, the smallest size of the USWDS theme type scale',
+          'Expected a minimum size of at least 13 px, the smallest size of the USWDS 3 theme type scale',
       },
     ]);
   });
@@ -1196,8 +1216,8 @@ describe('shade', () => {
       color: 'oklch(0% 0 0)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
     });
@@ -1207,8 +1227,8 @@ describe('shade', () => {
 
   it('darkens a brand color against a light background to the contrast its text needs', () => {
     const step = {
-      minimumSize: Fraction.makeUnsafe(16n, 1n),
-      maximumSize: Fraction.makeUnsafe(20n, 1n),
+      minimumSize: Rational.fromBigInt(16n),
+      maximumSize: Rational.fromBigInt(20n),
     };
     const exit = Color.shade({
       color: 'oklch(64% 0.17 147)',
@@ -1241,8 +1261,8 @@ describe('shade', () => {
       color: 'oklch(64% 0.17 147)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
     });
@@ -1258,14 +1278,14 @@ describe('shade', () => {
       color: 'oklch(54% 0.16 0)',
       background: 'oklch(56.2% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(24n, 1n),
-        maximumSize: Fraction.makeUnsafe(30n, 1n),
+        minimumSize: Rational.fromBigInt(24n),
+        maximumSize: Rational.fromBigInt(30n),
       },
       fontWeight: 400,
     });
 
     expect(Exit.isSuccess(exit) ? exit.value : '').toBe(
-      'oklch(0.08691023952433169 0.035232653611955 0)',
+      'oklch(0.086910239524331 0.03523265361195476 0)',
     );
   });
 
@@ -1305,8 +1325,8 @@ describe('shade', () => {
 
   it('lightens a brand color against a dark background and keeps its chroma where sRGB holds it', () => {
     const step = {
-      minimumSize: Fraction.makeUnsafe(16n, 1n),
-      maximumSize: Fraction.makeUnsafe(20n, 1n),
+      minimumSize: Rational.fromBigInt(16n),
+      maximumSize: Rational.fromBigInt(20n),
     };
     const exit = Color.shade({
       color: 'oklch(64% 0.17 147)',
@@ -1336,8 +1356,8 @@ describe('shade', () => {
 
   it('reaches a stricter contrast the project asks for', () => {
     const step = {
-      minimumSize: Fraction.makeUnsafe(16n, 1n),
-      maximumSize: Fraction.makeUnsafe(20n, 1n),
+      minimumSize: Rational.fromBigInt(16n),
+      maximumSize: Rational.fromBigInt(20n),
     };
     const exit = Color.shade({
       color: 'oklch(64% 0.17 147)',
@@ -1368,8 +1388,8 @@ describe('shade', () => {
       color: 'oklch(64% 0.17 147)',
       background: 'oklch(60% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
     });
@@ -1388,8 +1408,8 @@ describe('shade', () => {
         color: 'oklch(64% 0.17 147)',
         background: 'oklch(60% 0 0)',
         step: {
-          minimumSize: Fraction.makeUnsafe(16n, 1n),
-          maximumSize: Fraction.makeUnsafe(20n, 1n),
+          minimumSize: Rational.fromBigInt(16n),
+          maximumSize: Rational.fromBigInt(20n),
         },
         fontWeight: 400,
       }).pipe(Effect.catchTag('NoLegibleShade', (error) => Effect.succeed(error.requiredContrast)));
@@ -1403,8 +1423,8 @@ describe('shade', () => {
       color: 'oklch(64% 0.17 147)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
       minimumContrast: 5,
@@ -1428,8 +1448,8 @@ describe('shade', () => {
       color: 'oklch(64% 0.17 147)',
       background: 'oklch(100% 0 0)',
       step: {
-        minimumSize: Fraction.makeUnsafe(16n, 1n),
-        maximumSize: Fraction.makeUnsafe(20n, 1n),
+        minimumSize: Rational.fromBigInt(16n),
+        maximumSize: Rational.fromBigInt(20n),
       },
       fontWeight: 400,
       minimumContrast: 25,

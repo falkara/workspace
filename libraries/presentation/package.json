@@ -1,7 +1,7 @@
 {
   "name": "@falkara/presentation",
   "version": "0.7.0",
-  "description": "An Effect-based TypeScript library for interface design that derives each value from established standards.",
+  "description": "An Effect-based TypeScript library for interface design that derives each value from established standards, save one declared choice.",
   "keywords": [
     "accessibility",
     "color-contrast",
@@ -30,8 +30,10 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
+    "#jsr.json": "./jsr.json",
     "#package.json": "./package.json",
-    "#src/*": "./src/*.ts"
+    "#src/*": "./src/*.ts",
+    "#vite.config": "./vite.config.ts"
   },
   "exports": {
     "./Color": {
@@ -41,10 +43,6 @@
     "./Fluid": {
       "types": "./dist/Fluid.d.mts",
       "default": "./dist/Fluid.mjs"
-    },
-    "./Fraction": {
-      "types": "./dist/Fraction.d.mts",
-      "default": "./dist/Fraction.mjs"
     },
     "./Layout": {
       "types": "./dist/Layout.d.mts",
@@ -75,9 +73,9 @@
   },
   "devDependencies": {
     "@effect/vitest": "4.1.0",
-    "effect": "4.1.0"
+    "effect": "4.1.3"
   },
   "peerDependencies": {
-    "effect": "^4.1.0"
+    "effect": "^4.1.3"
   }
 }

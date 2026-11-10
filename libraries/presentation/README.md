@@ -1,30 +1,30 @@
 # Falkara Presentation
 
-Falkara Presentation is an [Effect-based](https://effect.website/) TypeScript library for interface design. It derives each value from established standards and refuses any that would break them to keep the design consistent as it scales.
+Falkara Presentation is an [Effect-based](https://effect.website/) TypeScript library for interface design. It derives each value from established standards, save one declared choice, the widest viewport its values grow to, and refuses any that would break them to keep the design consistent as it scales.
 
 It has always nagged at us that most interfaces resize in jumps at breakpoints while every screen between them makes do. We tied every value to shared ratios so each one grows smoothly in step with the rest. Every screen up to a desktop gets values of its own, even the ones nobody designed for.
 
-Decisions shift from numbers to intent. Everything that follows from that intent is worked out once and carries its reason with it, so none of it rests on anyone's taste. No value that would leave a reader behind ever reaches a screen. What remains is the part worth arguing about: how the interface should feel.
+Decisions shift from every number to the few choices that state the intent. Everything that follows from that intent is worked out once and carries its reason with it, so none of it rests on anyone's taste. No value that would leave a reader behind ever reaches a screen. What remains is the part worth arguing about: how the interface should feel.
 
 ## Spotlight
 
 Nothing shows the idea better than a fluid type scale. Three choices go in and out comes either a whole scale or a precise no for anything past the standards.
 
 ```ts
-import { Effect } from 'effect';
+import { Effect, Rational } from 'effect';
 import * as Fluid from '@falkara/presentation/Fluid';
 import * as Typography from '@falkara/presentation/Typography';
 
 // Intent: how sharply headings rise on narrow and wide screens, and how large body text gets.
 const intent = {
-  minimumFactor: { numerator: 6n, denominator: 5n },
-  maximumFactor: { numerator: 5n, denominator: 4n },
-  maximumBodyFontSize: { numerator: 20n, denominator: 1n }, // CSS pixels
+  minimumFactor: Rational.makeUnsafe(6n, 5n),
+  maximumFactor: Rational.makeUnsafe(5n, 4n),
+  maximumBodyFontSize: Rational.fromBigInt(20n), // CSS pixels
 };
 
 Effect.gen(function* () {
   const steps = yield* Typography.scale(intent);
-  return yield* Effect.forEach(steps, (step) => Fluid.clamp(step.minimumSize, step.maximumSize));
+  return yield* Effect.forEach(steps, Fluid.clamp);
 });
 // Success: [
 //   'clamp(0.83333rem, 0.77778rem + 0.27778vw, 1rem)',       position −1
@@ -33,9 +33,10 @@ Effect.gen(function* () {
 //   'clamp(2.98598rem, 2.39185rem + 2.97065vw, 4.76837rem)', position 6
 // ]
 
-Typography.scale({ ...intent, maximumBodyFontSize: { numerator: 30n, denominator: 1n } });
+Typography.scale({ ...intent, maximumBodyFontSize: Rational.fromBigInt(30n) });
 // Failure: SchemaError(Expected a body font size of at most 25.6 px, so that text can be enlarged
-//   to 200 % within the 300 % page zoom of Safari, as WCAG 2.2 Resize Text requires
+//   to 200 %, as WCAG 2.2 Resize Text requires, within the 300 % page zoom of Safari, the lowest
+//   maximum among the Baseline core browsers
 //   at ["maximumBodyFontSize"])
 ```
 
@@ -49,8 +50,19 @@ const scale = Typography.scale(intent);
 if (Exit.isSuccess(scale)) {
   scale.value; // the steps
 } else {
-  Option.getOrUndefined(Exit.findErrorOption(scale))?.message; // every reason, one per line
+  Option.getOrUndefined(Exit.findErrorOption(scale))?.message; // every reason, each followed by its path
 }
+```
+
+Intent kept as JSON reads through the JSON codec of the same schema, each number written in a string as a fraction or a whole number.
+
+```ts
+import { Schema } from 'effect';
+
+Schema.decodeUnknownExit(Schema.toCodecJson(Typography.ScaleOptions))(
+  JSON.parse('{ "minimumFactor": "6/5", "maximumFactor": "5/4", "maximumBodyFontSize": "20" }'),
+);
+// Success: the same intent, ready for Typography.scale
 ```
 
 Every schema the modules export, such as `Typography.ScaleOptions`, works with validators outside Effect too once it passes through `Schema.toStandardSchemaV1`.
@@ -62,7 +74,7 @@ Every schema the modules export, such as `Typography.ScaleOptions`, works with v
 - **Color** measures each pair against the size of the text it carries and finds the closest legible shade of a brand color.
 - **Layout** holds lines to lengths that follow the font.
 
-Viewport, Length, Fluid and Fraction hold the facts and the exact arithmetic the rest stands on.
+Viewport and Length hold the facts the rest stands on, worked out exactly in the `Rational` numbers of Effect, and Fluid writes the values as CSS lengths that grow with the viewport.
 
 ## Groundwork
 
@@ -72,7 +84,7 @@ We build only on what the industry already agrees on and let a handful of them s
 
 ### Web Platform
 
-Facts and opinions come built in. Only facts that hold for every reader in every browser are kept and opinions give way to derived values.
+Facts and opinions come built in. Only facts that hold for every reader in every Baseline core browser are kept, and opinions give way to derived values, save one declared choice: a maximum viewport width of 1280 px, as WCAG sets none and fluid values need one to stay resizable.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../.github/assets/baseline-widely-available-dark.svg">
@@ -83,11 +95,11 @@ Facts and opinions come built in. Only facts that hold for every reader in every
 
 Promises to readers are on record. Values keep every promise within their reach and that goes well past what the European Accessibility Act in the EU and Section 508 of the Rehabilitation Act in the United States demand.
 
-Falkara Presentation meets WCAG 2.2 at Level AAA in everything its values touch.
+Values meet the success criteria of WCAG 2.2 up to Level AAA that they decide: Contrast (Enhanced) for text, Resize Text, Reflow, Text Spacing and Visual Presentation. Criteria they feed without deciding, such as the contrast of interface components and focus indicators or the size of targets, rest with the interface that uses them.
 
 ### USWDS
 
-Conventions earn trust by surviving real use. Values borrow them only where the guidelines fall silent and only from the design system the United States government runs across nearly a hundred of its agencies.
+Conventions earn trust by surviving real use. Values borrow them only where the guidelines fall silent and only from USWDS 3, [the design system](https://designsystem.digital.gov/about/) the United States government builds its websites with, which supports dozens of its agencies and nearly 200 of their sites.
 
 ### Utopia
 
