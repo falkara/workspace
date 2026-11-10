@@ -1,4 +1,4 @@
-import { Exit, Rational, Schema } from 'effect';
+import { Array, Exit, Predicate, Rational, Schema } from 'effect';
 
 /** The tristimulus values of a color, relative to the white, whose Y is 1. */
 export interface Tristimulus {
@@ -638,7 +638,7 @@ export const isInGamut = (medium: Medium, color: Tristimulus): boolean =>
       Rational.isLessThanOrEqualTo(channel, medium.peak),
   );
 
-/** A color written in the CSS syntax of a medium, such as `color(srgb 1 0.5 0)`. Its linear channels are exact; each is rounded once to the nearest number and encoded in floating point by the medium's transfer function, as CSS Color 4 and CSS Color HDR encode it, including how they extend it to negative channels. The powers, logarithms and exponentials of the transfer functions are assumed accurate to one unit in the last place, since ECMAScript leaves their accuracy to the engines, so each encoded channel lies within a few units in the last place of the exact encoding; it is written as the shortest number that reads back as the same value. */
+/** A color written in the CSS syntax of a medium, such as `color(srgb 1 0.5 0)`. Its linear channels are exact; each is rounded once to the nearest number and encoded in floating point by the medium's transfer function, as CSS Color 4 and CSS Color HDR encode it, including how they extend it to negative channels. The powers, logarithms and exponentials of the transfer functions are assumed accurate to one unit in the last place, since ECMAScript leaves their accuracy to the engines. For sRGB and Display P3, each encoded channel then lies within 32 units in the last place of the exact encoding, as subtracting the offset amplifies the error of the power at most 2.4-fold; the other transfer functions amplify the errors of their powers by their exponents, that of PQ by its m2 of 78.84375. Each channel is written as the shortest number that reads back as the same value. */
 export const write = (medium: Medium, color: Tristimulus): string => {
   const encoded = transform(medium.xyzToLinear, [color.X, color.Y, color.Z]).map((channel) => {
     // A linear channel of a color lies far within the range of a number, so the conversion is finite.
@@ -683,3 +683,115 @@ export const write = (medium: Medium, color: Tristimulus): string => {
   });
   return `color(${medium.colorSpace} ${encoded[0]} ${encoded[1]} ${encoded[2]})`;
 };
+
+/**
+ * A schema of the hue, the medium and the headroom of the purest color of a hue in a medium. The hue and the medium are taken as the library makes them, by `dominantWavelength`, `complementaryWavelength` and the media, and are not checked in depth, so they are not decoded from JSON. The headroom is the largest linear channel the color may reach, relative to the white, whose channels are 1: by default 1, so that the color is no brighter than the white allows in SDR and stays at the level of HDR Reference White in HDR, exactly as in SDR. It bounds the largest channel rather than the luminance Y, as a bound on Y would brighten a color in HDR even at 1.
+ *
+ * Outside the library, the headroom is bounded by more than the medium: WCAG 2.2 says nothing about luminance above the white, as its contrast runs from black at 0 to white at 1; a display shows no more than its own peak; and a reader or a browser can lower it through `dynamic-range-limit`. If a color above the white flashes or pulses, WCAG 2.2 Three Flashes applies, and a bright HDR color makes a failure far more likely.
+ *
+ * @see https://www.w3.org/TR/WCAG22/#dfn-relative-luminance
+ * @see https://www.w3.org/TR/2026/WD-css-color-hdr-1-20261026/#propdef-dynamic-range-limit
+ * @see https://www.w3.org/TR/WCAG22/#three-flashes
+ */
+export const PurestColorOptions = Schema.Struct({
+  /** The hue, as `dominantWavelength` or `complementaryWavelength` gives it. */
+  hue: Schema.declare(
+    (input): input is Hue =>
+      Predicate.hasProperty(input, 'spectralChromaticity') &&
+      Predicate.hasProperty(input, 'direction'),
+  ),
+  /** The medium, one of the media of the library or one `onExactWhite` builds. */
+  medium: Schema.declare(
+    (input): input is Medium =>
+      Predicate.hasProperty(input, 'colorSpace') &&
+      Predicate.hasProperty(input, 'xyzToLinear') &&
+      Predicate.hasProperty(input, 'linearToXyz') &&
+      Predicate.hasProperty(input, 'peak'),
+  ),
+  /** The largest linear channel the color may reach, relative to the white; 1 when it is not given. */
+  headroom: Schema.optionalKey(
+    Schema.Rational.pipe(
+      Schema.check(
+        Schema.makeIsGreaterThan({ order: Rational.Order, formatter: Rational.format })(
+          Rational.fromBigInt(0n),
+          {
+            message:
+              'Expected a positive headroom, so that the color gives off light, as the purest color of a hue is not black',
+          },
+        ),
+      ),
+    ),
+  ),
+}).pipe(
+  Schema.check(
+    Schema.makeFilter(
+      (options) =>
+        options.headroom === undefined ||
+        Rational.isLessThanOrEqualTo(options.headroom, options.medium.peak) || {
+          path: ['headroom'],
+          issue:
+            options.medium.colorSpace === 'rec2100-pq'
+              ? `Expected a headroom of at most ${Rational.format(options.medium.peak)} for rec2100-pq, so that the color stays within the medium, as BT.2100 encodes no luminance above 10 000 cd/m²`
+              : options.medium.colorSpace === 'rec2100-hlg'
+                ? 'Expected a headroom of at most 1 for rec2100-hlg, so that the color stays within the medium, as how far HLG reaches above the white is not decided yet'
+                : `Expected a headroom of at most 1 for ${options.medium.colorSpace}, so that the color stays within the medium, as its channels reach no further than its white`,
+        },
+    ),
+  ),
+);
+
+/** The hue, the medium and the headroom of the purest color of a hue in a medium, as they are written. */
+export type PurestColorOptions = typeof PurestColorOptions.Encoded;
+
+/**
+ * The purest color of a hue that a medium shows, at the highest luminance the headroom allows, as tristimulus values relative to the white, worked out exactly; or a failure with the reason when the headroom is not positive or exceeds the peak of the medium. Along the line of the hue from the library's white, it takes the point where the line leaves the gamut of the medium, where the first linear channel reaches 0. Every measure of purity CIE defines, such as excitation purity and colorimetric purity, grows along that line, so the point does not depend on which one is meant. At that chromaticity it scales the color until its largest linear channel reaches the headroom.
+ */
+export const purestColor = (
+  options: PurestColorOptions,
+): Exit.Exit<Tristimulus, Schema.SchemaError> =>
+  Exit.map(Schema.decodeExit(PurestColorOptions)(options, { errors: 'all' }), (options) => {
+    // The linear channels of the chromaticity (x, y, 1 − x − y) of the point at t along the line, which are those of its color divided by its x + y + z, a positive number that changes no sign: at the white, and their change for each unit of t.
+    const atWhite = transform(options.medium.xyzToLinear, [
+      whiteChromaticity.x,
+      whiteChromaticity.y,
+      Rational.subtract(
+        Rational.fromBigInt(1n),
+        Rational.sum(whiteChromaticity.x, whiteChromaticity.y),
+      ),
+    ]);
+    const slope = transform(options.medium.xyzToLinear, [
+      options.hue.direction.x,
+      options.hue.direction.y,
+      Rational.negate(Rational.sum(options.hue.direction.x, options.hue.direction.y)),
+    ]);
+    // The t at which each channel with a negative slope reaches 0, its positive value at the white divided by its fall.
+    const edges = [0, 1, 2]
+      .filter((channel) => Rational.isNegative(slope[channel] ?? Rational.fromBigInt(0n)))
+      .map((channel) =>
+        Rational.divideUnsafe(
+          Rational.negate(atWhite[channel] ?? Rational.fromBigInt(0n)),
+          // Only channels with a negative slope reach this division, so the divisor is never zero.
+          slope[channel] ?? Rational.fromBigInt(-1n),
+        ),
+      );
+    // At least one channel has a negative slope: the direction changes x and y but not x + y + z, so its channels, weighted by the positive x + y + z of each primary, add up to 0, and they are not all 0, as the direction is not zero. The white is therefore never the result.
+    const edge = Array.isArrayNonEmpty(edges)
+      ? Array.min(edges, Rational.Order)
+      : Rational.fromBigInt(0n);
+    const channels = [
+      Rational.sum(atWhite[0], Rational.multiply(edge, slope[0])),
+      Rational.sum(atWhite[1], Rational.multiply(edge, slope[1])),
+      Rational.sum(atWhite[2], Rational.multiply(edge, slope[2])),
+    ] as const;
+    // The channels of the edge are not negative and not all 0, as its chromaticity is that of a color, so the largest is positive and the division cannot fail.
+    const scale = Rational.divideUnsafe(
+      options.headroom ?? Rational.fromBigInt(1n),
+      Rational.max(Rational.max(channels[0], channels[1]), channels[2]),
+    );
+    const [X, Y, Z] = transform(options.medium.linearToXyz, [
+      Rational.multiply(channels[0], scale),
+      Rational.multiply(channels[1], scale),
+      Rational.multiply(channels[2], scale),
+    ]);
+    return { X, Y, Z };
+  });

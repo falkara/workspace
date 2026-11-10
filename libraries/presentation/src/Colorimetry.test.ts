@@ -624,3 +624,264 @@ describe('media', () => {
     ).toEqual([0.75, 0.75, 0.75]);
   });
 });
+
+describe('purestColor', () => {
+  it('reaches the edge of the gamut of every medium, one channel at exactly 0 and the largest at exactly the headroom', () => {
+    const hue = Colorimetry.complementaryWavelength({
+      wavelength: 518,
+      xBar: Rational.makeUnsafe(4798504n, 100000000n),
+      yBar: Rational.makeUnsafe(6708752n, 10000000n),
+      zBar: Rational.makeUnsafe(8998272n, 100000000n),
+    });
+    const media = [
+      Colorimetry.srgb,
+      Colorimetry.displayP3,
+      Colorimetry.rec2020,
+      Colorimetry.rec2100Pq,
+      Colorimetry.rec2100Hlg,
+    ].flatMap((medium) => [medium, Colorimetry.onExactWhite(medium)]);
+
+    for (const medium of media) {
+      const exit = Exit.isSuccess(hue)
+        ? Colorimetry.purestColor({ hue: hue.value, medium })
+        : undefined;
+      const color = exit && Exit.isSuccess(exit) ? exit.value : undefined;
+      const channels =
+        color &&
+        medium.xyzToLinear.map((row) =>
+          Rational.sumAll([
+            Rational.multiply(row[0], color.X),
+            Rational.multiply(row[1], color.Y),
+            Rational.multiply(row[2], color.Z),
+          ]),
+        );
+
+      expect(color && Colorimetry.isInGamut(medium, color), `${medium.colorSpace} in gamut`).toBe(
+        true,
+      );
+      expect(
+        channels?.some((channel) => Rational.isZero(channel)),
+        `${medium.colorSpace} has a channel at exactly 0`,
+      ).toBe(true);
+      expect(
+        channels?.reduce((largest, channel) => Rational.max(largest, channel)),
+        `${medium.colorSpace} has its largest channel at exactly the headroom`,
+      ).toEqual(Rational.fromBigInt(1n));
+    }
+  });
+
+  it('lies on the line of the hue, on the side its direction points to, with nothing further along it in the gamut', () => {
+    const hue = Colorimetry.complementaryWavelength({
+      wavelength: 518,
+      xBar: Rational.makeUnsafe(4798504n, 100000000n),
+      yBar: Rational.makeUnsafe(6708752n, 10000000n),
+      zBar: Rational.makeUnsafe(8998272n, 100000000n),
+    });
+    const media = [
+      Colorimetry.srgb,
+      Colorimetry.displayP3,
+      Colorimetry.rec2020,
+      Colorimetry.rec2100Pq,
+      Colorimetry.rec2100Hlg,
+    ].flatMap((medium) => [medium, Colorimetry.onExactWhite(medium)]);
+
+    for (const medium of media) {
+      const direction = Exit.isSuccess(hue) ? hue.value.direction : undefined;
+      const exit = Exit.isSuccess(hue)
+        ? Colorimetry.purestColor({ hue: hue.value, medium })
+        : undefined;
+      const color = exit && Exit.isSuccess(exit) ? exit.value : undefined;
+      // The tristimulus values of a color within a gamut add up to a positive number, so the divisions by their sum below cannot fail.
+      const sum = color && Rational.sumAll([color.X, color.Y, color.Z]);
+      // From the white to the chromaticity of the color.
+      const offset = color &&
+        sum && {
+          x: Rational.subtract(
+            Rational.divideUnsafe(color.X, sum),
+            Colorimetry.whiteChromaticity.x,
+          ),
+          y: Rational.subtract(
+            Rational.divideUnsafe(color.Y, sum),
+            Colorimetry.whiteChromaticity.y,
+          ),
+        };
+
+      expect(
+        offset &&
+          direction &&
+          Rational.subtract(
+            Rational.multiply(offset.x, direction.y),
+            Rational.multiply(offset.y, direction.x),
+          ),
+        `${medium.colorSpace} lies on the line of the hue`,
+      ).toEqual(Rational.fromBigInt(0n));
+      expect(
+        offset &&
+          direction &&
+          Rational.isPositive(
+            Rational.sum(
+              Rational.multiply(offset.x, direction.x),
+              Rational.multiply(offset.y, direction.y),
+            ),
+          ),
+        `${medium.colorSpace} lies on the side the direction points to`,
+      ).toBe(true);
+      for (const further of [
+        Rational.makeUnsafe(1n, 1000000000000n),
+        Rational.makeUnsafe(1n, 2n),
+        Rational.fromBigInt(10n),
+      ]) {
+        const x =
+          offset &&
+          direction &&
+          Rational.sum(
+            Rational.sum(Colorimetry.whiteChromaticity.x, offset.x),
+            Rational.multiply(direction.x, further),
+          );
+        const y =
+          offset &&
+          direction &&
+          Rational.sum(
+            Rational.sum(Colorimetry.whiteChromaticity.y, offset.y),
+            Rational.multiply(direction.y, further),
+          );
+
+        expect(
+          x &&
+            y &&
+            color &&
+            Colorimetry.isInGamut(medium, {
+              X: x,
+              Y: y,
+              Z: Rational.subtract(Rational.fromBigInt(1n), Rational.sum(x, y)),
+            }),
+          `${medium.colorSpace} holds nothing further along the line`,
+        ).toBe(false);
+      }
+    }
+  });
+
+  it('gives 518 nm in sRGB a red of 1, a green of 0 and a blue between them, written within the bound write states', () => {
+    const hue = Colorimetry.complementaryWavelength({
+      wavelength: 518,
+      xBar: Rational.makeUnsafe(4798504n, 100000000n),
+      yBar: Rational.makeUnsafe(6708752n, 10000000n),
+      zBar: Rational.makeUnsafe(8998272n, 100000000n),
+    });
+    const exit = Exit.isSuccess(hue)
+      ? Colorimetry.purestColor({ hue: hue.value, medium: Colorimetry.srgb })
+      : undefined;
+    const color = exit && Exit.isSuccess(exit) ? exit.value : undefined;
+    const [red, green, blue] = Colorimetry.srgb.xyzToLinear.map((row) =>
+      color
+        ? Rational.sumAll([
+            Rational.multiply(row[0], color.X),
+            Rational.multiply(row[1], color.Y),
+            Rational.multiply(row[2], color.Z),
+          ])
+        : Rational.fromBigInt(-1n),
+    );
+    const written = Number(
+      color
+        ? /^color\(srgb \S+ \S+ (\S+)\)$/.exec(Colorimetry.write(Colorimetry.srgb, color))?.[1]
+        : NaN,
+    );
+    // The linear channels the written blue and the numbers 32 units in the last place to either side of it read back as, by the sRGB transfer function.
+    const readBack = [
+      written - 32 * written * Number.EPSILON,
+      written + 32 * written * Number.EPSILON,
+    ].map((encoded) => ((encoded + 0.055) / 1.055) ** 2.4);
+
+    expect(red).toEqual(Rational.fromBigInt(1n));
+    expect(green).toEqual(Rational.fromBigInt(0n));
+    expect(
+      blue && Rational.isPositive(blue) && Rational.isLessThan(blue, Rational.fromBigInt(1n)),
+    ).toBe(true);
+    expect(
+      blue &&
+        // The numbers read back are finite, so they convert to rationals.
+        Rational.isGreaterThan(blue, Rational.fromNumberUnsafe(readBack[0] ?? 1)) &&
+        Rational.isLessThan(blue, Rational.fromNumberUnsafe(readBack[1] ?? 0)),
+      'the exact blue lies within 32 units in the last place of the written one',
+    ).toBe(true);
+  });
+
+  it('brings the largest channel to a headroom above the white in PQ', () => {
+    const hue = Colorimetry.complementaryWavelength({
+      wavelength: 518,
+      xBar: Rational.makeUnsafe(4798504n, 100000000n),
+      yBar: Rational.makeUnsafe(6708752n, 10000000n),
+      zBar: Rational.makeUnsafe(8998272n, 100000000n),
+    });
+    const exit = Exit.isSuccess(hue)
+      ? Colorimetry.purestColor({
+          hue: hue.value,
+          medium: Colorimetry.rec2100Pq,
+          headroom: Rational.fromBigInt(2n),
+        })
+      : undefined;
+    const color = exit && Exit.isSuccess(exit) ? exit.value : undefined;
+
+    expect(
+      color &&
+        Colorimetry.rec2100Pq.xyzToLinear
+          .map((row) =>
+            Rational.sumAll([
+              Rational.multiply(row[0], color.X),
+              Rational.multiply(row[1], color.Y),
+              Rational.multiply(row[2], color.Z),
+            ]),
+          )
+          .reduce((largest, channel) => Rational.max(largest, channel)),
+    ).toEqual(Rational.fromBigInt(2n));
+  });
+
+  it('refuses a headroom above the peak of the medium or not positive, with the reason', () => {
+    const hue = Colorimetry.complementaryWavelength({
+      wavelength: 518,
+      xBar: Rational.makeUnsafe(4798504n, 100000000n),
+      yBar: Rational.makeUnsafe(6708752n, 10000000n),
+      zBar: Rational.makeUnsafe(8998272n, 100000000n),
+    });
+    const issues = (medium: Colorimetry.Medium, headroom: Rational.Rational) => {
+      const exit = Exit.isSuccess(hue)
+        ? Colorimetry.purestColor({ hue: hue.value, medium, headroom })
+        : undefined;
+
+      return exit && Exit.isFailure(exit)
+        ? SchemaIssue.makeFormatterStandardSchemaV1()(
+            Option.getOrThrow(Exit.findErrorOption(exit)).issue,
+          ).issues
+        : undefined;
+    };
+
+    expect(issues(Colorimetry.srgb, Rational.fromBigInt(2n))).toEqual([
+      {
+        path: ['headroom'],
+        message:
+          'Expected a headroom of at most 1 for srgb, so that the color stays within the medium, as its channels reach no further than its white',
+      },
+    ]);
+    expect(issues(Colorimetry.rec2100Pq, Rational.fromBigInt(50n))).toEqual([
+      {
+        path: ['headroom'],
+        message:
+          'Expected a headroom of at most 10000/203 for rec2100-pq, so that the color stays within the medium, as BT.2100 encodes no luminance above 10 000 cd/m²',
+      },
+    ]);
+    expect(issues(Colorimetry.rec2100Hlg, Rational.fromBigInt(2n))).toEqual([
+      {
+        path: ['headroom'],
+        message:
+          'Expected a headroom of at most 1 for rec2100-hlg, so that the color stays within the medium, as how far HLG reaches above the white is not decided yet',
+      },
+    ]);
+    expect(issues(Colorimetry.srgb, Rational.fromBigInt(0n))).toEqual([
+      {
+        path: ['headroom'],
+        message:
+          'Expected a positive headroom, so that the color gives off light, as the purest color of a hue is not black',
+      },
+    ]);
+  });
+});
