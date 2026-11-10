@@ -4,6 +4,7 @@ export default defineConfig({
   pack: {
     entry: [
       'src/Color.ts',
+      'src/Colorimetry.ts',
       'src/Fluid.ts',
       'src/Layout.ts',
       'src/Length.ts',

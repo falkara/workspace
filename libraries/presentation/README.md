@@ -74,7 +74,7 @@ Every schema the modules export, such as `Typography.ScaleOptions`, works with v
 - **Color** measures each pair against the size of the text it carries and finds the closest legible shade of a brand color.
 - **Layout** holds lines to lengths that follow the font.
 
-Viewport and Length hold the facts the rest stands on, worked out exactly in the `Rational` numbers of Effect, and Fluid writes the values as CSS lengths that grow with the viewport.
+Viewport, Length and Colorimetry hold the facts the rest stands on, worked out exactly in the `Rational` numbers of Effect, and Fluid writes the values as CSS lengths that grow with the viewport.
 
 ## Groundwork
 

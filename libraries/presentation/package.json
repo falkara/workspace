@@ -40,6 +40,10 @@
       "types": "./dist/Color.d.mts",
       "default": "./dist/Color.mjs"
     },
+    "./Colorimetry": {
+      "types": "./dist/Colorimetry.d.mts",
+      "default": "./dist/Colorimetry.mjs"
+    },
     "./Fluid": {
       "types": "./dist/Fluid.d.mts",
       "default": "./dist/Fluid.mjs"
