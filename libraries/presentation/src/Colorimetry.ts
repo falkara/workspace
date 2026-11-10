@@ -1,4 +1,16 @@
-import { Array, Brand, Exit, Option, Predicate, Rational, Schema } from 'effect';
+import {
+  Array,
+  Brand,
+  Cause,
+  Data,
+  Effect,
+  Exit,
+  Option,
+  Predicate,
+  Rational,
+  Record,
+  Schema,
+} from 'effect';
 
 import * as Real from '#src/Real';
 
@@ -697,14 +709,6 @@ export const onExactWhite = <Space extends ColorSpace>(
 ): Medium<Space, 'exact'> =>
   mediumOf(medium.colorSpace, medium.primaries, whiteChromaticity, medium.peak);
 
-/** Whether a color lies within the gamut of a medium, with each of its linear channels from 0 to the peak of the medium, decided exactly. */
-export const isInGamut = (medium: Medium, color: Tristimulus): boolean =>
-  transform(medium.xyzToLinear, xyzOf(color)).every(
-    (channel) =>
-      Rational.isGreaterThanOrEqualTo(channel, Rational.fromBigInt(0n)) &&
-      Rational.isLessThanOrEqualTo(channel, medium.peak),
-  );
-
 /**
  * The deepest channel the library judges colors in: 16 bits, the most an image format such as PNG holds, so that its steps are whole numbers.
  *
@@ -722,12 +726,52 @@ export const decimalPlaces = ((): number => {
   return places;
 })();
 
-/**
- * A color written in the CSS syntax of a medium, such as `color(srgb 1 0.5 0)`: its linear channels exactly, encoded exactly by the medium's transfer function, as CSS Color 4 and CSS Color HDR define it, including how they extend it to negative channels, and each rounded to `decimalPlaces` decimal places, to the nearest, a number exactly halfway toward +∞, as CSS Color 4 rounds the values it serializes.
- *
- * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#serializing-color-function-values
- */
-export const write = (medium: Medium, color: Tristimulus): string => {
+/** A color of the given medium, the linear channels of a color decided to be from 0 to the peak of the medium; the space of the channels is the brand, so that it names the medium on its white. */
+export type InGamut<M extends Medium> = Brand.Branded<
+  Tristimulus,
+  `in the gamut of ${NonNullable<M['xyzToLinear']['~spaces']>['to']}`
+>;
+
+/** The failure of a color that lies outside the gamut of a medium, a result of deciding it rather than a fault of the input. */
+export class OutOfGamut extends Schema.TaggedError<OutOfGamut, { readonly brand: unique symbol }>()(
+  'OutOfGamut',
+  {
+    /** The identifier of the medium the color lies outside of. */
+    medium: Schema.String,
+    /** Which channel leaves the gamut, and by how much. */
+    message: Schema.String,
+  },
+) {}
+
+/** A color marked as lying in the gamut of a medium, which only the library does, once the color is decided to lie there. The brand exists in the type alone, so the color is marked as it is: the precise type is the signature, which the checker holds compatible with the implementation, as the color in the gamut of a medium is a color. */
+function markInGamut<M extends Medium>(medium: M, color: Tristimulus): InGamut<M>;
+function markInGamut(_medium: Medium, color: Tristimulus): Tristimulus {
+  return color;
+}
+
+/** A color proven to lie in the gamut of a medium, each of its linear channels from 0 to the peak of the medium, decided exactly; or the failure naming the first channel that leaves it and its value. Only through it, or through a definition, does a color reach `write`, so that nothing reaches CSS outside a gamut. */
+export const inGamut = <M extends Medium>(
+  medium: M,
+  color: Tristimulus,
+): Exit.Exit<InGamut<M>, OutOfGamut> => {
+  const channels = transform(medium.xyzToLinear, xyzOf(color));
+  const outside = [0, 1, 2].find(
+    (index) =>
+      Rational.isNegative(channels[index] ?? Rational.fromBigInt(0n)) ||
+      Rational.isGreaterThan(channels[index] ?? Rational.fromBigInt(0n), medium.peak),
+  );
+  return outside === undefined
+    ? Exit.succeed(markInGamut(medium, color))
+    : Exit.fail(
+        new OutOfGamut({
+          medium: medium.colorSpace,
+          message: `Expected a color within the gamut of ${medium.colorSpace}, each linear channel from 0 to ${Real.writeDecimals(medium.peak, decimalPlaces)}; its ${['red', 'green', 'blue'][outside] ?? ''} channel is ${Real.writeDecimals(channels[outside] ?? Rational.fromBigInt(0n), decimalPlaces)}`,
+        }),
+      );
+};
+
+/** A color written in the CSS syntax of a medium, whatever its channels, which only a color proven to lie in the gamut of the medium reaches from outside the module. */
+const written = (medium: Medium, color: Tristimulus): string => {
   const encoded = transform(medium.xyzToLinear, xyzOf(color)).map((channel) => {
     const magnitude = Real.fromRational(Rational.abs(channel));
     const sign = Real.fromRational(Rational.fromBigInt(Rational.isNegative(channel) ? -1n : 1n));
@@ -829,7 +873,18 @@ export const write = (medium: Medium, color: Tristimulus): string => {
 };
 
 /**
- * A schema of the hue, the medium and the headroom of the purest color of a hue in a medium. The hue and the medium are taken as the library makes them, by `dominantWavelength`, `complementaryWavelength` and the media, and are not checked in depth, so they are not decoded from JSON. The headroom is the largest linear channel the color may reach, relative to the white, whose channels are 1: by default 1, so that the color is no brighter than the white allows in SDR and stays at the level of HDR Reference White in HDR, exactly as in SDR. It bounds the largest channel rather than the luminance Y, as a bound on Y would brighten a color in HDR even at 1.
+ * A color proven to lie in the gamut of a medium, written in its CSS syntax, such as `color(srgb 1 0.5 0)`: its linear channels exactly, encoded exactly by the medium's transfer function, as CSS Color 4 and CSS Color HDR define it, including how they extend it to negative channels, and each rounded to `decimalPlaces` decimal places, to the nearest, a number exactly halfway toward +∞, as CSS Color 4 rounds the values it serializes.
+ *
+ * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#serializing-color-function-values
+ */
+export const write = <M extends Medium>(medium: M, color: InGamut<NoInfer<M>>): string =>
+  written(medium, color);
+
+/** The headroom at the level of the white, 1, at which a color is no brighter than the white allows in SDR and stays at the level of HDR Reference White in HDR, exactly as in SDR; the default headroom of `purest`. */
+export const whiteLevel: RelativeToWhite = relativeToWhite(Rational.fromBigInt(1n));
+
+/**
+ * A schema of the hue and the headroom of the purest color of a hue, in whichever medium it is written. The hue is taken as the library makes it, by `dominantWavelength` and `complementaryWavelength`, and is not checked in depth, so it is not decoded from JSON. The headroom is the largest linear channel the color may reach, relative to the white, whose channels are 1: by default `whiteLevel`, 1, so that the color is no brighter than the white allows in SDR and stays at the level of HDR Reference White in HDR, exactly as in SDR. It bounds the largest channel rather than the luminance Y, as a bound on Y would brighten a color in HDR even at 1.
  *
  * Outside the library, the headroom is bounded by more than the medium: WCAG 2.2 says nothing about luminance above the white, as its contrast runs from black at 0 to white at 1; a display shows no more than its own peak; and a reader or a browser can lower it through `dynamic-range-limit`. If a color above the white flashes or pulses, WCAG 2.2 Three Flashes applies, and a bright HDR color makes a failure far more likely.
  *
@@ -837,19 +892,11 @@ export const write = (medium: Medium, color: Tristimulus): string => {
  * @see https://www.w3.org/TR/2026/WD-css-color-hdr-1-20261026/#propdef-dynamic-range-limit
  * @see https://www.w3.org/TR/WCAG22/#three-flashes
  */
-export const PurestColorOptions = Schema.Struct({
+export const PurestOptions = Schema.Struct({
   /** The hue, as `dominantWavelength` or `complementaryWavelength` gives it. */
   hue: Schema.declare(
     (input): input is Hue =>
       Predicate.hasProperty(input, 'spectralLight') && Predicate.hasProperty(input, 'direction'),
-  ),
-  /** The medium, one of the media of the library or one `onExactWhite` builds. */
-  medium: Schema.declare(
-    (input): input is Medium =>
-      Predicate.hasProperty(input, 'colorSpace') &&
-      Predicate.hasProperty(input, 'xyzToLinear') &&
-      Predicate.hasProperty(input, 'linearToXyz') &&
-      Predicate.hasProperty(input, 'peak'),
   ),
   /** The largest linear channel the color may reach, relative to the white; 1 when it is not given. */
   headroom: Schema.optionalKey(
@@ -864,6 +911,22 @@ export const PurestColorOptions = Schema.Struct({
         ),
       ),
     ),
+  ),
+});
+
+/** The hue and the headroom of the purest color of a hue, as they are written. */
+export type PurestOptions = typeof PurestOptions.Encoded;
+
+/** A schema of the options of the purest color together with the medium it is worked out in, which refuses a headroom above the peak of the medium. The medium is taken as the library makes it and is not checked in depth. */
+const PurestInMedium = Schema.Struct({
+  ...PurestOptions.fields,
+  /** The medium, one of the media of the library or one `onExactWhite` builds. */
+  medium: Schema.declare(
+    (input): input is Medium =>
+      Predicate.hasProperty(input, 'colorSpace') &&
+      Predicate.hasProperty(input, 'xyzToLinear') &&
+      Predicate.hasProperty(input, 'linearToXyz') &&
+      Predicate.hasProperty(input, 'peak'),
   ),
 }).pipe(
   Schema.check(
@@ -883,54 +946,185 @@ export const PurestColorOptions = Schema.Struct({
   ),
 );
 
-/** The hue, the medium and the headroom of the purest color of a hue in a medium, as they are written. */
-export type PurestColorOptions = typeof PurestColorOptions.Encoded;
+/** A color independent of the medium it is written in: for any medium M, a color in the gamut of M, or a failure with the reason. It computes nothing until it is evaluated in a medium, by `inMedium`, `inMedia` or `writeMedia`. */
+export interface Definition<E = never> {
+  /** The rule that gives the color in a medium, which only a color of that medium satisfies. */
+  readonly rule: <M extends Medium>(medium: M) => Exit.Exit<InGamut<M>, E>;
+}
 
 /**
- * The purest color of a hue that a medium shows, at the highest luminance the headroom allows, as tristimulus values relative to the white, worked out exactly; or a failure with the reason when the headroom is not positive or exceeds the peak of the medium. In the medium, the linear channels of a color α·W + β·D of the hue are α·w + β·d, with w and d those of the white and of the direction. The purest is the one with the largest β/α at which no channel is below 0: with α = 1, the smallest w_i / (−d_i) over the channels the direction lowers. Where the direction lowers none, the gamut holds the spectral light itself, and the purest color is the direction alone, α = 0, as Rec. 2020 and BT.2100 hold 532 nm and 630 nm, which their rounded primaries enclose. Every measure of purity CIE defines, such as excitation purity and colorimetric purity, grows with β/α along a hue, so the result does not depend on which one is meant. The color is then scaled until its largest linear channel reaches the headroom. Every step is rational, so the result is exact.
+ * The purest color of a hue in every medium, at the highest luminance the headroom allows, as tristimulus values relative to the white, worked out exactly; or, in a medium, a failure with the reason when the headroom is not positive or exceeds the peak of the medium. In the medium, the linear channels of a color α·W + β·D of the hue are α·w + β·d, with w and d those of the white and of the direction. The purest is the one with the largest β/α at which no channel is below 0: with α = 1, the smallest w_i / (−d_i) over the channels the direction lowers. Where the direction lowers none, the gamut holds the spectral light itself, and the purest color is the direction alone, α = 0, as Rec. 2020 and BT.2100 hold 532 nm and 630 nm, which their rounded primaries enclose. Every measure of purity CIE defines, such as excitation purity and colorimetric purity, grows with β/α along a hue, so the result does not depend on which one is meant. The color is then scaled until its largest linear channel reaches the headroom. Every step is rational, so the result is exact.
  */
-export const purestColor = (
-  options: PurestColorOptions,
-): Exit.Exit<Tristimulus, Schema.SchemaError> =>
-  Exit.map(Schema.decodeExit(PurestColorOptions)(options, { errors: 'all' }), (options) => {
-    const white = transform(options.medium.xyzToLinear, xyzOf(whiteTristimulus));
-    const direction = transform(options.medium.xyzToLinear, xyzOf(options.hue.direction));
-    // The β at which each channel the direction lowers reaches 0, with α = 1: every channel of the white is positive, as the white lies inside every gamut, so only a channel the direction lowers ever reaches 0.
-    const limits = [0, 1, 2]
-      .filter((channel) => Rational.isNegative(direction[channel] ?? Rational.fromBigInt(0n)))
-      .map((channel) =>
-        Rational.divideUnsafe(
-          white[channel] ?? Rational.fromBigInt(0n),
-          // Only a channel the direction lowers reaches this division, so the divisor is never 0.
-          Rational.negate(direction[channel] ?? Rational.fromBigInt(-1n)),
+export const purest = (options: PurestOptions): Definition<Schema.SchemaError> => ({
+  rule: (medium) =>
+    Exit.map(
+      Schema.decodeExit(PurestInMedium)({ ...options, medium }, { errors: 'all' }),
+      (options) => {
+        const white = transform(options.medium.xyzToLinear, xyzOf(whiteTristimulus));
+        const direction = transform(options.medium.xyzToLinear, xyzOf(options.hue.direction));
+        // The β at which each channel the direction lowers reaches 0, with α = 1: every channel of the white is positive, as the white lies inside every gamut, so only a channel the direction lowers ever reaches 0.
+        const limits = [0, 1, 2]
+          .filter((channel) => Rational.isNegative(direction[channel] ?? Rational.fromBigInt(0n)))
+          .map((channel) =>
+            Rational.divideUnsafe(
+              white[channel] ?? Rational.fromBigInt(0n),
+              // Only a channel the direction lowers reaches this division, so the divisor is never 0.
+              Rational.negate(direction[channel] ?? Rational.fromBigInt(-1n)),
+            ),
+          );
+        // Where the direction lowers no channel, the direction alone, which only a dominant wavelength can give: the opposite of a light lowers a channel, as the Y of a light and of every primary is positive.
+        const channels = Array.isArrayNonEmpty(limits)
+          ? ([
+              Rational.sum(
+                white[0],
+                Rational.multiply(Array.min(limits, Rational.Order), direction[0]),
+              ),
+              Rational.sum(
+                white[1],
+                Rational.multiply(Array.min(limits, Rational.Order), direction[1]),
+              ),
+              Rational.sum(
+                white[2],
+                Rational.multiply(Array.min(limits, Rational.Order), direction[2]),
+              ),
+            ] as const)
+          : direction;
+        // No channel is negative, and they are not all 0: the direction is not 0, and not parallel to the white, so no mixture of the two is black. The largest is positive and the division cannot fail.
+        const scale = Rational.divideUnsafe(
+          options.headroom ?? whiteLevel,
+          Rational.max(Rational.max(channels[0], channels[1]), channels[2]),
+        );
+        const [X, Y, Z] = transform(options.medium.linearToXyz, [
+          Rational.multiply(channels[0], scale),
+          Rational.multiply(channels[1], scale),
+          Rational.multiply(channels[2], scale),
+        ]);
+        // No channel is below 0 and the largest is the headroom, at most the peak of the medium, so the color lies in its gamut.
+        return markInGamut(medium, tristimulus({ X, Y, Z }));
+      },
+    ),
+});
+
+/** A color of the consumer's own rule, which for a medium gives a color in its gamut, through `inGamut` or another definition, or fails with its reason. The rule is an effect with no requirements, and an `Exit` is one, so a rule may return what `inGamut` returns or be written with `Effect.gen`; it runs synchronously when the definition is evaluated, and a rule that does not finish synchronously fails with a defect. */
+export const define = <E>(
+  rule: <M extends Medium>(medium: M) => Effect.Effect<InGamut<M>, E>,
+): Definition<E> => ({
+  rule: (medium) => Effect.runSyncExit(rule(medium)),
+});
+
+/** Every medium of the library, on the white its standard writes, by name: the media `inMedia` and `writeMedia` evaluate by default, and the names `byMedium` takes. */
+export const media = { srgb, displayP3, rec2020, rec2100Pq, rec2100Hlg } as const;
+
+/** The name of a medium of the library in `media`. */
+export type MediumName = keyof typeof media;
+
+/** A definition with exceptions for some media, each another definition, keyed by the names of `media`, a name it does not know refused by the compiler. An exception applies to its medium on either white, as it is matched by the color space; every other medium follows the definition. The failures of the result are those of the definition and of every exception. */
+export function byMedium<
+  E,
+  Exceptions extends { readonly [Name in MediumName]?: Definition<unknown> },
+>(
+  definition: Definition<E>,
+  exceptions: Exceptions & { readonly [Name in Exclude<keyof Exceptions, MediumName>]: never },
+): Definition<
+  | E
+  | {
+      readonly [Name in keyof Exceptions]: Exceptions[Name] extends Definition<infer F> ? F : never;
+    }[keyof Exceptions]
+>;
+export function byMedium(
+  definition: Definition<unknown>,
+  exceptions: { readonly [Name in MediumName]?: Definition<unknown> },
+): Definition<unknown> {
+  return {
+    rule: (medium) =>
+      Option.getOrElse(
+        Option.map(
+          Option.flatMapNullishOr(
+            Array.findFirst(
+              Record.keys(media),
+              (name) => media[name].colorSpace === medium.colorSpace,
+            ),
+            (name) => exceptions[name],
+          ),
+          (exception) => exception.rule(medium),
         ),
-      );
-    // Where the direction lowers no channel, the direction alone, which only a dominant wavelength can give: the opposite of a light lowers a channel, as the Y of a light and of every primary is positive.
-    const channels = Array.isArrayNonEmpty(limits)
-      ? ([
-          Rational.sum(
-            white[0],
-            Rational.multiply(Array.min(limits, Rational.Order), direction[0]),
+        () => definition.rule(medium),
+      ),
+  };
+}
+
+/** The color of a definition in one medium, not written, for further computation such as contrast; or the failure of the definition there. */
+export const inMedium = <E, M extends Medium>(
+  definition: Definition<E>,
+  medium: M,
+): Exit.Exit<InGamut<M>, E> => definition.rule(medium);
+
+/** The failure of a definition in a medium, naming the medium it arose in and holding the failure of the definition. */
+export class FailedInMedium<E, Name extends string = MediumName> extends Data.TaggedError(
+  'FailedInMedium',
+)<{
+  /** The name of the medium the definition failed in. */
+  readonly medium: Name;
+  /** The failure of the definition in that medium. */
+  readonly error: E;
+  /** The name of the medium followed by the reason of the failure. */
+  readonly message: string;
+}> {}
+
+/** The colors of a definition in every medium of a record, `media` by default, keyed as the record is, so that a project on the exact white keeps the names; or a failure for every medium the definition fails in, each a `FailedInMedium` naming it, in the order of the record. A defect of a rule passes through unnamed. */
+export function inMedia<E>(
+  definition: Definition<E>,
+): Exit.Exit<{ readonly [Name in MediumName]: InGamut<(typeof media)[Name]> }, FailedInMedium<E>>;
+export function inMedia<E, Selected extends { readonly [name: string]: Medium }>(
+  definition: Definition<E>,
+  selected: Selected,
+): Exit.Exit<
+  { readonly [Name in keyof Selected]: InGamut<Selected[Name]> },
+  FailedInMedium<E, keyof Selected & string>
+>;
+export function inMedia<E>(
+  definition: Definition<E>,
+  selected: { readonly [name: string]: Medium } = media,
+): Exit.Exit<{ readonly [name: string]: Tristimulus }, FailedInMedium<E, string>> {
+  const evaluated = Record.map(selected, (medium) => definition.rule(medium));
+  const failures = Record.keys(evaluated).flatMap((name) => {
+    const exit = evaluated[name];
+    return exit !== undefined && Exit.isFailure(exit)
+      ? [
+          Cause.map(
+            exit.cause,
+            (error) =>
+              new FailedInMedium({
+                medium: name,
+                error,
+                message: `In ${name}: ${Predicate.isString(error) ? error : Predicate.hasProperty(error, 'message') && Predicate.isString(error.message) ? error.message : 'the definition failed'}`,
+              }),
           ),
-          Rational.sum(
-            white[1],
-            Rational.multiply(Array.min(limits, Rational.Order), direction[1]),
-          ),
-          Rational.sum(
-            white[2],
-            Rational.multiply(Array.min(limits, Rational.Order), direction[2]),
-          ),
-        ] as const)
-      : direction;
-    // No channel is negative, and they are not all 0: the direction is not 0, and not parallel to the white, so no mixture of the two is black. The largest is positive and the division cannot fail.
-    const scale = Rational.divideUnsafe(
-      options.headroom ?? Rational.fromBigInt(1n),
-      Rational.max(Rational.max(channels[0], channels[1]), channels[2]),
-    );
-    const [X, Y, Z] = transform(options.medium.linearToXyz, [
-      Rational.multiply(channels[0], scale),
-      Rational.multiply(channels[1], scale),
-      Rational.multiply(channels[2], scale),
-    ]);
-    return tristimulus({ X, Y, Z });
+        ]
+      : [];
   });
+  return Array.isArrayNonEmpty(failures)
+    ? Exit.failCause(failures.reduce((all, cause) => Cause.combine(all, cause)))
+    : Exit.succeed(Record.getSomes(Record.map(evaluated, Exit.getSuccess)));
+}
+
+/** A definition written in every medium of a record, `media` by default, keyed as the record is; or a failure for every medium it fails in, as `inMedia` gives it. */
+export function writeMedia<E>(
+  definition: Definition<E>,
+): Exit.Exit<{ readonly [Name in MediumName]: string }, FailedInMedium<E>>;
+export function writeMedia<E, Selected extends { readonly [name: string]: Medium }>(
+  definition: Definition<E>,
+  selected: Selected,
+): Exit.Exit<
+  { readonly [Name in keyof Selected]: string },
+  FailedInMedium<E, keyof Selected & string>
+>;
+export function writeMedia<E>(
+  definition: Definition<E>,
+  selected: { readonly [name: string]: Medium } = media,
+): Exit.Exit<{ readonly [name: string]: string }, FailedInMedium<E, string>> {
+  return Exit.map(inMedia(definition, selected), (colors) =>
+    // Each color lies in the gamut of the medium of its name, as `inMedia` gives it.
+    Record.intersection(selected, colors, (medium, color) => written(medium, color)),
+  );
+}
