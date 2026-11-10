@@ -1349,3 +1349,263 @@ describe('types of definitions', () => {
     Colorimetry.define(() => Colorimetry.inGamut(Colorimetry.srgb, Colorimetry.whiteTristimulus));
   });
 });
+
+describe('mixtures', () => {
+  const hue = Option.getOrThrow(Exit.getSuccess(Colorimetry.complementaryWavelength(rows[518])));
+  const brand = Colorimetry.purest({ hue });
+  const media = [
+    ...Object.values(Colorimetry.media),
+    ...Object.values(Colorimetry.media).map(Colorimetry.onExactWhite),
+  ];
+  const luminance = Colorimetry.relativeLuminance(Rational.makeUnsafe(19n, 20n));
+  const black = Colorimetry.define((medium) =>
+    Colorimetry.inGamut(
+      medium,
+      Colorimetry.tristimulus({
+        X: Rational.fromBigInt(0n),
+        Y: Rational.fromBigInt(0n),
+        Z: Rational.fromBigInt(0n),
+      }),
+    ),
+  );
+
+  it('give white every channel at 1 in every medium, and the library white in a medium on the exact white', () => {
+    for (const medium of media) {
+      const color = Option.getOrThrow(
+        Exit.getSuccess(Colorimetry.inMedium(Colorimetry.white, medium)),
+      );
+
+      expect(channelsOf(medium, color), medium.colorSpace).toEqual([
+        Rational.fromBigInt(1n),
+        Rational.fromBigInt(1n),
+        Rational.fromBigInt(1n),
+      ]);
+    }
+    expect(
+      Colorimetry.inMedium(Colorimetry.white, Colorimetry.onExactWhite(Colorimetry.srgb)),
+    ).toEqual(Exit.succeed(Colorimetry.whiteTristimulus));
+  });
+
+  it('give the base at a share of 0 and the tint at a share of 1, each at the luminance given', () => {
+    for (const medium of media) {
+      for (const [share, expected] of [
+        [Rational.fromBigInt(0n), Colorimetry.white],
+        [Rational.fromBigInt(1n), brand],
+      ] as const) {
+        const color = Option.getOrThrow(
+          Exit.getSuccess(
+            Colorimetry.inMedium(
+              Colorimetry.mix({
+                base: Colorimetry.white,
+                tint: brand,
+                share,
+                luminance: Colorimetry.relativeLuminance(Rational.makeUnsafe(1n, 10n)),
+              }),
+              medium,
+            ),
+          ),
+        );
+        const alone = Option.getOrThrow(Exit.getSuccess(Colorimetry.inMedium(expected, medium)));
+
+        expect(
+          cross(color, alone),
+          `${medium.colorSpace} at a share of ${Rational.format(share)}`,
+        ).toEqual({
+          X: Rational.fromBigInt(0n),
+          Y: Rational.fromBigInt(0n),
+          Z: Rational.fromBigInt(0n),
+        });
+        expect(color.Y).toEqual(Rational.makeUnsafe(1n, 10n));
+      }
+    }
+  });
+
+  it('have exactly the luminance given, and a chromaticity on the line between those of the base and the tint, between them', () => {
+    const half = Colorimetry.relativeLuminance(Rational.makeUnsafe(1n, 2n));
+
+    for (const medium of media) {
+      for (const share of [Rational.makeUnsafe(1n, 20n), Rational.makeUnsafe(1n, 3n)]) {
+        const color = Option.getOrThrow(
+          Exit.getSuccess(
+            Colorimetry.inMedium(
+              Colorimetry.mix({ base: Colorimetry.white, tint: brand, share, luminance: half }),
+              medium,
+            ),
+          ),
+        );
+        const base = Option.getOrThrow(
+          Exit.getSuccess(Colorimetry.inMedium(Colorimetry.white, medium)),
+        );
+        const tint = Option.getOrThrow(Exit.getSuccess(Colorimetry.inMedium(brand, medium)));
+        // The color is a·base + b·tint exactly when it lies in their plane; then its cross product with the tint is a·(base × tint) and with the base is b·(tint × base).
+        const baseByTint = cross(base, tint);
+        const alongBase = cross(color, tint);
+        const alongTint = cross(color, base);
+        const label = `${medium.colorSpace} at a share of ${Rational.format(share)}`;
+
+        expect(color.Y, label).toEqual(half);
+        expect(
+          Rational.sumAll([
+            Rational.multiply(color.X, baseByTint.X),
+            Rational.multiply(color.Y, baseByTint.Y),
+            Rational.multiply(color.Z, baseByTint.Z),
+          ]),
+          `${label}: in the plane of the base and the tint, so on the line of their chromaticities`,
+        ).toEqual(Rational.fromBigInt(0n));
+        expect(
+          Rational.isPositive(
+            Rational.sumAll([
+              Rational.multiply(alongBase.X, baseByTint.X),
+              Rational.multiply(alongBase.Y, baseByTint.Y),
+              Rational.multiply(alongBase.Z, baseByTint.Z),
+            ]),
+          ) &&
+            Rational.isNegative(
+              Rational.sumAll([
+                Rational.multiply(alongTint.X, baseByTint.X),
+                Rational.multiply(alongTint.Y, baseByTint.Y),
+                Rational.multiply(alongTint.Z, baseByTint.Z),
+              ]),
+            ),
+          `${label}: some of the base and some of the tint, so between their chromaticities`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('fail with the reason in every medium a luminance takes the mixture out of the gamut, and nowhere else', () => {
+    const exit = Colorimetry.writeMedia(
+      Colorimetry.mix({
+        base: Colorimetry.white,
+        tint: brand,
+        share: Rational.fromBigInt(1n),
+        luminance: Colorimetry.relativeLuminance(Rational.fromBigInt(1n)),
+      }),
+    );
+    const failures = Exit.isFailure(exit)
+      ? exit.cause.reasons.flatMap((reason) => (reason._tag === 'Fail' ? [reason.error] : []))
+      : [];
+
+    expect(failures.length).toBeGreaterThan(0);
+    for (const failure of failures) {
+      expect(failure.error).toMatchObject({
+        _tag: 'OutOfGamut',
+        medium: Colorimetry.media[failure.medium].colorSpace,
+      });
+      expect(failure.message).toMatch(
+        new RegExp(`^In ${failure.medium}: Expected a color within the gamut of `),
+      );
+    }
+    expect(failures[0]?.message).toBe(
+      'In srgb: Expected a color within the gamut of srgb, each linear channel from 0 to 1; its red channel is 3.92117',
+    );
+  });
+
+  it('fail where the base and the tint mix to black, which no scale brings to a luminance', () => {
+    expect(
+      Option.getOrThrow(
+        Exit.findErrorOption(
+          Colorimetry.inMedium(
+            Colorimetry.mix({
+              base: black,
+              tint: black,
+              share: Rational.makeUnsafe(1n, 2n),
+              luminance,
+            }),
+            Colorimetry.srgb,
+          ),
+        ),
+      ),
+    ).toMatchObject({
+      _tag: 'BlackMixture',
+      medium: 'srgb',
+      message:
+        'Expected a mixture that gives off light, so that it can be scaled to a luminance; its base and tint mix to black in srgb',
+    });
+  });
+
+  it('refuse a share outside 0 to 1 and a luminance not above 0 or above 1, with the reason', () => {
+    const issues = (share: Rational.Rational, luminanceGiven: Colorimetry.RelativeLuminance) =>
+      SchemaIssue.makeFormatterStandardSchemaV1()(
+        Option.getOrThrow(
+          Option.filter(
+            Exit.findErrorOption(
+              Colorimetry.inMedium(
+                Colorimetry.mix({
+                  base: Colorimetry.white,
+                  tint: brand,
+                  share,
+                  luminance: luminanceGiven,
+                }),
+                Colorimetry.srgb,
+              ),
+            ),
+            Schema.isSchemaError,
+          ),
+        ).issue,
+      ).issues;
+
+    expect(issues(Rational.makeUnsafe(3n, 2n), luminance)).toEqual([
+      {
+        path: ['share'],
+        message:
+          'Expected a share of the tint from 0 to 1, as the percentage of the tint in color-mix() runs from 0% to 100%',
+      },
+    ]);
+    expect(
+      issues(Rational.makeUnsafe(1n, 2n), Colorimetry.relativeLuminance(Rational.fromBigInt(0n))),
+    ).toEqual([
+      {
+        path: ['luminance'],
+        message: 'Expected a positive luminance, so that the surface gives off light',
+      },
+    ]);
+    expect(
+      issues(
+        Rational.makeUnsafe(1n, 2n),
+        Colorimetry.relativeLuminance(Rational.makeUnsafe(3n, 2n)),
+      ),
+    ).toEqual([
+      {
+        path: ['luminance'],
+        message:
+          'Expected a luminance of at most 1, the luminance of the white, as a surface is no brighter than the white',
+      },
+    ]);
+  });
+
+  it('read their amounts from JSON, each written as a fraction', () => {
+    expect(
+      Schema.decodeUnknownExit(Schema.toCodecJson(Colorimetry.MixAmounts))(
+        JSON.parse('{ "share": "1/20", "luminance": "19/20" }'),
+      ),
+    ).toEqual(Exit.succeed({ share: Rational.makeUnsafe(1n, 20n), luminance }));
+  });
+
+  it('take a relative luminance, apart from a value relative to the white or a bare number', () => {
+    expectTypeOf(
+      Colorimetry.mix({
+        base: Colorimetry.white,
+        tint: brand,
+        share: Rational.makeUnsafe(1n, 20n),
+        luminance,
+      }),
+    ).toEqualTypeOf<
+      Colorimetry.Definition<Schema.SchemaError | Colorimetry.BlackMixture | Colorimetry.OutOfGamut>
+    >();
+    Colorimetry.mix({
+      base: Colorimetry.white,
+      tint: brand,
+      share: Rational.makeUnsafe(1n, 20n),
+      // @ts-expect-error The white level bounds a linear channel, not the luminance Y.
+      luminance: Colorimetry.whiteLevel,
+    });
+    Colorimetry.mix({
+      base: Colorimetry.white,
+      tint: brand,
+      share: Rational.makeUnsafe(1n, 20n),
+      // @ts-expect-error A number with no unit is not a luminance until it says it is relative.
+      luminance: Rational.makeUnsafe(19n, 20n),
+    });
+  });
+});

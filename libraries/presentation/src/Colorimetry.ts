@@ -456,6 +456,16 @@ export type RelativeToWhite = Brand.Branded<Rational.Rational, 'relative to the 
 export const relativeToWhite = Brand.nominal<RelativeToWhite>();
 
 /**
+ * A relative luminance: the luminance Y of a color relative to that of the white, whose Y is 1, as WCAG 2.2 defines it, 0 for black and 1 for white. Branded apart from a value relative to the white, which bounds a linear channel rather than Y, as the red of sRGB has a channel of 1 and a relative luminance of 0.2126.
+ *
+ * @see https://www.w3.org/TR/WCAG22/#dfn-relative-luminance
+ */
+export type RelativeLuminance = Brand.Branded<Rational.Rational, 'relative luminance'>;
+
+/** A relative luminance as a caller writes it, branded as it is, as every function that takes one checks it itself. */
+export const relativeLuminance = Brand.nominal<RelativeLuminance>();
+
+/**
  * A medium: a display color space in which a color is written. It holds what its standard defines (its primaries, its white and, through its CSS identifier, its transfer function) and the matrices that follow from them. It is plain data, so `Equal.equals` compares two media by value. Its space and its white are type parameters, which the space of its linear channels carries, so that channels worked out in one medium, or on one white, are refused by the matrices of another; by default they are any, so that `Medium` is every medium.
  */
 export interface Medium<
@@ -1011,6 +1021,124 @@ export const define = <E>(
 ): Definition<E> => ({
   rule: (medium) => Effect.runSyncExit(rule(medium)),
 });
+
+/** The white of each medium, its linear channels all at 1: in a medium on the white its standard writes, that white, and in one on the exact white, the library's white, which can lie a little outside the gamut of a standard medium. */
+export const white: Definition = {
+  rule: (medium) => {
+    const [X, Y, Z] = transform(medium.linearToXyz, [
+      Rational.fromBigInt(1n),
+      Rational.fromBigInt(1n),
+      Rational.fromBigInt(1n),
+    ]);
+    // Every channel is 1, from 0 to the peak of the medium, which is at least 1, so the white lies in its gamut.
+    return Exit.succeed(markInGamut(medium, tristimulus({ X, Y, Z })));
+  },
+};
+
+/** The failure of a mixture that gives off no light, which no scale brings to a luminance, a result of mixing rather than a fault of the input. */
+export class BlackMixture extends Schema.TaggedError<
+  BlackMixture,
+  { readonly brand: unique symbol }
+>()('BlackMixture', {
+  /** The identifier of the medium the base and the tint mix to black in. */
+  medium: Schema.String,
+  /** Why the mixture cannot be scaled. */
+  message: Schema.String,
+}) {}
+
+/** A schema of the amounts of a mixture: the share of the tint and the relative luminance the mixture is scaled to, each a decision of its own, so that the share sets the chromaticity and the luminance the lightness. */
+export const MixAmounts = Schema.Struct({
+  /** The share of the tint, from 0 for the base alone to 1 for the tint alone: the percentage of the tint in `color-mix()`, over 100. */
+  share: Schema.Rational.pipe(
+    Schema.check(
+      Schema.makeIsBetween({ order: Rational.Order, formatter: Rational.format })(
+        { minimum: Rational.fromBigInt(0n), maximum: Rational.fromBigInt(1n) },
+        {
+          message:
+            'Expected a share of the tint from 0 to 1, as the percentage of the tint in color-mix() runs from 0% to 100%',
+        },
+      ),
+    ),
+  ),
+  /** The relative luminance the mixture is scaled to, above 0 and at most 1, that of the white. */
+  luminance: Schema.Rational.pipe(
+    Schema.check(
+      Schema.makeIsGreaterThan({ order: Rational.Order, formatter: Rational.format })(
+        Rational.fromBigInt(0n),
+        { message: 'Expected a positive luminance, so that the surface gives off light' },
+      ),
+      Schema.makeIsLessThanOrEqualTo({ order: Rational.Order, formatter: Rational.format })(
+        Rational.fromBigInt(1n),
+        {
+          message:
+            'Expected a luminance of at most 1, the luminance of the white, as a surface is no brighter than the white',
+        },
+      ),
+    ),
+    Schema.brand('relative luminance'),
+  ),
+});
+
+/** The amounts of a mixture as a mixture takes them, the luminance a relative luminance. */
+export type MixAmounts = typeof MixAmounts.Type;
+
+/** The colors of a mixture and its amounts: the base, the tint mixed into it, the share of the tint and the relative luminance of the mixture. */
+export interface MixOptions<EBase, ETint> extends MixAmounts {
+  /** The color the tint is mixed into, such as `white` for a surface. */
+  readonly base: Definition<EBase>;
+  /** The color mixed into the base, such as a brand, which mixes in each medium as the color it defines there. */
+  readonly tint: Definition<ETint>;
+}
+
+/**
+ * A mixture of two colors in each medium, as lights mix: the base and the tint taken in the medium, their tristimulus values mixed as CSS Color 5 `color-mix()` mixes them in `xyz-d65`, the tint at its share and the base at the rest, which is linear in light and so the same in any linear space; then scaled until its relative luminance is the one given, which CSS does not do, so that the share sets the chromaticity, that of `color-mix(in xyz-d65, base, tint P%)` with P the share times 100, and the luminance the lightness; and proven to lie in the gamut of the medium. It fails in a medium where the base or the tint fails, where the amounts are refused, where the base and the tint mix to black, or where the mixture at its luminance leaves the gamut, with the reason.
+ *
+ * @see https://www.w3.org/TR/2026/WD-css-color-5-20261029/#color-mix-result
+ */
+export const mix = <EBase, ETint>(
+  options: MixOptions<EBase, ETint>,
+): Definition<EBase | ETint | Schema.SchemaError | BlackMixture | OutOfGamut> =>
+  define((medium) =>
+    Effect.gen(function* () {
+      const amounts = yield* Schema.decodeExit(MixAmounts)(
+        { share: options.share, luminance: options.luminance },
+        { errors: 'all' },
+      );
+      const base = yield* options.base.rule(medium);
+      const tint = yield* options.tint.rule(medium);
+      // The base at the rest of the share and the tint at the share, component by component.
+      const mixture = {
+        X: Rational.sum(
+          Rational.multiply(Rational.subtract(Rational.fromBigInt(1n), amounts.share), base.X),
+          Rational.multiply(amounts.share, tint.X),
+        ),
+        Y: Rational.sum(
+          Rational.multiply(Rational.subtract(Rational.fromBigInt(1n), amounts.share), base.Y),
+          Rational.multiply(amounts.share, tint.Y),
+        ),
+        Z: Rational.sum(
+          Rational.multiply(Rational.subtract(Rational.fromBigInt(1n), amounts.share), base.Z),
+          Rational.multiply(amounts.share, tint.Z),
+        ),
+      };
+      // The base and the tint lie in the gamut, with no channel below 0, and every primary has a positive Y, so the Y of the mixture is not negative, and 0 only for black.
+      if (Rational.isZero(mixture.Y)) {
+        return yield* new BlackMixture({
+          medium: medium.colorSpace,
+          message: `Expected a mixture that gives off light, so that it can be scaled to a luminance; its base and tint mix to black in ${medium.colorSpace}`,
+        });
+      }
+      return yield* inGamut(
+        medium,
+        tristimulus({
+          // The Y of the mixture is positive, so the divisions cannot fail.
+          X: Rational.divideUnsafe(Rational.multiply(mixture.X, amounts.luminance), mixture.Y),
+          Y: amounts.luminance,
+          Z: Rational.divideUnsafe(Rational.multiply(mixture.Z, amounts.luminance), mixture.Y),
+        }),
+      );
+    }),
+  );
 
 /** Every medium of the library, on the white its standard writes, by name: the media `inMedia` and `writeMedia` evaluate by default, and the names `byMedium` takes. */
 export const media = { srgb, displayP3, rec2020, rec2100Pq, rec2100Hlg } as const;
