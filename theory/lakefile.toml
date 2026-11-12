@@ -1,0 +1,2 @@
+name = "falkara"
+leanOptions = { warningAsError = true, autoImplicit = false, linter.missingDocs = true, linter.extra = true }
