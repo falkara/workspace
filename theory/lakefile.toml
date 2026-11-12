@@ -1,2 +1,6 @@
 name = "falkara"
 leanOptions = { warningAsError = true, autoImplicit = false, linter.missingDocs = true, linter.extra = true }
+
+[[lean_lib]]
+name = "Presentation"
+globs = ["Presentation.+"]
