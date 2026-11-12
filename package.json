@@ -14,7 +14,7 @@
   ],
   "type": "module",
   "scripts": {
-    "prepare": "effect-tsgo patch --oxlint",
+    "prepare": "effect-tsgo patch --oxlint && npm install --prefix .agents/skills/formalize/scripts",
     "check": "vp check",
     "check:fix": "vp check --fix",
     "test": "vp test"

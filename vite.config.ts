@@ -3,11 +3,13 @@ import { defineConfig } from 'vite-plus';
 
 export default defineConfig({
   fmt: {
-    // The vendored schemas are kept byte-identical to what they were published as, so re-vendoring one stays a clean diff.
-    ignorePatterns: ['scripts/schemas/**'],
+    // The vendored schemas are kept byte-identical to what they were published as, so re-vendoring one stays a clean diff. The skills are formatted once, under `.agents`, which `.claude` links to.
+    ignorePatterns: ['scripts/schemas/**', '.claude/**'],
     singleQuote: true,
   },
   lint: {
+    // The skills are checked once, under `.agents`, which `.claude` links to.
+    ignorePatterns: ['.claude/**'],
     extends: [recommended],
     rules: {
       'typescript/consistent-type-assertions': ['error', { assertionStyle: 'never' }],
