@@ -1,5 +1,15 @@
 # @falkara/presentation
 
+## 0.11.0
+
+### Minor Changes
+
+- [`7c8d21a`](https://github.com/falkara/workspace/commit/7c8d21a65cf307080688e5b6bb86334159d05b19) Thanks [@filipfalcon](https://github.com/filipfalcon)! - `Colorimetry` mixes a color from the light of others, as a surface is white with a tint of another color. `mix({ base, tint, share, luminance })` is a `Definition` that, in each medium, takes the base and the tint in that medium, mixes their tristimulus values as CSS Color 5 `color-mix()` mixes them in `xyz-d65`, `share` being the percentage of the tint over 100, scales the mixture until its relative luminance is `luminance`, so that the share sets the chromaticity and the luminance the lightness, and proves it in the gamut of the medium; mixing is linear in light, so the result is exact. `white` defines the white of each medium, its channels all at 1, the white its standard writes in a standard medium. `MixAmounts` checks the share, from 0 to 1, and the luminance, above 0 and at most 1, that of the white, each with its reason, and reads them from JSON. The luminance is a `RelativeLuminance`, Y relative to the white as WCAG 2.2 defines it, written with `relativeLuminance` and branded apart from a value relative to the white, which bounds a linear channel. A mixture that leaves the gamut at its luminance fails in that medium with an `OutOfGamut`, and one whose base and tint mix to black with a `BlackMixture`.
+
+### Patch Changes
+
+- [`f68a3db`](https://github.com/falkara/workspace/commit/f68a3dbbe0a4421aadbd704ee1757e299b52da88) Thanks [@filipfalcon](https://github.com/filipfalcon)! - Every number the library writes in CSS goes through Effect's `Rational.toBigDecimal` and `BigDecimal.format`, rounded as CSS Color 4 rounds, a number exactly halfway toward +∞, in place of a writer of its own. Numbers with fewer than 16 decimal places are written as before. A number written exactly with 16 decimal places or more, such as a component of a `Color` encoded back to `oklch()` or the hue of a shade, is now written with an exponent, such as `1e-17`, which CSS reads as well.
+
 ## 0.10.0
 
 ### Minor Changes
