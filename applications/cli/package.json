@@ -3,11 +3,8 @@
   "version": "1.0.0",
   "description": "Command line access to everything Falkara Workspace.",
   "homepage": "https://workspace.falkara.com",
-  "license": "SEE LICENSE IN LICENSE",
-  "author": {
-    "name": "Falkara s. r. o.",
-    "url": "https://falkara.com"
-  },
+  "license": "MIT",
+  "author": "Filip Falcon",
   "bin": {
     "falkara": "./dist/Entrypoint.mjs"
   },

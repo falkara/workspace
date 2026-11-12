@@ -4,4 +4,4 @@ A platform that lets virtually anyone build digital experiences without the slop
 
 ## License
 
-This repository is proprietary to Falkara s. r. o. and is source-available, not open source. See [LICENSE](LICENSE).
+This repository is licensed under [the MIT License](LICENSE).
