@@ -10,16 +10,17 @@ Every library of the theory lies under `Source`, and its checks lie under `Test`
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
 | `Citation`         | The attribute `cite`, which records the item of a work that a declaration states and refuses a work the theory never declares. |
 | `ExportTypeScript` | The attribute `export_typescript`, which marks a declaration that the generator writes as TypeScript.                          |
+| `Generator`        | The generator, which writes the declarations marked `export_typescript` as TypeScript.                                         |
 | `Presentation`     | The theory of Falkara Presentation, with a directory for each module of the package, such as `Presentation/Colorimetry`.       |
 | `References`       | Every work that the theory cites, with the files of each data set and their SHA-256.                                           |
-| `Test`             | The checks of the data and of the attributes `cite` and `export_typescript`, which `lake test` builds.                         |
+| `Test`             | The checks of the data, of the attributes `cite` and `export_typescript`, and of the generator, which `lake test` builds.      |
 
 ## Verification
 
 Elan installs Lean at the version that `lean-toolchain` pins, and two commands check the theory from this directory:
 
-1. `lake build Citation ExportTypeScript Presentation References` builds the theory and checks every proof.
-2. `lake test` builds the checks of the data and of the attributes `cite` and `export_typescript`.
+1. `lake build Citation ExportTypeScript Generator Presentation References` builds the theory and checks every proof.
+2. `lake test` builds the checks of the data, of the attributes `cite` and `export_typescript`, and of the generator.
 
 ## Licensing
 

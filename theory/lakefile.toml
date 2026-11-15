@@ -11,6 +11,11 @@ name = "ExportTypeScript"
 srcDir = "Source"
 
 [[lean_lib]]
+name = "Generator"
+srcDir = "Source"
+globs = ["Generator.+"]
+
+[[lean_lib]]
 name = "Presentation"
 srcDir = "Source"
 globs = ["Presentation.+"]
