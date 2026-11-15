@@ -5,6 +5,7 @@ def <The name joins the author, the year of the work, and the words of its title
   year := <The year in which the work was published, such as 2019>
   publisher := some "<The publisher with its place, as the work names them, such as International Commission on Illumination (CIE), Vienna, AT>"
   doi := some "<The DOI of the work, such as 10.25039/CIE.DS.xvudnb9b>"
+  itemAddress := some "<The address that the label of an item follows to give the page of the item, where every item has a page of its own, such as https://cie.co.at/eilvterm/>"
   license := some "<The license of the work, as the work names it, such as CC BY-SA 4.0>"
   files := [
     { name := "<The name of a file of the data set that the theory formalizes, such as CIE_xyz_1931_2deg.csv>"

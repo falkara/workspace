@@ -59,5 +59,6 @@ def cie2020internationalLightingVocabulary : Citation.Work where
   year := 2020
   publisher := some "International Commission on Illumination (CIE), Vienna, AT"
   doi := some "10.25039/S017.2020"
+  itemAddress := some "https://cie.co.at/eilvterm/"
 
 end References

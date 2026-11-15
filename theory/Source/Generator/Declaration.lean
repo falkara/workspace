@@ -1,10 +1,11 @@
+import Generator.Comment
 import Generator.Type
 import Lean.Structure
 
 /-!
 # Declaration
 
-The module defines the declaration of TypeScript that a declaration of the theory marked `export_typescript` takes. A structure takes a schema of Effect branded by its name, with a field for every field of the structure, as `Schema.Struct({ X: Schema.Rational, … }).pipe(Schema.brand('Tristimulus'))`, and a type of the same name for what the schema decodes. A function takes a type of its signature. Every other declaration has no declaration of TypeScript, and the generator refuses it.
+The module defines the declaration of TypeScript that a declaration of the theory marked `export_typescript` takes. A structure takes a schema of Effect branded by its name, with a field for every field of the structure, as `Schema.Struct({ X: Schema.Rational, … }).pipe(Schema.brand('Tristimulus'))`, and a type of the same name for what the schema decodes. A function takes a type of its signature. Every declaration and every field takes the documentation comment that the module `Comment` gives it, the schema of a structure opening with "A schema of". Every other declaration has no declaration of TypeScript, and the generator refuses it.
 
 ## Implementation Notes
 
@@ -32,17 +33,17 @@ def declarationOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
       | .forallE _ _ fieldType _ =>
         if fieldType.hasLooseBVars then
           Lean.throwError m!"`{name ++ field}` has no field in TypeScript, as its type depends on the structure."
-        return s!"  {field}: {← schemaOf fieldType},\n"
+        return s!"{← commentOf (name ++ field) "  "}  {field}: {← schemaOf fieldType},\n"
       | _ => Lean.throwError m!"`{name}` has no declaration in TypeScript, as it takes parameters."
-    return s!"export const {typeName} = Schema.Struct(\{\n{String.join fields}}).pipe(Schema.brand('{typeName}'));\n\n" ++
-      s!"export type {typeName} = typeof {typeName}.Type;\n"
+    return s!"{← commentOf name "" (some "A schema of")}export const {typeName} = Schema.Struct(\{\n{String.join fields}}).pipe(Schema.brand('{typeName}'));\n\n" ++
+      s!"{← commentOf name ""}export type {typeName} = typeof {typeName}.Type;\n"
   match (← Lean.getConstInfo name).type with
   | type@(.forallE ..) =>
     let (parameters, result) ← signatureOf [] type
     let line := s!"export type {typeName} = ({", ".intercalate parameters}) => {result};"
     -- Oxfmt breaks a line longer than 100 columns.
-    if line.length ≤ 100 then return s!"{line}\n"
-    return s!"export type {typeName} = (\n{String.join (parameters.map (s!"  {·},\n"))}) => {result};\n"
+    if line.length ≤ 100 then return s!"{← commentOf name ""}{line}\n"
+    return s!"{← commentOf name ""}export type {typeName} = (\n{String.join (parameters.map (s!"  {·},\n"))}) => {result};\n"
   | _ => Lean.throwError m!"`{name}` has no declaration in TypeScript, as it is a value and the generator writes no values."
 
 end Generator

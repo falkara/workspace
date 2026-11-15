@@ -33,6 +33,8 @@ structure Work where
   publisher : Option String := none
   /-- The DOI of the work, where the work has one. -/
   doi : Option String := none
+  /-- The address that the label of an item follows to give the page of the item, where every item of the work has a page of its own. -/
+  itemAddress : Option String := none
   /-- The license of the work, where the work names one. -/
   license : Option String := none
   /-- The files of the work that the theory formalizes, where the work is a data set. -/

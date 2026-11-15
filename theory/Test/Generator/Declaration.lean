@@ -3,7 +3,7 @@ import Generator.Declaration
 /-!
 # Declaration
 
-The module defines the checks of the declarations of TypeScript that the declarations of the theory take: a structure takes a branded schema with its fields and the type the schema decodes, and a function takes a type of its signature, on one line or, where the line is longer than 100 columns, with every parameter on a line of its own, both named without the namespace of their module, while a value and a declaration without the mark `export_typescript` take none.
+The module defines the checks of the declarations of TypeScript that the declarations of the theory take: a structure takes a branded schema with its fields and the type the schema decodes, and a function takes a type of its signature, on one line or, where the line is longer than 100 columns, with every parameter on a line of its own, both named without the namespace of their module and with their documentation comments, while a value and a declaration without the mark `export_typescript` take none.
 -/
 
 namespace Geometry
@@ -48,29 +48,40 @@ def unmarkedFunction (coordinate : Rat) : Rat :=
 end Geometry
 
 /--
-info: export const Point = Schema.Struct({
+info: /** A schema of the structure that the checks write. */
+export const Point = Schema.Struct({
+  /** The first coordinate of the point. */
   x: Schema.Rational,
+  /** The second coordinate of the point. */
   y: Schema.Rational,
 }).pipe(Schema.brand('Point'));
 
+/** The structure that the checks write. */
 export type Point = typeof Point.Type;
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
   IO.print (← Generator.declarationOf `Geometry ``Geometry.Point)
 
-/-- info: export type PointSum = (point: Point) => Rational.Rational; -/
+/--
+info: /** The function that the checks write, a function of a structure. */
+export type PointSum = (point: Point) => Rational.Rational;
+-/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
   IO.print (← Generator.declarationOf `Geometry ``Geometry.Point.sum)
 
-/-- info: export type PointOf = (coordinate: Rational.Rational) => Option.Option<Point>; -/
+/--
+info: /** The function that the checks write. */
+export type PointOf = (coordinate: Rational.Rational) => Option.Option<Point>;
+-/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
   IO.print (← Generator.declarationOf `Geometry ``Geometry.pointOf)
 
 /--
-info: export type PointBetween = (
+info: /** The function that the checks write with every parameter on a line of its own, as its type is longer than a line. */
+export type PointBetween = (
   firstCoordinateOfThePoint: Rational.Rational,
   secondCoordinateOfThePoint: Rational.Rational,
 ) => Option.Option<Point>;
