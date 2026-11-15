@@ -3,11 +3,11 @@ import References
 /-!
 # Illuminant
 
-The module defines the illuminant as CIE standard illuminant D65 by its relative spectral distribution at wavelengths from 300 nm to 830 nm in steps of 1 nm. The distribution is linear on each interval between adjacent wavelengths and zero below 300 nm and above 830 nm.
+The module defines the illuminant as CIE standard illuminant D65 by its relative spectral distribution at wavelengths from 300 nm to 830 nm in steps of 1 nm.
 
 ## Implementation Notes
 
-The illuminant holds every row of the data table [cie2019standardIlluminantD65] as a monochromatic component, with each value as the exact rational number that the decimal digits of the value denote. The illuminant holds the monochromatic components in place of the distribution, as linear interpolation on each interval between the wavelengths of adjacent components gives the value of the distribution at every wavelength in between.
+The illuminant holds every row of the data table [cie2019standardIlluminantD65] as a monochromatic component, with each value as the exact rational number that the decimal digits of the value denote.
 
 The metadata of the data table gives the column of the distribution a first wavelength of 360 nm, while the rows of the column start at 300 nm. The illuminant follows the rows, as the sum of the wavelengths among the validation values of the data table counts from 300 nm.
 -/

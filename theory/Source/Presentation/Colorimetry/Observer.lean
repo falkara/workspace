@@ -3,11 +3,11 @@ import References
 /-!
 # Observer
 
-The module defines the observer as the CIE 1931 standard colorimetric observer by its color-matching functions $\bar{x}$, $\bar{y}$, and $\bar{z}$ at wavelengths from 360 nm to 830 nm in steps of 1 nm. The functions are linear on each interval between adjacent wavelengths and zero below 360 nm and above 830 nm.
+The module defines the observer as the CIE 1931 standard colorimetric observer by its color-matching functions $\bar{x}$, $\bar{y}$, and $\bar{z}$ at wavelengths from 360 nm to 830 nm in steps of 1 nm.
 
 ## Implementation Notes
 
-The observer holds every row of the data table [cie2019colorMatchingFunctions] as a monochromatic stimulus, with each value as the exact rational number that the decimal digits of the value denote. The observer holds the monochromatic stimuli in place of the functions, as linear interpolation on each interval between the wavelengths of adjacent stimuli gives the value of the functions at every wavelength in between.
+The observer holds every row of the data table [cie2019colorMatchingFunctions] as a monochromatic stimulus, with each value as the exact rational number that the decimal digits of the value denote.
 -/
 
 namespace Presentation.Colorimetry
