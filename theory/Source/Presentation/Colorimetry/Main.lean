@@ -1,3 +1,4 @@
+import Presentation.Colorimetry.Chromaticity
 import Presentation.Colorimetry.Illuminant
 import Presentation.Colorimetry.Observer
 import Presentation.Colorimetry.Tristimulus
