@@ -72,7 +72,11 @@ export type Chromaticity = Theory.Chromaticity;
  */
 export const chromaticity = Theory.chromaticity;
 
-/** The chromaticity coordinates of a color, X and Y over X + Y + Z; none for a color whose X + Y + Z is 0, such as black, which has no chromaticity. */
+/**
+ * Gives `none` where $X + Y + Z = 0$ and otherwise the chromaticity of the tristimulus values, $x = X / (X + Y + Z)$ and $y = Y / (X + Y + Z)$.
+ *
+ * @see https://cie.co.at/eilvterm/17-23-053
+ */
 export const chromaticityOf: Theory.ChromaticityOf = (color) =>
   Option.zipWith(
     Rational.divide(color.X, Rational.sumAll([color.X, color.Y, color.Z])),
