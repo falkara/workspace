@@ -12,91 +12,12 @@ import {
   Schema,
 } from 'effect';
 
-import * as Theory from '#src/Colorimetry.generated';
+import { type Chromaticity, chromaticity, whiteChromaticity } from '#src/Colorimetry/Chromaticity';
+import { type Tristimulus, tristimulus, whiteTristimulus } from '#src/Colorimetry/Tristimulus';
 import * as Real from '#src/Real';
 
-/**
- * A schema of a triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system.
- *
- * @see https://cie.co.at/eilvterm/17-23-045
- */
-export const Tristimulus = Theory.Tristimulus;
-
-/**
- * A triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system.
- *
- * @see https://cie.co.at/eilvterm/17-23-045
- */
-export type Tristimulus = Theory.Tristimulus;
-
-/**
- * Brands without a check a triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system.
- *
- * @see https://cie.co.at/eilvterm/17-23-045
- */
-export const tristimulus = Theory.tristimulus;
-
-/**
- * The tristimulus values of CIE standard illuminant D65 under the CIE 1931 2° observer, worked out once from the CIE datasets (SHA-256 `fa663e3535a7e0763a745993a1f0a192eb0275ac46ad2d1befd7626841e713c1` and `e76f210bffff3d552ef7113025da5f325d5dfec200dd4b878b1a2f3a507032cb`) by summing every 1 nm from 360 nm to 830 nm, as CIE 015 prescribes.
- *
- * @see https://cie.co.at/publications/colorimetry-part-2-cie-standard-illuminants-0
- * @see https://cie.co.at/publications/colorimetry-part-1-cie-standard-colorimetric-observers-0
- * @see https://doi.org/10.25039/CIE.DS.xvudnb9b
- * @see https://doi.org/10.25039/CIE.DS.hjfjmt59
- * @see https://doi.org/10.25039/TR.015.2018
- */
-export const whiteTristimulus: Tristimulus = tristimulus({
-  X: Rational.makeUnsafe(71740714395483087745n, 75479154764200873016n),
-  Y: Rational.fromBigInt(1n),
-  Z: Rational.makeUnsafe(10272984088266781770n, 9434894345525109127n),
-});
-
-/**
- * A schema of a property of a color stimulus that its chromaticity coordinates $x$ and $y$ define.
- *
- * @see https://cie.co.at/eilvterm/17-23-052
- */
-export const Chromaticity = Theory.Chromaticity;
-
-/**
- * A property of a color stimulus that its chromaticity coordinates $x$ and $y$ define.
- *
- * @see https://cie.co.at/eilvterm/17-23-052
- */
-export type Chromaticity = Theory.Chromaticity;
-
-/**
- * Brands without a check a property of a color stimulus that its chromaticity coordinates $x$ and $y$ define.
- *
- * @see https://cie.co.at/eilvterm/17-23-052
- */
-export const chromaticity = Theory.chromaticity;
-
-/**
- * Gives `none` where $X + Y + Z = 0$ and otherwise the chromaticity of the tristimulus values, $x = X / (X + Y + Z)$ and $y = Y / (X + Y + Z)$.
- *
- * @see https://cie.co.at/eilvterm/17-23-053
- */
-export const chromaticityOf: Theory.ChromaticityOf = (color) =>
-  Option.zipWith(
-    Rational.divide(color.X, Rational.sumAll([color.X, color.Y, color.Z])),
-    Rational.divide(color.Y, Rational.sumAll([color.X, color.Y, color.Z])),
-    (x, y) => chromaticity({ x, y }),
-  );
-
-/** The chromaticity coordinates of the library's white. */
-export const whiteChromaticity: Chromaticity = chromaticity({
-  x: Rational.divideUnsafe(
-    whiteTristimulus.X,
-    // The tristimulus values of the white are positive, so their sum is and the division cannot fail.
-    Rational.sumAll([whiteTristimulus.X, whiteTristimulus.Y, whiteTristimulus.Z]),
-  ),
-  y: Rational.divideUnsafe(
-    whiteTristimulus.Y,
-    // The tristimulus values of the white are positive, so their sum is and the division cannot fail.
-    Rational.sumAll([whiteTristimulus.X, whiteTristimulus.Y, whiteTristimulus.Z]),
-  ),
-});
+export * from '#src/Colorimetry/Chromaticity';
+export * from '#src/Colorimetry/Tristimulus';
 
 /** A vector in XYZ that is not a light but a change of one: added to a color, it moves the color along a hue, and its values may be negative. Branded apart from a color, which has the same shape, so that it is never written, tested for a gamut or given a chromaticity. */
 export type Direction = Brand.Branded<
