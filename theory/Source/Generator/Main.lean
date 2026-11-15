@@ -11,6 +11,8 @@ The module defines the program `generator`, which writes the declarations that t
 The program writes a file for every module of the theory rather than for every module of the package, so that the package keeps a module of its own beside every module of the theory, as Effect keeps a module for every data type.
 
 The program writes the declarations of a module in the order of their lines, as the theory states them.
+
+The contract and its check stay unexported, as they concern the module of the package alone, and the check takes a name that opens with `_`, as Oxlint takes such a name for a declaration that is meant to stay unused.
 -/
 
 namespace Generator
@@ -75,9 +77,9 @@ def fileOf (packageNamespace module : Lean.Name) : Lean.MetaM String := do
     return s!"{← commentOf name "  "}  readonly {typeName.decapitalize}: {typeName};\n"
   let contract := if functions.isEmpty then "" else
     s!"\n/** The functions of the theory that the module `{modulePath}` of the package implements. */\n" ++
-      s!"export interface Contract \{\n{String.join members}}\n\n" ++
+      s!"interface Contract \{\n{String.join members}}\n\n" ++
       s!"/** The module `{modulePath}` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */\n" ++
-      "export type Implemented<Implementation extends Contract = typeof Module> = Implementation;\n"
+      "type _Implemented<Implementation extends Contract = typeof Module> = Implementation;\n"
   let theoryImports := if theoryLines.isEmpty && contractImport.isEmpty then "" else
     s!"\n{String.join (theoryLines ++ contractImport)}"
   return s!"{header}{importLine}{theoryImports}\n{body}{contract}"

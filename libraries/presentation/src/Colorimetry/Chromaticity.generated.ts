@@ -54,7 +54,7 @@ export type ChromaticityZ = (chromaticity: Chromaticity) => Rational.Rational;
 export type ChromaticityOf = (tristimulus: Tristimulus) => Option.Option<Chromaticity>;
 
 /** The functions of the theory that the module `Colorimetry/Chromaticity` of the package implements. */
-export interface Contract {
+interface Contract {
   /**
    * Gives the chromaticity coordinate $z$ of the chromaticity, $z = 1 - x - y$.
    *
@@ -70,4 +70,4 @@ export interface Contract {
 }
 
 /** The module `Colorimetry/Chromaticity` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */
-export type Implemented<Implementation extends Contract = typeof Module> = Implementation;
+type _Implemented<Implementation extends Contract = typeof Module> = Implementation;

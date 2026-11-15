@@ -31,13 +31,13 @@ export const point = Brand.nominal<Point>();
 export type PointAt = (coordinate: Coordinate) => Option.Option<Point>;
 
 /** The functions of the theory that the module `Test/Generator/Fixture/Point` of the package implements. */
-export interface Contract {
+interface Contract {
   /** Gives the point at a coordinate. */
   readonly pointAt: PointAt;
 }
 
 /** The module `Test/Generator/Fixture/Point` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */
-export type Implemented<Implementation extends Contract = typeof Module> = Implementation;
+type _Implemented<Implementation extends Contract = typeof Module> = Implementation;
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
