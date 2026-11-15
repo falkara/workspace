@@ -22,6 +22,13 @@ Elan installs Lean at the version that `lean-toolchain` pins, and two commands c
 1. `lake build Citation ExportTypeScript Generator Presentation References` builds the theory and checks every proof.
 2. `lake test` builds the checks of the data, of the attributes `cite` and `export_typescript`, and of the generator.
 
+## Generation
+
+The generator writes the declarations that the theory marks `export_typescript` into Falkara Presentation, a file for every module of the package, such as `Colorimetry.generated.ts` for `Presentation/Colorimetry`. It reads the built theory, so `lake build` precedes it:
+
+1. `lake build Presentation` builds the theory the generator reads.
+2. `lake exe generator ../libraries/presentation/src` writes the files of TypeScript.
+
 ## Licensing
 
 Every file of the theory is licensed under the MIT License of the repository, except the data of the CIE, which is licensed under CC BY-SA 4.0, as [LICENSE](LICENSE) sets out.

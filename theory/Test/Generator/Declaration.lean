@@ -3,7 +3,7 @@ import Generator.Declaration
 /-!
 # Declaration
 
-The module defines the checks of the declarations of TypeScript that the declarations of the theory take: a structure takes a branded type with its fields and a function takes a type of its signature, both named without the namespace of their module, while a value and a declaration without the mark `export_typescript` take none.
+The module defines the checks of the declarations of TypeScript that the declarations of the theory take: a structure takes a branded schema with its fields and the type the schema decodes, and a function takes a type of its signature, on one line or, where the line is longer than 100 columns, with every parameter on a line of its own, both named without the namespace of their module, while a value and a declaration without the mark `export_typescript` take none.
 -/
 
 namespace Geometry
@@ -29,6 +29,12 @@ def pointOf (coordinate : Rat) : Option Point :=
 
 attribute [export_typescript] pointOf
 
+/-- The function that the checks write with every parameter on a line of its own, as its type is longer than a line. -/
+def pointBetween (firstCoordinateOfThePoint secondCoordinateOfThePoint : Rat) : Option Point :=
+  some ⟨firstCoordinateOfThePoint, secondCoordinateOfThePoint⟩
+
+attribute [export_typescript] pointBetween
+
 /-- The value that the checks refuse. -/
 def origin : Rat :=
   0
@@ -42,13 +48,12 @@ def unmarkedFunction (coordinate : Rat) : Rat :=
 end Geometry
 
 /--
-info: export type Point = Brand.Branded<
-  {
-    readonly x: Rational.Rational;
-    readonly y: Rational.Rational;
-  },
-  'Point'
->;
+info: export const Point = Schema.Struct({
+  x: Schema.Rational,
+  y: Schema.Rational,
+}).pipe(Schema.brand('Point'));
+
+export type Point = typeof Point.Type;
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
@@ -63,6 +68,16 @@ info: export type Point = Brand.Branded<
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
   IO.print (← Generator.declarationOf `Geometry ``Geometry.pointOf)
+
+/--
+info: export type PointBetween = (
+  firstCoordinateOfThePoint: Rational.Rational,
+  secondCoordinateOfThePoint: Rational.Rational,
+) => Option.Option<Point>;
+-/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← Generator.declarationOf `Geometry ``Geometry.pointBetween)
 
 /-- error: `Geometry.origin` has no declaration in TypeScript, as it is a value and the generator writes no values. -/
 #guard_msgs in

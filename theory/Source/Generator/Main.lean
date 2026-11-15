@@ -1,0 +1,53 @@
+import Generator.Declaration
+
+/-!
+# Main
+
+The module defines the program `generator`, which writes the declarations of every module of Falkara Presentation that the theory marks `export_typescript` into a file of TypeScript of its own. The theory of a module of the package lies in a directory of `Source/Presentation`, such as `Source/Presentation/Colorimetry`, which `Main.lean` gathers, and the program writes its declarations into the file of the same name in the directory it is given, such as `Colorimetry.generated.ts`. The file imports from Effect the modules its declarations name, the module `Schema` as a value and every other module as a type, as the schemas are the only values the file holds.
+
+## Implementation Notes
+
+The program writes the declarations of a module in the order of their modules and of their lines, so that a declaration follows the declarations its module imports, as the theory states them.
+-/
+
+namespace Generator
+
+/-- Runs a computation of the generator in an environment, as a program runs it. -/
+def runIn {α : Type} (environment : Lean.Environment) (computation : Lean.MetaM α) : IO α := do
+  let (value, _) ← (computation.run' {} {}).toIO
+    { fileName := "", fileMap := default } { env := environment }
+  return value
+
+/-- Gives the file of TypeScript that holds the declarations marked `export_typescript` of every module of the theory in a namespace. -/
+def fileOf (moduleNamespace : Lean.Name) : Lean.MetaM String := do
+  let environment ← Lean.getEnv
+  let modules := (environment.header.moduleNames.zip environment.header.moduleData).toList.filter
+    fun (module, _) => moduleNamespace.isPrefixOf module
+  let declarations ← modules.flatMapM fun (_, data) => do
+    let marked := data.constNames.toList.filter (ExportTypeScript.tagAttribute.hasTag environment)
+    let lines ← marked.mapM fun name => do
+      return (name, ((← Lean.findDeclarationRanges? name).map (·.range.pos.line)).getD 0)
+    return (lines.mergeSort fun first second => first.snd ≤ second.snd).map Prod.fst
+  let texts ← declarations.mapM (declarationOf moduleNamespace)
+  let body := "\n".intercalate texts
+  let imports := ["Option", "Rational", "Schema"].filter fun module => (body.splitOn s!"{module}.").length > 1
+  let header := s!"// Written by the generator of Falkara Theory from `{moduleNamespace}`, so every change by hand is lost when the generator runs.\n"
+  -- The schemas are the only values of the file, so every other module is imported as a type.
+  let importLine := if imports.isEmpty then "" else if imports.contains "Schema" then
+      s!"\nimport \{ {", ".intercalate (imports.map fun module => if module == "Schema" then module else s!"type {module}")} } from 'effect';\n"
+    else s!"\nimport type \{ {", ".intercalate imports} } from 'effect';\n"
+  return s!"{header}{importLine}\n{body}"
+
+end Generator
+
+/-- Writes the file of TypeScript of every module of Falkara Presentation into the directory it is given. -/
+def main (arguments : List String) : IO Unit := do
+  let [directory] := arguments
+    | throw (IO.userError "The generator takes the directory to write the files of TypeScript into.")
+  Lean.initSearchPath (← Lean.findSysroot)
+  for entry in ← System.FilePath.readDir "Source/Presentation" do
+    if ← (entry.path / "Main.lean").pathExists then
+      let moduleNamespace := `Presentation ++ Lean.Name.mkSimple entry.fileName
+      let environment ← Lean.importModules #[{ module := moduleNamespace ++ `Main }] {}
+      let text ← Generator.runIn environment (Generator.fileOf moduleNamespace)
+      IO.FS.writeFile (System.FilePath.mk directory / s!"{entry.fileName}.generated.ts") text

@@ -28,3 +28,8 @@ srcDir = "Source"
 name = "Test"
 srcDir = "."
 globs = ["Test.+"]
+
+[[lean_exe]]
+name = "generator"
+srcDir = "Source"
+root = "Generator.Main"

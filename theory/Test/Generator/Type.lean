@@ -4,7 +4,7 @@ import Lean.Elab.Term
 /-!
 # Type
 
-The module defines the checks of the types of TypeScript that the types of the theory take: a rational number, an option, an array, a list, a function type, and a declaration marked `export_typescript` take their types, while a declaration without the mark, a type of any other form, such as a product, and a function type with an unnamed parameter take none.
+The module defines the checks of the types of TypeScript that the types of the theory take: a rational number, an option, an array, a list, a function type, and a declaration marked `export_typescript` take their types, while a declaration without the mark, a type of any other form, such as a product, and a function type with an unnamed parameter take none. The checks compare as well the schemas of Effect that the types of data take: a rational number, an option, an array, a list, and a declaration marked `export_typescript` take their schemas, while a function type and a type of any other form take none.
 -/
 
 /-- The structure that the checks mark `export_typescript`. -/
@@ -58,3 +58,27 @@ def unnamedFunction : Rat → Rat :=
 #guard_msgs in
 #eval show Lean.MetaM String from do
   Generator.typeOf (← Lean.getConstInfo ``unnamedFunction).type
+
+/-- info: "Schema.Option(Schema.Array(MarkedStructure))" -/
+#guard_msgs in
+#eval show Lean.Elab.TermElabM String from do
+  Generator.schemaOf (← Lean.Elab.Term.elabType (← `(Option (Array MarkedStructure))))
+
+/-- info: "Schema.Array(Schema.Rational)" -/
+#guard_msgs in
+#eval show Lean.Elab.TermElabM String from do
+  Generator.schemaOf (← Lean.Elab.Term.elabType (← `(List Rat)))
+
+/-- error: `UnmarkedStructure` has no declaration in TypeScript, as the theory never marks it `export_typescript`. -/
+#guard_msgs in
+#eval Generator.schemaOf (Lean.mkConst ``UnmarkedStructure)
+
+/-- error: `Rat × Rat` has no schema in TypeScript. -/
+#guard_msgs in
+#eval show Lean.Elab.TermElabM String from do
+  Generator.schemaOf (← Lean.Elab.Term.elabType (← `(Rat × Rat)))
+
+/-- error: `Rat → Rat` has no schema in TypeScript, as a schema describes data and the type is a function. -/
+#guard_msgs in
+#eval show Lean.MetaM String from do
+  Generator.schemaOf (← Lean.getConstInfo ``unnamedFunction).type
