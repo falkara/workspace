@@ -1,6 +1,21 @@
 name = "falkara"
 leanOptions = { warningAsError = true, autoImplicit = false, linter.missingDocs = true, linter.extra = true }
+testDriver = "Test"
 
 [[lean_lib]]
 name = "Presentation"
+srcDir = "Source"
 globs = ["Presentation.+"]
+
+[[lean_lib]]
+name = "Citation"
+srcDir = "Source"
+
+[[lean_lib]]
+name = "References"
+srcDir = "Source"
+
+[[lean_lib]]
+name = "Test"
+srcDir = "."
+globs = ["Test.+"]
