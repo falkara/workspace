@@ -1,6 +1,6 @@
 /-- <The comment states in one sentence what the work is, such as "The data table of the color-matching functions of the CIE 1931 standard colorimetric observer."> -/
-def <The name joins the author, the year of the work, and the words of its title that tell the work apart, as a citation key of a bibliography does, such as cie2019colorMatchingFunctions or suppes1989foundationsOfMeasurement> : Citation.Work where
-  author := "<The author as the work names it, such as CIE, or P. Suppes, D. H. Krantz, R. D. Luce, and A. Tversky>"
+def <The name joins the author, the year of the work, and the words of its title that tell the work apart, as a citation key of a bibliography does, such as cie2019colorMatchingFunctions or cie2020internationalLightingVocabulary> : Citation.Work where
+  author := "<The author as the work names it, such as CIE>"
   title := "<The title as the work writes it, in its own spelling, such as Colour-matching functions of CIE 1931 standard colorimetric observer>"
   year := <The year in which the work was published, such as 2019>
   publisher := some "<The publisher with its place, as the work names them, such as International Commission on Illumination (CIE), Vienna, AT>"

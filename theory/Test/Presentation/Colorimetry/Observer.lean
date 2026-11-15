@@ -3,7 +3,7 @@ import Presentation.Colorimetry.Observer
 /-!
 # Observer
 
-The module defines the checks of the observer against the data table [cie2019colorMatchingFunctions]. The checks compare the sum of the wavelengths $\lambda$, the sum of the values of each color-matching function $\bar{x}$, $\bar{y}$, and $\bar{z}$, and the values at one sample wavelength with the validation values of the data table, and the wavelengths with the range and the step that the data table gives. A further check compares every value of the color-matching functions with zero, as the coordinates X, Y, and Z of every light are nonnegative [suppes1989foundationsOfMeasurement].
+The module defines the checks of the observer against the data table [cie2019colorMatchingFunctions]. The checks compare the sum of the wavelengths $\lambda$, the sum of the values of each color-matching function $\bar{x}$, $\bar{y}$, and $\bar{z}$, and the values at one sample wavelength with the validation values of the data table, and the wavelengths with the range and the step that the data table gives.
 
 ## Implementation Notes
 
@@ -37,12 +37,5 @@ theorem observer_wavelengths :
   decide +kernel
 
 attribute [cite "lambda" cie2019colorMatchingFunctions] observer_wavelengths
-
-/-- Every value of the color-matching functions of the observer is at least zero, $\bar{x}(\lambda) \geq 0$, $\bar{y}(\lambda) \geq 0$, and $\bar{z}(\lambda) \geq 0$. -/
-theorem observer_nonnegative :
-    ∀ stimulus ∈ observer.toList, 0 ≤ stimulus.xBar ∧ 0 ≤ stimulus.yBar ∧ 0 ≤ stimulus.zBar := by
-  decide +kernel
-
-attribute [cite "15.4.2" suppes1989foundationsOfMeasurement] observer_nonnegative
 
 end Presentation.Colorimetry

@@ -44,11 +44,12 @@ def cie2019standardIlluminantD65 : Citation.Work where
       url := "https://files.cie.co.at/Publications-datasets/CIE_std_illum_D65.csv_metadata_v2.json"
       sha256 := "71994379b81c65db111f652e747a00b599b5456c2a8242e9a0d6f379f560a14e" }]
 
-/-- The second volume of the foundations of measurement, which states the Grassmann structures of color matching. -/
-def suppes1989foundationsOfMeasurement : Citation.Work where
-  author := "P. Suppes, D. H. Krantz, R. D. Luce, and A. Tversky"
-  title := "Foundations of Measurement, Volume II: Geometrical, Threshold, and Probabilistic Representations"
-  year := 1989
-  publisher := some "Academic Press, San Diego"
+/-- The vocabulary of the CIE, which defines the terms of colorimetry, each under a number of its own. -/
+def cie2020internationalLightingVocabulary : Citation.Work where
+  author := "CIE"
+  title := "CIE S 017/E:2020 ILV: International Lighting Vocabulary, 2nd Edition"
+  year := 2020
+  publisher := some "International Commission on Illumination (CIE), Vienna, AT"
+  doi := some "10.25039/S017.2020"
 
 end References
