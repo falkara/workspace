@@ -8,6 +8,7 @@ description: Brings every text into line with one set of rules. Use this skill b
 Read `references/language.md` before writing or auditing any text, as every text is written in words and names the things it speaks of. Read beside `references/language.md` the reference for the kind of text, as each kind has rules that hold for that kind alone:
 
 - `references/comments.md` for any comment, such as one on a module, a declaration, or a line of code.
+- `references/lean.md` for any module of Lean and its declarations, beside `references/comments.md`, and `../formalize/assets/ModuleComment.lean` for the comment of the module.
 - `references/pages.md` for any page of documentation, such as one in a repository or on a website.
 
 ## Writing

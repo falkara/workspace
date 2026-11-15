@@ -27,7 +27,13 @@ Read the reference with the reader in the directory `scripts` of this skill, whi
 
 ## Writing
 
-Whenever the request is not an audit, cite in the module comment the sections of the reference that the module formalizes, decide the scope by the first step of Auditing, and write a declaration for every item in scope. Then check the module by the steps of Auditing, fix every finding, and repeat the check while it still finds something. Leave each uncertainty as it is, and name it in the reply.
+Whenever the request is not an audit, decide the scope by the first step of Auditing, write a declaration for every item in scope, and cite the item of the reference that each declaration states by the attribute `cite`. Write the comment of every module, a module of the tests included, after `assets/ModuleComment.lean`, leaving out every section the module has nothing for. Then check the module by the steps of Auditing, fix every finding, and repeat the check while it still finds something. Leave each uncertainty as it is, and name it in the reply.
+
+Declare every work the theory cites in the module `References` after `assets/Work.lean`, leaving out every field the work has nothing for, such as the files of a work that is no data set.
+
+Prove every statement that holds by computation with `decide +kernel`, as `native_decide` adds an axiom of its own to the standard axioms of Lean for every proof.
+
+State every check of data or of a computation that nothing in the theory builds on as a theorem of the test library of the theory, never of the module the check concerns, as `lake test` builds the test library apart from the theory.
 
 ## Auditing
 
