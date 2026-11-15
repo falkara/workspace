@@ -107,6 +107,21 @@ describe('whiteChromaticity', () => {
   });
 });
 
+describe('chromaticityZ', () => {
+  it('gives the white Z over X + Y + Z, as the CIE defines the chromaticity coordinate z', () => {
+    expect(
+      Rational.divide(
+        Colorimetry.whiteTristimulus.Z,
+        Rational.sumAll([
+          Colorimetry.whiteTristimulus.X,
+          Colorimetry.whiteTristimulus.Y,
+          Colorimetry.whiteTristimulus.Z,
+        ]),
+      ),
+    ).toEqual(Option.some(Colorimetry.chromaticityZ(Colorimetry.whiteChromaticity)));
+  });
+});
+
 describe('chromaticityOf', () => {
   it('gives the white the chromaticity of the library', () => {
     expect(Colorimetry.chromaticityOf(Colorimetry.whiteTristimulus)).toEqual(

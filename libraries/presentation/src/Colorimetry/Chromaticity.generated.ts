@@ -3,6 +3,7 @@
 import { Brand, type Option, type Rational, Schema } from 'effect';
 
 import type { Tristimulus } from '#src/Colorimetry/Tristimulus.generated';
+import type * as Module from '#src/Colorimetry/Chromaticity';
 
 /**
  * A schema of a property of a color stimulus that its chromaticity coordinates $x$ and $y$ define.
@@ -51,3 +52,22 @@ export type ChromaticityZ = (chromaticity: Chromaticity) => Rational.Rational;
  * @see https://cie.co.at/eilvterm/17-23-053
  */
 export type ChromaticityOf = (tristimulus: Tristimulus) => Option.Option<Chromaticity>;
+
+/** The functions of the theory that the module `Colorimetry/Chromaticity` of the package implements. */
+export interface Contract {
+  /**
+   * Gives the chromaticity coordinate $z$ of the chromaticity, $z = 1 - x - y$.
+   *
+   * @see https://cie.co.at/eilvterm/17-23-053
+   */
+  readonly chromaticityZ: ChromaticityZ;
+  /**
+   * Gives `none` where $X + Y + Z = 0$ and otherwise the chromaticity of the tristimulus values, $x = X / (X + Y + Z)$ and $y = Y / (X + Y + Z)$.
+   *
+   * @see https://cie.co.at/eilvterm/17-23-053
+   */
+  readonly chromaticityOf: ChromaticityOf;
+}
+
+/** The module `Colorimetry/Chromaticity` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */
+export type Implemented<Implementation extends Contract = typeof Module> = Implementation;
