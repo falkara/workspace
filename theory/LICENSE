@@ -1,0 +1,26 @@
+The files of the theory are licensed under the MIT License in the file
+LICENSE at the root of this repository, except the files below, which hold
+data of the International Commission on Illumination (CIE) and are licensed
+under the Creative Commons Attribution-ShareAlike 4.0 International License
+(CC BY-SA 4.0), https://creativecommons.org/licenses/by-sa/4.0/legalcode.
+
+Tables of the CIE, each written in Lean with every value unchanged:
+
+- Source/Presentation/Colorimetry/Observer.lean: CIE (2019),
+  Colour-matching functions of CIE 1931 standard colorimetric observer,
+  International Commission on Illumination (CIE), Vienna,
+  https://doi.org/10.25039/CIE.DS.xvudnb9b, licensed under CC BY-SA 4.0.
+- Source/Presentation/Colorimetry/Illuminant.lean: CIE (2019), CIE standard
+  illuminant D65, International Commission on Illumination (CIE), Vienna,
+  https://doi.org/10.25039/CIE.DS.hjfjmt59, licensed under CC BY-SA 4.0.
+
+Validation values from the metadata of the same data sets, each written in
+Lean with every value unchanged:
+
+- Test/Presentation/Colorimetry/Observer.lean: the validation values of CIE
+  (2019), Colour-matching functions of CIE 1931 standard colorimetric
+  observer, https://doi.org/10.25039/CIE.DS.xvudnb9b, licensed under
+  CC BY-SA 4.0.
+- Test/Presentation/Colorimetry/Illuminant.lean: the validation values of CIE
+  (2019), CIE standard illuminant D65,
+  https://doi.org/10.25039/CIE.DS.hjfjmt59, licensed under CC BY-SA 4.0.
