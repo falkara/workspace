@@ -3,7 +3,7 @@ import Generator.Declaration
 /-!
 # Declaration
 
-The module defines the checks of the declarations of TypeScript that the declarations of the theory take: a structure takes a branded schema with its fields and the type the schema decodes, and a function takes a type of its signature, on one line or, where the line is longer than 100 columns, with every parameter on a line of its own, both named without the namespace of their module and with their documentation comments, while a value and a declaration without the mark `export_typescript` take none.
+The module defines the checks of the declarations of TypeScript that the declarations of the theory take: a structure takes a branded schema with its fields, the type the schema decodes, and a constructor that brands a value, and a function takes a type of its signature, on one line or, where the line is longer than 100 columns, with every parameter on a line of its own, both named without the namespace of their module and with their documentation comments, while a value and a declaration without the mark `export_typescript` take none.
 -/
 
 namespace Geometry
@@ -58,6 +58,9 @@ export const Point = Schema.Struct({
 
 /** The structure that the checks write. */
 export type Point = typeof Point.Type;
+
+/** Brands without a check the structure that the checks write. */
+export const point = Brand.nominal<Point>();
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do

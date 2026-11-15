@@ -3,7 +3,7 @@ import Generator.Declaration
 /-!
 # Main
 
-The module defines the program `generator`, which writes the declarations of every module of Falkara Presentation that the theory marks `export_typescript` into a file of TypeScript of its own. The theory of a module of the package lies in a directory of `Source/Presentation`, such as `Source/Presentation/Colorimetry`, which `Main.lean` gathers, and the program writes its declarations into the file of the same name in the directory it is given, such as `Colorimetry.generated.ts`. The file imports from Effect the modules its declarations name, the module `Schema` as a value and every other module as a type, as the schemas are the only values the file holds.
+The module defines the program `generator`, which writes the declarations of every module of Falkara Presentation that the theory marks `export_typescript` into a file of TypeScript of its own. The theory of a module of the package lies in a directory of `Source/Presentation`, such as `Source/Presentation/Colorimetry`, which `Main.lean` gathers, and the program writes its declarations into the file of the same name in the directory it is given, such as `Colorimetry.generated.ts`. The file imports from Effect the modules its declarations name, the modules `Brand` and `Schema` as values and every other module as a type, as the schemas and the constructors are the only values the file holds.
 
 ## Implementation Notes
 
@@ -30,11 +30,12 @@ def fileOf (moduleNamespace : Lean.Name) : Lean.MetaM String := do
     return (lines.mergeSort fun first second => first.snd ≤ second.snd).map Prod.fst
   let texts ← declarations.mapM (declarationOf moduleNamespace)
   let body := "\n".intercalate texts
-  let imports := ["Option", "Rational", "Schema"].filter fun module => (body.splitOn s!"{module}.").length > 1
+  let imports := ["Brand", "Option", "Rational", "Schema"].filter fun module => (body.splitOn s!"{module}.").length > 1
   let header := s!"// Written by the generator of Falkara Theory from `{moduleNamespace}`, so every change by hand is lost when the generator runs.\n"
-  -- The schemas are the only values of the file, so every other module is imported as a type.
-  let importLine := if imports.isEmpty then "" else if imports.contains "Schema" then
-      s!"\nimport \{ {", ".intercalate (imports.map fun module => if module == "Schema" then module else s!"type {module}")} } from 'effect';\n"
+  -- The schemas and the constructors are the only values of the file, so every other module is imported as a type.
+  let importLine := if imports.isEmpty then "" else if imports.any (["Brand", "Schema"].contains ·) then
+      s!"\nimport \{ {", ".intercalate (imports.map fun module =>
+        if ["Brand", "Schema"].contains module then module else s!"type {module}")} } from 'effect';\n"
     else s!"\nimport type \{ {", ".intercalate imports} } from 'effect';\n"
   return s!"{header}{importLine}\n{body}"
 

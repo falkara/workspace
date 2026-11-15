@@ -5,11 +5,13 @@ import Lean.Structure
 /-!
 # Declaration
 
-The module defines the declaration of TypeScript that a declaration of the theory marked `export_typescript` takes. A structure takes a schema of Effect branded by its name, with a field for every field of the structure, as `Schema.Struct({ X: Schema.Rational, … }).pipe(Schema.brand('Tristimulus'))`, and a type of the same name for what the schema decodes. A function takes a type of its signature. Every declaration and every field takes the documentation comment that the module `Comment` gives it, the schema of a structure opening with "A schema of". Every other declaration has no declaration of TypeScript, and the generator refuses it.
+The module defines the declaration of TypeScript that a declaration of the theory marked `export_typescript` takes. A structure takes a schema of Effect branded by its name, with a field for every field of the structure, as `Schema.Struct({ X: Schema.Rational, … }).pipe(Schema.brand('Tristimulus'))`, and a type of the same name for what the schema decodes, and a constructor named in camel case, such as `tristimulus`, which brands a value as a caller writes it. A function takes a type of its signature. Every declaration and every field takes the documentation comment that the module `Comment` gives it, the schema of a structure opening with "A schema of" and its constructor with "Brands without a check". Every other declaration has no declaration of TypeScript, and the generator refuses it.
 
 ## Implementation Notes
 
 A structure takes a schema in place of a type alone, so a value from outside the package takes the brand of the structure only by decoding, which checks every field.
+
+The constructor of a structure brands a value by `Brand.nominal` of Effect, which checks nothing, as the schemas the generator writes hold no checks, and constructing a value with a schema of Effect either fails by throwing or gives an option. A structure whose schema holds a check takes a constructor that checks the value.
 
 A structure takes the brand of Effect, as two structures with the same fields, such as a color and a change of a color, stay apart in TypeScript only by their brands.
 
@@ -36,7 +38,8 @@ def declarationOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
         return s!"{← commentOf (name ++ field) "  "}  {field}: {← schemaOf fieldType},\n"
       | _ => Lean.throwError m!"`{name}` has no declaration in TypeScript, as it takes parameters."
     return s!"{← commentOf name "" (some "A schema of")}export const {typeName} = Schema.Struct(\{\n{String.join fields}}).pipe(Schema.brand('{typeName}'));\n\n" ++
-      s!"{← commentOf name ""}export type {typeName} = typeof {typeName}.Type;\n"
+      s!"{← commentOf name ""}export type {typeName} = typeof {typeName}.Type;\n\n" ++
+      s!"{← commentOf name "" (some "Brands without a check")}export const {typeName.decapitalize} = Brand.nominal<{typeName}>();\n"
   match (← Lean.getConstInfo name).type with
   | type@(.forallE ..) =>
     let (parameters, result) ← signatureOf [] type
