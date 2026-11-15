@@ -12,13 +12,29 @@ import {
   Schema,
 } from 'effect';
 
-import { Chromaticity, type ChromaticityOf, Tristimulus } from '#src/Colorimetry.generated';
+import * as Theory from '#src/Colorimetry.generated';
 import * as Real from '#src/Real';
 
-export { Chromaticity, Tristimulus };
+/**
+ * A schema of a triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system.
+ *
+ * @see https://cie.co.at/eilvterm/17-23-045
+ */
+export const Tristimulus = Theory.Tristimulus;
 
-/** The tristimulus values of a color as a caller writes them, branded as they are, as every function that takes a color judges it itself, refusing what lies outside a medium. */
-export const tristimulus = Brand.nominal<Tristimulus>();
+/**
+ * A triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system.
+ *
+ * @see https://cie.co.at/eilvterm/17-23-045
+ */
+export type Tristimulus = Theory.Tristimulus;
+
+/**
+ * Brands without a check a triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system.
+ *
+ * @see https://cie.co.at/eilvterm/17-23-045
+ */
+export const tristimulus = Theory.tristimulus;
 
 /**
  * The tristimulus values of CIE standard illuminant D65 under the CIE 1931 2° observer, worked out once from the CIE datasets (SHA-256 `fa663e3535a7e0763a745993a1f0a192eb0275ac46ad2d1befd7626841e713c1` and `e76f210bffff3d552ef7113025da5f325d5dfec200dd4b878b1a2f3a507032cb`) by summing every 1 nm from 360 nm to 830 nm, as CIE 015 prescribes.
@@ -35,11 +51,29 @@ export const whiteTristimulus: Tristimulus = tristimulus({
   Z: Rational.makeUnsafe(10272984088266781770n, 9434894345525109127n),
 });
 
-/** The chromaticity coordinates as a caller writes them, branded as they are, such as the primaries and the white that a standard writes. */
-export const chromaticity = Brand.nominal<Chromaticity>();
+/**
+ * A schema of a property of a color stimulus that its chromaticity coordinates $x$ and $y$ define.
+ *
+ * @see https://cie.co.at/eilvterm/17-23-052
+ */
+export const Chromaticity = Theory.Chromaticity;
+
+/**
+ * A property of a color stimulus that its chromaticity coordinates $x$ and $y$ define.
+ *
+ * @see https://cie.co.at/eilvterm/17-23-052
+ */
+export type Chromaticity = Theory.Chromaticity;
+
+/**
+ * Brands without a check a property of a color stimulus that its chromaticity coordinates $x$ and $y$ define.
+ *
+ * @see https://cie.co.at/eilvterm/17-23-052
+ */
+export const chromaticity = Theory.chromaticity;
 
 /** The chromaticity coordinates of a color, X and Y over X + Y + Z; none for a color whose X + Y + Z is 0, such as black, which has no chromaticity. */
-export const chromaticityOf: ChromaticityOf = (color) =>
+export const chromaticityOf: Theory.ChromaticityOf = (color) =>
   Option.zipWith(
     Rational.divide(color.X, Rational.sumAll([color.X, color.Y, color.Z])),
     Rational.divide(color.Y, Rational.sumAll([color.X, color.Y, color.Z])),

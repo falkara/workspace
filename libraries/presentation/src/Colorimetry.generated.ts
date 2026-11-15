@@ -1,6 +1,6 @@
 // Written by the generator of Falkara Theory from `Presentation.Colorimetry`, so every change by hand is lost when the generator runs.
 
-import { type Option, type Rational, Schema } from 'effect';
+import { Brand, type Option, type Rational, Schema } from 'effect';
 
 /**
  * A schema of a triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system.
@@ -34,6 +34,13 @@ export const Tristimulus = Schema.Struct({
  * @see https://cie.co.at/eilvterm/17-23-045
  */
 export type Tristimulus = typeof Tristimulus.Type;
+
+/**
+ * Brands without a check a triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system.
+ *
+ * @see https://cie.co.at/eilvterm/17-23-045
+ */
+export const tristimulus = Brand.nominal<Tristimulus>();
 
 /**
  * Gives the tristimulus values of a color stimulus function $\varphi_\lambda(\lambda)$ as the sums over the wavelengths $\lambda$ of the observer, $X = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{x}(\lambda)\,\Delta\lambda$, $Y = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{y}(\lambda)\,\Delta\lambda$, and $Z = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{z}(\lambda)\,\Delta\lambda$ with $\Delta\lambda = 1\,\mathrm{nm}$.
@@ -70,6 +77,13 @@ export const Chromaticity = Schema.Struct({
  * @see https://cie.co.at/eilvterm/17-23-052
  */
 export type Chromaticity = typeof Chromaticity.Type;
+
+/**
+ * Brands without a check a property of a color stimulus that its chromaticity coordinates $x$ and $y$ define.
+ *
+ * @see https://cie.co.at/eilvterm/17-23-052
+ */
+export const chromaticity = Brand.nominal<Chromaticity>();
 
 /**
  * Gives the chromaticity coordinate $z$ of the chromaticity, $z = 1 - x - y$.
