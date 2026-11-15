@@ -1,3 +1,4 @@
+import ExportTypeScript
 import Presentation.Colorimetry.Observer
 
 /-!
@@ -27,9 +28,10 @@ attribute [cite "17-23-045" cie2020internationalLightingVocabulary] Tristimulus
 attribute [cite "17-23-038" cie2020internationalLightingVocabulary] Tristimulus.X
 attribute [cite "17-23-038" cie2020internationalLightingVocabulary] Tristimulus.Y
 attribute [cite "17-23-038" cie2020internationalLightingVocabulary] Tristimulus.Z
+attribute [export_typescript] Tristimulus
 
 /-- Gives the tristimulus values of a color stimulus function $\varphi_\lambda(\lambda)$ as the sums over the wavelengths $\lambda$ of the observer, $X = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{x}(\lambda)\,\Delta\lambda$, $Y = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{y}(\lambda)\,\Delta\lambda$, and $Z = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{z}(\lambda)\,\Delta\lambda$ with $\Delta\lambda = 1\,\mathrm{nm}$. -/
-def tristimulusOf (colorStimulusFunction : Rat → Rat) : Tristimulus :=
+def tristimulusOf (colorStimulusFunction : (wavelength : Rat) → Rat) : Tristimulus :=
   observer.foldl
     (fun sum monochromaticStimulus =>
       ⟨sum.X + colorStimulusFunction monochromaticStimulus.wavelength * monochromaticStimulus.xBar,
@@ -38,5 +40,6 @@ def tristimulusOf (colorStimulusFunction : Rat → Rat) : Tristimulus :=
     ⟨0, 0, 0⟩
 
 attribute [cite "Abstract" cie2019tristimulusValues] tristimulusOf
+attribute [export_typescript] tristimulusOf
 
 end Presentation.Colorimetry

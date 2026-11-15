@@ -24,12 +24,14 @@ structure Chromaticity where
 attribute [cite "17-23-052" cie2020internationalLightingVocabulary] Chromaticity
 attribute [cite "17-23-053" cie2020internationalLightingVocabulary] Chromaticity.x
 attribute [cite "17-23-053" cie2020internationalLightingVocabulary] Chromaticity.y
+attribute [export_typescript] Chromaticity
 
 /-- Gives the chromaticity coordinate $z$ of the chromaticity, $z = 1 - x - y$. -/
 def Chromaticity.z (chromaticity : Chromaticity) : Rat :=
   1 - chromaticity.x - chromaticity.y
 
 attribute [cite "17-23-053" cie2020internationalLightingVocabulary] Chromaticity.z
+attribute [export_typescript] Chromaticity.z
 
 /-- Gives `none` where $X + Y + Z = 0$ and otherwise the chromaticity of the tristimulus values, $x = X / (X + Y + Z)$ and $y = Y / (X + Y + Z)$. -/
 def chromaticityOf (tristimulus : Tristimulus) : Option Chromaticity :=
@@ -40,5 +42,6 @@ def chromaticityOf (tristimulus : Tristimulus) : Option Chromaticity :=
       tristimulus.Y / (tristimulus.X + tristimulus.Y + tristimulus.Z)⟩
 
 attribute [cite "17-23-053" cie2020internationalLightingVocabulary] chromaticityOf
+attribute [export_typescript] chromaticityOf
 
 end Presentation.Colorimetry
