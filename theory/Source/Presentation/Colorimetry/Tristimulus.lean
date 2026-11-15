@@ -40,6 +40,5 @@ def tristimulusOf (colorStimulusFunction : (wavelength : Rat) → Rat) : Tristim
     ⟨0, 0, 0⟩
 
 attribute [cite "Abstract" cie2019tristimulusValues] tristimulusOf
-attribute [export_typescript] tristimulusOf
 
 end Presentation.Colorimetry

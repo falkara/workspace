@@ -4,7 +4,7 @@ import Generator.Redeclaration
 /-!
 # Main
 
-The module defines the program `generator`, which writes the declarations that the theory of Falkara Presentation marks `export_typescript` into files of TypeScript, a file for every module of the theory. The theory of a module of the package lies in a directory of `Source/Presentation`, such as `Source/Presentation/Colorimetry`, which `Main.lean` gathers, and the program writes the declarations of every module in the directory, such as `Tristimulus.lean`, into the file of the same name in the directory of the same name in the directory it is given, such as `Colorimetry/Tristimulus.generated.ts`. A file imports from Effect the modules its declarations name, `Brand` and `Schema` as values and every other module as a type, and from the files of the other modules of the theory the declarations it names, as values where a schema names them and as types otherwise. The program then checks the module of the package beside every file, such as `Colorimetry/Tristimulus.ts`, by the module `Redeclaration`, and fails with a reason for every redeclaration whose comment differs from the theory.
+The module defines the program `generator`, which writes the declarations that the theory of Falkara Presentation marks `export_typescript` into files of TypeScript, a file for every module of the theory. The theory of a module of the package lies in a directory of `Source/Presentation`, such as `Source/Presentation/Colorimetry`, which `Main.lean` gathers, and the program writes the declarations of every module in the directory, such as `Tristimulus.lean`, into the file of the same name in the directory of the same name in the directory it is given, such as `Colorimetry/Tristimulus.generated.ts`. A file imports from Effect the modules its declarations name, `Brand` and `Schema` as values and every other module as a type, and from the files of the other modules of the theory the declarations it names, as values where a schema names them and as types otherwise. A file whose module defines functions ends with a contract, an interface that names every function as the module of the package beside the file exports it, such as `chromaticityOf`, and a type that fails to compile where that module leaves a function out or gives it another type, as a signature of a module in ML requires of the module. The program then checks the module of the package beside every file, such as `Colorimetry/Tristimulus.ts`, by the module `Redeclaration`, and fails with a reason for every redeclaration whose comment differs from the theory.
 
 ## Implementation Notes
 
@@ -65,8 +65,22 @@ def fileOf (packageNamespace module : Lean.Name) : Lean.MetaM String := do
     if typeNames.any Prod.snd then
       s!"import \{ {", ".intercalate (typeNames.map fun (typeName, value) => if value then typeName else s!"type {typeName}")} } from '#src/{path}.generated';\n"
     else s!"import type \{ {", ".intercalate (typeNames.map Prod.fst)} } from '#src/{path}.generated';\n"
-  let theoryImports := if theoryLines.isEmpty then "" else s!"\n{String.join theoryLines}"
-  return s!"{header}{importLine}{theoryImports}\n{body}"
+  -- The contract names the module of the package as a type alone, so the two modules import each other only as types.
+  let functions := declarations.filter fun name => !Lean.isStructure environment name
+  let modulePath := (module.replacePrefix `Presentation .anonymous).toString.replace "." "/"
+  let contractImport := if functions.isEmpty then [] else [s!"import type * as Module from '#src/{modulePath}';\n"]
+  let members ← functions.mapM fun name => do
+    let typeName := String.join ((name.replacePrefix packageNamespace .anonymous).components.map
+      fun component => component.toString.capitalize)
+    return s!"{← commentOf name "  "}  readonly {typeName.decapitalize}: {typeName};\n"
+  let contract := if functions.isEmpty then "" else
+    s!"\n/** The functions of the theory that the module `{modulePath}` of the package implements. */\n" ++
+      s!"export interface Contract \{\n{String.join members}}\n\n" ++
+      s!"/** The module `{modulePath}` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */\n" ++
+      "export type Implemented<Implementation extends Contract = typeof Module> = Implementation;\n"
+  let theoryImports := if theoryLines.isEmpty && contractImport.isEmpty then "" else
+    s!"\n{String.join (theoryLines ++ contractImport)}"
+  return s!"{header}{importLine}{theoryImports}\n{body}{contract}"
 
 end Generator
 
