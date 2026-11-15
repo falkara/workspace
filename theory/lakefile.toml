@@ -3,13 +3,17 @@ leanOptions = { warningAsError = true, autoImplicit = false, linter.missingDocs 
 testDriver = "Test"
 
 [[lean_lib]]
+name = "Citation"
+srcDir = "Source"
+
+[[lean_lib]]
+name = "ExportTypeScript"
+srcDir = "Source"
+
+[[lean_lib]]
 name = "Presentation"
 srcDir = "Source"
 globs = ["Presentation.+"]
-
-[[lean_lib]]
-name = "Citation"
-srcDir = "Source"
 
 [[lean_lib]]
 name = "References"
