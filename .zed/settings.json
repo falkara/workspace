@@ -73,11 +73,21 @@
       }
     },
     "TypeScript": {
+      "language_servers": ["typescript-ls", "!vtsls", "!typescript-language-server", "..."],
       "formatter": {
         "external": {
           "command": "node_modules/.bin/oxfmt",
           "arguments": ["--stdin-filepath", "{buffer_path}"]
         }
+      }
+    }
+  },
+  "lsp": {
+    "typescript-ls": {
+      // The project's own TypeScript 7, which `effect-tsgo patch` extends with Effect diagnostics on install.
+      "binary": {
+        "path": "node_modules/typescript/bin/tsc",
+        "arguments": ["--lsp", "--stdio"]
       }
     }
   }
