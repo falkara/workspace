@@ -17,9 +17,10 @@ export default defineConfig({
     entry,
     // Every module ships as a file of its own, so that a consumer's bundler leaves out the modules it never imports.
     unbundle: true,
-    // JSR reads the types of each JavaScript module from the declarations it names, as it generates none for JavaScript. Only an entry has declarations; an internal module packed beside it, such as Real, has none to name, and no public type reaches it.
+    // JSR reads the types of each JavaScript module from the declarations it names, as it generates none for JavaScript. An entry has declarations, and so does a module generated from the theory, whose types an entry exports; any other internal module packed beside them, such as Real, has none to name, and no public type reaches it.
     banner: ({ fileName }) =>
-      entry.includes(`src/${fileName.replace(/\.mjs$/, '.ts')}`)
+      entry.includes(`src/${fileName.replace(/\.mjs$/, '.ts')}`) ||
+      fileName.endsWith('.generated.mjs')
         ? { js: `/* @ts-self-types="./${fileName.replace(/\.mjs$/, '.d.mts')}" */` }
         : undefined,
   },
