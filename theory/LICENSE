@@ -24,3 +24,7 @@ Lean with every value unchanged:
 - Test/Presentation/Colorimetry/Illuminant.lean: the validation values of CIE
   (2019), CIE standard illuminant D65,
   https://doi.org/10.25039/CIE.DS.hjfjmt59, licensed under CC BY-SA 4.0.
+- Test/Presentation/Colorimetry/Tristimulus.lean: the validation values of CIE
+  (2019), Colour-matching functions of CIE 1931 standard colorimetric
+  observer, https://doi.org/10.25039/CIE.DS.xvudnb9b, licensed under
+  CC BY-SA 4.0.

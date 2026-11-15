@@ -44,6 +44,14 @@ def cie2019standardIlluminantD65 : Citation.Work where
       url := "https://files.cie.co.at/Publications-datasets/CIE_std_illum_D65.csv_metadata_v2.json"
       sha256 := "71994379b81c65db111f652e747a00b599b5456c2a8242e9a0d6f379f560a14e" }]
 
+/-- The standard of the CIE and ISO that defines the calculation of tristimulus values from a spectral distribution. -/
+def cie2019tristimulusValues : Citation.Work where
+  author := "CIE"
+  title := "ISO/CIE 11664-3:2019(E) Colorimetry — Part 3: CIE tristimulus values"
+  year := 2019
+  publisher := some "International Commission on Illumination (CIE), Vienna, AT"
+  doi := some "10.25039/DS11664-3.2019"
+
 /-- The vocabulary of the CIE, which defines the terms of colorimetry, each under a number of its own. -/
 def cie2020internationalLightingVocabulary : Citation.Work where
   author := "CIE"
