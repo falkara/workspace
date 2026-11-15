@@ -12,17 +12,10 @@ import {
   Schema,
 } from 'effect';
 
+import { Chromaticity, type ChromaticityOf, Tristimulus } from '#src/Colorimetry.generated';
 import * as Real from '#src/Real';
 
-/** The tristimulus values of a color, a light, relative to the white, whose Y is 1. Branded apart from a direction, which has the same shape but is a change of a color rather than a light, so that only a light is written, tested for a gamut or given a chromaticity. */
-export type Tristimulus = Brand.Branded<
-  {
-    readonly X: Rational.Rational;
-    readonly Y: Rational.Rational;
-    readonly Z: Rational.Rational;
-  },
-  'Tristimulus'
->;
+export { Chromaticity, Tristimulus };
 
 /** The tristimulus values of a color as a caller writes them, branded as they are, as every function that takes a color judges it itself, refusing what lies outside a medium. */
 export const tristimulus = Brand.nominal<Tristimulus>();
@@ -42,22 +35,19 @@ export const whiteTristimulus: Tristimulus = tristimulus({
   Z: Rational.makeUnsafe(10272984088266781770n, 9434894345525109127n),
 });
 
-/** The chromaticity coordinates of a color: its position in the chromaticity plane, a view of its tristimulus values for people and diagrams. Dividing by X + Y + Z drops the intensity and mixes lights non-linearly, so nothing is computed in it. */
-export interface Chromaticity {
-  readonly x: Rational.Rational;
-  readonly y: Rational.Rational;
-}
+/** The chromaticity coordinates as a caller writes them, branded as they are, such as the primaries and the white that a standard writes. */
+export const chromaticity = Brand.nominal<Chromaticity>();
 
 /** The chromaticity coordinates of a color, X and Y over X + Y + Z; none for a color whose X + Y + Z is 0, such as black, which has no chromaticity. */
-export const chromaticityOf = (color: Tristimulus): Option.Option<Chromaticity> =>
+export const chromaticityOf: ChromaticityOf = (color) =>
   Option.zipWith(
     Rational.divide(color.X, Rational.sumAll([color.X, color.Y, color.Z])),
     Rational.divide(color.Y, Rational.sumAll([color.X, color.Y, color.Z])),
-    (x, y) => ({ x, y }),
+    (x, y) => chromaticity({ x, y }),
   );
 
 /** The chromaticity coordinates of the library's white. */
-export const whiteChromaticity: Chromaticity = {
+export const whiteChromaticity: Chromaticity = chromaticity({
   x: Rational.divideUnsafe(
     whiteTristimulus.X,
     // The tristimulus values of the white are positive, so their sum is and the division cannot fail.
@@ -68,7 +58,7 @@ export const whiteChromaticity: Chromaticity = {
     // The tristimulus values of the white are positive, so their sum is and the division cannot fail.
     Rational.sumAll([whiteTristimulus.X, whiteTristimulus.Y, whiteTristimulus.Z]),
   ),
-};
+});
 
 /** A vector in XYZ that is not a light but a change of one: added to a color, it moves the color along a hue, and its values may be negative. Branded apart from a color, which has the same shape, so that it is never written, tested for a gamut or given a chromaticity. */
 export type Direction = Brand.Branded<
@@ -551,10 +541,10 @@ const mediumOf = <Space extends ColorSpace, White extends MediumWhite>(
  * @see https://www.itu.int/rec/R-REC-BT.2020-2-201510-I/en
  * @see https://www.itu.int/rec/R-REC-BT.2100-3-202502-I/en
  */
-export const standardWhiteChromaticity: Chromaticity = {
+export const standardWhiteChromaticity: Chromaticity = chromaticity({
   x: Rational.makeUnsafe(3127n, 10000n),
   y: Rational.makeUnsafe(3290n, 10000n),
-};
+});
 
 /**
  * The constants of the sRGB transfer function, shared by sRGB and Display P3: the linear value up to which the function is linear, the slope of that segment, and the offset and exponent of the curved segment.
@@ -645,9 +635,12 @@ export const hlgScale = Rational.makeUnsafe(37743n, 10000n);
 export const srgb: Medium<'srgb', 'standard'> = mediumOf(
   'srgb',
   {
-    red: { x: Rational.makeUnsafe(640n, 1000n), y: Rational.makeUnsafe(330n, 1000n) },
-    green: { x: Rational.makeUnsafe(300n, 1000n), y: Rational.makeUnsafe(600n, 1000n) },
-    blue: { x: Rational.makeUnsafe(150n, 1000n), y: Rational.makeUnsafe(60n, 1000n) },
+    red: chromaticity({ x: Rational.makeUnsafe(640n, 1000n), y: Rational.makeUnsafe(330n, 1000n) }),
+    green: chromaticity({
+      x: Rational.makeUnsafe(300n, 1000n),
+      y: Rational.makeUnsafe(600n, 1000n),
+    }),
+    blue: chromaticity({ x: Rational.makeUnsafe(150n, 1000n), y: Rational.makeUnsafe(60n, 1000n) }),
   },
   standardWhiteChromaticity,
   relativeToWhite(Rational.fromBigInt(1n)),
@@ -661,9 +654,12 @@ export const srgb: Medium<'srgb', 'standard'> = mediumOf(
 export const displayP3: Medium<'display-p3', 'standard'> = mediumOf(
   'display-p3',
   {
-    red: { x: Rational.makeUnsafe(680n, 1000n), y: Rational.makeUnsafe(320n, 1000n) },
-    green: { x: Rational.makeUnsafe(265n, 1000n), y: Rational.makeUnsafe(690n, 1000n) },
-    blue: { x: Rational.makeUnsafe(150n, 1000n), y: Rational.makeUnsafe(60n, 1000n) },
+    red: chromaticity({ x: Rational.makeUnsafe(680n, 1000n), y: Rational.makeUnsafe(320n, 1000n) }),
+    green: chromaticity({
+      x: Rational.makeUnsafe(265n, 1000n),
+      y: Rational.makeUnsafe(690n, 1000n),
+    }),
+    blue: chromaticity({ x: Rational.makeUnsafe(150n, 1000n), y: Rational.makeUnsafe(60n, 1000n) }),
   },
   standardWhiteChromaticity,
   relativeToWhite(Rational.fromBigInt(1n)),
@@ -678,9 +674,12 @@ export const displayP3: Medium<'display-p3', 'standard'> = mediumOf(
 export const rec2020: Medium<'rec2020', 'standard'> = mediumOf(
   'rec2020',
   {
-    red: { x: Rational.makeUnsafe(708n, 1000n), y: Rational.makeUnsafe(292n, 1000n) },
-    green: { x: Rational.makeUnsafe(170n, 1000n), y: Rational.makeUnsafe(797n, 1000n) },
-    blue: { x: Rational.makeUnsafe(131n, 1000n), y: Rational.makeUnsafe(46n, 1000n) },
+    red: chromaticity({ x: Rational.makeUnsafe(708n, 1000n), y: Rational.makeUnsafe(292n, 1000n) }),
+    green: chromaticity({
+      x: Rational.makeUnsafe(170n, 1000n),
+      y: Rational.makeUnsafe(797n, 1000n),
+    }),
+    blue: chromaticity({ x: Rational.makeUnsafe(131n, 1000n), y: Rational.makeUnsafe(46n, 1000n) }),
   },
   standardWhiteChromaticity,
   relativeToWhite(Rational.fromBigInt(1n)),
