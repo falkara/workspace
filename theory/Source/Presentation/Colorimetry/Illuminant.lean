@@ -3,7 +3,7 @@ import References
 /-!
 # Illuminant
 
-The module defines the illuminant as CIE standard illuminant D65 by its relative spectral distribution at wavelengths from 300 nm to 830 nm in steps of 1 nm, and the distribution as a function of the wavelength, which is 0 beyond the wavelengths of the data table, as the data table extrapolates by zero.
+The module defines the illuminant as CIE standard illuminant D65 by its relative spectral distribution at wavelengths from 300 nm to 830 nm in steps of 1 nm, and the distribution as a function of the wavelength, which gives the distribution from 360 nm to 830 nm, the wavelengths that the metadata of the data table gives the column of the distribution, and 0 beyond them, as the data table extrapolates by zero.
 
 ## Implementation Notes
 
@@ -11,7 +11,7 @@ The illuminant holds every row of the data table [cie2019standardIlluminantD65] 
 
 The illuminant holds its rows as a list rather than an array, as the kernel of Lean folds a list row by row, while it reduces a fold of an array through the loop of the fold and the bounds of every index, which takes gigabytes of memory over the rows of a data table.
 
-The metadata of the data table gives the column of the distribution a first wavelength of 360 nm, while the rows of the column start at 300 nm. The illuminant follows the rows, as the sum of the wavelengths among the validation values of the data table counts from 300 nm.
+The metadata of the data table gives the column of the distribution the wavelengths from 360 nm to 830 nm, while the rows of the column start at 300 nm. The illuminant holds every row, as the sum of the wavelengths among the validation values of the data table counts from 300 nm, and the function of the wavelength takes the rows from 360 nm alone, so the theory holds the rows below 360 nm and computes with none of them.
 
 The function of the wavelength takes the row whose index is the wavelength less 300 nm, as the rows run from 300 nm in steps of 1 nm, so the kernel of Lean reaches the row without comparing the wavelength with every row before it. The function gives 0 as well at a wavelength between two rows, where the data table interpolates linearly, as the theory takes the function only at the wavelengths of the observer, each of which is a wavelength of a row.
 -/
@@ -565,10 +565,12 @@ def illuminant : List MonochromaticComponent := [
 
 attribute [cite "CIE_std_illum_D65.csv" cie2019standardIlluminantD65] illuminant
 
-/-- Gives the relative spectral distribution of the illuminant at a wavelength $\lambda$ of a row of the data table, $S(\lambda)$, and 0 at every other wavelength. -/
+/-- Gives the relative spectral distribution of the illuminant at a wavelength $\lambda$ of a row of the data table from 360 nm to 830 nm, $S(\lambda)$, and 0 at every other wavelength. -/
 def relativeSpectralPowerAt (wavelength : Rat) : Rat :=
-  ((illuminant[(wavelength - 300).floor.toNat]?.filter (·.wavelength = wavelength)).map
-    (·.relativeSpectralPower)).getD 0
+  if 360 ≤ wavelength ∧ wavelength ≤ 830 then
+    ((illuminant[(wavelength - 300).floor.toNat]?.filter (·.wavelength = wavelength)).map
+      (·.relativeSpectralPower)).getD 0
+  else 0
 
 attribute [cite "extrapolationMethod" cie2019standardIlluminantD65] relativeSpectralPowerAt
 

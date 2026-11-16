@@ -2,6 +2,13 @@
 
 Falkara Theory states in Lean the mathematics that the packages of this repository compute, so that the kernel of Lean checks every definition before code follows it. For now it covers the colorimetry of Falkara Presentation: the CIE 1931 standard colorimetric observer and CIE standard illuminant D65, each held as exact rational numbers from the data tables of the CIE.
 
+## Data and Computation
+
+The theory keeps its data apart from its computations:
+
+1. A data table holds every row of its data set as the CIE publishes it, CIE standard illuminant D65 from 300 nm to 830 nm and the CIE 1931 standard colorimetric observer from 360 nm to 830 nm, so its checks compare it with the validation values of the CIE.
+2. A computation takes the wavelengths from 360 nm to 830 nm alone, the range of the observer and of the standard method of ISO/CIE 11664-3, so the rows of D65 below 360 nm are held and never computed with.
+
 ## Organization
 
 Every library of the theory lies under `Source`, and its checks lie under `Test` at the same path.

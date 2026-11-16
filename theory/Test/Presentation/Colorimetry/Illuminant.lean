@@ -4,7 +4,7 @@ import Presentation.Colorimetry.Observer
 /-!
 # Illuminant
 
-The module defines the checks of the illuminant against the data table [cie2019standardIlluminantD65]. The checks compare the sum of the wavelengths $\lambda$, the sum of the values of the relative spectral distribution $S$, and the value at one sample wavelength with the validation values of the data table, and the wavelengths with the range and the step that the data table gives. A further check compares the value of the distribution at 560 nm with 100, as the data table gives it, and a last check compares the distribution as a function of the wavelength at every wavelength of the observer with the row of the data table at that wavelength.
+The module defines the checks of the illuminant against the data table [cie2019standardIlluminantD65]. The checks compare the sum of the wavelengths $\lambda$, the sum of the values of the relative spectral distribution $S$, and the value at one sample wavelength with the validation values of the data table, and the wavelengths with the range and the step that the data table gives. A further check compares the value of the distribution at 560 nm with 100, as the data table gives it, a further check compares the distribution as a function of the wavelength at every wavelength of the observer with the row of the data table at that wavelength, and a last check compares the function with 0 at every row below 360 nm and beyond 830 nm.
 
 ## Implementation Notes
 
@@ -52,5 +52,13 @@ theorem relativeSpectralPowerAt_observer :
   decide +kernel
 
 attribute [cite "S_D65(lambda)" cie2019standardIlluminantD65] relativeSpectralPowerAt_observer
+
+/-- The distribution as a function of the wavelength is 0 at every row of the data table below 360 nm and beyond 830 nm, as the metadata of the data table gives the column of the distribution the wavelengths from 360 nm to 830 nm and extrapolates by zero, $S(\lambda) = 0$ for $\lambda$ from 300 nm to 359 nm and at 831 nm. -/
+theorem relativeSpectralPowerAt_outside :
+    (illuminant.take 60).map (fun component => relativeSpectralPowerAt component.wavelength) = List.replicate 60 0 ∧
+      relativeSpectralPowerAt 831 = 0 := by
+  decide +kernel
+
+attribute [cite "extrapolationMethod" cie2019standardIlluminantD65] relativeSpectralPowerAt_outside
 
 end Presentation.Colorimetry
