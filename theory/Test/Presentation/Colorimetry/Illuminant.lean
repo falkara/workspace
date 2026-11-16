@@ -33,7 +33,7 @@ attribute [cite "sampleRow" cie2019standardIlluminantD65] illuminant_sampleRow
 
 /-- The wavelengths of the illuminant run from 300 nm to 830 nm in steps of 1 nm, $\lambda_i = (300 + i)\,\mathrm{nm}$ for $i = 0, \ldots, 530$. -/
 theorem illuminant_wavelengths :
-    (illuminant.map (·.wavelength)).toList = (List.range 531).map (fun (index : Nat) => 300 + (index : Rat)) := by
+    illuminant.map (·.wavelength) = (List.range 531).map (fun (index : Nat) => 300 + (index : Rat)) := by
   decide +kernel
 
 attribute [cite "lambda" cie2019standardIlluminantD65] illuminant_wavelengths
@@ -48,7 +48,7 @@ attribute [cite "S_D65(lambda)" cie2019standardIlluminantD65] illuminant_normali
 /-- The distribution as a function of the wavelength gives the row of the data table at every wavelength of the observer, $S(\lambda)$ for $\lambda$ from 360 nm to 830 nm. -/
 theorem relativeSpectralPowerAt_observer :
     (observer.map fun stimulus => relativeSpectralPowerAt stimulus.wavelength) =
-      (illuminant.extract 60 531).map (·.relativeSpectralPower) := by
+      (illuminant.drop 60).map (·.relativeSpectralPower) := by
   decide +kernel
 
 attribute [cite "S_D65(lambda)" cie2019standardIlluminantD65] relativeSpectralPowerAt_observer

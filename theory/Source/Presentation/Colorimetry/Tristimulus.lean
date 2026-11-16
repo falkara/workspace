@@ -91,8 +91,7 @@ theorem tristimulusOf_add (first second : (wavelength : Rat) → Rat) :
     tristimulusOf (fun wavelength => first wavelength + second wavelength) =
       (tristimulusOf first).add (tristimulusOf second) := by
   unfold tristimulusOf
-  rw [← Array.foldl_toList, ← Array.foldl_toList, ← Array.foldl_toList]
-  generalize observer.toList = stimuli
+  generalize observer = stimuli
   suffices ∀ (firstSum secondSum : Tristimulus),
       stimuli.foldl (fun sum monochromaticStimulus =>
           ⟨sum.X + (first monochromaticStimulus.wavelength + second monochromaticStimulus.wavelength) * monochromaticStimulus.xBar,
@@ -129,8 +128,7 @@ theorem tristimulusOf_scale (colorStimulusFunction : (wavelength : Rat) → Rat)
     tristimulusOf (fun wavelength => factor * colorStimulusFunction wavelength) =
       (tristimulusOf colorStimulusFunction).scale factor := by
   unfold tristimulusOf
-  rw [← Array.foldl_toList, ← Array.foldl_toList]
-  generalize observer.toList = stimuli
+  generalize observer = stimuli
   suffices ∀ (sum : Tristimulus),
       stimuli.foldl (fun sum monochromaticStimulus =>
           ⟨sum.X + factor * colorStimulusFunction monochromaticStimulus.wavelength * monochromaticStimulus.xBar,

@@ -8,6 +8,8 @@ The module defines the observer as the CIE 1931 standard colorimetric observer b
 ## Implementation Notes
 
 The observer holds every row of the data table [cie2019colorMatchingFunctions] as a monochromatic stimulus, with each value as the exact rational number that the decimal digits of the value denote.
+
+The observer holds its rows as a list rather than an array, as the kernel of Lean folds a list row by row, while it reduces a fold of an array through the loop of the fold and the bounds of every index, which takes gigabytes of memory over the rows of a data table.
 -/
 
 namespace Presentation.Colorimetry
@@ -30,7 +32,7 @@ attribute [cite "y_bar(lambda)" cie2019colorMatchingFunctions] MonochromaticStim
 attribute [cite "z_bar(lambda)" cie2019colorMatchingFunctions] MonochromaticStimulus.zBar
 
 /-- The monochromatic stimuli that define the observer, at wavelengths from 360 nm to 830 nm in steps of 1 nm. -/
-def observer : Array MonochromaticStimulus := #[
+def observer : List MonochromaticStimulus := [
   ⟨360, 0.000129900000, 0.0000039170000, 0.000606100000⟩,
   ⟨361, 0.000145847000, 0.0000043935810, 0.000680879200⟩,
   ⟨362, 0.000163802100, 0.0000049296040, 0.000765145600⟩,

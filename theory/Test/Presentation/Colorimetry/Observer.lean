@@ -33,7 +33,7 @@ attribute [cite "sampleRow" cie2019colorMatchingFunctions] observer_sampleRow
 
 /-- The wavelengths of the observer run from 360 nm to 830 nm in steps of 1 nm, $\lambda_i = (360 + i)\,\mathrm{nm}$ for $i = 0, \ldots, 470$. -/
 theorem observer_wavelengths :
-    (observer.map (·.wavelength)).toList = (List.range 471).map (fun (index : Nat) => 360 + (index : Rat)) := by
+    observer.map (·.wavelength) = (List.range 471).map (fun (index : Nat) => 360 + (index : Rat)) := by
   decide +kernel
 
 attribute [cite "lambda" cie2019colorMatchingFunctions] observer_wavelengths

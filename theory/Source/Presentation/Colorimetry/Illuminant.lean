@@ -9,6 +9,8 @@ The module defines the illuminant as CIE standard illuminant D65 by its relative
 
 The illuminant holds every row of the data table [cie2019standardIlluminantD65] as a monochromatic component, with each value as the exact rational number that the decimal digits of the value denote.
 
+The illuminant holds its rows as a list rather than an array, as the kernel of Lean folds a list row by row, while it reduces a fold of an array through the loop of the fold and the bounds of every index, which takes gigabytes of memory over the rows of a data table.
+
 The metadata of the data table gives the column of the distribution a first wavelength of 360 nm, while the rows of the column start at 300 nm. The illuminant follows the rows, as the sum of the wavelengths among the validation values of the data table counts from 300 nm.
 
 The function of the wavelength takes the row whose index is the wavelength less 300 nm, as the rows run from 300 nm in steps of 1 nm, so the kernel of Lean reaches the row without comparing the wavelength with every row before it. The function gives 0 as well at a wavelength between two rows, where the data table interpolates linearly, as the theory takes the function only at the wavelengths of the observer, each of which is a wavelength of a row.
@@ -28,7 +30,7 @@ attribute [cite "lambda" cie2019standardIlluminantD65] MonochromaticComponent.wa
 attribute [cite "S_D65(lambda)" cie2019standardIlluminantD65] MonochromaticComponent.relativeSpectralPower
 
 /-- The monochromatic components that define the illuminant, at wavelengths from 300 nm to 830 nm in steps of 1 nm. -/
-def illuminant : Array MonochromaticComponent := #[
+def illuminant : List MonochromaticComponent := [
   ⟨300, 0.0341⟩,
   ⟨301, 0.36014⟩,
   ⟨302, 0.68618⟩,
