@@ -2,6 +2,8 @@
 # counts the file as JavaScript. The extension is the truth here.
 *.ts linguist-language=TypeScript
 
-# The generator of the theory writes every file of the theory in TypeScript, so
-# GitHub collapses it in a diff and leaves it out of the languages.
+# The generator of the theory writes every file of the theory in TypeScript and
+# its tests, so GitHub collapses them in a diff and leaves them out of the
+# languages.
 *.theory.ts linguist-generated=true
+*.theory.test.ts linguist-generated=true

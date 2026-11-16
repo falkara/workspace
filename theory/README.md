@@ -24,7 +24,7 @@ Elan installs Lean at the version that `lean-toolchain` pins, and two commands c
 
 ## Generation
 
-The generator writes the declarations that the theory marks `export_typescript` into Falkara Presentation, a file for every module of the theory, such as `Colorimetry/Tristimulus.theory.ts` for `Presentation/Colorimetry/Tristimulus.lean`, beside which the package keeps a module of its own, such as `Colorimetry/Tristimulus.ts`. It reads the built theory, so `lake build` precedes it:
+The generator writes the declarations that the theory marks `export_typescript` into Falkara Presentation, a file for every module of the theory, such as `Colorimetry/Tristimulus.theory.ts` for `Presentation/Colorimetry/Tristimulus.lean`, beside which the package keeps a module of its own, such as `Colorimetry/Tristimulus.ts`. The module of the package is bounded by the types of the theory, which it must implement, and by its theorems, which the generator writes as tests of the module, such as `Colorimetry/Tristimulus.theory.test.ts`. It reads the built theory, so `lake build` precedes it:
 
 1. `lake build Presentation` builds the theory the generator reads.
 2. `lake exe generator ../libraries/presentation/src` writes the files of TypeScript and fails where a module of the package, such as `Colorimetry/Tristimulus.ts`, redeclares a declaration of the theory with another comment than the theory gives it.
