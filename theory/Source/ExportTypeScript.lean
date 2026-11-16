@@ -7,7 +7,7 @@ The module defines the attribute `export_typescript`, which marks a declaration 
 
 ## Implementation Notes
 
-The attribute marks each declaration by hand rather than every declaration of the library `Presentation`, as the data tables of the CIE are licensed under CC BY-SA 4.0 and the packages of the repository under the MIT License, so the data tables stay out of the packages.
+The attribute marks each declaration by hand rather than every declaration of a library, so a declaration that the theory alone needs, such as a data table licensed otherwise than the packages, stays out of the packages.
 -/
 
 namespace ExportTypeScript

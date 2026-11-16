@@ -44,15 +44,15 @@ info: {
   ("second", .atom "Tristimulus.Tristimulus"), ("third", .atom "Tristimulus.Tristimulus")]) 4 4 1)
 
 /--
-info: // Written by the generator of Falkara Theory from `Test.Generator.Fixture.Point`, so every change by hand is lost when the generator runs.
+info: // Written by the generator of the theory from `Test.Generator.Fixture.Point`, so every change by hand is lost when the generator runs.
 
 import { describe, expect, it } from '@effect/vitest';
 import { Equal, Option } from 'effect';
 
-import * as Coordinate from '#src/Test/Generator/Fixture/Coordinate';
-import * as Point from '#src/Test/Generator/Fixture/Point';
+import * as Coordinate from '#src/Generator/Fixture/Coordinate';
+import * as Point from '#src/Generator/Fixture/Point';
 
-describe('Test/Generator/Fixture/Point', () => {
+describe('Generator/Fixture/Point', () => {
   /** The point at a coordinate is the point whose first coordinate it is. */
   it.prop('pointAt_first', { coordinate: Coordinate.Coordinate }, ({ coordinate }) => {
     const actual = Point.pointAt(coordinate);

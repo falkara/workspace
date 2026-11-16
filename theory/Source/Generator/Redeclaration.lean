@@ -5,11 +5,13 @@ import Lean.Structure
 /-!
 # Redeclaration
 
-The module defines the check of the redeclarations that a module of Falkara Presentation makes of the declarations the generator writes. A module imports the generated module as `Theory`, redeclares the schema, the type, and the constructor of every structure, such as `export const Tristimulus = Theory.Tristimulus;`, redeclares every value, such as `export const whiteTristimulus = Theory.whiteTristimulus;`, and implements every function under the name its contract gives it, such as `export const chromaticityOf`. Every redeclaration and every implementation takes the documentation comment that the generator writes for the declaration, right above it, and the check gives a reason for every one that is missing or takes another comment.
+The module defines the check of the redeclarations that a module of a package makes of the declarations the generator writes. A module imports the generated module as `Theory`, redeclares the schema, the type, and the constructor of every structure, such as `export const Tristimulus = Theory.Tristimulus;`, redeclares the type and the constructor of every structure that takes an interface and every type, such as `export type MachineOutcome<State, Output> =`, redeclares every value, such as `export const whiteTristimulus = Theory.whiteTristimulus;`, and implements every function under the name its contract gives it, such as `export const chromaticityOf`. Every redeclaration and every implementation takes the documentation comment that the generator writes for the declaration, right above it, and the check gives a reason for every one that is missing or takes another comment.
 
 ## Implementation Notes
 
 The check finds a redeclaration by the text its line opens with, as the module of TypeScript is read as text and has no syntax tree in Lean. A line that opens with the text and goes on with a character of a name, such as `export const chromaticityOfWhite`, declares another name and marks no redeclaration.
+
+A type is found by the text up to its `=`, as oxfmt breaks a redeclaration longer than 100 columns, such as one of a type with three type parameters, after the `=` and between the arguments.
 
 A value is redeclared from the generated module alone, so the module of the package holds the value of the theory and never a value of its own.
 
@@ -22,13 +24,23 @@ namespace Generator
 def redeclarationsOf (moduleNamespace name : Lean.Name) : Lean.MetaM (List (String × String)) := do
   let typeName := String.join ((name.replacePrefix moduleNamespace .anonymous).components.map
     fun component => component.toString.capitalize)
+  let information ← Lean.getConstInfo name
+  let names ← Lean.Meta.forallBoundedTelescope information.type (some (typeParameterCount information.type))
+    fun parameters _ => parameters.toList.mapM fun parameter => return (← parameter.fvarId!.getUserName).toString
+  let arguments := if names.isEmpty then "" else s!"<{", ".intercalate names}>"
   if Lean.isStructure (← Lean.getEnv) name then
+    if ← hasSchema moduleNamespace name then
+      return [
+        (s!"export const {typeName} = Theory.{typeName};", ← commentOf name "" (some "A schema of")),
+        (s!"export type {typeName} = Theory.{typeName};", ← commentOf name ""),
+        (s!"export const {typeName.decapitalize} = Theory.{typeName.decapitalize};",
+          ← commentOf name "" (some "Brands without a check"))]
     return [
-      (s!"export const {typeName} = Theory.{typeName};", ← commentOf name "" (some "A schema of")),
-      (s!"export type {typeName} = Theory.{typeName};", ← commentOf name ""),
-      (s!"export const {typeName.decapitalize} = Theory.{typeName.decapitalize};",
-        ← commentOf name "" (some "Brands without a check"))]
-  if !((← Lean.getConstInfo name).type matches .forallE ..) then
+      (s!"export type {typeName}{arguments} =", ← commentOf name ""),
+      (s!"export const {typeName.decapitalize} = Theory.{typeName.decapitalize};", ← commentOf name "" (some "Creates"))]
+  if information.type.getForallBody matches .sort _ then
+    return [(s!"export type {typeName}{arguments} =", ← commentOf name "")]
+  if !(information.type matches .forallE ..) then
     return [(s!"export const {typeName.decapitalize} = Theory.{typeName.decapitalize};", ← commentOf name "")]
   return [(s!"export const {typeName.decapitalize}", ← commentOf name "")]
 

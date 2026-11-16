@@ -1,9 +1,10 @@
 import Generator.Redeclaration
+import Test.Generator.Fixture.Walker
 
 /-!
 # Redeclaration
 
-The module defines the checks of the redeclarations in a module of TypeScript: a structure is redeclared as its schema, its type, and its constructor, a value is redeclared from the generated module, and a function is implemented under its name, each with the comment of the theory. The check gives no reason for a module that holds every redeclaration with the comment of the theory, even beside a name that merely opens with the name of a function, and a reason for a redeclaration that is missing, a comment that differs, and a redeclaration with no comment.
+The module defines the checks of the redeclarations in a module of TypeScript: a structure is redeclared as its schema, its type, and its constructor, a structure that takes an interface as its type and its constructor, a type as its type alone, found by the text up to its `=` even where the redeclaration breaks over lines, a value is redeclared from the generated module, and a function is implemented under its name, each with the comment of the theory. The check gives no reason for a module that holds every redeclaration with the comment of the theory, even beside a name that merely opens with the name of a function, and a reason for a redeclaration that is missing, a comment that differs, and a redeclaration with no comment.
 -/
 
 namespace Geometry
@@ -72,3 +73,22 @@ info: ["Geometry.ts: `export const Point = Theory.Point;` is missing, which the 
     ("/** A point. */\nexport type Point = Theory.Point;\n\n" ++
       "export const pointOf: Theory.PointOf = (coordinate) => point({ x: coordinate });\n")
     redeclarations
+
+/--
+info: [("export type Walker<State, Input, Trace> =", "/** A walker that takes a step upon every input. */\n"),
+  ("export const walker = Theory.walker;", "/** Creates a walker that takes a step upon every input. */\n"),
+  ("export type StepMove<State, Input, Trace> =",
+    "/** A function that gives the step from a state upon an input. */\n")]
+-/
+#guard_msgs in
+#eval show Lean.MetaM (List (String × String)) from do
+  return (← Generator.redeclarationsOf `Geometry ``Geometry.Walker) ++
+    (← Generator.redeclarationsOf `Geometry ``Geometry.Step.Move)
+
+/-- info: [] -/
+#guard_msgs in
+#eval show Lean.MetaM (List String) from do
+  return Generator.mismatchesOf "Walker.ts"
+    ("/** A function that gives the step from a state upon an input. */\n" ++
+      "export type StepMove<State, Input, Trace> = Theory.StepMove<\n  State,\n  Input,\n  Trace\n>;\n")
+    (← Generator.redeclarationsOf `Geometry ``Geometry.Step.Move)

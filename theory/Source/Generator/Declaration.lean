@@ -6,7 +6,7 @@ import Lean.Structure
 /-!
 # Declaration
 
-The module defines the declaration of TypeScript that a declaration of the theory marked `export_typescript` takes. A structure takes a schema of Effect branded by its name, with a field for every field of the structure, as `Schema.Struct({ X: Schema.Rational, … }).pipe(Schema.brand('Tristimulus'))`, and a type of the same name for what the schema decodes, and a constructor named in camel case, such as `tristimulus`, which brands a value as a caller writes it. A function takes a type of its signature. A value takes a constant of its type that holds the value as the kernel of Lean reduces it, a rational number as `Rational.fromBigInt(1n)` or `Rational.makeUnsafe(1n, 2n)` and a structure of its module as its constructor with a value for every field, such as `tristimulus({ X: …, Y: …, Z: … })`. Every declaration and every field takes the documentation comment that the module `Comment` gives it, the schema of a structure opening with "A schema of" and its constructor with "Brands without a check". Every other declaration has no declaration of TypeScript, and the generator refuses it.
+The module defines the declaration of TypeScript that a declaration of the theory marked `export_typescript` takes. A structure takes a schema of Effect branded by its name, with a field for every field of the structure, as `Schema.Struct({ X: Schema.Rational, … }).pipe(Schema.brand('Tristimulus'))`, and a type of the same name for what the schema decodes, and a constructor named in camel case, such as `tristimulus`, which brands a value as a caller writes it. A structure that takes type parameters, or whose field takes no schema, such as a function, takes an interface in place of the schema, with a field for every field of the structure and a type parameter for every type parameter, annotated with its variance, such as `interface Machine<in out State, in Input, out Output>`, and a constructor that gives a value as a caller writes it. A type takes a type alias with a type parameter for every type parameter of the type, annotated with its variance. A function takes a type of its signature, with a type parameter for every implicit type parameter of the function. A value takes a constant of its type that holds the value as the kernel of Lean reduces it, a rational number as `Rational.fromBigInt(1n)` or `Rational.makeUnsafe(1n, 2n)` and a structure of its module as its constructor with a value for every field, such as `tristimulus({ X: …, Y: …, Z: … })`. Every declaration and every field takes the documentation comment that the module `Comment` gives it, the schema of a structure opening with "A schema of", its constructor with "Brands without a check", and the constructor of an interface with "Creates". Every other declaration has no declaration of TypeScript, and the generator refuses it.
 
 ## Implementation Notes
 
@@ -16,7 +16,9 @@ The constructor of a structure brands a value by `Brand.nominal` of Effect, whic
 
 A structure takes the brand of Effect, as two structures with the same fields, such as a color and a change of a color, stay apart in TypeScript only by their brands.
 
-A declaration takes the words of its name after the namespace of its module, each capitalized and joined, such as `ChromaticityOf` for `chromaticityOf` and `ChromaticityZ` for `Chromaticity.z`, as a type of TypeScript is named in Pascal case and the namespace has no counterpart in a module of TypeScript.
+A structure that takes an interface takes no brand, as a schema of Effect describes data alone, and a type parameter or a function has no schema whose decoding could give the brand.
+
+A declaration takes the words of its name after the namespace of its module, each capitalized and joined, such as `ChromaticityOf` for `chromaticityOf` and `ChromaticityZ` for `Chromaticity.z`, as the module `Type` names every declaration.
 
 A value is reduced by the kernel of Lean rather than computed by the compiler, so the file holds the value that the kernel checks every theorem of the value against.
 
@@ -75,27 +77,54 @@ def declarationOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
     Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never marks it `export_typescript`."
   let typeName := String.join ((name.replacePrefix moduleNamespace .anonymous).components.map
     fun component => component.toString.capitalize)
-  if Lean.isStructure environment name then
-    let fields ← (Lean.getStructureFields environment name).toList.mapM fun field => do
-      match (← Lean.getConstInfo (name ++ field)).type with
-      | .forallE _ _ fieldType _ =>
-        if fieldType.hasLooseBVars then
-          Lean.throwError m!"`{name ++ field}` has no field in TypeScript, as its type depends on the structure."
-        return s!"{← commentOf (name ++ field) "  "}  {field}: {← schemaOf fieldType},\n"
-      | _ => Lean.throwError m!"`{name}` has no declaration in TypeScript, as it takes parameters."
-    return s!"{← commentOf name "" (some "A schema of")}export const {typeName} = Schema.Struct(\{\n{String.join fields}}).pipe(Schema.brand('{typeName}'));\n\n" ++
-      s!"{← commentOf name ""}export type {typeName} = typeof {typeName}.Type;\n\n" ++
-      s!"{← commentOf name "" (some "Brands without a check")}export const {typeName.decapitalize} = Brand.nominal<{typeName}>();\n"
-  match (← Lean.getConstInfo name).type with
-  | type@(.forallE ..) =>
-    let (parameters, result) ← signatureOf [] type
-    let line := s!"export type {typeName} = ({", ".intercalate parameters}) => {result};"
-    -- Oxfmt breaks a line longer than 100 columns.
-    if line.length ≤ 100 then return s!"{← commentOf name ""}{line}\n"
-    return s!"{← commentOf name ""}export type {typeName} = (\n{String.join (parameters.map (s!"  {·},\n"))}) => {result};\n"
-  | type =>
-    let value ← valueOf moduleNamespace name type (Lean.mkConst name)
-    let opening := s!"export const {typeName.decapitalize}: {← typeOf type} = "
-    return s!"{← commentOf name ""}{opening}{value.render 0 opening.length 1};\n"
+  let information ← Lean.getConstInfo name
+  Lean.Meta.forallBoundedTelescope information.type (some (typeParameterCount information.type)) fun parameters rest => do
+    let names ← parameters.toList.mapM fun parameter => return (← parameter.fvarId!.getUserName).toString
+    let arguments := if names.isEmpty then "" else s!"<{", ".intercalate names}>"
+    if Lean.isStructure environment name then
+      if ← hasSchema moduleNamespace name then
+        let fields ← (← fieldTypesOf name parameters).mapM fun (field, fieldType) => do
+          return s!"{← commentOf (name ++ field) "  "}  {field}: {← schemaOf moduleNamespace fieldType},\n"
+        return s!"{← commentOf name "" (some "A schema of")}export const {typeName} = Schema.Struct(\{\n{String.join fields}}).pipe(Schema.brand('{typeName}'));\n\n" ++
+          s!"{← commentOf name ""}export type {typeName} = typeof {typeName}.Type;\n\n" ++
+          s!"{← commentOf name "" (some "Brands without a check")}export const {typeName.decapitalize} = Brand.nominal<{typeName}>();\n"
+    let variances ← variancesOf name
+    let generics := if names.isEmpty then "" else s!"<{", ".intercalate ((names.zip variances).map fun (parameter, polarities) =>
+      match polarities.contains false, polarities.contains true with
+      | true, true => s!"in out {parameter}"
+      | true, false => s!"in {parameter}"
+      | false, true => s!"out {parameter}"
+      | false, false => parameter)}>"
+    if Lean.isStructure environment name then
+      let fields ← (← fieldTypesOf name parameters).mapM fun (field, fieldType) => do
+        return s!"{← commentOf (name ++ field) "  "}  readonly {field}: {← typeOf moduleNamespace fieldType};\n"
+      let line := s!"export const {typeName.decapitalize} = {arguments}(fields: {typeName}{arguments}): {typeName}{arguments} => fields;"
+      -- Oxfmt breaks a line longer than 100 columns.
+      let constructor := if line.length ≤ 100 then s!"{line}\n" else
+        s!"export const {typeName.decapitalize} = {arguments}(\n  fields: {typeName}{arguments},\n): {typeName}{arguments} => fields;\n"
+      return s!"{← commentOf name ""}export interface {typeName}{generics} \{\n{String.join fields}}\n\n" ++
+        s!"{← commentOf name "" (some "Creates")}{constructor}"
+    if rest matches .sort _ then
+      let some value := information.value?
+        | Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory gives the type no value."
+      let body := value.beta parameters
+      let line := s!"export type {typeName}{generics} = {← typeOf moduleNamespace body};"
+      -- Oxfmt breaks a line longer than 100 columns, a function type before its parameters.
+      unless line.length > 100 && body matches .forallE .. do return s!"{← commentOf name ""}{line}\n"
+      let (signature, result) ← signatureOf moduleNamespace [] body
+      return s!"{← commentOf name ""}export type {typeName}{generics} = (\n{String.join (signature.map (s!"  {·},\n"))}) => {result};\n"
+    match rest with
+    | .forallE .. =>
+      let (signature, result) ← signatureOf moduleNamespace [] rest
+      let line := s!"export type {typeName} = {arguments}({", ".intercalate signature}) => {result};"
+      -- Oxfmt breaks a line longer than 100 columns.
+      if line.length ≤ 100 then return s!"{← commentOf name ""}{line}\n"
+      return s!"{← commentOf name ""}export type {typeName} = {arguments}(\n{String.join (signature.map (s!"  {·},\n"))}) => {result};\n"
+    | type =>
+      unless names.isEmpty do
+        Lean.throwError m!"`{name}` has no value in TypeScript, as it takes type parameters."
+      let value ← valueOf moduleNamespace name type (Lean.mkConst name)
+      let opening := s!"export const {typeName.decapitalize}: {← typeOf moduleNamespace type} = "
+      return s!"{← commentOf name ""}{opening}{value.render 0 opening.length 1};\n"
 
 end Generator

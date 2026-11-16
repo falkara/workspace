@@ -152,11 +152,11 @@ def testFileOf (module : Lean.Name) (packageNamespace : Lean.Name) (theorems : L
   let effectImport := if effectModules.isEmpty then "" else
     s!"import \{ {", ".intercalate effectModules} } from 'effect';\n"
   let packageImports := String.join (← modules.mapM fun named => do
-    let path := (named.replacePrefix `Presentation .anonymous).toString.replace "." "/"
+    let path := (named.replacePrefix named.getRoot .anonymous).toString.replace "." "/"
     let .str _ last := named | Lean.throwError m!"`{named}` has no name that a test can import it under."
     return s!"import * as {last} from '#src/{path}';\n")
-  let modulePath := (module.replacePrefix `Presentation .anonymous).toString.replace "." "/"
-  return s!"// Written by the generator of Falkara Theory from `{module}`, so every change by hand is lost when the generator runs.\n\n" ++
+  let modulePath := (module.replacePrefix module.getRoot .anonymous).toString.replace "." "/"
+  return s!"// Written by the generator of the theory from `{module}`, so every change by hand is lost when the generator runs.\n\n" ++
     s!"import \{ describe, expect, it } from '@effect/vitest';\n{effectImport}\n{packageImports}\n" ++
     s!"describe('{modulePath}', () => \{\n{body}});\n"
 

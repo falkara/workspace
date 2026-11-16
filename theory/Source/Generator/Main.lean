@@ -5,7 +5,7 @@ import Generator.Theorem
 /-!
 # Main
 
-The module defines the program `generator`, which writes the declarations that the theory of Falkara Presentation marks `export_typescript` into files of TypeScript, a file for every module of the theory. The theory of a module of the package lies in a directory of `Source/Presentation`, such as `Source/Presentation/Colorimetry`, which `Main.lean` gathers, and the program writes the declarations of every module in the directory, such as `Tristimulus.lean`, into the file of the same name in the directory of the same name in the directory it is given, such as `Colorimetry/Tristimulus.theory.ts`. A file imports from Effect the modules its declarations name, `Brand`, `Schema`, and every module whose function a value calls, such as `Rational.fromBigInt`, as values and every other module as a type, and from the files of the other modules of the theory the declarations it names, as values where a schema names them and as types otherwise. A file whose module defines functions ends with a contract, an interface that names every function as the module of the package beside the file exports it, such as `chromaticityOf`, and a type that fails to compile where that module leaves a function out or gives it another type, as a signature of a module in ML requires of the module. The program writes the theorems of a module marked `export_typescript` into the file of tests of the same name, such as `Colorimetry/Tristimulus.theory.test.ts`, by the module `Theorem`. The program then checks the module of the package beside every file, such as `Colorimetry/Tristimulus.ts`, by the module `Redeclaration`, and fails with a reason for every redeclaration whose comment differs from the theory.
+The module defines the program `generator`, which writes the declarations that the theory of a package marks `export_typescript` into files of TypeScript, a file for every module of the theory. The program takes the directory of the theory of the package, such as `Presentation` for `Source/Presentation`, and the directory of the source of the package, and writes the declarations of every module of the theory, such as `Source/Presentation/Colorimetry/Tristimulus.lean`, into the file of the same path in the directory of the source, such as `Colorimetry/Tristimulus.theory.ts`, named without the namespace of the module, such as `Presentation.Colorimetry`. A file imports from Effect the modules its declarations name, `Brand`, `Schema`, and every module whose function a value calls, such as `Rational.fromBigInt`, as values and every other module as a type, and from the files of the other modules of the theory the declarations it names, as values where a schema names them and as types otherwise. A file whose module defines functions ends with a contract, an interface that names every function as the module of the package beside the file exports it, such as `chromaticityOf`, and a type that fails to compile where that module leaves a function out or gives it another type, as a signature of a module in ML requires of the module. The program writes the theorems of a module marked `export_typescript` into the file of tests of the same name, such as `Colorimetry/Tristimulus.theory.test.ts`, by the module `Theorem`. The program then checks the module of the package beside every file, such as `Colorimetry/Tristimulus.ts`, by the module `Redeclaration`, and fails with a reason for every redeclaration whose comment differs from the theory.
 
 ## Implementation Notes
 
@@ -44,7 +44,7 @@ def fileOf (packageNamespace module : Lean.Name) : Lean.MetaM String := do
   let declarations ← markedDeclarationsOf module false
   let body := "\n".intercalate (← declarations.mapM (declarationOf packageNamespace))
   let imports := ["Brand", "Option", "Rational", "Schema"].filter fun module => (body.splitOn s!"{module}.").length > 1
-  let header := s!"// Written by the generator of Falkara Theory from `{module}`, so every change by hand is lost when the generator runs.\n"
+  let header := s!"// Written by the generator of the theory from `{module}`, so every change by hand is lost when the generator runs.\n"
   -- A schema, a constructor, and a function such as `Rational.fromBigInt` are the values of the file, so a module the file names otherwise, as `Rational.Rational`, is imported as a type.
   let valued := fun (module : String) => ["Brand", "Schema"].contains module ||
     ((body.splitOn s!"{module}.").drop 1).any fun rest => rest.toList.head?.any Char.isLower
@@ -53,12 +53,22 @@ def fileOf (packageNamespace module : Lean.Name) : Lean.MetaM String := do
         if valued module then module else s!"type {module}")} } from 'effect';\n"
     else s!"\nimport type \{ {", ".intercalate imports} } from 'effect';\n"
   -- A schema names the schemas of its fields as values, and every other declaration names a declaration as a type.
-  let namedBySchemas := declarations.flatMap fun name =>
+  let namedBySchemas ← declarations.flatMapM fun name => do
+    if Lean.isStructure environment name then
+      if ← hasSchema packageNamespace name then
+        return (Lean.getStructureFields environment name).toList.flatMap fun field =>
+          ((environment.find? (name ++ field)).map (·.type.getUsedConstants.toList)).getD []
+    return []
+  -- An interface names the types of its fields and a type alias the types of its value.
+  let named := declarations.flatMap fun name =>
     if Lean.isStructure environment name then
       (Lean.getStructureFields environment name).toList.flatMap fun field =>
         ((environment.find? (name ++ field)).map (·.type.getUsedConstants.toList)).getD []
-    else []
-  let named := declarations.flatMap fun name => ((environment.find? name).map (·.type.getUsedConstants.toList)).getD []
+    else ((environment.find? name).map fun information =>
+      information.type.getUsedConstants.toList ++
+        if information.type.getForallBody matches .sort _ then
+          (information.value?.map (·.getUsedConstants.toList)).getD []
+        else []).getD []
   let others := (namedBySchemas ++ named).eraseDups.filter fun name =>
     ExportTypeScript.tagAttribute.hasTag environment name &&
       (environment.getModuleIdxFor? name).map (·.toNat) != (environment.getModuleIdx? module).map (·.toNat)
@@ -70,14 +80,15 @@ def fileOf (packageNamespace module : Lean.Name) : Lean.MetaM String := do
     let typeNames := names.map fun name =>
       (String.join ((name.replacePrefix packageNamespace .anonymous).components.map fun component => component.toString.capitalize),
         namedBySchemas.contains name)
-    let path := (otherModule.replacePrefix `Presentation .anonymous).toString.replace "." "/"
+    let path := (otherModule.replacePrefix otherModule.getRoot .anonymous).toString.replace "." "/"
     if typeNames.any Prod.snd then
       s!"import \{ {", ".intercalate (typeNames.map fun (typeName, value) => if value then typeName else s!"type {typeName}")} } from '#src/{path}.theory';\n"
     else s!"import type \{ {", ".intercalate (typeNames.map Prod.fst)} } from '#src/{path}.theory';\n"
   -- The contract names the module of the package as a type alone, so the two modules import each other only as types.
   let functions := declarations.filter fun name =>
-    !Lean.isStructure environment name && (environment.find? name).any (·.type matches .forallE ..)
-  let modulePath := (module.replacePrefix `Presentation .anonymous).toString.replace "." "/"
+    !Lean.isStructure environment name && (environment.find? name).any fun information =>
+      information.type matches .forallE .. && !(information.type.getForallBody matches .sort _)
+  let modulePath := (module.replacePrefix module.getRoot .anonymous).toString.replace "." "/"
   let contractImport := if functions.isEmpty then [] else [s!"import type * as Module from '#src/{modulePath}';\n"]
   let members ← functions.mapM fun name => do
     let typeName := String.join ((name.replacePrefix packageNamespace .anonymous).components.map
@@ -94,31 +105,32 @@ def fileOf (packageNamespace module : Lean.Name) : Lean.MetaM String := do
 
 end Generator
 
-/-- Writes a file of TypeScript for every module of the theory of Falkara Presentation into the directory it is given, and checks the module of the package beside every file. -/
+/-- Writes a file of TypeScript for every module of the theory of a package into the directory of the source of the package, and checks the module of the package beside every file. -/
 def main (arguments : List String) : IO Unit := do
-  let [directory] := arguments
-    | throw (IO.userError "The generator takes the directory to write the files of TypeScript into.")
+  let [theory, directory] := arguments
+    | throw (IO.userError "The generator takes the directory of the theory of a package, such as `Presentation`, and the directory of the source of the package to write the files of TypeScript into.")
   Lean.initSearchPath (← Lean.findSysroot)
-  for entry in ← System.FilePath.readDir "Source/Presentation" do
-    if ← (entry.path / "Main.lean").pathExists then
-      let packageNamespace := `Presentation ++ Lean.Name.mkSimple entry.fileName
-      let environment ← Lean.importModules #[{ module := packageNamespace ++ `Main }] {}
-      for module in environment.header.moduleNames do
-        if let .str _ last := module then
-          let declarations ← Generator.runIn environment (Generator.markedDeclarationsOf module false)
-          if packageNamespace.isPrefixOf module && !declarations.isEmpty then
-            let packageDirectory := System.FilePath.mk directory / entry.fileName
-            IO.FS.createDirAll packageDirectory
-            let text ← Generator.runIn environment (Generator.fileOf packageNamespace module)
-            IO.FS.writeFile (packageDirectory / s!"{last}.theory.ts") text
-            let path := packageDirectory / s!"{last}.ts"
-            if ← path.pathExists then
-              let redeclarations ← Generator.runIn environment
-                (declarations.flatMapM (Generator.redeclarationsOf packageNamespace))
-              let mismatches := Generator.mismatchesOf path.toString (← IO.FS.readFile path) redeclarations
-              unless mismatches.isEmpty do
-                throw (IO.userError ("\n\n".intercalate mismatches))
-          let theorems ← Generator.runIn environment (Generator.markedDeclarationsOf module true)
-          if packageNamespace.isPrefixOf module && !theorems.isEmpty then
-            let text ← Generator.runIn environment (Generator.testFileOf module packageNamespace theorems)
-            IO.FS.writeFile (System.FilePath.mk directory / entry.fileName / s!"{last}.theory.test.ts") text
+  let modules := (← (System.FilePath.mk "Source" / theory).walkDir).toList.filterMap fun path =>
+    if path.extension == some "lean" then
+      some (((path.withExtension "").components.drop 1).foldl Lean.Name.mkStr .anonymous)
+    else none
+  let environment ← Lean.importModules (modules.map ({ module := · })).toArray {}
+  for module in modules do
+    let packageNamespace := module.getPrefix
+    let path := System.FilePath.mk directory / (module.replacePrefix module.getRoot .anonymous).toString.replace "." "/"
+    let declarations ← Generator.runIn environment (Generator.markedDeclarationsOf module false)
+    if !declarations.isEmpty then
+      if let some parent := path.parent then IO.FS.createDirAll parent
+      let text ← Generator.runIn environment (Generator.fileOf packageNamespace module)
+      IO.FS.writeFile (path.addExtension "theory.ts") text
+      if ← (path.addExtension "ts").pathExists then
+        let redeclarations ← Generator.runIn environment
+          (declarations.flatMapM (Generator.redeclarationsOf packageNamespace))
+        let mismatches := Generator.mismatchesOf (path.addExtension "ts").toString
+          (← IO.FS.readFile (path.addExtension "ts")) redeclarations
+        unless mismatches.isEmpty do
+          throw (IO.userError ("\n\n".intercalate mismatches))
+    let theorems ← Generator.runIn environment (Generator.markedDeclarationsOf module true)
+    if !theorems.isEmpty then
+      let text ← Generator.runIn environment (Generator.testFileOf module packageNamespace theorems)
+      IO.FS.writeFile (path.addExtension "theory.test.ts") text

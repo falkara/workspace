@@ -47,7 +47,7 @@ jobs:
       - name: Generate the TypeScript of the theory
         # Fails where a module of the library leaves out a redeclaration of the theory or gives it another comment.
         working-directory: theory
-        run: lake exe generator ../libraries/presentation/src
+        run: lake exe generator Presentation ../libraries/presentation/src
       - name: Check that the generated files match the theory
         # A file that the generator changes or writes anew means the theory changed without its files.
         run: |

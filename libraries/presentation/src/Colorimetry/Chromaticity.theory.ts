@@ -1,4 +1,4 @@
-// Written by the generator of Falkara Theory from `Presentation.Colorimetry.Chromaticity`, so every change by hand is lost when the generator runs.
+// Written by the generator of the theory from `Presentation.Colorimetry.Chromaticity`, so every change by hand is lost when the generator runs.
 
 import { Brand, type Option, type Rational, Schema } from 'effect';
 
