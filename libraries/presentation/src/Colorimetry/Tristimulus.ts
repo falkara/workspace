@@ -24,6 +24,30 @@ export type Tristimulus = Theory.Tristimulus;
 export const tristimulus = Theory.tristimulus;
 
 /**
+ * Gives the tristimulus values of the additive mixture of two color stimuli as the sums of their amounts, $X_1 + X_2$, $Y_1 + Y_2$, and $Z_1 + Z_2$.
+ *
+ * @see https://cie.co.at/eilvterm/17-23-040
+ */
+export const tristimulusAdd: Theory.TristimulusAdd = (first, second) =>
+  tristimulus({
+    X: Rational.sum(first.X, second.X),
+    Y: Rational.sum(first.Y, second.Y),
+    Z: Rational.sum(first.Z, second.Z),
+  });
+
+/**
+ * Gives the tristimulus values of a factor $c$ of units of a color stimulus as the products of the factor and its amounts, $cX$, $cY$, and $cZ$.
+ *
+ * @see https://cie.co.at/eilvterm/17-23-040
+ */
+export const tristimulusScale: Theory.TristimulusScale = (color, factor) =>
+  tristimulus({
+    X: Rational.multiply(factor, color.X),
+    Y: Rational.multiply(factor, color.Y),
+    Z: Rational.multiply(factor, color.Z),
+  });
+
+/**
  * The tristimulus values of CIE standard illuminant D65 under the CIE 1931 2° observer, worked out once from the CIE datasets (SHA-256 `fa663e3535a7e0763a745993a1f0a192eb0275ac46ad2d1befd7626841e713c1` and `e76f210bffff3d552ef7113025da5f325d5dfec200dd4b878b1a2f3a507032cb`) by summing every 1 nm from 360 nm to 830 nm, as CIE 015 prescribes.
  *
  * @see https://cie.co.at/publications/colorimetry-part-2-cie-standard-illuminants-0

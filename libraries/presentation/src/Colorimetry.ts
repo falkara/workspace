@@ -19,35 +19,6 @@ import * as Real from '#src/Real';
 export * from '#src/Colorimetry/Chromaticity';
 export * from '#src/Colorimetry/Tristimulus';
 
-/** A vector in XYZ that is not a light but a change of one: added to a color, it moves the color along a hue, and its values may be negative. Branded apart from a color, which has the same shape, so that it is never written, tested for a gamut or given a chromaticity. */
-export type Direction = Brand.Branded<
-  {
-    readonly X: Rational.Rational;
-    readonly Y: Rational.Rational;
-    readonly Z: Rational.Rational;
-  },
-  'Direction'
->;
-
-/** A direction made from its values in XYZ, which only the library does, from the spectral light of a wavelength. */
-const makeDirection = Brand.nominal<Direction>();
-
-/** A color with a direction added: the color moved along the hue the direction gives, the sum of their values in XYZ. */
-export const add = (color: Tristimulus, change: Direction): Tristimulus =>
-  tristimulus({
-    X: Rational.sum(color.X, change.X),
-    Y: Rational.sum(color.Y, change.Y),
-    Z: Rational.sum(color.Z, change.Z),
-  });
-
-/** A direction scaled by a factor: as much more or less of the same change, and its opposite for a negative factor. */
-export const scale = (change: Direction, factor: Rational.Rational): Direction =>
-  makeDirection({
-    X: Rational.multiply(change.X, factor),
-    Y: Rational.multiply(change.Y, factor),
-    Z: Rational.multiply(change.Z, factor),
-  });
-
 /**
  * A hue given by a wavelength, as a mixture of two lights, which add as vectors in XYZ: the library's white, W, `whiteTristimulus`, and a direction, D, the spectral light S = (x̄, ȳ, z̄) of the wavelength for a dominant wavelength and its opposite, −S, for a complementary one. Its colors are α·W + β·D with α > 0 and β ≥ 0. The colors of a dominant wavelength mix the white with its spectral light, and a color of a complementary wavelength, mixed with its spectral light, gives white, as CIE S 017 defines the two. Every operation of colorimetry is linear in XYZ, so the hue is held there; the chromaticity of its spectral light, `chromaticityOf(spectralLight)`, is only a view.
  *
@@ -57,8 +28,8 @@ export const scale = (change: Direction, factor: Rational.Rational): Direction =
 export interface Hue {
   /** The spectral light S of the wavelength, a light, as the observer's values are published. */
   readonly spectralLight: Tristimulus;
-  /** The change mixed with the white: S for a dominant wavelength and −S for a complementary one. */
-  readonly direction: Direction;
+  /** The change mixed with the white: S for a dominant wavelength and −S, tristimulus values below 0, for a complementary one. */
+  readonly direction: Tristimulus;
 }
 
 /**
@@ -161,7 +132,7 @@ export const dominantWavelength = (
 ): Exit.Exit<Hue, Schema.SchemaError> =>
   Exit.map(Schema.decodeExit(DominantWavelengthOptions)(options, { errors: 'all' }), (row) => ({
     spectralLight: tristimulus({ X: row.xBar, Y: row.yBar, Z: row.zBar }),
-    direction: makeDirection({ X: row.xBar, Y: row.yBar, Z: row.zBar }),
+    direction: tristimulus({ X: row.xBar, Y: row.yBar, Z: row.zBar }),
   }));
 
 /**
@@ -266,7 +237,7 @@ export const complementaryWavelength = (
     Schema.decodeExit(ComplementaryWavelengthOptions)(options, { errors: 'all' }),
     (row) => ({
       spectralLight: tristimulus({ X: row.xBar, Y: row.yBar, Z: row.zBar }),
-      direction: makeDirection({
+      direction: tristimulus({
         X: Rational.negate(row.xBar),
         Y: Rational.negate(row.yBar),
         Z: Rational.negate(row.zBar),
@@ -288,8 +259,8 @@ export type Matrix<From extends string, To extends string> = readonly [
   readonly [Rational.Rational, Rational.Rational, Rational.Rational],
 ] & { readonly '~spaces'?: { readonly from: From; readonly to: To } };
 
-/** The vector in XYZ of a color or of a direction, both of which live there. */
-export const xyzOf = (value: Tristimulus | Direction): Vector<'XYZ'> => [value.X, value.Y, value.Z];
+/** The vector in XYZ of tristimulus values, of a color or of a change of one. */
+export const xyzOf = (value: Tristimulus): Vector<'XYZ'> => [value.X, value.Y, value.Z];
 
 /** The product of a matrix and a vector of the space it converts from, worked out exactly: the vector in the space it converts to. The space of the vector is not inferred from the vector, so that a vector of another space is refused rather than widening it. */
 export const transform = <From extends string, To extends string>(

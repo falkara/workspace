@@ -27,8 +27,8 @@ const rows = {
 
 /** The cross product of two vectors in XYZ, colors or directions, 0 exactly when they are parallel. */
 const cross = (
-  first: Colorimetry.Tristimulus | Colorimetry.Direction,
-  second: Colorimetry.Tristimulus | Colorimetry.Direction,
+  first: Colorimetry.Tristimulus,
+  second: Colorimetry.Tristimulus,
 ): {
   readonly X: Rational.Rational;
   readonly Y: Rational.Rational;
@@ -72,9 +72,12 @@ describe('complementaryWavelength', () => {
       // The spectral light added back is the opposite of the direction of a complementary wavelength.
       expect(
         direction &&
-          Colorimetry.add(
-            Colorimetry.add(Colorimetry.whiteTristimulus, Colorimetry.scale(direction, amount)),
-            Colorimetry.scale(direction, Rational.negate(amount)),
+          Colorimetry.tristimulusAdd(
+            Colorimetry.tristimulusAdd(
+              Colorimetry.whiteTristimulus,
+              Colorimetry.tristimulusScale(direction, amount),
+            ),
+            Colorimetry.tristimulusScale(direction, Rational.negate(amount)),
           ),
       ).toEqual(Colorimetry.whiteTristimulus);
     }
@@ -95,7 +98,10 @@ describe('complementaryWavelength', () => {
       const color =
         direction &&
         Colorimetry.chromaticityOf(
-          Colorimetry.add(Colorimetry.whiteTristimulus, Colorimetry.scale(direction, amount)),
+          Colorimetry.tristimulusAdd(
+            Colorimetry.whiteTristimulus,
+            Colorimetry.tristimulusScale(direction, amount),
+          ),
         ).pipe(Option.getOrUndefined);
       const towardsLight = light && {
         x: Rational.subtract(light.x, Colorimetry.whiteChromaticity.x),
@@ -750,7 +756,7 @@ describe('purest', () => {
               Exit.isSuccess(
                 Colorimetry.inGamut(
                   medium,
-                  Colorimetry.add(color, Colorimetry.scale(direction, more)),
+                  Colorimetry.tristimulusAdd(color, Colorimetry.tristimulusScale(direction, more)),
                 ),
               ),
             `${label}: more of the direction leaves the gamut`,
@@ -988,31 +994,20 @@ describe('build time', () => {
 describe('types', () => {
   const hue = Option.getOrThrow(Exit.getSuccess(Colorimetry.complementaryWavelength(rows[518])));
 
-  it('keep a direction apart from a color, so that it is never written, tested for a gamut or given a chromaticity', () => {
-    expectTypeOf(hue.direction).not.toExtend<Colorimetry.Tristimulus>();
-    expectTypeOf(hue.spectralLight).not.toExtend<Colorimetry.Direction>();
+  it('hold the direction of a hue as tristimulus values, as the theory holds a change of a color', () => {
+    expectTypeOf(hue.direction).toEqualTypeOf<Colorimetry.Tristimulus>();
     expectTypeOf(Colorimetry.chromaticityOf(hue.spectralLight)).toEqualTypeOf<
       Option.Option<Colorimetry.Chromaticity>
     >();
-    // @ts-expect-error A direction is a change of a color, not a light, so it is not written.
-    Colorimetry.write(Colorimetry.srgb, hue.direction);
-    // @ts-expect-error A direction lies in no gamut.
-    Colorimetry.inGamut(Colorimetry.srgb, hue.direction);
-    // @ts-expect-error A direction has no chromaticity; its spectral light has.
-    Colorimetry.chromaticityOf(hue.direction);
   });
 
-  it('add a direction to a color and scale a direction, and nothing else', () => {
+  it('add and scale tristimulus values into tristimulus values', () => {
     expectTypeOf(
-      Colorimetry.add(Colorimetry.whiteTristimulus, hue.direction),
+      Colorimetry.tristimulusAdd(Colorimetry.whiteTristimulus, hue.direction),
     ).toEqualTypeOf<Colorimetry.Tristimulus>();
     expectTypeOf(
-      Colorimetry.scale(hue.direction, Rational.fromBigInt(2n)),
-    ).toEqualTypeOf<Colorimetry.Direction>();
-    // @ts-expect-error A color is a light, not a change of one.
-    Colorimetry.add(Colorimetry.whiteTristimulus, Colorimetry.whiteTristimulus);
-    // @ts-expect-error Only a direction is scaled.
-    Colorimetry.scale(Colorimetry.whiteTristimulus, Rational.fromBigInt(2n));
+      Colorimetry.tristimulusScale(hue.direction, Rational.fromBigInt(2n)),
+    ).toEqualTypeOf<Colorimetry.Tristimulus>();
   });
 
   it('apply a matrix only to a vector of the space it converts from, and give a vector of the space it converts to', () => {
@@ -1149,7 +1144,10 @@ describe('definitions', () => {
 
         return yield* Colorimetry.inGamut(
           medium,
-          Colorimetry.add(color, Colorimetry.scale(hue.direction, Rational.fromBigInt(1n))),
+          Colorimetry.tristimulusAdd(
+            color,
+            Colorimetry.tristimulusScale(hue.direction, Rational.fromBigInt(1n)),
+          ),
         );
       }),
     );
