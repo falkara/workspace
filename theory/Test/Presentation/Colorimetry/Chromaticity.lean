@@ -3,7 +3,11 @@ import Presentation.Colorimetry.Chromaticity
 /-!
 # Chromaticity
 
-The module defines the checks of the chromaticity against the vocabulary [cie2020internationalLightingVocabulary]. The check compares the coordinate $z = 1 - x - y$ of the chromaticity with the quotient of the tristimulus value $Z$ and the sum $X + Y + Z$.
+The module defines the checks of the chromaticity against the vocabulary [cie2020internationalLightingVocabulary] and CIE 015 [cie2018colorimetry]. The first check compares the coordinate $z = 1 - x - y$ of the chromaticity with the quotient of the tristimulus value $Z$ and the sum $X + Y + Z$. The second compares the chromaticity coordinates of the white, rounded as Table 9.1 of CIE 015 rounds them, with the values that the theory sets beside those of the table.
+
+## Implementation Notes
+
+The check of the white is proved by `decide +kernel`, as `native_decide` proves every statement by an axiom of its own, which asserts the result the compiler computes and lies beyond `propext`, `Classical.choice`, and `Quot.sound`.
 -/
 
 namespace Presentation.Colorimetry
@@ -20,5 +24,13 @@ theorem z_eq_of_chromaticityOf_eq_some {tristimulus : Tristimulus} {chromaticity
     grind
 
 attribute [cite "17-23-053" cie2020internationalLightingVocabulary] z_eq_of_chromaticityOf_eq_some
+
+/-- The chromaticity coordinates of the white round to $x = 0.312\,73$ and $y = 0.329\,02$ at five decimal places, where Table 9.1 of CIE 015 gives $x = 0.312\,71$ and $y = 0.329\,03$. -/
+theorem chromaticityOf_whiteTristimulus_rounded :
+    (chromaticityOf whiteTristimulus).map (fun chromaticity =>
+      ((chromaticity.x * 100000 + 1 / 2).floor, (chromaticity.y * 100000 + 1 / 2).floor)) = some (31273, 32902) := by
+  decide +kernel
+
+attribute [cite "Table 9.1" cie2018colorimetry] chromaticityOf_whiteTristimulus_rounded
 
 end Presentation.Colorimetry

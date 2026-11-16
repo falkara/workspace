@@ -1,10 +1,11 @@
 import ExportTypeScript
+import Presentation.Colorimetry.Illuminant
 import Presentation.Colorimetry.Observer
 
 /-!
 # Tristimulus
 
-The module defines the tristimulus values of a color stimulus as the amounts $X$, $Y$, and $Z$ that match the color of the stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system [cie2020internationalLightingVocabulary]. The tristimulus values of a color stimulus function $\varphi_\lambda(\lambda)$ are the sums of the products of the function and the color-matching functions of the observer at wavelengths from 360 nm to 830 nm in steps of 1 nm [cie2019tristimulusValues]. Tristimulus values add and scale by a factor as the coordinates of a vector do, as a color equation represents a color stimulus as a vector, so the tristimulus values of the additive mixture of two color stimulus functions are the sums of their tristimulus values, as Grassmann's laws state.
+The module defines the tristimulus values of a color stimulus as the amounts $X$, $Y$, and $Z$ that match the color of the stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system [cie2020internationalLightingVocabulary]. The tristimulus values of a color stimulus function $\varphi_\lambda(\lambda)$ are the sums of the products of the function and the color-matching functions of the observer at wavelengths from 360 nm to 830 nm in steps of 1 nm [cie2019tristimulusValues]. Tristimulus values add and scale by a factor as the coordinates of a vector do, as a color equation represents a color stimulus as a vector, so the tristimulus values of the additive mixture of two color stimulus functions are the sums of their tristimulus values, as Grassmann's laws state. The white is the color stimulus to which the tristimulus values of a color are normalized, those of CIE standard illuminant D65 scaled so that their luminance factor $Y$ is 1, as that of an adapted white is [cie2020internationalLightingVocabulary].
 
 ## Implementation Notes
 
@@ -13,6 +14,8 @@ The tristimulus values are rational numbers of either sign, as a color equation 
 The sums rest on the abstract of ISO/CIE 11664-3, as the text of the standard is sold. The sums take no factor of normalization, so the tristimulus values of a sum of color stimulus functions are the sum of their tristimulus values.
 
 The multiple of tristimulus values by a factor rests on the color equation, which takes an amount as units of a reference color stimulus in a vector representation, as the vocabulary states no law of proportionality, and the multiple of the tristimulus values of a color stimulus function rests on the sums of the standard.
+
+The white follows the sums of ISO/CIE 11664-3 rather than Table 9.1 of CIE 015 [cie2018colorimetry], which gives D65 as $X = 95.04$, $Y = 100.00$, and $Z = 108.88$ with the chromaticity coordinates $x = 0.312\,71$ and $y = 0.329\,03$, while the sums at 1 nm from 360 nm to 830 nm, rounded to the same places, give $X = 95.05$, $Z = 108.88$, $x = 0.312\,73$, and $y = 0.329\,02$.
 -/
 
 namespace Presentation.Colorimetry
@@ -153,5 +156,12 @@ theorem tristimulusOf_scale (colorStimulusFunction : (wavelength : Rat) → Rat)
     refine ⟨?_, ?_, ?_⟩ <;> grind
 
 attribute [cite "Abstract" cie2019tristimulusValues] tristimulusOf_scale
+
+/-- The tristimulus values of the white, those of CIE standard illuminant D65 scaled so that their luminance factor $Y$ is 1, $X = \sum_{\lambda} S(\lambda)\,\bar{x}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$, $Y = 1$, and $Z = \sum_{\lambda} S(\lambda)\,\bar{z}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$. -/
+def whiteTristimulus : Tristimulus :=
+  (tristimulusOf relativeSpectralPowerAt).scale (tristimulusOf relativeSpectralPowerAt).Y⁻¹
+
+attribute [cite "17-23-081" cie2020internationalLightingVocabulary] whiteTristimulus
+attribute [export_typescript] whiteTristimulus
 
 end Presentation.Colorimetry

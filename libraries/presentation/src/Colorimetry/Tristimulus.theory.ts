@@ -1,6 +1,6 @@
 // Written by the generator of Falkara Theory from `Presentation.Colorimetry.Tristimulus`, so every change by hand is lost when the generator runs.
 
-import { Brand, type Rational, Schema } from 'effect';
+import { Brand, Rational, Schema } from 'effect';
 
 import type * as Module from '#src/Colorimetry/Tristimulus';
 
@@ -57,6 +57,17 @@ export type TristimulusAdd = (first: Tristimulus, second: Tristimulus) => Tristi
  * @see https://cie.co.at/eilvterm/17-23-040
  */
 export type TristimulusScale = (tristimulus: Tristimulus, factor: Rational.Rational) => Tristimulus;
+
+/**
+ * The tristimulus values of the white, those of CIE standard illuminant D65 scaled so that their luminance factor $Y$ is 1, $X = \sum_{\lambda} S(\lambda)\,\bar{x}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$, $Y = 1$, and $Z = \sum_{\lambda} S(\lambda)\,\bar{z}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$.
+ *
+ * @see https://cie.co.at/eilvterm/17-23-081
+ */
+export const whiteTristimulus: Tristimulus = tristimulus({
+  X: Rational.makeUnsafe(71740714395483087745n, 75479154764200873016n),
+  Y: Rational.fromBigInt(1n),
+  Z: Rational.makeUnsafe(10272984088266781770n, 9434894345525109127n),
+});
 
 /** The functions of the theory that the module `Colorimetry/Tristimulus` of the package implements. */
 interface Contract {

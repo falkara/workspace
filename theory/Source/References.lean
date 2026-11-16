@@ -12,6 +12,14 @@ Every work is named after its author, the year of the work, and the words of its
 
 namespace References
 
+/-- The technical report of the CIE that gives its recommendations on colorimetry, with the colorimetric data of the CIE illuminants. -/
+def cie2018colorimetry : Citation.Work where
+  author := "CIE"
+  title := "CIE 015:2018 Colorimetry, 4th Edition"
+  year := 2018
+  publisher := some "International Commission on Illumination (CIE), Vienna, AT"
+  doi := some "10.25039/TR.015.2018"
+
 /-- The data table of the color-matching functions of the CIE 1931 standard colorimetric observer. -/
 def cie2019colorMatchingFunctions : Citation.Work where
   author := "CIE"

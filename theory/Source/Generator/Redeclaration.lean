@@ -5,11 +5,13 @@ import Lean.Structure
 /-!
 # Redeclaration
 
-The module defines the check of the redeclarations that a module of Falkara Presentation makes of the declarations the generator writes. A module imports the generated module as `Theory`, redeclares the schema, the type, and the constructor of every structure, such as `export const Tristimulus = Theory.Tristimulus;`, and implements every function under the name its contract gives it, such as `export const chromaticityOf`. Every redeclaration and every implementation takes the documentation comment that the generator writes for the declaration, right above it, and the check gives a reason for every one that is missing or takes another comment.
+The module defines the check of the redeclarations that a module of Falkara Presentation makes of the declarations the generator writes. A module imports the generated module as `Theory`, redeclares the schema, the type, and the constructor of every structure, such as `export const Tristimulus = Theory.Tristimulus;`, redeclares every value, such as `export const whiteTristimulus = Theory.whiteTristimulus;`, and implements every function under the name its contract gives it, such as `export const chromaticityOf`. Every redeclaration and every implementation takes the documentation comment that the generator writes for the declaration, right above it, and the check gives a reason for every one that is missing or takes another comment.
 
 ## Implementation Notes
 
 The check finds a redeclaration by the text its line opens with, as the module of TypeScript is read as text and has no syntax tree in Lean. A line that opens with the text and goes on with a character of a name, such as `export const chromaticityOfWhite`, declares another name and marks no redeclaration.
+
+A value is redeclared from the generated module alone, so the module of the package holds the value of the theory and never a value of its own.
 
 A missing redeclaration is a reason of its own, so a redeclaration the check fails to find, such as one that a formatter breaks over two lines, fails the check rather than passing it unchecked.
 -/
@@ -26,6 +28,8 @@ def redeclarationsOf (moduleNamespace name : Lean.Name) : Lean.MetaM (List (Stri
       (s!"export type {typeName} = Theory.{typeName};", ← commentOf name ""),
       (s!"export const {typeName.decapitalize} = Theory.{typeName.decapitalize};",
         ← commentOf name "" (some "Brands without a check"))]
+  if !((← Lean.getConstInfo name).type matches .forallE ..) then
+    return [(s!"export const {typeName.decapitalize} = Theory.{typeName.decapitalize};", ← commentOf name "")]
   return [(s!"export const {typeName.decapitalize}", ← commentOf name "")]
 
 /-- Gives a reason for every redeclaration or implementation that a module of TypeScript leaves out or whose documentation comment differs from the one it takes. -/

@@ -1,9 +1,10 @@
 import Presentation.Colorimetry.Illuminant
+import Presentation.Colorimetry.Observer
 
 /-!
 # Illuminant
 
-The module defines the checks of the illuminant against the data table [cie2019standardIlluminantD65]. The checks compare the sum of the wavelengths $\lambda$, the sum of the values of the relative spectral distribution $S$, and the value at one sample wavelength with the validation values of the data table, and the wavelengths with the range and the step that the data table gives. A further check compares the value of the distribution at 560 nm with 100, as the data table gives it.
+The module defines the checks of the illuminant against the data table [cie2019standardIlluminantD65]. The checks compare the sum of the wavelengths $\lambda$, the sum of the values of the relative spectral distribution $S$, and the value at one sample wavelength with the validation values of the data table, and the wavelengths with the range and the step that the data table gives. A further check compares the value of the distribution at 560 nm with 100, as the data table gives it, and a last check compares the distribution as a function of the wavelength at every wavelength of the observer with the row of the data table at that wavelength.
 
 ## Implementation Notes
 
@@ -43,5 +44,13 @@ theorem illuminant_normalization :
   decide +kernel
 
 attribute [cite "S_D65(lambda)" cie2019standardIlluminantD65] illuminant_normalization
+
+/-- The distribution as a function of the wavelength gives the row of the data table at every wavelength of the observer, $S(\lambda)$ for $\lambda$ from 360 nm to 830 nm. -/
+theorem relativeSpectralPowerAt_observer :
+    (observer.map fun stimulus => relativeSpectralPowerAt stimulus.wavelength) =
+      (illuminant.extract 60 531).map (·.relativeSpectralPower) := by
+  decide +kernel
+
+attribute [cite "S_D65(lambda)" cie2019standardIlluminantD65] relativeSpectralPowerAt_observer
 
 end Presentation.Colorimetry

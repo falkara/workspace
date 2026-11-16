@@ -4,7 +4,7 @@ import Test.Generator.Fixture.Point
 /-!
 # Main
 
-The module defines the checks of the files that the generator writes for the modules of the theory. A module whose structure names a structure of another module imports that structure as a value, as its schema names the schema of the other, imports from Effect only the modules its declarations name, and ends with the contract of its functions. A module with no function and no structure of another module imports nothing beyond Effect and ends with no contract.
+The module defines the checks of the files that the generator writes for the modules of the theory. A module whose structure names a structure of another module imports that structure as a value, as its schema names the schema of the other, imports from Effect only the modules its declarations name, and ends with the contract of its functions. A module with no function and no structure of another module imports nothing beyond Effect and ends with no contract, and a module with a value imports from Effect the module whose function writes the value as a value.
 -/
 
 /--
@@ -46,7 +46,7 @@ type _Implemented<Implementation extends Contract = typeof Module> = Implementat
 /--
 info: // Written by the generator of Falkara Theory from `Test.Generator.Fixture.Coordinate`, so every change by hand is lost when the generator runs.
 
-import { Brand, Schema } from 'effect';
+import { Brand, Rational, Schema } from 'effect';
 
 /** A schema of a coordinate of a point. */
 export const Coordinate = Schema.Struct({
@@ -59,6 +59,9 @@ export type Coordinate = typeof Coordinate.Type;
 
 /** Brands without a check a coordinate of a point. */
 export const coordinate = Brand.nominal<Coordinate>();
+
+/** The coordinate whose value is 1. */
+export const unit: Coordinate = coordinate({ value: Rational.fromBigInt(1n) });
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do

@@ -3,7 +3,7 @@ import Generator.Redeclaration
 /-!
 # Redeclaration
 
-The module defines the checks of the redeclarations in a module of TypeScript: a structure is redeclared as its schema, its type, and its constructor and a function is implemented under its name, each with the comment of the theory. The check gives no reason for a module that holds every redeclaration with the comment of the theory, even beside a name that merely opens with the name of a function, and a reason for a redeclaration that is missing, a comment that differs, and a redeclaration with no comment.
+The module defines the checks of the redeclarations in a module of TypeScript: a structure is redeclared as its schema, its type, and its constructor, a value is redeclared from the generated module, and a function is implemented under its name, each with the comment of the theory. The check gives no reason for a module that holds every redeclaration with the comment of the theory, even beside a name that merely opens with the name of a function, and a reason for a redeclaration that is missing, a comment that differs, and a redeclaration with no comment.
 -/
 
 namespace Geometry
@@ -21,7 +21,18 @@ def pointOf (coordinate : Rat) : Point :=
 
 attribute [export_typescript] pointOf
 
+/-- The value that the checks redeclare. -/
+def origin : Point :=
+  ⟨0⟩
+
+attribute [export_typescript] origin
+
 end Geometry
+
+/-- info: [("export const origin = Theory.origin;", "/** The value that the checks redeclare. */\n")] -/
+#guard_msgs in
+#eval show Lean.MetaM (List (String × String)) from do
+  Generator.redeclarationsOf `Geometry ``Geometry.origin
 
 /--
 info: [("export const Point = Theory.Point;", "/** A schema of the structure that the checks redeclare. */\n"),

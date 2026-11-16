@@ -5,7 +5,7 @@ import Generator.Theorem
 /-!
 # Main
 
-The module defines the program `generator`, which writes the declarations that the theory of Falkara Presentation marks `export_typescript` into files of TypeScript, a file for every module of the theory. The theory of a module of the package lies in a directory of `Source/Presentation`, such as `Source/Presentation/Colorimetry`, which `Main.lean` gathers, and the program writes the declarations of every module in the directory, such as `Tristimulus.lean`, into the file of the same name in the directory of the same name in the directory it is given, such as `Colorimetry/Tristimulus.theory.ts`. A file imports from Effect the modules its declarations name, `Brand` and `Schema` as values and every other module as a type, and from the files of the other modules of the theory the declarations it names, as values where a schema names them and as types otherwise. A file whose module defines functions ends with a contract, an interface that names every function as the module of the package beside the file exports it, such as `chromaticityOf`, and a type that fails to compile where that module leaves a function out or gives it another type, as a signature of a module in ML requires of the module. The program writes the theorems of a module marked `export_typescript` into the file of tests of the same name, such as `Colorimetry/Tristimulus.theory.test.ts`, by the module `Theorem`. The program then checks the module of the package beside every file, such as `Colorimetry/Tristimulus.ts`, by the module `Redeclaration`, and fails with a reason for every redeclaration whose comment differs from the theory.
+The module defines the program `generator`, which writes the declarations that the theory of Falkara Presentation marks `export_typescript` into files of TypeScript, a file for every module of the theory. The theory of a module of the package lies in a directory of `Source/Presentation`, such as `Source/Presentation/Colorimetry`, which `Main.lean` gathers, and the program writes the declarations of every module in the directory, such as `Tristimulus.lean`, into the file of the same name in the directory of the same name in the directory it is given, such as `Colorimetry/Tristimulus.theory.ts`. A file imports from Effect the modules its declarations name, `Brand`, `Schema`, and every module whose function a value calls, such as `Rational.fromBigInt`, as values and every other module as a type, and from the files of the other modules of the theory the declarations it names, as values where a schema names them and as types otherwise. A file whose module defines functions ends with a contract, an interface that names every function as the module of the package beside the file exports it, such as `chromaticityOf`, and a type that fails to compile where that module leaves a function out or gives it another type, as a signature of a module in ML requires of the module. The program writes the theorems of a module marked `export_typescript` into the file of tests of the same name, such as `Colorimetry/Tristimulus.theory.test.ts`, by the module `Theorem`. The program then checks the module of the package beside every file, such as `Colorimetry/Tristimulus.ts`, by the module `Redeclaration`, and fails with a reason for every redeclaration whose comment differs from the theory.
 
 ## Implementation Notes
 
@@ -45,10 +45,12 @@ def fileOf (packageNamespace module : Lean.Name) : Lean.MetaM String := do
   let body := "\n".intercalate (← declarations.mapM (declarationOf packageNamespace))
   let imports := ["Brand", "Option", "Rational", "Schema"].filter fun module => (body.splitOn s!"{module}.").length > 1
   let header := s!"// Written by the generator of Falkara Theory from `{module}`, so every change by hand is lost when the generator runs.\n"
-  -- The schemas and the constructors are the only values of the file, so every other module is imported as a type.
-  let importLine := if imports.isEmpty then "" else if imports.any (["Brand", "Schema"].contains ·) then
+  -- A schema, a constructor, and a function such as `Rational.fromBigInt` are the values of the file, so a module the file names otherwise, as `Rational.Rational`, is imported as a type.
+  let valued := fun (module : String) => ["Brand", "Schema"].contains module ||
+    ((body.splitOn s!"{module}.").drop 1).any fun rest => rest.toList.head?.any Char.isLower
+  let importLine := if imports.isEmpty then "" else if imports.any valued then
       s!"\nimport \{ {", ".intercalate (imports.map fun module =>
-        if ["Brand", "Schema"].contains module then module else s!"type {module}")} } from 'effect';\n"
+        if valued module then module else s!"type {module}")} } from 'effect';\n"
     else s!"\nimport type \{ {", ".intercalate imports} } from 'effect';\n"
   -- A schema names the schemas of its fields as values, and every other declaration names a declaration as a type.
   let namedBySchemas := declarations.flatMap fun name =>
@@ -73,7 +75,8 @@ def fileOf (packageNamespace module : Lean.Name) : Lean.MetaM String := do
       s!"import \{ {", ".intercalate (typeNames.map fun (typeName, value) => if value then typeName else s!"type {typeName}")} } from '#src/{path}.theory';\n"
     else s!"import type \{ {", ".intercalate (typeNames.map Prod.fst)} } from '#src/{path}.theory';\n"
   -- The contract names the module of the package as a type alone, so the two modules import each other only as types.
-  let functions := declarations.filter fun name => !Lean.isStructure environment name
+  let functions := declarations.filter fun name =>
+    !Lean.isStructure environment name && (environment.find? name).any (·.type matches .forallE ..)
   let modulePath := (module.replacePrefix `Presentation .anonymous).toString.replace "." "/"
   let contractImport := if functions.isEmpty then [] else [s!"import type * as Module from '#src/{modulePath}';\n"]
   let members ← functions.mapM fun name => do
