@@ -46,6 +46,32 @@ def Tristimulus.scale (tristimulus : Tristimulus) (factor : Rat) : Tristimulus :
 attribute [cite "17-23-040" cie2020internationalLightingVocabulary] Tristimulus.scale
 attribute [export_typescript] Tristimulus.scale
 
+/-- The additive mixture of two color stimuli is the same in either order, $X_1 + X_2 = X_2 + X_1$ and likewise for $Y$ and $Z$. -/
+theorem Tristimulus.add_comm (first second : Tristimulus) : first.add second = second.add first := by
+  simp only [Tristimulus.add, Tristimulus.mk.injEq]
+  refine ⟨?_, ?_, ?_⟩ <;> grind
+
+attribute [cite "17-23-040" cie2020internationalLightingVocabulary] Tristimulus.add_comm
+attribute [export_typescript] Tristimulus.add_comm
+
+/-- The additive mixture of three color stimuli is the same in either grouping, $(X_1 + X_2) + X_3 = X_1 + (X_2 + X_3)$ and likewise for $Y$ and $Z$. -/
+theorem Tristimulus.add_assoc (first second third : Tristimulus) :
+    (first.add second).add third = first.add (second.add third) := by
+  simp only [Tristimulus.add, Tristimulus.mk.injEq]
+  refine ⟨?_, ?_, ?_⟩ <;> grind
+
+attribute [cite "17-23-040" cie2020internationalLightingVocabulary] Tristimulus.add_assoc
+attribute [export_typescript] Tristimulus.add_assoc
+
+/-- A factor of units of the additive mixture of two color stimuli is the mixture of that factor of units of each, $c\,(X_1 + X_2) = c\,X_1 + c\,X_2$ and likewise for $Y$ and $Z$. -/
+theorem Tristimulus.scale_add (first second : Tristimulus) (factor : Rat) :
+    (first.add second).scale factor = (first.scale factor).add (second.scale factor) := by
+  simp only [Tristimulus.add, Tristimulus.scale, Tristimulus.mk.injEq]
+  refine ⟨?_, ?_, ?_⟩ <;> grind
+
+attribute [cite "17-23-040" cie2020internationalLightingVocabulary] Tristimulus.scale_add
+attribute [export_typescript] Tristimulus.scale_add
+
 /-- Gives the tristimulus values of a color stimulus function $\varphi_\lambda(\lambda)$ as the sums over the wavelengths $\lambda$ of the observer, $X = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{x}(\lambda)\,\Delta\lambda$, $Y = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{y}(\lambda)\,\Delta\lambda$, and $Z = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{z}(\lambda)\,\Delta\lambda$ with $\Delta\lambda = 1\,\mathrm{nm}$. -/
 def tristimulusOf (colorStimulusFunction : (wavelength : Rat) → Rat) : Tristimulus :=
   observer.foldl
