@@ -3,7 +3,7 @@ import Presentation.Colorimetry.Observer
 /-!
 # Observer
 
-The module defines the checks of the observer against the data table [cie2019colorMatchingFunctions]. The checks compare the sum of the wavelengths $\lambda$, the sum of the values of each color-matching function $\bar{x}$, $\bar{y}$, and $\bar{z}$, and the values at one sample wavelength with the validation values of the data table, and the wavelengths with the range and the step that the data table gives.
+The module defines the checks of the observer against the data table [cie2019colorMatchingFunctions]. The checks compare the sum of the wavelengths $\lambda$, the sum of the values of each color-matching function $\bar{x}$, $\bar{y}$, and $\bar{z}$, and the values at one sample wavelength with the validation values of the data table, and the wavelengths with the range and the step that the data table gives. A last check compares the monochromatic stimulus at every wavelength from 360 nm to 830 nm with the row of the data table at that wavelength.
 
 ## Implementation Notes
 
@@ -33,9 +33,15 @@ attribute [cite "sampleRow" cie2019colorMatchingFunctions] observer_sampleRow
 
 /-- The wavelengths of the observer run from 360 nm to 830 nm in steps of 1 nm, $\lambda_i = (360 + i)\,\mathrm{nm}$ for $i = 0, \ldots, 470$. -/
 theorem observer_wavelengths :
-    observer.map (·.wavelength) = (List.range 471).map (fun (index : Nat) => 360 + (index : Rat)) := by
+    observer.map (·.wavelength) = (List.range 471).map (360 + ·) := by
   decide +kernel
 
 attribute [cite "lambda" cie2019colorMatchingFunctions] observer_wavelengths
+
+/-- The monochromatic stimulus at every wavelength from 360 nm to 830 nm is the row of the data table at that wavelength. -/
+theorem monochromaticStimulusAt_wavelengths : wavelengths.map monochromaticStimulusAt = observer := by
+  decide +kernel
+
+attribute [cite "lambda" cie2019colorMatchingFunctions] monochromaticStimulusAt_wavelengths
 
 end Presentation.Colorimetry

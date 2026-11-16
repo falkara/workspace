@@ -1,19 +1,19 @@
-import References
+import Presentation.Colorimetry.Wavelength
 
 /-!
 # Illuminant
 
-The module defines the illuminant as CIE standard illuminant D65 by its relative spectral distribution at wavelengths from 300 nm to 830 nm in steps of 1 nm, and the distribution as a function of the wavelength, which gives the distribution at every row from 360 nm to 830 nm, the wavelengths that the metadata of the data table gives the column of the distribution, and no value at any other wavelength.
+The module defines the illuminant as CIE standard illuminant D65 by its relative spectral distribution at wavelengths from 300 nm to 830 nm in steps of 1 nm, and the distribution as a function of the wavelength from 360 nm to 830 nm, the wavelengths that the metadata of the data table gives the column of the distribution.
 
 ## Implementation Notes
 
-The illuminant holds every row of the data table [cie2019standardIlluminantD65] as a monochromatic component, with each value as the exact rational number that the decimal digits of the value denote.
+The illuminant holds every row of the data table [cie2019standardIlluminantD65] as a monochromatic component, with its wavelength as the whole number of nanometers that the data table gives and its distribution as the exact rational number that the decimal digits of the value denote.
 
 The illuminant holds its rows as a list rather than an array, as the kernel of Lean folds a list row by row, while it reduces a fold of an array through the loop of the fold and the bounds of every index, which takes gigabytes of memory over the rows of a data table.
 
-The metadata of the data table gives the column of the distribution the wavelengths from 360 nm to 830 nm, while its rows start at 300 nm. The illuminant holds every row, as the sum of the wavelengths among the validation values of the data table counts from 300 nm, and the function of the wavelength gives a value at the rows from 360 nm to 830 nm alone, the wavelengths of the observer. At every other wavelength it gives none rather than the zero by which the metadata extrapolates or the line by which it interpolates, so the theory takes no value that the rows leave out.
+The metadata of the data table gives the column of the distribution the wavelengths from 360 nm to 830 nm, while its rows start at 300 nm. The illuminant holds every row, as the sum of the wavelengths among the validation values of the data table counts from 300 nm, and the function of the wavelength takes a wavelength from 360 nm to 830 nm, so the theory computes with none of the rows below 360 nm, and neither the zero by which the metadata extrapolates nor the line by which it interpolates enters the theory.
 
-The function of the wavelength takes the row whose index is the wavelength less 300 nm, as the rows run from 300 nm in steps of 1 nm, so the kernel of Lean reaches the row without comparing the wavelength with every row before it.
+The function of the wavelength takes the row whose index is the wavelength less 300 nm, as the rows run from 300 nm in steps of 1 nm, which a check of the illuminant proves, so the kernel of Lean reaches the row without comparing the wavelength with every row before it.
 -/
 
 namespace Presentation.Colorimetry
@@ -21,7 +21,7 @@ namespace Presentation.Colorimetry
 /-- A monochromatic component with the value of the relative spectral distribution at its wavelength. -/
 structure MonochromaticComponent where
   /-- The wavelength, in nanometers. -/
-  wavelength : Rat
+  wavelength : Nat
   /-- The spectral power at the wavelength of the component relative to that at 560 nm, scaled so that the value at 560 nm is 100. -/
   relativeSpectralPower : Rat
 
@@ -565,12 +565,15 @@ def illuminant : List MonochromaticComponent := [
 
 attribute [cite "CIE_std_illum_D65.csv" cie2019standardIlluminantD65] illuminant
 
-/-- Gives the relative spectral distribution of the illuminant at a wavelength $\lambda$ of a row of the data table from 360 nm to 830 nm, $S(\lambda)$, and no value at any other wavelength. -/
-def relativeSpectralPowerAt (wavelength : Rat) : Option Rat :=
-  if 360 ≤ wavelength ∧ wavelength ≤ 830 then
-    (illuminant[(wavelength - 300).floor.toNat]?.filter (·.wavelength = wavelength)).map
-      (·.relativeSpectralPower)
-  else none
+/-- The illuminant holds a row for each of the 531 wavelengths from 300 nm to 830 nm. -/
+theorem illuminant_length : illuminant.length = 531 := by
+  decide +kernel
+
+attribute [cite "CIE_std_illum_D65.csv" cie2019standardIlluminantD65] illuminant_length
+
+/-- Gives the relative spectral distribution of the illuminant at a wavelength $\lambda$, $S(\lambda)$. -/
+def relativeSpectralPowerAt (wavelength : Wavelength) : Rat :=
+  (illuminant[wavelength.val - 300]'(by have := wavelength.property; rw [illuminant_length]; omega)).relativeSpectralPower
 
 attribute [cite "S_D65(lambda)" cie2019standardIlluminantD65] relativeSpectralPowerAt
 

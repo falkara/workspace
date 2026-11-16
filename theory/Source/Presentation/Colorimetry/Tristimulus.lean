@@ -15,7 +15,7 @@ The sums rest on the abstract of ISO/CIE 11664-3, as the text of the standard is
 
 The multiple of tristimulus values by a factor rests on the color equation, which takes an amount as units of a reference color stimulus in a vector representation, as the vocabulary states no law of proportionality, and the multiple of the tristimulus values of a color stimulus function rests on the sums of the standard.
 
-The white takes the distribution of the illuminant at the wavelengths of the observer, where the distribution gives a value at every wavelength, as a check of the illuminant proves, so the 0 that the white takes in place of a missing value never enters the sums.
+The sums pair every wavelength with the row of the observer in the same place, which a check of the observer proves to be the monochromatic stimulus at the wavelength, as the kernel of Lean folds two lists in step, while it reaches a row by its index by walking every row before it.
 
 The white follows the sums of ISO/CIE 11664-3 rather than Table 9.1 of CIE 015 [cie2018colorimetry], which gives D65 as $X = 95.04$, $Y = 100.00$, and $Z = 108.88$ with the chromaticity coordinates $x = 0.312\,71$ and $y = 0.329\,03$, while the sums at 1 nm from 360 nm to 830 nm, rounded to the same places, give $X = 95.05$, $Z = 108.88$, $x = 0.312\,73$, and $y = 0.329\,02$.
 -/
@@ -77,45 +77,45 @@ theorem Tristimulus.scale_add (first second : Tristimulus) (factor : Rat) :
 attribute [cite "17-23-040" cie2020internationalLightingVocabulary] Tristimulus.scale_add
 attribute [export_typescript] Tristimulus.scale_add
 
-/-- Gives the tristimulus values of a color stimulus function $\varphi_\lambda(\lambda)$ as the sums over the wavelengths $\lambda$ of the observer, $X = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{x}(\lambda)\,\Delta\lambda$, $Y = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{y}(\lambda)\,\Delta\lambda$, and $Z = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{z}(\lambda)\,\Delta\lambda$ with $\Delta\lambda = 1\,\mathrm{nm}$. -/
-def tristimulusOf (colorStimulusFunction : (wavelength : Rat) → Rat) : Tristimulus :=
-  observer.foldl
-    (fun sum monochromaticStimulus =>
-      ⟨sum.X + colorStimulusFunction monochromaticStimulus.wavelength * monochromaticStimulus.xBar,
-        sum.Y + colorStimulusFunction monochromaticStimulus.wavelength * monochromaticStimulus.yBar,
-        sum.Z + colorStimulusFunction monochromaticStimulus.wavelength * monochromaticStimulus.zBar⟩)
+/-- Gives the tristimulus values of a color stimulus function $\varphi_\lambda(\lambda)$ as the sums over the wavelengths $\lambda$ from 360 nm to 830 nm, $X = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{x}(\lambda)\,\Delta\lambda$, $Y = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{y}(\lambda)\,\Delta\lambda$, and $Z = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{z}(\lambda)\,\Delta\lambda$ with $\Delta\lambda = 1\,\mathrm{nm}$. -/
+def tristimulusOf (colorStimulusFunction : (wavelength : Wavelength) → Rat) : Tristimulus :=
+  (wavelengths.zip observer).foldl
+    (fun sum pair =>
+      ⟨sum.X + colorStimulusFunction pair.1 * pair.2.xBar,
+        sum.Y + colorStimulusFunction pair.1 * pair.2.yBar,
+        sum.Z + colorStimulusFunction pair.1 * pair.2.zBar⟩)
     ⟨0, 0, 0⟩
 
 attribute [cite "Abstract" cie2019tristimulusValues] tristimulusOf
 
 /-- The tristimulus values of the additive mixture of two color stimulus functions are the sums of their tristimulus values, $X(\varphi_1 + \varphi_2) = X(\varphi_1) + X(\varphi_2)$ and likewise for $Y$ and $Z$. -/
-theorem tristimulusOf_add (first second : (wavelength : Rat) → Rat) :
+theorem tristimulusOf_add (first second : (wavelength : Wavelength) → Rat) :
     tristimulusOf (fun wavelength => first wavelength + second wavelength) =
       (tristimulusOf first).add (tristimulusOf second) := by
   unfold tristimulusOf
-  generalize observer = stimuli
+  generalize wavelengths.zip observer = pairs
   suffices ∀ (firstSum secondSum : Tristimulus),
-      stimuli.foldl (fun sum monochromaticStimulus =>
-          ⟨sum.X + (first monochromaticStimulus.wavelength + second monochromaticStimulus.wavelength) * monochromaticStimulus.xBar,
-            sum.Y + (first monochromaticStimulus.wavelength + second monochromaticStimulus.wavelength) * monochromaticStimulus.yBar,
-            sum.Z + (first monochromaticStimulus.wavelength + second monochromaticStimulus.wavelength) * monochromaticStimulus.zBar⟩)
+      pairs.foldl (fun sum pair =>
+          ⟨sum.X + (first pair.1 + second pair.1) * pair.2.xBar,
+            sum.Y + (first pair.1 + second pair.1) * pair.2.yBar,
+            sum.Z + (first pair.1 + second pair.1) * pair.2.zBar⟩)
         (firstSum.add secondSum) =
-      (stimuli.foldl (fun sum monochromaticStimulus =>
-          ⟨sum.X + first monochromaticStimulus.wavelength * monochromaticStimulus.xBar,
-            sum.Y + first monochromaticStimulus.wavelength * monochromaticStimulus.yBar,
-            sum.Z + first monochromaticStimulus.wavelength * monochromaticStimulus.zBar⟩) firstSum).add
-        (stimuli.foldl (fun sum monochromaticStimulus =>
-          ⟨sum.X + second monochromaticStimulus.wavelength * monochromaticStimulus.xBar,
-            sum.Y + second monochromaticStimulus.wavelength * monochromaticStimulus.yBar,
-            sum.Z + second monochromaticStimulus.wavelength * monochromaticStimulus.zBar⟩) secondSum) by
+      (pairs.foldl (fun sum pair =>
+          ⟨sum.X + first pair.1 * pair.2.xBar,
+            sum.Y + first pair.1 * pair.2.yBar,
+            sum.Z + first pair.1 * pair.2.zBar⟩) firstSum).add
+        (pairs.foldl (fun sum pair =>
+          ⟨sum.X + second pair.1 * pair.2.xBar,
+            sum.Y + second pair.1 * pair.2.yBar,
+            sum.Z + second pair.1 * pair.2.zBar⟩) secondSum) by
     have zero : (⟨0, 0, 0⟩ : Tristimulus) = (⟨0, 0, 0⟩ : Tristimulus).add ⟨0, 0, 0⟩ := by
       simp only [Tristimulus.add, Tristimulus.mk.injEq]
       grind
     conv => lhs; rw [zero]
     exact this _ _
-  induction stimuli with
+  induction pairs with
   | nil => intro firstSum secondSum; rfl
-  | cons monochromaticStimulus rest ih =>
+  | cons pair rest ih =>
     intro firstSum secondSum
     simp only [List.foldl]
     rw [← ih]
@@ -126,28 +126,28 @@ theorem tristimulusOf_add (first second : (wavelength : Rat) → Rat) :
 attribute [cite "17-23-033" cie2020internationalLightingVocabulary] tristimulusOf_add
 
 /-- The tristimulus values of a color stimulus function multiplied by a factor $c$ are the products of the factor and its tristimulus values, $X(c\,\varphi) = c\,X(\varphi)$ and likewise for $Y$ and $Z$. -/
-theorem tristimulusOf_scale (colorStimulusFunction : (wavelength : Rat) → Rat) (factor : Rat) :
+theorem tristimulusOf_scale (colorStimulusFunction : (wavelength : Wavelength) → Rat) (factor : Rat) :
     tristimulusOf (fun wavelength => factor * colorStimulusFunction wavelength) =
       (tristimulusOf colorStimulusFunction).scale factor := by
   unfold tristimulusOf
-  generalize observer = stimuli
+  generalize wavelengths.zip observer = pairs
   suffices ∀ (sum : Tristimulus),
-      stimuli.foldl (fun sum monochromaticStimulus =>
-          ⟨sum.X + factor * colorStimulusFunction monochromaticStimulus.wavelength * monochromaticStimulus.xBar,
-            sum.Y + factor * colorStimulusFunction monochromaticStimulus.wavelength * monochromaticStimulus.yBar,
-            sum.Z + factor * colorStimulusFunction monochromaticStimulus.wavelength * monochromaticStimulus.zBar⟩)
+      pairs.foldl (fun sum pair =>
+          ⟨sum.X + factor * colorStimulusFunction pair.1 * pair.2.xBar,
+            sum.Y + factor * colorStimulusFunction pair.1 * pair.2.yBar,
+            sum.Z + factor * colorStimulusFunction pair.1 * pair.2.zBar⟩)
         (sum.scale factor) =
-      (stimuli.foldl (fun sum monochromaticStimulus =>
-          ⟨sum.X + colorStimulusFunction monochromaticStimulus.wavelength * monochromaticStimulus.xBar,
-            sum.Y + colorStimulusFunction monochromaticStimulus.wavelength * monochromaticStimulus.yBar,
-            sum.Z + colorStimulusFunction monochromaticStimulus.wavelength * monochromaticStimulus.zBar⟩) sum).scale factor by
+      (pairs.foldl (fun sum pair =>
+          ⟨sum.X + colorStimulusFunction pair.1 * pair.2.xBar,
+            sum.Y + colorStimulusFunction pair.1 * pair.2.yBar,
+            sum.Z + colorStimulusFunction pair.1 * pair.2.zBar⟩) sum).scale factor by
     have zero : (⟨0, 0, 0⟩ : Tristimulus) = (⟨0, 0, 0⟩ : Tristimulus).scale factor := by
       simp [Tristimulus.scale]
     conv => lhs; rw [zero]
     exact this _
-  induction stimuli with
+  induction pairs with
   | nil => intro sum; rfl
-  | cons monochromaticStimulus rest ih =>
+  | cons pair rest ih =>
     intro sum
     simp only [List.foldl]
     rw [← ih]
@@ -159,8 +159,7 @@ attribute [cite "Abstract" cie2019tristimulusValues] tristimulusOf_scale
 
 /-- The tristimulus values of the white, those of CIE standard illuminant D65 scaled so that their luminance factor $Y$ is 1, $X = \sum_{\lambda} S(\lambda)\,\bar{x}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$, $Y = 1$, and $Z = \sum_{\lambda} S(\lambda)\,\bar{z}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$. -/
 def whiteTristimulus : Tristimulus :=
-  (tristimulusOf fun wavelength => (relativeSpectralPowerAt wavelength).getD 0).scale
-    (tristimulusOf fun wavelength => (relativeSpectralPowerAt wavelength).getD 0).Y⁻¹
+  (tristimulusOf relativeSpectralPowerAt).scale (tristimulusOf relativeSpectralPowerAt).Y⁻¹
 
 attribute [cite "17-23-081" cie2020internationalLightingVocabulary] whiteTristimulus
 attribute [export_typescript] whiteTristimulus

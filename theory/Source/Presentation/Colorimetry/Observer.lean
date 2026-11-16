@@ -1,13 +1,15 @@
-import References
+import Presentation.Colorimetry.Wavelength
 
 /-!
 # Observer
 
-The module defines the observer as the CIE 1931 standard colorimetric observer by its color-matching functions $\bar{x}$, $\bar{y}$, and $\bar{z}$ at wavelengths from 360 nm to 830 nm in steps of 1 nm.
+The module defines the observer as the CIE 1931 standard colorimetric observer by its color-matching functions $\bar{x}$, $\bar{y}$, and $\bar{z}$ at wavelengths from 360 nm to 830 nm in steps of 1 nm, and the monochromatic stimulus of the observer at a wavelength.
 
 ## Implementation Notes
 
-The observer holds every row of the data table [cie2019colorMatchingFunctions] as a monochromatic stimulus, with each value as the exact rational number that the decimal digits of the value denote.
+The observer holds every row of the data table [cie2019colorMatchingFunctions] as a monochromatic stimulus, with its wavelength as the whole number of nanometers that the data table gives and each other value as the exact rational number that the decimal digits of the value denote.
+
+The monochromatic stimulus at a wavelength is the row whose index is the wavelength less 360 nm, as the rows run from 360 nm in steps of 1 nm, which a check of the observer proves, so the kernel of Lean reaches the row without comparing the wavelength with every row before it.
 
 The observer holds its rows as a list rather than an array, as the kernel of Lean folds a list row by row, while it reduces a fold of an array through the loop of the fold and the bounds of every index, which takes gigabytes of memory over the rows of a data table.
 -/
@@ -17,7 +19,7 @@ namespace Presentation.Colorimetry
 /-- A monochromatic stimulus with the values of the color-matching functions at its wavelength. -/
 structure MonochromaticStimulus where
   /-- The wavelength, in nanometers. -/
-  wavelength : Rat
+  wavelength : Nat
   /-- The value of the color-matching function $\bar{x}$ at the wavelength of the stimulus. -/
   xBar : Rat
   /-- The value of the color-matching function $\bar{y}$ at the wavelength of the stimulus. -/
@@ -506,5 +508,17 @@ def observer : List MonochromaticStimulus := [
   ⟨830, 0.000001251141, 0.0000004518100, 0.000000000000⟩]
 
 attribute [cite "CIE_xyz_1931_2deg.csv" cie2019colorMatchingFunctions] observer
+
+/-- The observer holds a row for each of the 471 wavelengths from 360 nm to 830 nm. -/
+theorem observer_length : observer.length = 471 := by
+  decide +kernel
+
+attribute [cite "CIE_xyz_1931_2deg.csv" cie2019colorMatchingFunctions] observer_length
+
+/-- Gives the monochromatic stimulus of the observer at a wavelength $\lambda$, with the values $\bar{x}(\lambda)$, $\bar{y}(\lambda)$, and $\bar{z}(\lambda)$ of the color-matching functions. -/
+def monochromaticStimulusAt (wavelength : Wavelength) : MonochromaticStimulus :=
+  observer[wavelength.val - 360]'(by have := wavelength.property; rw [observer_length]; omega)
+
+attribute [cite "columnHeaders" cie2019colorMatchingFunctions] monochromaticStimulusAt
 
 end Presentation.Colorimetry
