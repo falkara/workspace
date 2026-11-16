@@ -11,11 +11,9 @@ The illuminant holds every row of the data table [cie2019standardIlluminantD65] 
 
 The illuminant holds its rows as a list rather than an array, as the kernel of Lean folds a list row by row, while it reduces a fold of an array through the loop of the fold and the bounds of every index, which takes gigabytes of memory over the rows of a data table.
 
-The metadata of the data table gives the column of the distribution the wavelengths from 360 nm to 830 nm, while the rows of the column start at 300 nm. The illuminant holds every row, as the sum of the wavelengths among the validation values of the data table counts from 300 nm, and the function of the wavelength takes the rows from 360 nm alone, so the theory holds the rows below 360 nm and computes with none of them.
+The metadata of the data table gives the column of the distribution the wavelengths from 360 nm to 830 nm, while its rows start at 300 nm. The illuminant holds every row, as the sum of the wavelengths among the validation values of the data table counts from 300 nm, and the function of the wavelength gives a value at the rows from 360 nm to 830 nm alone, the wavelengths of the observer. At every other wavelength it gives none rather than the zero by which the metadata extrapolates or the line by which it interpolates, so the theory takes no value that the rows leave out.
 
 The function of the wavelength takes the row whose index is the wavelength less 300 nm, as the rows run from 300 nm in steps of 1 nm, so the kernel of Lean reaches the row without comparing the wavelength with every row before it.
-
-The function gives no value where the data table gives no row, between two rows, where the metadata of the data table interpolates linearly, and beyond 360 nm to 830 nm, where it extrapolates by zero, so the theory takes no value that the rows of the data table leave out. The theory takes the function at the wavelengths of the observer alone, each of which is a wavelength of a row.
 -/
 
 namespace Presentation.Colorimetry
