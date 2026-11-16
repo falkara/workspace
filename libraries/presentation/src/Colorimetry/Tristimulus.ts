@@ -1,6 +1,6 @@
 import { Rational } from 'effect';
 
-import * as Theory from '#src/Colorimetry/Tristimulus.generated';
+import * as Theory from '#src/Colorimetry/Tristimulus.theory';
 
 /**
  * A schema of a triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system.

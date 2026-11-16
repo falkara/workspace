@@ -12,7 +12,7 @@ info: // Written by the generator of Falkara Theory from `Test.Generator.Fixture
 
 import { Brand, type Option, Schema } from 'effect';
 
-import { Coordinate } from '#src/Test/Generator/Fixture/Coordinate.generated';
+import { Coordinate } from '#src/Test/Generator/Fixture/Coordinate.theory';
 import type * as Module from '#src/Test/Generator/Fixture/Point';
 
 /** A schema of a point by its first coordinate. */

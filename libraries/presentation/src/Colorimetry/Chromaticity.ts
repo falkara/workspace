@@ -1,6 +1,6 @@
 import { Option, Rational } from 'effect';
 
-import * as Theory from '#src/Colorimetry/Chromaticity.generated';
+import * as Theory from '#src/Colorimetry/Chromaticity.theory';
 import { whiteTristimulus } from '#src/Colorimetry/Tristimulus';
 
 /**

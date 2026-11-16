@@ -2,7 +2,7 @@
 
 import { Brand, type Option, type Rational, Schema } from 'effect';
 
-import type { Tristimulus } from '#src/Colorimetry/Tristimulus.generated';
+import type { Tristimulus } from '#src/Colorimetry/Tristimulus.theory';
 import type * as Module from '#src/Colorimetry/Chromaticity';
 
 /**

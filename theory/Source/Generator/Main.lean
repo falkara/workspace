@@ -4,11 +4,13 @@ import Generator.Redeclaration
 /-!
 # Main
 
-The module defines the program `generator`, which writes the declarations that the theory of Falkara Presentation marks `export_typescript` into files of TypeScript, a file for every module of the theory. The theory of a module of the package lies in a directory of `Source/Presentation`, such as `Source/Presentation/Colorimetry`, which `Main.lean` gathers, and the program writes the declarations of every module in the directory, such as `Tristimulus.lean`, into the file of the same name in the directory of the same name in the directory it is given, such as `Colorimetry/Tristimulus.generated.ts`. A file imports from Effect the modules its declarations name, `Brand` and `Schema` as values and every other module as a type, and from the files of the other modules of the theory the declarations it names, as values where a schema names them and as types otherwise. A file whose module defines functions ends with a contract, an interface that names every function as the module of the package beside the file exports it, such as `chromaticityOf`, and a type that fails to compile where that module leaves a function out or gives it another type, as a signature of a module in ML requires of the module. The program then checks the module of the package beside every file, such as `Colorimetry/Tristimulus.ts`, by the module `Redeclaration`, and fails with a reason for every redeclaration whose comment differs from the theory.
+The module defines the program `generator`, which writes the declarations that the theory of Falkara Presentation marks `export_typescript` into files of TypeScript, a file for every module of the theory. The theory of a module of the package lies in a directory of `Source/Presentation`, such as `Source/Presentation/Colorimetry`, which `Main.lean` gathers, and the program writes the declarations of every module in the directory, such as `Tristimulus.lean`, into the file of the same name in the directory of the same name in the directory it is given, such as `Colorimetry/Tristimulus.theory.ts`. A file imports from Effect the modules its declarations name, `Brand` and `Schema` as values and every other module as a type, and from the files of the other modules of the theory the declarations it names, as values where a schema names them and as types otherwise. A file whose module defines functions ends with a contract, an interface that names every function as the module of the package beside the file exports it, such as `chromaticityOf`, and a type that fails to compile where that module leaves a function out or gives it another type, as a signature of a module in ML requires of the module. The program then checks the module of the package beside every file, such as `Colorimetry/Tristimulus.ts`, by the module `Redeclaration`, and fails with a reason for every redeclaration whose comment differs from the theory.
 
 ## Implementation Notes
 
 The program writes a file for every module of the theory rather than for every module of the package, so that the package keeps a module of its own beside every module of the theory, as Effect keeps a module for every data type.
+
+A file takes the suffix `.theory.ts`, which names what the file holds, the declarations of the theory, as the import `Theory` of the module of the package names them, rather than how the file comes about; its header and the file `.gitattributes` mark it as generated.
 
 The program writes the declarations of a module in the order of their lines, as the theory states them.
 
@@ -65,8 +67,8 @@ def fileOf (packageNamespace module : Lean.Name) : Lean.MetaM String := do
         namedBySchemas.contains name)
     let path := (otherModule.replacePrefix `Presentation .anonymous).toString.replace "." "/"
     if typeNames.any Prod.snd then
-      s!"import \{ {", ".intercalate (typeNames.map fun (typeName, value) => if value then typeName else s!"type {typeName}")} } from '#src/{path}.generated';\n"
-    else s!"import type \{ {", ".intercalate (typeNames.map Prod.fst)} } from '#src/{path}.generated';\n"
+      s!"import \{ {", ".intercalate (typeNames.map fun (typeName, value) => if value then typeName else s!"type {typeName}")} } from '#src/{path}.theory';\n"
+    else s!"import type \{ {", ".intercalate (typeNames.map Prod.fst)} } from '#src/{path}.theory';\n"
   -- The contract names the module of the package as a type alone, so the two modules import each other only as types.
   let functions := declarations.filter fun name => !Lean.isStructure environment name
   let modulePath := (module.replacePrefix `Presentation .anonymous).toString.replace "." "/"
@@ -102,7 +104,7 @@ def main (arguments : List String) : IO Unit := do
             let packageDirectory := System.FilePath.mk directory / entry.fileName
             IO.FS.createDirAll packageDirectory
             let text ← Generator.runIn environment (Generator.fileOf packageNamespace module)
-            IO.FS.writeFile (packageDirectory / s!"{last}.generated.ts") text
+            IO.FS.writeFile (packageDirectory / s!"{last}.theory.ts") text
             let path := packageDirectory / s!"{last}.ts"
             if ← path.pathExists then
               let redeclarations ← Generator.runIn environment
