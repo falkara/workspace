@@ -111,20 +111,22 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
       s!"\nimport \{ {", ".intercalate (imports.map fun module ↦
         if valued module then module else s!"type {module}")} } from 'effect';\n"
     else s!"\nimport type \{ {", ".intercalate imports} } from 'effect';\n"
+  let kinds ← declarations.mapM fun name ↦ return (name, ← kindOf name)
+  let fieldConstants := fun (name : Lean.Name) ↦
+    (Lean.getStructureFields environment name).toList.flatMap fun field ↦
+      ((environment.find? (name ++ field)).map (·.type.getUsedConstants.toList)).getD []
   -- A schema names the schemas of its fields as values, and every other declaration names a
   -- declaration as a type.
-  let namedBySchemas ← declarations.flatMapM fun name ↦ do
-    if Lean.isStructure environment name then
-      if ← hasSchema packageNamespace name then
-        return (Lean.getStructureFields environment name).toList.flatMap fun field ↦
-          ((environment.find? (name ++ field)).map (·.type.getUsedConstants.toList)).getD []
-    if let some (base, _) ← refinementOf name then return base.getUsedConstants.toList
-    return []
+  let namedBySchemas := kinds.flatMap fun
+    | (name, .dataStructure) => fieldConstants name
+    | (_, .refinement base _) => base.getUsedConstants.toList
+    | _ => []
   -- A refinement calls its condition in its filter, so the file imports the condition as a value
   -- from the module of checks, which imports no schema, and the module of the package and the file
   -- still import each other only as types.
-  let conditions ← declarations.filterMapM fun name ↦ do
-    return (← refinementOf name).map Prod.snd
+  let conditions := kinds.filterMap fun
+    | (_, .refinement _ condition) => some condition
+    | _ => none
   let checkLines := (conditions.filterMap fun condition ↦
     (environment.getModuleIdxFor? condition).bind fun index ↦
       environment.header.moduleNames[index.toNat]?).eraseDups.map
@@ -137,14 +139,14 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
         (String.join ((condition.replacePrefix packageNamespace .anonymous).components.map
           fun component ↦ component.toString.capitalize)).decapitalize)} } \
         from '#src/{path}.check';\n"
-  -- An interface names the types of its fields and a type alias the types of its value.
-  let named := declarations.flatMap fun name ↦
-    if Lean.isStructure environment name then
-      (Lean.getStructureFields environment name).toList.flatMap fun field ↦
-        ((environment.find? (name ++ field)).map (·.type.getUsedConstants.toList)).getD []
-    else ((environment.find? name).map fun information ↦
+  -- An interface names the types of its fields, and a type and a refinement the types of their
+  -- values.
+  let named := kinds.flatMap fun (name, kind) ↦
+    match kind with
+    | .dataStructure | .structure => fieldConstants name
+    | _ => ((environment.find? name).map fun information ↦
       information.type.getUsedConstants.toList ++
-        if information.type.getForallBody matches .sort _ then
+        if kind matches .type | .refinement .. then
           (information.value?.map (·.getUsedConstants.toList)).getD []
         else []).getD []
   let others := (namedBySchemas ++ named).eraseDups.filter fun name ↦
@@ -171,9 +173,9 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
         from '#src/{path}.theory';\n"
   -- The contract names the module of the package as a type alone, so the two modules import each
   -- other only as types.
-  let functions := declarations.filter fun name ↦
-    !Lean.isStructure environment name && (environment.find? name).any fun information ↦
-      information.type matches .forallE .. && !(information.type.getForallBody matches .sort _)
+  let functions := kinds.filterMap fun
+    | (name, .function) => some name
+    | _ => none
   let modulePath := pathOf theory module
   let contractImport := if functions.isEmpty then [] else
     [s!"import type * as Module from '#src/{modulePath}';\n"]

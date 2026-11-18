@@ -43,11 +43,17 @@ polarities at which the parameter occurs in the fields or the value of the decla
   named without the namespace of its package, or fails with the reason where the type has none.
 - `signatureOf`: gives the parameters and the result of TypeScript that a function type of the
   theory takes, with the parameters already written before the rest of the type.
+- `isDataType`: tells whether a type of the theory is a type of data: a rational number, a string, a
+  boolean, an option, an array, or a list of data, a structure of data marked `export_typescript`,
+  or a refinement marked `export_typescript`.
+- `isData`: tells whether a structure is a structure of data, one without type parameters whose
+  every field takes a type of data.
+- `DeclarationKind`: a kind of declaration of the theory, which the generator writes in a form of
+  its own.
+- `kindOf`: gives the kind of a declaration of the theory.
 - `schemaOf`: gives the schema of Effect that a type of data of the theory takes, with every
   structure named without the namespace of its package, or fails with the reason where the type
   has none.
-- `hasSchema`: tells whether a structure takes a schema of Effect, as a structure without type
-  parameters whose every field takes a schema does, rather than an interface.
 - `polaritiesOf`: gives the polarities at which a type parameter occurs in a type, `true` for a
   positive occurrence and `false` for a negative one, given the polarity of the type.
 - `variancesOf`: gives the polarities at which every type parameter of a declaration occurs in the
@@ -57,6 +63,10 @@ polarities at which the parameter occurs in the fields or the value of the decla
 
 The types and the schemas of TypeScript name the modules `Rational`, `Option`, and `Schema` of
 Effect, as the packages of the repository compute with Effect.
+
+A type of data and the kind of a declaration are told apart from the theory alone, so every
+module of the generator writes a declaration by the same kind, and a type of data takes a schema
+because it is data.
 
 A declaration takes the words of its name after the namespace of its package, each capitalized and
 joined, such as `MachineOutcome` for `Machine.Outcome`, as a type of TypeScript is named in Pascal
@@ -166,6 +176,57 @@ end
 
 mutual
 
+/-- Tells whether a type of the theory is a type of data: a rational number, a string, a boolean, an
+option, an array, or a list of data, a structure of data marked `export_typescript`, or a refinement
+marked `export_typescript`. -/
+partial def isDataType (type : Lean.Expr) : Lean.MetaM Bool := do
+  match type with
+  | .const ``Rat _ | .const ``String _ | .const ``Bool _ => return true
+  | .app (.const ``Option _) element | .app (.const ``Array _) element
+  | .app (.const ``List _) element => isDataType element
+  | .const name _ =>
+    unless ExportTypeScript.tagAttribute.hasTag (← Lean.getEnv) name do return false
+    if Lean.isStructure (← Lean.getEnv) name then isData name
+    else return (← refinementOf name).isSome
+  | _ => return false
+
+/-- Tells whether a structure is a structure of data, one without type parameters whose every field
+takes a type of data. -/
+partial def isData (name : Lean.Name) : Lean.MetaM Bool := do
+  if typeParameterCount (← Lean.getConstInfo name).type > 0 then return false
+  -- A structure whose field depends on the structure has no fields that a type of data describes.
+  let fields ← try fieldTypesOf name #[] catch _ => return false
+  fields.allM fun (_, fieldType) ↦ isDataType fieldType
+
+end
+
+/-- A kind of declaration of the theory, which the generator writes in a form of its own. -/
+inductive DeclarationKind where
+  /-- A structure of data. -/
+  | dataStructure
+  /-- A structure that takes type parameters or a field of a type other than data. -/
+  | structure
+  /-- A refinement of a type by a condition. -/
+  | refinement (base : Lean.Expr) (condition : Lean.Name)
+  /-- A type, a declaration whose value is a type. -/
+  | type
+  /-- A function, a declaration that takes parameters beyond its type parameters. -/
+  | function
+  /-- A value, a declaration that takes no parameters beyond its type parameters. -/
+  | value
+
+/-- Gives the kind of a declaration of the theory. -/
+def kindOf (name : Lean.Name) : Lean.MetaM DeclarationKind := do
+  if Lean.isStructure (← Lean.getEnv) name then
+    return if ← isData name then .dataStructure else .structure
+  if let some (base, condition) ← refinementOf name then return .refinement base condition
+  let information ← Lean.getConstInfo name
+  Lean.Meta.forallBoundedTelescope information.type (some (typeParameterCount information.type))
+    fun _ rest ↦ return match rest with
+      | .sort _ => .type
+      | .forallE .. => .function
+      | _ => .value
+
 /-- Gives the schema of Effect that a type of data of the theory takes, with every structure named
 without the namespace of its package, or fails with the reason where the type has none. -/
 partial def schemaOf (packageNamespace : Lean.Name) (type : Lean.Expr) : Lean.MetaM String := do
@@ -185,25 +246,12 @@ partial def schemaOf (packageNamespace : Lean.Name) (type : Lean.Expr) : Lean.Me
     unless ExportTypeScript.tagAttribute.hasTag (← Lean.getEnv) name do
       Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never marks it \
         `export_typescript`."
-    unless (Lean.isStructure (← Lean.getEnv) name && (← hasSchema packageNamespace name)) ||
-        (← refinementOf name).isSome do
+    unless ← isDataType type do
       Lean.throwError m!"`{name}` has no schema in TypeScript, as it is neither a structure whose \
         every field takes a schema nor a refinement."
     return String.join ((name.replacePrefix packageNamespace .anonymous).components.map
       fun component ↦ component.toString.capitalize)
   | _ => Lean.throwError m!"`{type}` has no schema in TypeScript."
-
-/-- Tells whether a structure takes a schema of Effect, as a structure without type parameters
-whose every field takes a schema does, rather than an interface. -/
-partial def hasSchema (packageNamespace name : Lean.Name) : Lean.MetaM Bool := do
-  if typeParameterCount (← Lean.getConstInfo name).type > 0 then return false
-  (← fieldTypesOf name #[]).allM fun (_, fieldType) ↦ do
-    try
-      discard <| schemaOf packageNamespace fieldType
-      return true
-    catch _ => return false
-
-end
 
 mutual
 

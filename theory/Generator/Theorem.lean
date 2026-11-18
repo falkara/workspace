@@ -7,10 +7,9 @@ module
 
 public import Lean.Meta.Basic
 import Lean.Meta.InferType
-import Lean.Structure
-import Falkara.ExportTypeScript
 import Generator.Comment
 import Generator.Path
+import Generator.Type
 
 /-!
 # Theorem
@@ -119,9 +118,9 @@ partial def expressionOf (packageNamespace : Lean.Name) (expression : Lean.Expr)
             {(typeName constructor.induct).decapitalize}(\{ {", ".intercalate values} })",
           constructor.induct :: written.flatMap Prod.snd)
     if ExportTypeScript.tagAttribute.hasTag environment name &&
-        !Lean.isStructure environment name &&
         !(environment.find? name matches some (.thmInfo _)) && arguments.length > 0 then
-      return ← call s!"{← moduleAliasOf name}.{(typeName name).decapitalize}" arguments [name]
+      if (← kindOf name) matches .function then
+        return ← call s!"{← moduleAliasOf name}.{(typeName name).decapitalize}" arguments [name]
     Lean.throwError m!"`{expression}` has no expression in a test of TypeScript."
   | _, _ => Lean.throwError m!"`{expression}` has no expression in a test of TypeScript."
 
@@ -137,7 +136,7 @@ partial def arbitraryOf (packageNamespace : Lean.Name) (type : Lean.Expr) :
     return (s!"Schema.Option({script})", named)
   | .const name _ =>
     unless ExportTypeScript.tagAttribute.hasTag (← Lean.getEnv) name &&
-        Lean.isStructure (← Lean.getEnv) name do
+        (← kindOf name) matches .dataStructure do
       Lean.throwError m!"`{name}` has no schema that a test can draw from."
     let typeName := String.join
       ((name.replacePrefix packageNamespace .anonymous).components.map fun component ↦

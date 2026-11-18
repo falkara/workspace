@@ -157,15 +157,6 @@ def declarationOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
     let names ← parameters.toList.mapM fun parameter ↦
       return (← parameter.fvarId!.getUserName).toString
     let arguments := if names.isEmpty then "" else s!"<{", ".intercalate names}>"
-    if Lean.isStructure environment name then
-      if ← hasSchema moduleNamespace name then
-        let fields ← (← fieldTypesOf name parameters).mapM fun (field, fieldType) ↦ do
-          return s!"{← commentOf (name ++ field)}{field}: {← schemaOf moduleNamespace fieldType},\n"
-        return s!"{← commentOf name (some "A schema of")}export const {typeName} = \
-            Schema.Struct(\{\n{String.join fields}}).pipe(Schema.brand('{typeName}'));\n\n" ++
-          s!"{← commentOf name}export type {typeName} = typeof {typeName}.Type;\n\n" ++
-          s!"{← commentOf name (some "Brands without a check")}export const \
-            {typeName.decapitalize} = Brand.nominal<{typeName}>();\n"
     let variances ← variancesOf name
     let generics := if names.isEmpty then "" else
       s!"<{", ".intercalate ((names.zip variances).map fun (parameter, polarities) ↦
@@ -174,7 +165,16 @@ def declarationOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
       | true, false => s!"in {parameter}"
       | false, true => s!"out {parameter}"
       | false, false => parameter)}>"
-    if Lean.isStructure environment name then
+    match ← kindOf name with
+    | .dataStructure =>
+      let fields ← (← fieldTypesOf name parameters).mapM fun (field, fieldType) ↦ do
+        return s!"{← commentOf (name ++ field)}{field}: {← schemaOf moduleNamespace fieldType},\n"
+      return s!"{← commentOf name (some "A schema of")}export const {typeName} = \
+          Schema.Struct(\{\n{String.join fields}}).pipe(Schema.brand('{typeName}'));\n\n" ++
+        s!"{← commentOf name}export type {typeName} = typeof {typeName}.Type;\n\n" ++
+        s!"{← commentOf name (some "Brands without a check")}export const \
+          {typeName.decapitalize} = Brand.nominal<{typeName}>();\n"
+    | .structure =>
       let fields ← (← fieldTypesOf name parameters).mapM fun (field, fieldType) ↦ do
         return s!"{← commentOf (name ++ field)}readonly {field}: \
           {← typeOf moduleNamespace fieldType};\n"
@@ -182,7 +182,7 @@ def declarationOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
           \{\n{String.join fields}}\n\n" ++
         s!"{← commentOf name (some "Creates")}export const {typeName.decapitalize} = \
           {arguments}(fields: {typeName}{arguments}): {typeName}{arguments} => fields;\n"
-    if let some (base, condition) ← refinementOf name then
+    | .refinement base condition =>
       let conditionName :=
         (String.join ((condition.replacePrefix moduleNamespace .anonymous).components.map
           fun component ↦ component.toString.capitalize)).decapitalize
@@ -190,22 +190,21 @@ def declarationOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
           {← schemaOf moduleNamespace base}.pipe(Schema.check(Schema.makeFilter(\
           {conditionName})), Schema.brand('{typeName}'));\n\n" ++
         s!"{← commentOf name}export type {typeName} = typeof {typeName}.Type;\n"
-    if rest matches .sort _ then
+    | .type =>
       let some value := information.value?
         | Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory gives the \
             type no value."
       return s!"{← commentOf name}export type {typeName}{generics} = \
         {← typeOf moduleNamespace (value.beta parameters)};\n"
-    match rest with
-    | .forallE .. =>
+    | .function =>
       let (signature, result) ← signatureOf moduleNamespace [] rest
       return s!"{← commentOf name}export type {typeName} = \
         {arguments}({", ".intercalate signature}) => {result};\n"
-    | type =>
+    | .value =>
       unless names.isEmpty do
         Lean.throwError m!"`{name}` has no value in TypeScript, as it takes type parameters."
       return s!"{← commentOf name}export const {typeName.decapitalize}: \
-        {← typeOf moduleNamespace type} = \
-        {← valueOf moduleNamespace name type (Lean.mkConst name)};\n"
+        {← typeOf moduleNamespace rest} = \
+        {← valueOf moduleNamespace name rest (Lean.mkConst name)};\n"
 
 end Generator
