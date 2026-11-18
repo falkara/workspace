@@ -136,9 +136,7 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
           environment.header.moduleNames[index.toNat]?) == some checkModule
       let path := pathOf theory checkModule
       s!"import \{ {", ".intercalate (names.map fun condition ↦
-        (String.join ((condition.replacePrefix packageNamespace .anonymous).components.map
-          fun component ↦ component.toString.capitalize)).decapitalize)} } \
-        from '#src/{path}.check';\n"
+        camelCaseOf (wordsOf packageNamespace condition))} } from '#src/{path}.check';\n"
   -- An interface names the types of its fields, and a type and a refinement the types of their
   -- values.
   let named := kinds.flatMap fun (name, kind) ↦
@@ -161,9 +159,7 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
       ((environment.getModuleIdxFor? name).bind fun index ↦
         environment.header.moduleNames[index.toNat]?) == some otherModule
     let typeNames := names.map fun name ↦
-      (String.join ((name.replacePrefix packageNamespace .anonymous).components.map
-          fun component ↦ component.toString.capitalize),
-        namedBySchemas.contains name)
+      (pascalCaseOf (wordsOf packageNamespace name), namedBySchemas.contains name)
     let path := pathOf theory otherModule
     if typeNames.any Prod.snd then
       s!"import \{ {", ".intercalate (typeNames.map fun (typeName, value) ↦
@@ -180,9 +176,8 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
   let contractImport := if functions.isEmpty then [] else
     [s!"import type * as Module from '#src/{modulePath}';\n"]
   let members ← functions.mapM fun name ↦ do
-    let typeName := String.join ((name.replacePrefix packageNamespace .anonymous).components.map
-      fun component ↦ component.toString.capitalize)
-    return s!"{← commentOf name}readonly {typeName.decapitalize}: {typeName};\n"
+    let words := wordsOf packageNamespace name
+    return s!"{← commentOf name}readonly {camelCaseOf words}: {pascalCaseOf words};\n"
   let contract := if functions.isEmpty then "" else
     s!"\n/** The functions of the theory that the module `{modulePath}` of the package \
       implements. */\n" ++

@@ -67,9 +67,9 @@ schema runs on decoding.
 A structure that takes an interface takes no brand, as a schema of Effect describes data alone, and
 a type parameter or a function has no schema whose decoding could give the brand.
 
-A declaration takes the words of its name after the namespace of its module, each capitalized and
-joined, such as `ChromaticityOf` for `chromaticityOf` and `ChromaticityZ` for `Chromaticity.z`, as
-the module `Type` names every declaration.
+A declaration takes the name that the module `Name` gives it, such as `ChromaticityOf` for
+`chromaticityOf` and `ChromaticityZ` for `Chromaticity.z`, as every module of the generator names
+the declaration.
 
 A value is reduced by the kernel of Lean rather than computed by the compiler, so the file holds the
 value that the kernel checks every theorem of the value against.
@@ -135,10 +135,8 @@ partial def valueOf (moduleNamespace name : Lean.Name) (type expression : Lean.E
             m!"`{structureName}` has no value in TypeScript, as it takes parameters."
       return s!"{field}: {← valueOf moduleNamespace name fieldType
         (Lean.mkApp (Lean.mkConst (structureName ++ field)) expression)}"
-    let constructorName :=
-      (String.join ((structureName.replacePrefix moduleNamespace .anonymous).components.map
-        fun component ↦ component.toString.capitalize)).decapitalize
-    return s!"{constructorName}(\{ {", ".intercalate fields} })"
+    return s!"{camelCaseOf (wordsOf moduleNamespace structureName)}\
+      (\{ {", ".intercalate fields} })"
   | _ => Lean.throwError m!"`{name}` has no value in TypeScript, as `{type}` has none."
 
 /-- Gives the declaration of TypeScript that a declaration of the theory marked `export_typescript`
@@ -149,8 +147,8 @@ def declarationOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
   unless ExportTypeScript.tagAttribute.hasTag environment name do
     Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never marks it \
       `export_typescript`."
-  let typeName := String.join ((name.replacePrefix moduleNamespace .anonymous).components.map
-    fun component ↦ component.toString.capitalize)
+  let typeName := pascalCaseOf (wordsOf moduleNamespace name)
+  let valueName := camelCaseOf (wordsOf moduleNamespace name)
   let information ← Lean.getConstInfo name
   Lean.Meta.forallBoundedTelescope information.type (some (typeParameterCount information.type))
       fun parameters rest ↦ do
@@ -173,22 +171,19 @@ def declarationOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
           Schema.Struct(\{\n{String.join fields}}).pipe(Schema.brand('{typeName}'));\n\n" ++
         s!"{← commentOf name}export type {typeName} = typeof {typeName}.Type;\n\n" ++
         s!"{← commentOf name (some "Brands without a check")}export const \
-          {typeName.decapitalize} = Brand.nominal<{typeName}>();\n"
+          {valueName} = Brand.nominal<{typeName}>();\n"
     | .structure =>
       let fields ← (← fieldTypesOf name parameters).mapM fun (field, fieldType) ↦ do
         return s!"{← commentOf (name ++ field)}readonly {field}: \
           {← typeOf moduleNamespace fieldType};\n"
       return s!"{← commentOf name}export interface {typeName}{generics} \
           \{\n{String.join fields}}\n\n" ++
-        s!"{← commentOf name (some "Creates")}export const {typeName.decapitalize} = \
+        s!"{← commentOf name (some "Creates")}export const {valueName} = \
           {arguments}(fields: {typeName}{arguments}): {typeName}{arguments} => fields;\n"
     | .refinement base condition =>
-      let conditionName :=
-        (String.join ((condition.replacePrefix moduleNamespace .anonymous).components.map
-          fun component ↦ component.toString.capitalize)).decapitalize
       return s!"{← commentOf name (some "A schema of")}export const {typeName} = \
           {← schemaOf moduleNamespace base}.pipe(Schema.check(Schema.makeFilter(\
-          {conditionName})), Schema.brand('{typeName}'));\n\n" ++
+          {camelCaseOf (wordsOf moduleNamespace condition)})), Schema.brand('{typeName}'));\n\n" ++
         s!"{← commentOf name}export type {typeName} = typeof {typeName}.Type;\n"
     | .type =>
       let some value := information.value?
@@ -203,7 +198,7 @@ def declarationOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
     | .value =>
       unless names.isEmpty do
         Lean.throwError m!"`{name}` has no value in TypeScript, as it takes type parameters."
-      return s!"{← commentOf name}export const {typeName.decapitalize}: \
+      return s!"{← commentOf name}export const {valueName}: \
         {← typeOf moduleNamespace rest} = \
         {← valueOf moduleNamespace name rest (Lean.mkConst name)};\n"
 

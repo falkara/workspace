@@ -57,8 +57,8 @@ namespace Generator
 the theory, with the documentation comment it takes. -/
 def redeclarationsOf (moduleNamespace name : Lean.Name) :
     Lean.MetaM (List (String × String)) := do
-  let typeName := String.join ((name.replacePrefix moduleNamespace .anonymous).components.map
-    fun component ↦ component.toString.capitalize)
+  let typeName := pascalCaseOf (wordsOf moduleNamespace name)
+  let valueName := camelCaseOf (wordsOf moduleNamespace name)
   let information ← Lean.getConstInfo name
   let names ← Lean.Meta.forallBoundedTelescope information.type
     (some (typeParameterCount information.type)) fun parameters _ ↦
@@ -70,12 +70,12 @@ def redeclarationsOf (moduleNamespace name : Lean.Name) :
       (s!"export const {typeName} = Theory.{typeName};",
         ← commentOf name (some "A schema of")),
       (s!"export type {typeName} = Theory.{typeName};", ← commentOf name),
-      (s!"export const {typeName.decapitalize} = Theory.{typeName.decapitalize};",
+      (s!"export const {valueName} = Theory.{valueName};",
         ← commentOf name (some "Brands without a check"))]
   | .structure =>
     return [
       (s!"export type {typeName}{arguments} =", ← commentOf name),
-      (s!"export const {typeName.decapitalize} = Theory.{typeName.decapitalize};",
+      (s!"export const {valueName} = Theory.{valueName};",
         ← commentOf name (some "Creates"))]
   | .refinement .. =>
     return [
@@ -84,9 +84,9 @@ def redeclarationsOf (moduleNamespace name : Lean.Name) :
       (s!"export type {typeName} = Theory.{typeName};", ← commentOf name)]
   | .type => return [(s!"export type {typeName}{arguments} =", ← commentOf name)]
   | .value =>
-    return [(s!"export const {typeName.decapitalize} = Theory.{typeName.decapitalize};",
+    return [(s!"export const {valueName} = Theory.{valueName};",
       ← commentOf name)]
-  | .function => return [(s!"export const {typeName.decapitalize}", ← commentOf name)]
+  | .function => return [(s!"export const {valueName}", ← commentOf name)]
 
 /-- Gives a reason for every redeclaration or implementation that a module of TypeScript leaves out
 or whose documentation comment differs from the one it takes. -/

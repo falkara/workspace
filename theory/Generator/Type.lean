@@ -8,6 +8,7 @@ module
 public import Falkara.ExportTypeScript
 public import Lean.Meta.Basic
 public import Lean.Structure
+public import Generator.Name
 
 /-!
 # Type
@@ -68,9 +69,9 @@ A type of data and the kind of a declaration are told apart from the theory alon
 module of the generator writes a declaration by the same kind, and a type of data takes a schema
 because it is data.
 
-A declaration takes the words of its name after the namespace of its package, each capitalized and
-joined, such as `MachineOutcome` for `Machine.Outcome`, as a type of TypeScript is named in Pascal
-case and the namespace has no counterpart in a module of TypeScript.
+A declaration takes the name that the module `Name` gives it in Pascal case, such as
+`MachineOutcome` for `Machine.Outcome`, as a type of TypeScript is named in Pascal case and the
+namespace has no counterpart in a module of TypeScript.
 
 A function type takes every parameter by its name in the theory, as TypeScript names every
 parameter of a function type, so the generator refuses a parameter that the theory leaves unnamed,
@@ -146,8 +147,7 @@ partial def typeOf (packageNamespace : Lean.Name) (type : Lean.Expr) : Lean.Meta
     unless ExportTypeScript.tagAttribute.hasTag (← Lean.getEnv) name do
       Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never marks it \
         `export_typescript`."
-    let typeName := String.join ((name.replacePrefix packageNamespace .anonymous).components.map
-      fun component ↦ component.toString.capitalize)
+    let typeName := pascalCaseOf (wordsOf packageNamespace name)
     let arguments ← type.getAppArgs.toList.mapM (typeOf packageNamespace)
     if arguments.isEmpty then return typeName
     return s!"{typeName}<{", ".intercalate arguments}>"
@@ -249,8 +249,7 @@ partial def schemaOf (packageNamespace : Lean.Name) (type : Lean.Expr) : Lean.Me
     unless ← isDataType type do
       Lean.throwError m!"`{name}` has no schema in TypeScript, as it is neither a structure whose \
         every field takes a schema nor a refinement."
-    return String.join ((name.replacePrefix packageNamespace .anonymous).components.map
-      fun component ↦ component.toString.capitalize)
+    return pascalCaseOf (wordsOf packageNamespace name)
   | _ => Lean.throwError m!"`{type}` has no schema in TypeScript."
 
 mutual

@@ -98,9 +98,8 @@ partial def expressionOf (packageNamespace : Lean.Name) (expression : Lean.Expr)
   | .const ``Option.some _, [_, value] => call "Option.some" [value] []
   | .const ``Option.none _, [_] => return ("Option.none()", [])
   | .const name _, arguments =>
-    let typeName := fun (declaration : Lean.Name) ↦ String.join
-      ((declaration.replacePrefix packageNamespace .anonymous).components.map fun component ↦
-        component.toString.capitalize)
+    let valueName := fun (declaration : Lean.Name) ↦
+      camelCaseOf (wordsOf packageNamespace declaration)
     if let some projection := environment.getProjectionFnInfo? name then
       if ExportTypeScript.tagAttribute.hasTag environment name.getPrefix then
         if let (.str _ field, some value) := (name, arguments[projection.numParams]?) then
@@ -115,12 +114,12 @@ partial def expressionOf (packageNamespace : Lean.Name) (expression : Lean.Expr)
         let values := (fields.zip (written.map Prod.fst)).map fun (field, value) ↦
           s!"{field}: {value}"
         return (s!"{← moduleAliasOf constructor.induct}.\
-            {(typeName constructor.induct).decapitalize}(\{ {", ".intercalate values} })",
+            {valueName constructor.induct}(\{ {", ".intercalate values} })",
           constructor.induct :: written.flatMap Prod.snd)
     if ExportTypeScript.tagAttribute.hasTag environment name &&
         !(environment.find? name matches some (.thmInfo _)) && arguments.length > 0 then
       if (← kindOf name) matches .function then
-        return ← call s!"{← moduleAliasOf name}.{(typeName name).decapitalize}" arguments [name]
+        return ← call s!"{← moduleAliasOf name}.{valueName name}" arguments [name]
     Lean.throwError m!"`{expression}` has no expression in a test of TypeScript."
   | _, _ => Lean.throwError m!"`{expression}` has no expression in a test of TypeScript."
 
@@ -138,10 +137,7 @@ partial def arbitraryOf (packageNamespace : Lean.Name) (type : Lean.Expr) :
     unless ExportTypeScript.tagAttribute.hasTag (← Lean.getEnv) name &&
         (← kindOf name) matches .dataStructure do
       Lean.throwError m!"`{name}` has no schema that a test can draw from."
-    let typeName := String.join
-      ((name.replacePrefix packageNamespace .anonymous).components.map fun component ↦
-        component.toString.capitalize)
-    return (s!"{← moduleAliasOf name}.{typeName}", [name])
+    return (s!"{← moduleAliasOf name}.{pascalCaseOf (wordsOf packageNamespace name)}", [name])
   | _ => Lean.throwError m!"`{type}` has no schema that a test can draw from."
 
 /-- Gives the test of TypeScript that a theorem of the theory marked `export_typescript` takes,
