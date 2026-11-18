@@ -68,25 +68,25 @@ def redeclarationsOf (moduleNamespace name : Lean.Name) :
     if ← hasSchema moduleNamespace name then
       return [
         (s!"export const {typeName} = Theory.{typeName};",
-          ← commentOf name "" (some "A schema of")),
-        (s!"export type {typeName} = Theory.{typeName};", ← commentOf name ""),
+          ← commentOf name (some "A schema of")),
+        (s!"export type {typeName} = Theory.{typeName};", ← commentOf name),
         (s!"export const {typeName.decapitalize} = Theory.{typeName.decapitalize};",
-          ← commentOf name "" (some "Brands without a check"))]
+          ← commentOf name (some "Brands without a check"))]
     return [
-      (s!"export type {typeName}{arguments} =", ← commentOf name ""),
+      (s!"export type {typeName}{arguments} =", ← commentOf name),
       (s!"export const {typeName.decapitalize} = Theory.{typeName.decapitalize};",
-        ← commentOf name "" (some "Creates"))]
+        ← commentOf name (some "Creates"))]
   if (← refinementOf name).isSome then
     return [
       (s!"export const {typeName} = Theory.{typeName};",
-        ← commentOf name "" (some "A schema of")),
-      (s!"export type {typeName} = Theory.{typeName};", ← commentOf name "")]
+        ← commentOf name (some "A schema of")),
+      (s!"export type {typeName} = Theory.{typeName};", ← commentOf name)]
   if information.type.getForallBody matches .sort _ then
-    return [(s!"export type {typeName}{arguments} =", ← commentOf name "")]
+    return [(s!"export type {typeName}{arguments} =", ← commentOf name)]
   if !(information.type matches .forallE ..) then
     return [(s!"export const {typeName.decapitalize} = Theory.{typeName.decapitalize};",
-      ← commentOf name "")]
-  return [(s!"export const {typeName.decapitalize}", ← commentOf name "")]
+      ← commentOf name)]
+  return [(s!"export const {typeName.decapitalize}", ← commentOf name)]
 
 /-- Gives a reason for every redeclaration or implementation that a module of TypeScript leaves out
 or whose documentation comment differs from the one it takes. -/

@@ -27,7 +27,7 @@ otherwise.
   the declaration cites or the DOI of the work, where the declaration cites one.
 - `commentOf`: gives the documentation comment of TypeScript of a declaration, with a text that
   opens the comment in place of the first word of the documentation comment of the theory, where
-  one is given, and indented by the spaces given.
+  one is given.
 
 ## Implementation Notes
 
@@ -62,10 +62,9 @@ def addressOf (name : Lean.Name) : Lean.MetaM (Option String) := do
     m!"`{name}` cites `{item.work}`, which has neither a page for every item nor a DOI."
 
 /-- Gives the documentation comment of TypeScript of a declaration, with a text that opens the
-comment in place of the first word of the documentation comment of the theory, where one is given,
-and indented by the spaces given. -/
-def commentOf (name : Lean.Name) (indentation : String) (opening : Option String := none) :
-    Lean.MetaM String := do
+comment in place of the first word of the documentation comment of the theory, where one is
+given. -/
+def commentOf (name : Lean.Name) (opening : Option String := none) : Lean.MetaM String := do
   let some documentation ← Lean.findDocString? (← Lean.getEnv) name
     | Lean.throwError m!"`{name}` has no documentation comment."
   -- A documentation comment wraps at 100 columns as the theory writes it, and its lines join into
@@ -76,9 +75,7 @@ def commentOf (name : Lean.Name) (indentation : String) (opening : Option String
     | some opening => s!"{opening} {documentation.decapitalize}"
     | none => documentation
   match ← addressOf name with
-  | some address =>
-    return s!"{indentation}/**\n{indentation} * {text}\n{indentation} *\n\
-      {indentation} * @see {address}\n{indentation} */\n"
-  | none => return s!"{indentation}/** {text} */\n"
+  | some address => return s!"/**\n * {text}\n *\n * @see {address}\n */\n"
+  | none => return s!"/** {text} */\n"
 
 end Generator

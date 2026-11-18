@@ -180,7 +180,7 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
   let members ← functions.mapM fun name ↦ do
     let typeName := String.join ((name.replacePrefix packageNamespace .anonymous).components.map
       fun component ↦ component.toString.capitalize)
-    return s!"{← commentOf name "  "}  readonly {typeName.decapitalize}: {typeName};\n"
+    return s!"{← commentOf name}readonly {typeName.decapitalize}: {typeName};\n"
   let contract := if functions.isEmpty then "" else
     s!"\n/** The functions of the theory that the module `{modulePath}` of the package \
       implements. */\n" ++

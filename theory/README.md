@@ -38,6 +38,7 @@ The generator writes the declarations that the theory marks `export_typescript` 
 
 1. `lake build` builds the theory the generator reads.
 2. `lake exe generator Presentation ../libraries/presentation/src` writes the files of TypeScript and fails where a module of the package, such as `Colorimetry/Tristimulus.ts`, redeclares a declaration of the theory with another comment than the theory gives it.
+3. `npm run check:fix` in the root of the repository formats the files by oxfmt, as the generator writes them unformatted.
 
 ## Licensing
 

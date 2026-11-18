@@ -29,8 +29,8 @@ import type * as Module from '#src/Fixture/Point';
 
 /** A schema of a point by its first coordinate. */
 export const Point = Schema.Struct({
-  /** The first coordinate of the point. */
-  first: Coordinate,
+/** The first coordinate of the point. */
+first: Coordinate,
 }).pipe(Schema.brand('Point'));
 
 /** A point by its first coordinate. */
@@ -44,8 +44,8 @@ export type PointAt = (coordinate: Coordinate) => Option.Option<Point>;
 
 /** The functions of the theory that the module `Fixture/Point` of the package implements. */
 interface Contract {
-  /** Gives the point at a coordinate. */
-  readonly pointAt: PointAt;
+/** Gives the point at a coordinate. */
+readonly pointAt: PointAt;
 }
 
 /** The module `Fixture/Point` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */
@@ -62,8 +62,8 @@ import { Brand, Rational, Schema } from 'effect';
 
 /** A schema of a coordinate of a point. */
 export const Coordinate = Schema.Struct({
-  /** The value of the coordinate. */
-  value: Schema.Rational,
+/** The value of the coordinate. */
+value: Schema.Rational,
 }).pipe(Schema.brand('Coordinate'));
 
 /** A coordinate of a point. */
@@ -87,43 +87,34 @@ import type * as Module from '#src/Fixture/Walker';
 
 /** A step of a walk, the state it reaches and the trace it leaves. */
 export interface Step<out State, out Trace> {
-  /** The state the step reaches. */
-  readonly state: State;
-  /** The trace the step leaves. */
-  readonly trace: Trace;
+/** The state the step reaches. */
+readonly state: State;
+/** The trace the step leaves. */
+readonly trace: Trace;
 }
 
 /** Creates a step of a walk, the state it reaches and the trace it leaves. */
 export const step = <State, Trace>(fields: Step<State, Trace>): Step<State, Trace> => fields;
 
 /** A function that gives the step from a state upon an input. */
-export type StepMove<in out State, in Input, out Trace> = (
-  currentState: State,
-  input: Input,
-) => Step<State, Trace>;
+export type StepMove<in out State, in Input, out Trace> = (currentState: State, input: Input) => Step<State, Trace>;
 
 /** A walker that takes a step upon every input. */
 export interface Walker<in out State, in Input, out Trace> {
-  /** The function that gives the step of the walker from a state upon an input. */
-  readonly move: StepMove<State, Input, Trace>;
+/** The function that gives the step of the walker from a state upon an input. */
+readonly move: StepMove<State, Input, Trace>;
 }
 
 /** Creates a walker that takes a step upon every input. */
-export const walker = <State, Input, Trace>(
-  fields: Walker<State, Input, Trace>,
-): Walker<State, Input, Trace> => fields;
+export const walker = <State, Input, Trace>(fields: Walker<State, Input, Trace>): Walker<State, Input, Trace> => fields;
 
 /** Gives the state a walker reaches from a state upon an input. */
-export type WalkerNext = <State, Input, Trace>(
-  walker: Walker<State, Input, Trace>,
-  state: State,
-  input: Input,
-) => State;
+export type WalkerNext = <State, Input, Trace>(walker: Walker<State, Input, Trace>, state: State, input: Input) => State;
 
 /** A course that turns every coordinate into another. */
 export interface Course {
-  /** The function that gives the coordinate the course turns a coordinate into. */
-  readonly turn: (coordinate: Coordinate) => Coordinate;
+/** The function that gives the coordinate the course turns a coordinate into. */
+readonly turn: (coordinate: Coordinate) => Coordinate;
 }
 
 /** Creates a course that turns every coordinate into another. */
@@ -131,8 +122,8 @@ export const course = (fields: Course): Course => fields;
 
 /** The functions of the theory that the module `Fixture/Walker` of the package implements. */
 interface Contract {
-  /** Gives the state a walker reaches from a state upon an input. */
-  readonly walkerNext: WalkerNext;
+/** Gives the state a walker reaches from a state upon an input. */
+readonly walkerNext: WalkerNext;
 }
 
 /** The module `Fixture/Walker` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */

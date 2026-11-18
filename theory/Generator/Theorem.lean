@@ -5,7 +5,6 @@ Authors: Filip Falcon
 -/
 module
 
-public import Generator.Script
 public import Lean.Meta.Basic
 import Lean.Meta.InferType
 import Lean.Structure
@@ -40,8 +39,8 @@ from Effect. Every other expression has no form in TypeScript, and the generator
   declarations of the theory whose modules of the package it names, or fails with the reason where
   the type has none.
 - `testOf`: gives the test of TypeScript that a theorem of the theory marked `export_typescript`
-  takes, indented in a block of tests, with the declarations of the theory whose modules of the
-  package it names, or fails with the reason where the theorem has none.
+  takes, with the declarations of the theory whose modules of the package it names, or fails with
+  the reason where the theorem has none.
 - `testFileOf`: gives the file of tests of TypeScript that holds the tests of the theorems of a
   module of the theory of a package, which imports the modules of the package that the tests name.
 
@@ -53,9 +52,8 @@ the implementation, which is the only code a theorem of the theory has not prove
 A quotient has no form in a test, as `Rational.divide` of Effect gives an option where the division
 of Lean gives 0.
 
-A test takes the form that oxfmt gives it, so the generated file passes the check of formatting of
-the repository unchanged, with every expression laid out by the module `Script`. The two sides of
-the conclusion take constants of their own, so the line of the check stays short.
+A test takes a line of its own for every comment and every statement, and oxfmt formats the rest of
+the generated file after the generator writes it.
 -/
 
 public section
@@ -78,18 +76,19 @@ def moduleAliasOf (name : Lean.Name) : Lean.MetaM String := do
 of the theory whose modules of the package it names, or fails with the reason where the expression
 has none. -/
 partial def expressionOf (packageNamespace : Lean.Name) (expression : Lean.Expr) :
-    Lean.MetaM (Script × List Lean.Name) := do
+    Lean.MetaM (String × List Lean.Name) := do
   let environment ← Lean.getEnv
   if let .fvar binder := expression then
-    return (.atom (← binder.getUserName).toString, [])
+    return ((← binder.getUserName).toString, [])
   -- Only the operands that take a form of their own are written, so a type or an instance among
   -- the arguments is never written.
   let call := fun (function : String) (operands : List Lean.Expr) (named : List Lean.Name) ↦ do
     let written ← operands.mapM (expressionOf packageNamespace)
-    return (Script.call function (written.map Prod.fst), named ++ written.flatMap Prod.snd)
+    return (s!"{function}({", ".intercalate (written.map Prod.fst)})",
+      named ++ written.flatMap Prod.snd)
   match expression.getAppFn, expression.getAppArgs.toList with
   | .const ``OfNat.ofNat _, [.const ``Rat _, .lit (.natVal value), _] =>
-    return (.call "Rational.fromBigInt" [.atom s!"{value}n"], [])
+    return (s!"Rational.fromBigInt({value}n)", [])
   | .const ``Neg.neg _, [.const ``Rat _, _, value] => call "Rational.negate" [value] []
   | .const ``HAdd.hAdd _, [.const ``Rat _, _, _, _, augend, addend] =>
     call "Rational.sum" [augend, addend] []
@@ -98,7 +97,7 @@ partial def expressionOf (packageNamespace : Lean.Name) (expression : Lean.Expr)
   | .const ``HMul.hMul _, [.const ``Rat _, _, _, _, multiplicand, multiplier] =>
     call "Rational.multiply" [multiplicand, multiplier] []
   | .const ``Option.some _, [_, value] => call "Option.some" [value] []
-  | .const ``Option.none _, [_] => return (.call "Option.none" [], [])
+  | .const ``Option.none _, [_] => return ("Option.none()", [])
   | .const name _, arguments =>
     let typeName := fun (declaration : Lean.Name) ↦ String.join
       ((declaration.replacePrefix packageNamespace .anonymous).components.map fun component ↦
@@ -107,16 +106,17 @@ partial def expressionOf (packageNamespace : Lean.Name) (expression : Lean.Expr)
       if ExportTypeScript.tagAttribute.hasTag environment name.getPrefix then
         if let (.str _ field, some value) := (name, arguments[projection.numParams]?) then
           let (script, named) ← expressionOf packageNamespace value
-          return (.atom s!"{script.flat}.{field}", named)
+          return (s!"{script}.{field}", named)
     if let some (.ctorInfo constructor) := environment.find? name then
       if ExportTypeScript.tagAttribute.hasTag environment constructor.induct then
         let written ←
           (arguments.drop constructor.numParams).mapM (expressionOf packageNamespace)
         let fields :=
           (Lean.getStructureFields environment constructor.induct).toList.map (·.toString)
-        return (.call
-          s!"{← moduleAliasOf constructor.induct}.{(typeName constructor.induct).decapitalize}"
-          [.object (fields.zip (written.map Prod.fst))],
+        let values := (fields.zip (written.map Prod.fst)).map fun (field, value) ↦
+          s!"{field}: {value}"
+        return (s!"{← moduleAliasOf constructor.induct}.\
+            {(typeName constructor.induct).decapitalize}(\{ {", ".intercalate values} })",
           constructor.induct :: written.flatMap Prod.snd)
     if ExportTypeScript.tagAttribute.hasTag environment name &&
         !Lean.isStructure environment name &&
@@ -129,12 +129,12 @@ partial def expressionOf (packageNamespace : Lean.Name) (expression : Lean.Expr)
 the theory whose modules of the package it names, or fails with the reason where the type has
 none. -/
 partial def arbitraryOf (packageNamespace : Lean.Name) (type : Lean.Expr) :
-    Lean.MetaM (Script × List Lean.Name) := do
+    Lean.MetaM (String × List Lean.Name) := do
   match type with
-  | .const ``Rat _ => return (.atom "Schema.Rational", [])
+  | .const ``Rat _ => return ("Schema.Rational", [])
   | .app (.const ``Option _) element =>
     let (script, named) ← arbitraryOf packageNamespace element
-    return (.call "Schema.Option" [script], named)
+    return (s!"Schema.Option({script})", named)
   | .const name _ =>
     unless ExportTypeScript.tagAttribute.hasTag (← Lean.getEnv) name &&
         Lean.isStructure (← Lean.getEnv) name do
@@ -142,16 +142,16 @@ partial def arbitraryOf (packageNamespace : Lean.Name) (type : Lean.Expr) :
     let typeName := String.join
       ((name.replacePrefix packageNamespace .anonymous).components.map fun component ↦
         component.toString.capitalize)
-    return (.atom s!"{← moduleAliasOf name}.{typeName}", [name])
+    return (s!"{← moduleAliasOf name}.{typeName}", [name])
   | _ => Lean.throwError m!"`{type}` has no schema that a test can draw from."
 
 /-- Gives the test of TypeScript that a theorem of the theory marked `export_typescript` takes,
-indented in a block of tests, with the declarations of the theory whose modules of the package it
-names, or fails with the reason where the theorem has none. -/
+with the declarations of the theory whose modules of the package it names, or fails with the reason
+where the theorem has none. -/
 def testOf (packageNamespace name : Lean.Name) : Lean.MetaM (String × List Lean.Name) := do
   Lean.Meta.forallTelescope (← Lean.getConstInfo name).type fun variables conclusion ↦ do
-    let mut arbitraries : List (String × Script) := []
-    let mut conditions : List Script := []
+    let mut arbitraries : List (String × String) := []
+    let mut conditions : List String := []
     let mut named : List Lean.Name := []
     for binder in variables do
       let type ← Lean.Meta.inferType binder
@@ -160,12 +160,12 @@ def testOf (packageNamespace name : Lean.Name) : Lean.MetaM (String × List Lean
         | .const ``Ne _, [_, left, right] =>
           let (leftScript, leftNamed) ← expressionOf packageNamespace left
           let (rightScript, rightNamed) ← expressionOf packageNamespace right
-          conditions := conditions ++ [.call "Equal.equals" [leftScript, rightScript]]
+          conditions := conditions ++ [s!"Equal.equals({leftScript}, {rightScript})"]
           named := named ++ leftNamed ++ rightNamed
         | .const ``Eq _, [_, left, right] =>
           let (leftScript, leftNamed) ← expressionOf packageNamespace left
           let (rightScript, rightNamed) ← expressionOf packageNamespace right
-          conditions := conditions ++ [.call "!Equal.equals" [leftScript, rightScript]]
+          conditions := conditions ++ [s!"!Equal.equals({leftScript}, {rightScript})"]
           named := named ++ leftNamed ++ rightNamed
         | _, _ =>
           Lean.throwError m!"`{type}` is no hypothesis that a test can skip the values of."
@@ -181,30 +181,16 @@ def testOf (packageNamespace name : Lean.Name) : Lean.MetaM (String × List Lean
       | Lean.throwError m!"`{conclusion}` is no equation that a test can check."
     let (leftScript, leftNamed) ← expressionOf packageNamespace left
     let (rightScript, rightNamed) ← expressionOf packageNamespace right
-    let spaces := fun (count : Nat) ↦ String.ofList (List.replicate count ' ')
-    let bodyAt := fun (indentation : Nat) ↦
-      String.join (conditions.map fun condition ↦
-        s!"{spaces indentation}if ({condition.render indentation (indentation + 4) 3}) \{\n" ++
-          s!"{spaces (indentation + 2)}return;\n{spaces indentation}}\n") ++
-      s!"{spaces indentation}const actual = \
-        {leftScript.render indentation (indentation + 15) 1};\n" ++
-      s!"{spaces indentation}const expected = \
-        {rightScript.render indentation (indentation + 17) 1};\n" ++
-      s!"{spaces indentation}expect(actual).toEqual(expected);\n"
+    let body :=
+      String.join (conditions.map fun condition ↦ s!"if ({condition}) \{\nreturn;\n}\n") ++
+      s!"const actual = {leftScript};\nconst expected = {rightScript};\n\
+        expect(actual).toEqual(expected);\n"
     let testName := (name.replacePrefix packageNamespace .anonymous).toString
-    let (function, arguments, parameters) :=
-      if arbitraries.isEmpty then ("it", [s!"'{testName}'"], "()") else
-        ("it.prop", [s!"'{testName}'", (Script.object arbitraries).flat],
-          s!"(\{ {", ".intercalate (arbitraries.map Prod.fst)} })")
-    let opening := s!"  {function}({", ".intercalate arguments}, {parameters} => \{"
-    -- Oxfmt keeps the arguments on the line of the call while the line holds at most 100 columns,
-    -- and otherwise takes every argument on a line of its own.
-    let test := if opening.length ≤ 100 then s!"{opening}\n{bodyAt 4}  });\n" else
-      let laidOut := if arbitraries.isEmpty then [s!"'{testName}'"] else
-        [s!"'{testName}'", (Script.object arbitraries).render 4 4 1]
-      s!"  {function}(\n{String.join (laidOut.map (s!"    {·},\n"))}    {parameters} => \
-        \{\n{bodyAt 6}    },\n  );\n"
-    return (s!"{← commentOf name "  "}{test}", named ++ leftNamed ++ rightNamed)
+    let test := if arbitraries.isEmpty then s!"it('{testName}', () => \{\n{body}});\n" else
+      let schemas := arbitraries.map fun (binderName, schema) ↦ s!"{binderName}: {schema}"
+      s!"it.prop('{testName}', \{ {", ".intercalate schemas} }, \
+        (\{ {", ".intercalate (arbitraries.map Prod.fst)} }) => \{\n{body}});\n"
+    return (s!"{← commentOf name}{test}", named ++ leftNamed ++ rightNamed)
 
 /-- Gives the file of tests of TypeScript that holds the tests of the theorems of a module of the
 theory of a package, which imports the modules of the package that the tests name. -/

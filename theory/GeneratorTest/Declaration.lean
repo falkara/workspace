@@ -9,11 +9,10 @@ meta import Generator.Declaration
 
 The module defines the checks of the declarations of TypeScript that the declarations of the theory
 take: a structure takes a branded schema with its fields, the type the schema decodes, and a
-constructor that brands a value, a function takes a type of its signature, on one line or, where
-the line is longer than 100 columns, with every parameter on a line of its own, and a value takes a
+constructor that brands a value, a function takes a type of its signature, and a value takes a
 constant that holds the value, a rational number as an integer or a quotient and a structure as its
-constructor, on one line or with every field on a line of its own, all named without the namespace
-of their module and with their documentation comments. A value of a type with no value in
+constructor, all named without the namespace of their module and with their documentation
+comments. A value of a type with no value in
 TypeScript, a value of a structure of another module, and a declaration without the mark
 `export_typescript` take none.
 
@@ -22,12 +21,8 @@ TypeScript, a value of a structure of another module, and a declaration without 
 - `Point`: the structure that the checks write.
 - `Point.sum`: the function that the checks write, a function of a structure.
 - `pointOf`: the function that the checks write.
-- `pointBetween`: the function that the checks write with every parameter on a line of its own,
-  as its type is longer than a line.
 - `origin`: the rational value that the checks write.
 - `corner`: the value of a structure that the checks write.
-- `farthestCornerOfTheSquare`: the value of a structure that the checks write with every field on
-  a line of its own, as the value is longer than a line.
 - `missingCoordinate`: the value that the checks refuse, as an option has no value in TypeScript.
 - `unitCoordinate`: the value that the checks refuse, as its structure lies in another module.
 - `unmarkedFunction`: the function that the checks leave unmarked.
@@ -58,13 +53,6 @@ def pointOf (coordinate : Rat) : Option Point :=
 
 attribute [export_typescript] pointOf
 
-/-- The function that the checks write with every parameter on a line of its own, as its type is
-longer than a line. -/
-def pointBetween (firstCoordinateOfThePoint secondCoordinateOfThePoint : Rat) : Option Point :=
-  some ⟨firstCoordinateOfThePoint, secondCoordinateOfThePoint⟩
-
-attribute [export_typescript] pointBetween
-
 /-- The rational value that the checks write. -/
 def origin : Rat :=
   0
@@ -76,13 +64,6 @@ def corner : Point :=
   ⟨1 / 2, -3⟩
 
 attribute [export_typescript] corner
-
-/-- The value of a structure that the checks write with every field on a line of its own, as the
-value is longer than a line. -/
-def farthestCornerOfTheSquare : Point :=
-  ⟨123456789 / 1000, -987654321 / 1000⟩
-
-attribute [export_typescript] farthestCornerOfTheSquare
 
 /-- The value that the checks refuse, as an option has no value in TypeScript. -/
 def missingCoordinate : Option Rat :=
@@ -105,10 +86,10 @@ end Geometry
 /--
 info: /** A schema of the structure that the checks write. */
 export const Point = Schema.Struct({
-  /** The first coordinate of the point. */
-  x: Schema.Rational,
-  /** The second coordinate of the point. */
-  y: Schema.Rational,
+/** The first coordinate of the point. */
+x: Schema.Rational,
+/** The second coordinate of the point. */
+y: Schema.Rational,
 }).pipe(Schema.brand('Point'));
 
 /** The structure that the checks write. */
@@ -138,17 +119,6 @@ export type PointOf = (coordinate: Rational.Rational) => Option.Option<Point>;
   IO.print (← Generator.declarationOf `Geometry ``Geometry.pointOf)
 
 /--
-info: /** The function that the checks write with every parameter on a line of its own, as its type is longer than a line. */
-export type PointBetween = (
-  firstCoordinateOfThePoint: Rational.Rational,
-  secondCoordinateOfThePoint: Rational.Rational,
-) => Option.Option<Point>;
--/
-#guard_msgs in
-#eval show Lean.MetaM Unit from do
-  IO.print (← Generator.declarationOf `Geometry ``Geometry.pointBetween)
-
-/--
 info: /** The rational value that the checks write. */
 export const origin: Rational.Rational = Rational.fromBigInt(0n);
 -/
@@ -163,17 +133,6 @@ export const corner: Point = point({ x: Rational.makeUnsafe(1n, 2n), y: Rational
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
   IO.print (← Generator.declarationOf `Geometry ``Geometry.corner)
-
-/--
-info: /** The value of a structure that the checks write with every field on a line of its own, as the value is longer than a line. */
-export const farthestCornerOfTheSquare: Point = point({
-  x: Rational.makeUnsafe(123456789n, 1000n),
-  y: Rational.makeUnsafe(-987654321n, 1000n),
-});
--/
-#guard_msgs in
-#eval show Lean.MetaM Unit from do
-  IO.print (← Generator.declarationOf `Geometry ``Geometry.farthestCornerOfTheSquare)
 
 /-- error: `Geometry.missingCoordinate` has no value in TypeScript, as `Option Rat` has none. -/
 #guard_msgs in

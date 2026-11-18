@@ -58,15 +58,15 @@ attribute [cite "sumOfColumns" tableOfTheChecks] tableDeclaration
 def uncitedDeclaration : Nat := 0
 
 /--
-info:   /**
-   * The declaration that cites an entry of the vocabulary.
-   *
-   * @see https://example.com/term/17-23-053
-   */
+info: /**
+ * The declaration that cites an entry of the vocabulary.
+ *
+ * @see https://example.com/term/17-23-053
+ */
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
-  IO.print (← Generator.commentOf ``entryDeclaration "  ")
+  IO.print (← Generator.commentOf ``entryDeclaration)
 
 /--
 info: /**
@@ -77,9 +77,9 @@ info: /**
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
-  IO.print (← Generator.commentOf ``tableDeclaration "")
+  IO.print (← Generator.commentOf ``tableDeclaration)
 
 /-- info: /** A schema of the declaration that cites no work. */ -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
-  IO.print (← Generator.commentOf ``uncitedDeclaration "" (some "A schema of"))
+  IO.print (← Generator.commentOf ``uncitedDeclaration (some "A schema of"))

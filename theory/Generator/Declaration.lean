@@ -5,7 +5,6 @@ Authors: Filip Falcon
 -/
 module
 
-public import Generator.Script
 import Generator.Comment
 import Generator.Type
 public import Lean.Meta.Basic
@@ -81,10 +80,8 @@ a rational number of Lean has a positive denominator.
 A value takes a structure of its own module alone, as a file imports the declarations of another
 module as types and schemas and never their constructors.
 
-A declaration takes the form that oxfmt gives it, so the generated file passes the check of
-formatting of the repository unchanged. A function type longer than 100 columns, the width that
-oxfmt breaks at, takes every parameter on a line of its own, and a value is laid out by the module
-`Script`.
+A declaration takes a line of its own for every comment and every field, and oxfmt formats the rest
+of the generated file after the generator writes it.
 -/
 
 public section
@@ -115,14 +112,14 @@ def integerOf (expression : Lean.Expr) : Lean.MetaM Int := do
 theory, as the kernel of Lean reduces it, for a declaration of a module of the theory, or fails with
 the reason where the type has no value in TypeScript. -/
 partial def valueOf (moduleNamespace name : Lean.Name) (type expression : Lean.Expr) :
-    Lean.MetaM Script := do
+    Lean.MetaM String := do
   let environment ← Lean.getEnv
   match type with
   | .const ``Rat _ =>
     let numerator ← integerOf (Lean.mkApp (Lean.mkConst ``Rat.num) expression)
     let denominator ← naturalOf (Lean.mkApp (Lean.mkConst ``Rat.den) expression)
-    if denominator == 1 then return .call "Rational.fromBigInt" [.atom s!"{numerator}n"]
-    return .call "Rational.makeUnsafe" [.atom s!"{numerator}n", .atom s!"{denominator}n"]
+    if denominator == 1 then return s!"Rational.fromBigInt({numerator}n)"
+    return s!"Rational.makeUnsafe({numerator}n, {denominator}n)"
   | .const structureName _ =>
     unless ExportTypeScript.tagAttribute.hasTag environment structureName &&
         Lean.isStructure environment structureName do
@@ -136,13 +133,12 @@ partial def valueOf (moduleNamespace name : Lean.Name) (type expression : Lean.E
       let .forallE _ _ fieldType _ := (← Lean.getConstInfo (structureName ++ field)).type
         | Lean.throwError
             m!"`{structureName}` has no value in TypeScript, as it takes parameters."
-      return (field.toString,
-        ← valueOf moduleNamespace name fieldType
-          (Lean.mkApp (Lean.mkConst (structureName ++ field)) expression))
+      return s!"{field}: {← valueOf moduleNamespace name fieldType
+        (Lean.mkApp (Lean.mkConst (structureName ++ field)) expression)}"
     let constructorName :=
       (String.join ((structureName.replacePrefix moduleNamespace .anonymous).components.map
         fun component ↦ component.toString.capitalize)).decapitalize
-    return .call constructorName [.object fields]
+    return s!"{constructorName}(\{ {", ".intercalate fields} })"
   | _ => Lean.throwError m!"`{name}` has no value in TypeScript, as `{type}` has none."
 
 /-- Gives the declaration of TypeScript that a declaration of the theory marked `export_typescript`
@@ -164,12 +160,11 @@ def declarationOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
     if Lean.isStructure environment name then
       if ← hasSchema moduleNamespace name then
         let fields ← (← fieldTypesOf name parameters).mapM fun (field, fieldType) ↦ do
-          return s!"{← commentOf (name ++ field) "  "}  \
-            {field}: {← schemaOf moduleNamespace fieldType},\n"
-        return s!"{← commentOf name "" (some "A schema of")}export const {typeName} = \
+          return s!"{← commentOf (name ++ field)}{field}: {← schemaOf moduleNamespace fieldType},\n"
+        return s!"{← commentOf name (some "A schema of")}export const {typeName} = \
             Schema.Struct(\{\n{String.join fields}}).pipe(Schema.brand('{typeName}'));\n\n" ++
-          s!"{← commentOf name ""}export type {typeName} = typeof {typeName}.Type;\n\n" ++
-          s!"{← commentOf name "" (some "Brands without a check")}export const \
+          s!"{← commentOf name}export type {typeName} = typeof {typeName}.Type;\n\n" ++
+          s!"{← commentOf name (some "Brands without a check")}export const \
             {typeName.decapitalize} = Brand.nominal<{typeName}>();\n"
     let variances ← variancesOf name
     let generics := if names.isEmpty then "" else
@@ -181,54 +176,36 @@ def declarationOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
       | false, false => parameter)}>"
     if Lean.isStructure environment name then
       let fields ← (← fieldTypesOf name parameters).mapM fun (field, fieldType) ↦ do
-        return s!"{← commentOf (name ++ field) "  "}  \
-          readonly {field}: {← typeOf moduleNamespace fieldType};\n"
-      let line := s!"export const {typeName.decapitalize} = {arguments}(fields: \
-        {typeName}{arguments}): {typeName}{arguments} => fields;"
-      -- Oxfmt breaks a line longer than 100 columns.
-      let constructor := if line.length ≤ 100 then s!"{line}\n" else
-        s!"export const {typeName.decapitalize} = {arguments}(\n  fields: \
-          {typeName}{arguments},\n): {typeName}{arguments} => fields;\n"
-      return s!"{← commentOf name ""}export interface {typeName}{generics} \
+        return s!"{← commentOf (name ++ field)}readonly {field}: \
+          {← typeOf moduleNamespace fieldType};\n"
+      return s!"{← commentOf name}export interface {typeName}{generics} \
           \{\n{String.join fields}}\n\n" ++
-        s!"{← commentOf name "" (some "Creates")}{constructor}"
+        s!"{← commentOf name (some "Creates")}export const {typeName.decapitalize} = \
+          {arguments}(fields: {typeName}{arguments}): {typeName}{arguments} => fields;\n"
     if let some (base, condition) ← refinementOf name then
       let conditionName :=
         (String.join ((condition.replacePrefix moduleNamespace .anonymous).components.map
           fun component ↦ component.toString.capitalize)).decapitalize
-      let schema := Script.call s!"{← schemaOf moduleNamespace base}.pipe"
-        [.call "Schema.check" [.call "Schema.makeFilter" [.atom conditionName]],
-          .call "Schema.brand" [.atom s!"'{typeName}'"]]
-      let opening := s!"export const {typeName} = "
-      return s!"{← commentOf name "" (some "A schema of")}{opening}\
-          {schema.render 0 opening.length 1};\n\n" ++
-        s!"{← commentOf name ""}export type {typeName} = typeof {typeName}.Type;\n"
+      return s!"{← commentOf name (some "A schema of")}export const {typeName} = \
+          {← schemaOf moduleNamespace base}.pipe(Schema.check(Schema.makeFilter(\
+          {conditionName})), Schema.brand('{typeName}'));\n\n" ++
+        s!"{← commentOf name}export type {typeName} = typeof {typeName}.Type;\n"
     if rest matches .sort _ then
       let some value := information.value?
         | Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory gives the \
             type no value."
-      let body := value.beta parameters
-      let line := s!"export type {typeName}{generics} = {← typeOf moduleNamespace body};"
-      -- Oxfmt breaks a line longer than 100 columns, a function type before its parameters.
-      unless line.length > 100 && body matches .forallE .. do
-        return s!"{← commentOf name ""}{line}\n"
-      let (signature, result) ← signatureOf moduleNamespace [] body
-      return s!"{← commentOf name ""}export type {typeName}{generics} = (\n\
-        {String.join (signature.map (s!"  {·},\n"))}) => {result};\n"
+      return s!"{← commentOf name}export type {typeName}{generics} = \
+        {← typeOf moduleNamespace (value.beta parameters)};\n"
     match rest with
     | .forallE .. =>
       let (signature, result) ← signatureOf moduleNamespace [] rest
-      let line :=
-        s!"export type {typeName} = {arguments}({", ".intercalate signature}) => {result};"
-      -- Oxfmt breaks a line longer than 100 columns.
-      if line.length ≤ 100 then return s!"{← commentOf name ""}{line}\n"
-      return s!"{← commentOf name ""}export type {typeName} = {arguments}(\n\
-        {String.join (signature.map (s!"  {·},\n"))}) => {result};\n"
+      return s!"{← commentOf name}export type {typeName} = \
+        {arguments}({", ".intercalate signature}) => {result};\n"
     | type =>
       unless names.isEmpty do
         Lean.throwError m!"`{name}` has no value in TypeScript, as it takes type parameters."
-      let value ← valueOf moduleNamespace name type (Lean.mkConst name)
-      let opening := s!"export const {typeName.decapitalize}: {← typeOf moduleNamespace type} = "
-      return s!"{← commentOf name ""}{opening}{value.render 0 opening.length 1};\n"
+      return s!"{← commentOf name}export const {typeName.decapitalize}: \
+        {← typeOf moduleNamespace type} = \
+        {← valueOf moduleNamespace name type (Lean.mkConst name)};\n"
 
 end Generator
