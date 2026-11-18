@@ -1,4 +1,4 @@
-// Written by the generator of the theory from `Presentation.Colorimetry.Tristimulus`, so every change by hand is lost when the generator runs.
+// Written by the generator of the theory from `Falkara.Presentation.Colorimetry.Tristimulus`, so every change by hand is lost when the generator runs.
 
 import { Brand, Rational, Schema } from 'effect';
 

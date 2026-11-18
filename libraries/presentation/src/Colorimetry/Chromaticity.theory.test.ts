@@ -1,4 +1,4 @@
-// Written by the generator of the theory from `Presentation.Colorimetry.Chromaticity`, so every change by hand is lost when the generator runs.
+// Written by the generator of the theory from `Falkara.Presentation.Colorimetry.Chromaticity`, so every change by hand is lost when the generator runs.
 
 import { describe, expect, it } from '@effect/vitest';
 import { Equal, Rational, Schema } from 'effect';
