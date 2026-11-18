@@ -41,9 +41,13 @@ TypeScript, and the generator refuses it.
   with the reason where it reduces to none.
 - `integerOf`: gives the integer that the kernel of Lean reduces an expression to, or fails with
   the reason where it reduces to none.
-- `valueOf`: gives the expression of TypeScript that writes the value of an expression of a type of
-  the theory, as the kernel of Lean reduces it, for a declaration of a module of the theory, or
-  fails with the reason where the type has no value in TypeScript.
+- `Value`: a value of the theory as the kernel of Lean reduces it.
+- `valueOf`: gives the value of an expression of a type of the theory, as the kernel of Lean
+  reduces it, for a declaration of the theory, or fails with the reason where the type has no
+  value.
+- `initializerOf`: gives the expression of TypeScript that writes a value for a declaration of a
+  module of the theory, or fails with the reason where the value takes a structure of another
+  module.
 - `declarationOf`: gives the declaration of TypeScript that a declaration of the theory marked
   `export_typescript` takes, named without the namespace of its module, or fails with the reason
   where the declaration has none.
@@ -72,7 +76,9 @@ A declaration takes the name that the module `Name` gives it, such as `Chromatic
 the declaration.
 
 A value is reduced by the kernel of Lean rather than computed by the compiler, so the file holds the
-value that the kernel checks every theorem of the value against.
+value that the kernel checks every theorem of the value against. The value is reduced apart from
+the expression of TypeScript that writes it, so the reduction holds for a language other than
+TypeScript as well.
 
 A rational number takes `Rational.makeUnsafe` of Effect, which throws only on a denominator of 0, as
 a rational number of Lean has a positive denominator.
@@ -108,36 +114,50 @@ def integerOf (expression : Lean.Expr) : Lean.MetaM Int := do
   | .app (.const ``Int.negSucc _) value => return -((← naturalOf value) : Int) - 1
   | reduced => Lean.throwError m!"`{expression}` reduces to `{reduced}`, which is no integer."
 
-/-- Gives the expression of TypeScript that writes the value of an expression of a type of the
-theory, as the kernel of Lean reduces it, for a declaration of a module of the theory, or fails with
-the reason where the type has no value in TypeScript. -/
-partial def valueOf (moduleNamespace name : Lean.Name) (type expression : Lean.Expr) :
-    Lean.MetaM String := do
+/-- A value of the theory as the kernel of Lean reduces it. -/
+inductive Value where
+  /-- A rational number by its numerator and its positive denominator. -/
+  | rational (numerator : Int) (denominator : Nat)
+  /-- A structure marked `export_typescript` by its name and the value of every field. -/
+  | structure (name : Lean.Name) (fields : List (Lean.Name × Value))
+
+/-- Gives the value of an expression of a type of the theory, as the kernel of Lean reduces it, for
+a declaration of the theory, or fails with the reason where the type has no value. -/
+partial def valueOf (name : Lean.Name) (type expression : Lean.Expr) : Lean.MetaM Value := do
   let environment ← Lean.getEnv
   match type with
   | .const ``Rat _ =>
-    let numerator ← integerOf (Lean.mkApp (Lean.mkConst ``Rat.num) expression)
-    let denominator ← naturalOf (Lean.mkApp (Lean.mkConst ``Rat.den) expression)
-    if denominator == 1 then return s!"Rational.fromBigInt({numerator}n)"
-    return s!"Rational.makeUnsafe({numerator}n, {denominator}n)"
+    return .rational (← integerOf (Lean.mkApp (Lean.mkConst ``Rat.num) expression))
+      (← naturalOf (Lean.mkApp (Lean.mkConst ``Rat.den) expression))
   | .const structureName _ =>
     unless ExportTypeScript.tagAttribute.hasTag environment structureName &&
         Lean.isStructure environment structureName do
       Lean.throwError m!"`{name}` has no value in TypeScript, as `{structureName}` is no \
         structure marked `export_typescript`."
-    unless (environment.getModuleIdxFor? structureName).map (·.toNat) ==
-        (environment.getModuleIdxFor? name).map (·.toNat) do
-      Lean.throwError m!"`{name}` has no value in TypeScript, as `{structureName}` lies in \
-        another module, whose constructor the file never imports."
     let fields ← (Lean.getStructureFields environment structureName).toList.mapM fun field ↦ do
       let .forallE _ _ fieldType _ := (← Lean.getConstInfo (structureName ++ field)).type
         | Lean.throwError
             m!"`{structureName}` has no value in TypeScript, as it takes parameters."
-      return s!"{field}: {← valueOf moduleNamespace name fieldType
-        (Lean.mkApp (Lean.mkConst (structureName ++ field)) expression)}"
-    return s!"{camelCaseOf (wordsOf moduleNamespace structureName)}\
-      (\{ {", ".intercalate fields} })"
+      return (field,
+        ← valueOf name fieldType (Lean.mkApp (Lean.mkConst (structureName ++ field)) expression))
+    return .structure structureName fields
   | _ => Lean.throwError m!"`{name}` has no value in TypeScript, as `{type}` has none."
+
+/-- Gives the expression of TypeScript that writes a value for a declaration of a module of the
+theory, or fails with the reason where the value takes a structure of another module. -/
+partial def initializerOf (moduleNamespace name : Lean.Name) : Value → Lean.MetaM String
+  | .rational numerator 1 => return s!"Rational.fromBigInt({numerator}n)"
+  | .rational numerator denominator => return s!"Rational.makeUnsafe({numerator}n, {denominator}n)"
+  | .structure structureName fields => do
+    let environment ← Lean.getEnv
+    unless (environment.getModuleIdxFor? structureName).map (·.toNat) ==
+        (environment.getModuleIdxFor? name).map (·.toNat) do
+      Lean.throwError m!"`{name}` has no value in TypeScript, as `{structureName}` lies in \
+        another module, whose constructor the file never imports."
+    let written ← fields.mapM fun (field, value) ↦ do
+      return s!"{field}: {← initializerOf moduleNamespace name value}"
+    return s!"{camelCaseOf (wordsOf moduleNamespace structureName)}\
+      (\{ {", ".intercalate written} })"
 
 /-- Gives the declaration of TypeScript that a declaration of the theory marked `export_typescript`
 takes, named without the namespace of its module, or fails with the reason where the declaration
@@ -200,6 +220,6 @@ def declarationOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
         Lean.throwError m!"`{name}` has no value in TypeScript, as it takes type parameters."
       return s!"{← commentOf name}export const {valueName}: \
         {← typeOf moduleNamespace rest} = \
-        {← valueOf moduleNamespace name rest (Lean.mkConst name)};\n"
+        {← initializerOf moduleNamespace name (← valueOf name rest (Lean.mkConst name))};\n"
 
 end Generator
