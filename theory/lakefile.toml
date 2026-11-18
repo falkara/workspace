@@ -1,35 +1,37 @@
 name = "falkara"
-leanOptions = { warningAsError = true, autoImplicit = false, linter.missingDocs = true, linter.extra = true }
-testDriver = "Test"
+license = "MIT AND CC-BY-SA-4.0"
+reservoir = false
+defaultTargets = ["Falkara"]
+testDriver = "FalkaraTest"
+lintDriver = "batteries/runLinter"
+
+[leanOptions]
+autoImplicit = false
+maxSynthPendingDepth = 3
+linter.missingDocs = true
+pp.unicode.fun = true
+weak.linter.mathlibStandardSet = true
+weak.linter.style.header.license = "Released under MIT license as described in the file LICENSE."
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.36.0"
 
 [[lean_lib]]
-name = "Citation"
-srcDir = "Source"
+name = "Falkara"
 
 [[lean_lib]]
-name = "ExportTypeScript"
-srcDir = "Source"
+name = "FalkaraTest"
+globs = ["FalkaraTest.+"]
 
 [[lean_lib]]
 name = "Generator"
-srcDir = "Source"
-globs = ["Generator.+"]
 
 [[lean_lib]]
-name = "Presentation"
-srcDir = "Source"
-globs = ["Presentation.+"]
-
-[[lean_lib]]
-name = "References"
-srcDir = "Source"
-
-[[lean_lib]]
-name = "Test"
-srcDir = "."
-globs = ["Test.+"]
+name = "GeneratorTest"
+globs = ["GeneratorTest.+"]
 
 [[lean_exe]]
 name = "generator"
-srcDir = "Source"
 root = "Generator.Main"
