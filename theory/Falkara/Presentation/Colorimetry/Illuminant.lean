@@ -69,6 +69,7 @@ structure MonochromaticComponent where
   /-- The spectral power at the wavelength of the component relative to that at 560 nm, scaled so
   that the value at 560 nm is 100. -/
   relativeSpectralPower : ℚ
+  deriving DecidableEq
 
 attribute [cite "columnHeaders" cie2019standardIlluminantD65] MonochromaticComponent
 attribute [cite "lambda" cie2019standardIlluminantD65] MonochromaticComponent.wavelength

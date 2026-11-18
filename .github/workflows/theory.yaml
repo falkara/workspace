@@ -37,6 +37,10 @@ jobs:
         run: |
           lake build --wfail GeneratorTest
           lake exe runLinter Generator
+      - name: Lint the checks
+        # The checks have no root module, so the step names every module of their libraries, which the lint driver never lints.
+        working-directory: theory
+        run: find FalkaraTest GeneratorTest -name '*.lean' | sed 's/\.lean$//; s|/|.|g' | sort | xargs lake exe runLinter
       - name: Check that the root modules import every module
         # The checks declare the same names in several modules, so their library has no root module, as the tests of Mathlib have none.
         working-directory: theory

@@ -40,8 +40,6 @@ public section
 
 namespace Falkara.Presentation.Colorimetry
 
-deriving instance DecidableEq for MonochromaticStimulus
-
 /-- The sum of the wavelengths and the sum of the values of each color-matching function equal the
 validation values of the data table, $\sum \lambda = 280\,245$,
 $\sum \bar{x}(\lambda) = 106.865\,469\,489\,595$,

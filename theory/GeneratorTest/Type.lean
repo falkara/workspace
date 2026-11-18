@@ -53,6 +53,7 @@ structure UnmarkedStructure where
   Generator.typeOf .anonymous (← Lean.Elab.Term.elabType (← `(List Rat)))
 
 /-- The function whose type the checks write with a named parameter. -/
+@[nolint unusedArguments]
 def namedFunction : (wavelength : Rat) → Option (Array MarkedStructure) :=
   fun _ ↦ none
 

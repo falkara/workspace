@@ -64,6 +64,7 @@ structure MonochromaticStimulus where
   yBar : ℚ
   /-- The value of the color-matching function $\bar{z}$ at the wavelength of the stimulus. -/
   zBar : ℚ
+  deriving DecidableEq
 
 attribute [cite "columnHeaders" cie2019colorMatchingFunctions] MonochromaticStimulus
 attribute [cite "lambda" cie2019colorMatchingFunctions] MonochromaticStimulus.wavelength

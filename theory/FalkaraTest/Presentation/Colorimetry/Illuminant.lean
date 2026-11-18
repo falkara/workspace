@@ -40,8 +40,6 @@ public section
 
 namespace Falkara.Presentation.Colorimetry
 
-deriving instance DecidableEq for MonochromaticComponent
-
 /-- The sum of the wavelengths and the sum of the values of the relative spectral distribution equal
 the validation values of the data table, $\sum \lambda = 300\,015$ and
 $\sum S(\lambda) = 40\,852.204$. -/

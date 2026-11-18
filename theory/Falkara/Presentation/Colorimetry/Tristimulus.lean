@@ -109,6 +109,7 @@ structure Tristimulus where
   Y : ℚ
   /-- The amount of the reference color stimulus $[Z]$. -/
   Z : ℚ
+  deriving DecidableEq
 
 attribute [cite "17-23-045" cie2020internationalLightingVocabulary] Tristimulus
 attribute [cite "17-23-038" cie2020internationalLightingVocabulary] Tristimulus.X
