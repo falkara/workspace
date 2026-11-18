@@ -5,9 +5,9 @@ Authors: Filip Falcon
 -/
 module
 
-public import Lean.Meta.Basic
 import Lean.Meta.InferType
 import Generator.Comment
+public import Generator.Import
 import Generator.Path
 import Generator.Type
 
@@ -75,7 +75,7 @@ def moduleAliasOf (name : Lean.Name) : Lean.MetaM String := do
 of the theory whose modules of the package it names, or fails with the reason where the expression
 has none. -/
 partial def expressionOf (packageNamespace : Lean.Name) (expression : Lean.Expr) :
-    Lean.MetaM (String × List Lean.Name) := do
+    TypeScriptM (String × List Lean.Name) := do
   let environment ← Lean.getEnv
   if let .fvar binder := expression then
     return ((← binder.getUserName).toString, [])
@@ -85,18 +85,20 @@ partial def expressionOf (packageNamespace : Lean.Name) (expression : Lean.Expr)
     let written ← operands.mapM (expressionOf packageNamespace)
     return (s!"{function}({", ".intercalate (written.map Prod.fst)})",
       named ++ written.flatMap Prod.snd)
+  let callEffect := fun (module function : String) (operands : List Lean.Expr) ↦ do
+    call (← effectNameOf module function .value) operands []
   match expression.getAppFn, expression.getAppArgs.toList with
   | .const ``OfNat.ofNat _, [.const ``Rat _, .lit (.natVal value), _] =>
-    return (s!"Rational.fromBigInt({value}n)", [])
-  | .const ``Neg.neg _, [.const ``Rat _, _, value] => call "Rational.negate" [value] []
+    return (s!"{← effectNameOf "Rational" "fromBigInt" .value}({value}n)", [])
+  | .const ``Neg.neg _, [.const ``Rat _, _, value] => callEffect "Rational" "negate" [value]
   | .const ``HAdd.hAdd _, [.const ``Rat _, _, _, _, augend, addend] =>
-    call "Rational.sum" [augend, addend] []
+    callEffect "Rational" "sum" [augend, addend]
   | .const ``HSub.hSub _, [.const ``Rat _, _, _, _, minuend, subtrahend] =>
-    call "Rational.subtract" [minuend, subtrahend] []
+    callEffect "Rational" "subtract" [minuend, subtrahend]
   | .const ``HMul.hMul _, [.const ``Rat _, _, _, _, multiplicand, multiplier] =>
-    call "Rational.multiply" [multiplicand, multiplier] []
-  | .const ``Option.some _, [_, value] => call "Option.some" [value] []
-  | .const ``Option.none _, [_] => return ("Option.none()", [])
+    callEffect "Rational" "multiply" [multiplicand, multiplier]
+  | .const ``Option.some _, [_, value] => callEffect "Option" "some" [value]
+  | .const ``Option.none _, [_] => callEffect "Option" "none" []
   | .const name _, arguments =>
     let valueName := fun (declaration : Lean.Name) ↦
       camelCaseOf (wordsOf packageNamespace declaration)
@@ -127,12 +129,12 @@ partial def expressionOf (packageNamespace : Lean.Name) (expression : Lean.Expr)
 the theory whose modules of the package it names, or fails with the reason where the type has
 none. -/
 partial def arbitraryOf (packageNamespace : Lean.Name) (type : Lean.Expr) :
-    Lean.MetaM (String × List Lean.Name) := do
+    TypeScriptM (String × List Lean.Name) := do
   match type with
-  | .const ``Rat _ => return ("Schema.Rational", [])
+  | .const ``Rat _ => return (← effectNameOf "Schema" "Rational" .value, [])
   | .app (.const ``Option _) element =>
     let (script, named) ← arbitraryOf packageNamespace element
-    return (s!"Schema.Option({script})", named)
+    return (s!"{← effectNameOf "Schema" "Option" .value}({script})", named)
   | .const name _ =>
     unless ExportTypeScript.tagAttribute.hasTag (← Lean.getEnv) name &&
         (← kindOf name) matches .dataStructure do
@@ -143,7 +145,7 @@ partial def arbitraryOf (packageNamespace : Lean.Name) (type : Lean.Expr) :
 /-- Gives the test of TypeScript that a theorem of the theory marked `export_typescript` takes,
 with the declarations of the theory whose modules of the package it names, or fails with the reason
 where the theorem has none. -/
-def testOf (packageNamespace name : Lean.Name) : Lean.MetaM (String × List Lean.Name) := do
+def testOf (packageNamespace name : Lean.Name) : TypeScriptM (String × List Lean.Name) := do
   Lean.Meta.forallTelescope (← Lean.getConstInfo name).type fun variables conclusion ↦ do
     let mut arbitraries : List (String × String) := []
     let mut conditions : List String := []
@@ -155,12 +157,14 @@ def testOf (packageNamespace name : Lean.Name) : Lean.MetaM (String × List Lean
         | .const ``Ne _, [_, left, right] =>
           let (leftScript, leftNamed) ← expressionOf packageNamespace left
           let (rightScript, rightNamed) ← expressionOf packageNamespace right
-          conditions := conditions ++ [s!"Equal.equals({leftScript}, {rightScript})"]
+          conditions := conditions ++
+            [s!"{← effectNameOf "Equal" "equals" .value}({leftScript}, {rightScript})"]
           named := named ++ leftNamed ++ rightNamed
         | .const ``Eq _, [_, left, right] =>
           let (leftScript, leftNamed) ← expressionOf packageNamespace left
           let (rightScript, rightNamed) ← expressionOf packageNamespace right
-          conditions := conditions ++ [s!"!Equal.equals({leftScript}, {rightScript})"]
+          conditions := conditions ++
+            [s!"!{← effectNameOf "Equal" "equals" .value}({leftScript}, {rightScript})"]
           named := named ++ leftNamed ++ rightNamed
         | _, _ =>
           Lean.throwError m!"`{type}` is no hypothesis that a test can skip the values of."
@@ -192,14 +196,14 @@ theory of a package, which imports the modules of the package that the tests nam
 def testFileOf (theory module : Lean.Name) (packageNamespace : Lean.Name)
     (theorems : List Lean.Name) : Lean.MetaM String := do
   let environment ← Lean.getEnv
-  let tests ← theorems.mapM (testOf packageNamespace)
+  let (tests, records) ← (theorems.mapM (testOf packageNamespace)).run []
   let body := "\n".intercalate (tests.map Prod.fst)
   let named := (tests.flatMap Prod.snd).filterMap fun name ↦
     (environment.getModuleIdxFor? name).map (·.toNat)
   let modules := (named.eraseDups.mergeSort (· ≤ ·)).filterMap fun index ↦
     environment.header.moduleNames[index]?
-  let effectModules := ["Equal", "Option", "Rational", "Schema"].filter fun effectModule ↦
-    (body.splitOn s!"{effectModule}.").length > 1
+  -- A test names every module of Effect as a value, so the file imports each of them as a value.
+  let effectModules := (effectImportsOf records).map Prod.fst
   let effectImport := if effectModules.isEmpty then "" else
     s!"import \{ {", ".intercalate effectModules} } from 'effect';\n"
   let packageImports := String.join (← modules.mapM fun named ↦ do

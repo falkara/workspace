@@ -6,8 +6,8 @@ Authors: Filip Falcon
 module
 
 import Generator.Comment
+public import Generator.Import
 import Generator.Type
-public import Lean.Meta.Basic
 
 /-!
 # Declaration
@@ -145,9 +145,11 @@ partial def valueOf (name : Lean.Name) (type expression : Lean.Expr) : Lean.Meta
 
 /-- Gives the expression of TypeScript that writes a value for a declaration of a module of the
 theory, or fails with the reason where the value takes a structure of another module. -/
-partial def initializerOf (moduleNamespace name : Lean.Name) : Value → Lean.MetaM String
-  | .rational numerator 1 => return s!"Rational.fromBigInt({numerator}n)"
-  | .rational numerator denominator => return s!"Rational.makeUnsafe({numerator}n, {denominator}n)"
+partial def initializerOf (moduleNamespace name : Lean.Name) : Value → TypeScriptM String
+  | .rational numerator 1 => do
+    return s!"{← effectNameOf "Rational" "fromBigInt" .value}({numerator}n)"
+  | .rational numerator denominator => do
+    return s!"{← effectNameOf "Rational" "makeUnsafe" .value}({numerator}n, {denominator}n)"
   | .structure structureName fields => do
     let environment ← Lean.getEnv
     unless (environment.getModuleIdxFor? structureName).map (·.toNat) ==
@@ -162,7 +164,7 @@ partial def initializerOf (moduleNamespace name : Lean.Name) : Value → Lean.Me
 /-- Gives the declaration of TypeScript that a declaration of the theory marked `export_typescript`
 takes, named without the namespace of its module, or fails with the reason where the declaration
 has none. -/
-def declarationOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
+def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
   let environment ← Lean.getEnv
   unless ExportTypeScript.tagAttribute.hasTag environment name do
     Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never marks it \
@@ -188,10 +190,11 @@ def declarationOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
       let fields ← (← fieldTypesOf name parameters).mapM fun (field, fieldType) ↦ do
         return s!"{← commentOf (name ++ field)}{field}: {← schemaOf moduleNamespace fieldType},\n"
       return s!"{← commentOf name (some "A schema of")}export const {typeName} = \
-          Schema.Struct(\{\n{String.join fields}}).pipe(Schema.brand('{typeName}'));\n\n" ++
+          {← effectNameOf "Schema" "Struct" .value}(\{\n{String.join fields}}).pipe(\
+          {← effectNameOf "Schema" "brand" .value}('{typeName}'));\n\n" ++
         s!"{← commentOf name}export type {typeName} = typeof {typeName}.Type;\n\n" ++
         s!"{← commentOf name (some "Brands without a check")}export const \
-          {valueName} = Brand.nominal<{typeName}>();\n"
+          {valueName} = {← effectNameOf "Brand" "nominal" .value}<{typeName}>();\n"
     | .structure =>
       let fields ← (← fieldTypesOf name parameters).mapM fun (field, fieldType) ↦ do
         return s!"{← commentOf (name ++ field)}readonly {field}: \
@@ -202,8 +205,10 @@ def declarationOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
           {arguments}(fields: {typeName}{arguments}): {typeName}{arguments} => fields;\n"
     | .refinement base condition =>
       return s!"{← commentOf name (some "A schema of")}export const {typeName} = \
-          {← schemaOf moduleNamespace base}.pipe(Schema.check(Schema.makeFilter(\
-          {camelCaseOf (wordsOf moduleNamespace condition)})), Schema.brand('{typeName}'));\n\n" ++
+          {← schemaOf moduleNamespace base}.pipe({← effectNameOf "Schema" "check" .value}(\
+          {← effectNameOf "Schema" "makeFilter" .value}(\
+          {camelCaseOf (wordsOf moduleNamespace condition)})), \
+          {← effectNameOf "Schema" "brand" .value}('{typeName}'));\n\n" ++
         s!"{← commentOf name}export type {typeName} = typeof {typeName}.Type;\n"
     | .type =>
       let some value := information.value?

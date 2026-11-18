@@ -98,19 +98,17 @@ of the theory of a package, named without the namespace of the package. -/
 def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := do
   let environment ← Lean.getEnv
   let declarations ← markedDeclarationsOf module false
-  let body := "\n".intercalate (← declarations.mapM (declarationOf packageNamespace))
-  let imports := ["Brand", "Option", "Rational", "Schema"].filter fun module ↦
-    (body.splitOn s!"{module}.").length > 1
+  let (texts, records) ← (declarations.mapM (declarationOf packageNamespace)).run []
+  let body := "\n".intercalate texts
   let header := s!"// Written by the generator of the theory from `{module}`, so every change by \
     hand is lost when the generator runs.\n"
   -- A schema, a constructor, and a function such as `Rational.fromBigInt` are the values of the
   -- file, so a module the file names otherwise, as `Rational.Rational`, is imported as a type.
-  let valued := fun (module : String) ↦ ["Brand", "Schema"].contains module ||
-    ((body.splitOn s!"{module}.").drop 1).any fun rest ↦ rest.toList.head?.any Char.isLower
-  let importLine := if imports.isEmpty then "" else if imports.any valued then
-      s!"\nimport \{ {", ".intercalate (imports.map fun module ↦
-        if valued module then module else s!"type {module}")} } from 'effect';\n"
-    else s!"\nimport type \{ {", ".intercalate imports} } from 'effect';\n"
+  let imports := effectImportsOf records
+  let importLine := if imports.isEmpty then "" else if imports.any (·.snd == .value) then
+      s!"\nimport \{ {", ".intercalate (imports.map fun (module, usage) ↦
+        if usage == .value then module else s!"type {module}")} } from 'effect';\n"
+    else s!"\nimport type \{ {", ".intercalate (imports.map Prod.fst)} } from 'effect';\n"
   let kinds ← declarations.mapM fun name ↦ return (name, ← kindOf name)
   let fieldConstants := fun (name : Lean.Name) ↦
     (Lean.getStructureFields environment name).toList.flatMap fun field ↦

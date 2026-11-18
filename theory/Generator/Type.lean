@@ -6,8 +6,8 @@ Authors: Filip Falcon
 module
 
 public import Falkara.ExportTypeScript
-public import Lean.Meta.Basic
 public import Lean.Structure
+public import Generator.Import
 public import Generator.Name
 
 /-!
@@ -63,7 +63,8 @@ polarities at which the parameter occurs in the fields or the value of the decla
 ## Implementation Notes
 
 The types and the schemas of TypeScript name the modules `Rational`, `Option`, and `Schema` of
-Effect, as the packages of the repository compute with Effect.
+Effect, as the packages of the repository compute with Effect, and record each module they name by
+the module `Import`.
 
 A type of data and the kind of a declaration are told apart from the theory alone, so every
 module of the generator writes a declaration by the same kind, and a type of data takes a schema
@@ -127,17 +128,17 @@ mutual
 
 /-- Gives the type of TypeScript that a type of the theory takes, with every declaration named
 without the namespace of its package, or fails with the reason where the type has none. -/
-partial def typeOf (packageNamespace : Lean.Name) (type : Lean.Expr) : Lean.MetaM String := do
+partial def typeOf (packageNamespace : Lean.Name) (type : Lean.Expr) : TypeScriptM String := do
   match type with
   | .forallE .. =>
     let (parameters, result) ← signatureOf packageNamespace [] type
     return s!"({", ".intercalate parameters}) => {result}"
   | .fvar parameter => return (← parameter.getUserName).toString
-  | .const ``Rat _ => return "Rational.Rational"
+  | .const ``Rat _ => effectNameOf "Rational" "Rational" .type
   | .const ``String _ => return "string"
   | .const ``Bool _ => return "boolean"
   | .app (.const ``Option _) element =>
-    return s!"Option.Option<{← typeOf packageNamespace element}>"
+    return s!"{← effectNameOf "Option" "Option" .type}<{← typeOf packageNamespace element}>"
   | .app (.const ``Array _) element =>
     return s!"ReadonlyArray<{← typeOf packageNamespace element}>"
   | .app (.const ``List _) element =>
@@ -156,7 +157,7 @@ partial def typeOf (packageNamespace : Lean.Name) (type : Lean.Expr) : Lean.Meta
 /-- Gives the parameters and the result of TypeScript that a function type of the theory takes,
 with the parameters already written before the rest of the type. -/
 partial def signatureOf (packageNamespace : Lean.Name) (parameters : List String)
-    (type : Lean.Expr) : Lean.MetaM (List String × String) := do
+    (type : Lean.Expr) : TypeScriptM (List String × String) := do
   match type with
   | .forallE name domain body .default =>
     if body.hasLooseBVars then
@@ -229,19 +230,17 @@ def kindOf (name : Lean.Name) : Lean.MetaM DeclarationKind := do
 
 /-- Gives the schema of Effect that a type of data of the theory takes, with every structure named
 without the namespace of its package, or fails with the reason where the type has none. -/
-partial def schemaOf (packageNamespace : Lean.Name) (type : Lean.Expr) : Lean.MetaM String := do
+partial def schemaOf (packageNamespace : Lean.Name) (type : Lean.Expr) : TypeScriptM String := do
   match type with
   | .forallE .. => Lean.throwError m!"`{type}` has no schema in TypeScript, as a schema describes \
       data and the type is a function."
-  | .const ``Rat _ => return "Schema.Rational"
-  | .const ``String _ => return "Schema.String"
-  | .const ``Bool _ => return "Schema.Boolean"
+  | .const ``Rat _ => effectNameOf "Schema" "Rational" .value
+  | .const ``String _ => effectNameOf "Schema" "String" .value
+  | .const ``Bool _ => effectNameOf "Schema" "Boolean" .value
   | .app (.const ``Option _) element =>
-    return s!"Schema.Option({← schemaOf packageNamespace element})"
-  | .app (.const ``Array _) element =>
-    return s!"Schema.Array({← schemaOf packageNamespace element})"
-  | .app (.const ``List _) element =>
-    return s!"Schema.Array({← schemaOf packageNamespace element})"
+    return s!"{← effectNameOf "Schema" "Option" .value}({← schemaOf packageNamespace element})"
+  | .app (.const ``Array _) element | .app (.const ``List _) element =>
+    return s!"{← effectNameOf "Schema" "Array" .value}({← schemaOf packageNamespace element})"
   | .const name _ =>
     unless ExportTypeScript.tagAttribute.hasTag (← Lean.getEnv) name do
       Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never marks it \

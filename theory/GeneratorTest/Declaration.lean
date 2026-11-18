@@ -100,7 +100,7 @@ export const point = Brand.nominal<Point>();
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
-  IO.print (← Generator.declarationOf `Geometry ``Geometry.Point)
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.Point).run' [])
 
 /--
 info: /** The function that the checks write, a function of a structure. */
@@ -108,7 +108,7 @@ export type PointSum = (point: Point) => Rational.Rational;
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
-  IO.print (← Generator.declarationOf `Geometry ``Geometry.Point.sum)
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.Point.sum).run' [])
 
 /--
 info: /** The function that the checks write. */
@@ -116,7 +116,7 @@ export type PointOf = (coordinate: Rational.Rational) => Option.Option<Point>;
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
-  IO.print (← Generator.declarationOf `Geometry ``Geometry.pointOf)
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.pointOf).run' [])
 
 /--
 info: /** The rational value that the checks write. */
@@ -124,7 +124,7 @@ export const origin: Rational.Rational = Rational.fromBigInt(0n);
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
-  IO.print (← Generator.declarationOf `Geometry ``Geometry.origin)
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.origin).run' [])
 
 /--
 info: /** The value of a structure that the checks write. */
@@ -132,19 +132,19 @@ export const corner: Point = point({ x: Rational.makeUnsafe(1n, 2n), y: Rational
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
-  IO.print (← Generator.declarationOf `Geometry ``Geometry.corner)
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.corner).run' [])
 
 /-- error: `Geometry.missingCoordinate` has no value in TypeScript, as `Option Rat` has none. -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
-  IO.print (← Generator.declarationOf `Geometry ``Geometry.missingCoordinate)
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.missingCoordinate).run' [])
 
 /-- error: `Geometry.unitCoordinate` has no value in TypeScript, as `Geometry.Coordinate` lies in another module, whose constructor the file never imports. -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
-  IO.print (← Generator.declarationOf `Geometry ``Geometry.unitCoordinate)
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.unitCoordinate).run' [])
 
 /-- error: `Geometry.unmarkedFunction` has no declaration in TypeScript, as the theory never marks it `export_typescript`. -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
-  IO.print (← Generator.declarationOf `Geometry ``Geometry.unmarkedFunction)
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.unmarkedFunction).run' [])
