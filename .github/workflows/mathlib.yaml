@@ -1,0 +1,45 @@
+name: Mathlib
+on:
+  schedule:
+    # Every Monday at 08:00Z, as Mathlib releases a version for every release of Lean.
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  Discovery:
+    runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.discovery.outputs.is-update-available }}
+      tags: ${{ steps.discovery.outputs.new-tags }}
+    steps:
+      - name: Find the releases of Mathlib newer than the one the theory requires
+        id: discovery
+        uses: leanprover-community/mathlib-update-action@f8e3259913597ef668a7b360aa97eb3ebdfbc4c9 # main, 2026-10-02
+        with:
+          # Releases for stable versions of Lean alone, as the theory requires Mathlib at the tag of its `lean-toolchain`.
+          intermediate_releases: stable
+          lake_package_directory: theory
+  Update:
+    needs: Discovery
+    if: needs.Discovery.outputs.available == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    strategy:
+      # One release after another, so the pull requests open in the order of the releases.
+      max-parallel: 1
+      matrix:
+        tag: ${{ fromJSON(needs.Discovery.outputs.tags) }}
+    steps:
+      - name: Move the theory to the release and open a pull request, or an issue where the theory fails to build
+        uses: leanprover-community/mathlib-update-action/do-update@f8e3259913597ef668a7b360aa97eb3ebdfbc4c9 # main, 2026-10-02
+        with:
+          tag: ${{ matrix.tag }}
+          lake_package_directory: theory
+          # Fails on every warning that remains, as the workflow Theory builds.
+          build_args: --wfail
+          on_update_succeeds: pr
+          on_update_fails: issue

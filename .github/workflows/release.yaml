@@ -33,7 +33,7 @@ jobs:
         run: npm ci
       - name: Format, lint and type check
         # Nothing is versioned or published that fails the checks, even when pushed to main without a pull request.
-        run: npx vp check
+        run: npm run check
       - name: Test
         run: npx vp test
       - name: Open the Version Packages pull request or publish the packages

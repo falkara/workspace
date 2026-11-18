@@ -1,0 +1,60 @@
+name: Theory
+on:
+  # Only a change to the theory runs it, as a run takes minutes and the theory changes rarely.
+  pull_request:
+    paths: [theory/**]
+  push:
+    branches: [main]
+    paths: [theory/**]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # A newer push makes the checks of an older one moot.
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  Theory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build and test the theory
+        # Installs Lean at the version that lean-toolchain pins, downloads the built files of Mathlib, builds the default targets of the theory, which checks every proof and the style, builds its checks with lake test, and runs the linters of the environment with lake lint.
+        uses: leanprover/lean-action@fe408643ea7367d8c0404a8be3975bb145f5fb64 # v1.7.0
+        with:
+          lake-package-directory: theory
+          # Fails the build and the checks on every warning that remains, as the builds of Mathlib do.
+          build-args: --wfail
+          test-args: --wfail
+      - name: Build the generator
+        # The generator lies outside the default targets, as the tools of Mathlib do, and the steps below read its built modules.
+        working-directory: theory
+        run: lake build --wfail Generator generator
+      - name: Check the generator
+        # The checks and the lint of the generator lie outside the test driver and the lint driver, as those of the cache of Mathlib do.
+        working-directory: theory
+        run: |
+          lake build --wfail GeneratorTest
+          lake exe runLinter Generator
+      - name: Check that the root modules import every module
+        # The checks declare the same names in several modules, so their library has no root module, as the tests of Mathlib have none.
+        working-directory: theory
+        run: |
+          lake exe mk_all --check --lib Falkara
+          lake exe mk_all --check --lib Generator
+      - name: Check that every module imports what it needs alone
+        # Fails where a module imports a module it never uses or one that another import implies, as `lake shake` finds them.
+        working-directory: theory
+        # The generator lies outside the default targets, so the step names it beside the theory.
+        run: lake shake Falkara Generator
+      - name: Generate the TypeScript of the theory
+        # Fails where a module of the library leaves out a redeclaration of the theory or gives it another comment.
+        working-directory: theory
+        run: lake exe generator Presentation ../libraries/presentation/src
+      - name: Check that the generated files match the theory
+        # A file that the generator changes or writes anew means the theory changed without its files.
+        run: |
+          git status --porcelain -- libraries/presentation/src
+          git diff --exit-code -- libraries/presentation/src
+          test -z "$(git status --porcelain -- libraries/presentation/src)"
