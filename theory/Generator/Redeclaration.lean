@@ -82,6 +82,20 @@ def redeclarationsOf (moduleNamespace name : Lean.Name) :
       (s!"export const {typeName} = Theory.{typeName};",
         ← commentOf name (some "A schema of")),
       (s!"export type {typeName} = Theory.{typeName};", ← commentOf name)]
+  | .bundled =>
+    let some value := information.value?
+      | Lean.throwError m!"`{name}` has no redeclaration, as the theory gives the type no value."
+    let bundledNames ← Lean.Meta.forallBoundedTelescope information.type
+      (some (typeParameterCount information.type)) fun parameters _ ↦
+        bundledFieldsOf (value.beta parameters) fun bundledParameters _ ↦
+          (parameters.toList ++ bundledParameters).mapM fun parameter ↦
+            return (← parameter.fvarId!.getUserName).toString
+    let allArguments := if bundledNames.isEmpty then "" else
+      s!"<{", ".intercalate bundledNames}>"
+    return [
+      (s!"export type {typeName}{allArguments} =", ← commentOf name),
+      (s!"export const {valueName} = Theory.{valueName};",
+        ← commentOf name (some "Creates"))]
   | .type => return [(s!"export type {typeName}{arguments} =", ← commentOf name)]
   | .value =>
     return [(s!"export const {valueName} = Theory.{valueName};",

@@ -5,7 +5,6 @@ Authors: Filip Falcon
 -/
 module
 
-import Lean.Meta.InferType
 import Generator.Comment
 public import Generator.Import
 import Generator.Path

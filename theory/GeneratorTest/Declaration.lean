@@ -1,8 +1,11 @@
 module
 
 meta import Falkara.ExportTypeScript
+public import GeneratorTest.Fixture.Clock
 public import GeneratorTest.Fixture.Coordinate
 meta import Generator.Declaration
+import all GeneratorTest.Fixture.Clock
+import all Mathlib.CategoryTheory.Endofunctor.Algebra
 
 /-!
 # Declaration
@@ -12,9 +15,10 @@ take: a structure takes a branded schema with its fields, the type the schema de
 constructor that brands a value, a function takes a type of its signature, and a value takes a
 constant that holds the value, a rational number as an integer or a quotient and a structure as its
 constructor, all named without the namespace of their module and with their documentation
-comments. A value of a type with no value in
-TypeScript, a value of a structure of another module, and a declaration without the mark
-`export_typescript` take none.
+comments. A bundled structure of Mathlib, the clock of the fixture `Clock`, takes an interface with
+a type parameter in place of its state space and a function in place of its transition. A value of
+a type with no value in TypeScript, a value of a structure of another module, and a declaration
+without the mark `export_typescript` take none.
 
 ## Main Definitions
 
@@ -148,3 +152,17 @@ export const corner: Point = point({ x: Rational.makeUnsafe(1n, 2n), y: Rational
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
   IO.print (← (Generator.declarationOf `Geometry ``Geometry.unmarkedFunction).run' [])
+
+/--
+info: /** A clock that ticks from every state to its next state. */
+export interface Clock<in out V> {
+/** structure morphism of the coalgebra */
+readonly str: (value: V) => V;
+}
+
+/** Creates a clock that ticks from every state to its next state. */
+export const clock = <V>(fields: Clock<V>): Clock<V> => fields;
+-/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.Clock).run' [])

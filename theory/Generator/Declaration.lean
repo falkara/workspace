@@ -21,7 +21,12 @@ same name for what the schema decodes, and a constructor named in camel case, su
 or whose field takes no schema, such as a function, takes an interface in place of the schema, with
 a field for every field of the structure and a type parameter for every type parameter, annotated
 with its variance, such as `interface Machine<in out State, in Input, out Output>`, and a
-constructor that gives a value as a caller writes it. A refinement takes the schema of its type with
+constructor that gives a value as a caller writes it. A bundled structure, a type that applies a
+structure of Mathlib with a field whose value is a type, such as
+`Endofunctor.Coalgebra (𝟭 (Type u))`, takes the same interface and constructor, with a type
+parameter in place of every field whose value is a type, such as
+`interface IdentityCoalgebra<in out V> { readonly str: (value: V) => V }`. A refinement takes the
+schema of its type with
 a filter that calls its condition and the brand of its name, as
 `Schema.String.pipe(Schema.check(Schema.makeFilter(isSegment)), Schema.brand('Segment'))`, and a
 type of the same name for what the schema decodes. A type takes a type alias with a type parameter
@@ -180,11 +185,7 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
     let variances ← variancesOf name
     let generics := if names.isEmpty then "" else
       s!"<{", ".intercalate ((names.zip variances).map fun (parameter, polarities) ↦
-      match polarities.contains false, polarities.contains true with
-      | true, true => s!"in out {parameter}"
-      | true, false => s!"in {parameter}"
-      | false, true => s!"out {parameter}"
-      | false, false => parameter)}>"
+        annotationOf parameter polarities)}>"
     match ← kindOf name with
     | .dataStructure =>
       let fields ← (← fieldTypesOf name parameters).mapM fun (field, fieldType) ↦ do
@@ -210,6 +211,28 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
           {camelCaseOf (wordsOf moduleNamespace condition)})), \
           {← effectNameOf "Schema" "brand" .value}('{typeName}'));\n\n" ++
         s!"{← commentOf name}export type {typeName} = typeof {typeName}.Type;\n"
+    | .bundled =>
+      let some value := information.value?
+        | Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory gives the \
+            type no value."
+      let .const structureName _ := (value.beta parameters).getAppFn
+        | Lean.throwError m!"`{name}` applies no structure."
+      bundledFieldsOf (value.beta parameters) fun bundledParameters fields ↦ do
+        let allParameters := parameters.toList ++ bundledParameters
+        let allNames ← allParameters.mapM fun parameter ↦
+          return (← parameter.fvarId!.getUserName).toString
+        let allArguments := if allNames.isEmpty then "" else s!"<{", ".intercalate allNames}>"
+        let annotations ← (allParameters.zip allNames).mapM fun (parameter, parameterName) ↦ do
+          return annotationOf parameterName
+            (← fields.flatMapM fun (_, fieldType) ↦ polaritiesOf parameter true fieldType)
+        let allGenerics := if allNames.isEmpty then "" else s!"<{", ".intercalate annotations}>"
+        let fieldLines ← fields.mapM fun (field, fieldType) ↦ do
+          return s!"{← commentOf (structureName ++ field)}readonly {field}: \
+            {← typeOf moduleNamespace fieldType};\n"
+        return s!"{← commentOf name}export interface {typeName}{allGenerics} \
+            \{\n{String.join fieldLines}}\n\n" ++
+          s!"{← commentOf name (some "Creates")}export const {valueName} = \
+            {allArguments}(fields: {typeName}{allArguments}): {typeName}{allArguments} => fields;\n"
     | .type =>
       let some value := information.value?
         | Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory gives the \

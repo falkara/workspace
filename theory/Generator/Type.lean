@@ -6,6 +6,7 @@ Authors: Filip Falcon
 module
 
 public import Falkara.ExportTypeScript
+public import Lean.Meta.AppBuilder
 public import Lean.Structure
 public import Generator.Import
 public import Generator.Name
@@ -40,6 +41,17 @@ polarities at which the parameter occurs in the fields or the value of the decla
 - `fieldTypesOf`: gives the type of every field of a structure, with the type parameters given in
   place of those of the structure, or fails with the reason where the type of a field depends on
   the structure.
+- `normalizedOf`: gives a type of the theory as TypeScript reads it: a morphism `X ⟶ Y` of the
+  category of types as the function type `(value : X) → Y`, and an object `F.obj X` of a functor `F`
+  as the type it reduces to, such as `X` for the identity functor.
+- `bundledOf`: gives the structure that a type of the theory applies, where the type is a bundled
+  structure, one with a field whose value is a type, such as `Endofunctor.Coalgebra (𝟭 (Type u))`
+  with its state space `V`.
+- `bundledFieldsOf`: runs a computation on the fields of a bundled structure that a type of the
+  theory applies, with a type parameter in place of every field whose value is a type and the type
+  of every other field, with every such type parameter in place of the projection of its field, as
+  `normalizedOf` reads it, or fails with the reason where the type of a field depends on another
+  field.
 - `typeOf`: gives the type of TypeScript that a type of the theory takes, with every declaration
   named without the namespace of its package, or fails with the reason where the type has none.
 - `signatureOf`: gives the parameters and the result of TypeScript that a function type of the
@@ -49,6 +61,9 @@ polarities at which the parameter occurs in the fields or the value of the decla
   or a refinement marked `export_typescript`.
 - `isData`: tells whether a structure is a structure of data, one without type parameters whose
   every field takes a type of data.
+- `annotationOf`: gives a type parameter as TypeScript annotates it with its variance, `in` where it
+  occurs negatively, `out` where it occurs positively, both where it occurs at both polarities, and
+  neither where it does not occur.
 - `DeclarationKind`: a kind of declaration of the theory, which the generator writes in a form of
   its own.
 - `kindOf`: gives the kind of a declaration of the theory.
@@ -123,6 +138,76 @@ def fieldTypesOf (name : Lean.Name) (parameters : Array Lean.Expr) :
           the structure."
       return (field, fieldType)
     | _ => Lean.throwError m!"`{name ++ field}` is no field of a structure."
+
+/-- Gives a type of the theory as TypeScript reads it: a morphism `X ⟶ Y` of the category of types
+as the function type `(value : X) → Y`, and an object `F.obj X` of a functor `F` as the type it
+reduces to, such as `X` for the identity functor. -/
+partial def normalizedOf (type : Lean.Expr) : Lean.MetaM Lean.Expr := do
+  match type with
+  | .forallE name domain body info =>
+    return .forallE name (← normalizedOf domain) (← normalizedOf body) info
+  | _ =>
+    match type.getAppFn, type.getAppArgs with
+    -- The generator imports no Mathlib, so the names of Mathlib are written as names alone.
+    | .const `Quiver.Hom _, #[.sort _, _, source, target] =>
+      return .forallE `value (← normalizedOf source) (← normalizedOf target) .default
+    | .const `Prefunctor.obj _, _ | .const `CategoryTheory.Functor.obj _, _ =>
+      let reduced ← Lean.Meta.whnfD type
+      if reduced == type then return type
+      normalizedOf reduced
+    | function, arguments =>
+      if arguments.isEmpty then return type
+      return Lean.mkAppN function (← arguments.mapM normalizedOf)
+
+/-- Gives the structure that a type of the theory applies, where the type is a bundled structure,
+one with a field whose value is a type, such as `Endofunctor.Coalgebra (𝟭 (Type u))` with its state
+space `V`. -/
+def bundledOf (type : Lean.Expr) : Lean.MetaM (Option Lean.Name) := do
+  let .const structureName _ := type.getAppFn | return none
+  unless Lean.isStructure (← Lean.getEnv) structureName do return none
+  Lean.Meta.withLocalDeclD `self type fun self ↦ do
+    let bundled ← (Lean.getStructureFields (← Lean.getEnv) structureName).anyM fun field ↦ do
+      let fieldType ← Lean.Meta.inferType (← Lean.Meta.mkProjection self field)
+      return (← Lean.Meta.whnfR fieldType).isSort
+    return if bundled then some structureName else none
+
+/-- Runs a computation on the fields of a bundled structure that a type of the theory applies, with
+a type parameter in place of every field whose value is a type and the type of every other field,
+with every such type parameter in place of the projection of its field, as `normalizedOf` reads it,
+or fails with the reason where the type of a field depends on another field. -/
+def bundledFieldsOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
+    [MonadLiftT Lean.MetaM m] {α : Type} (type : Lean.Expr)
+    (computation : List Lean.Expr → List (Lean.Name × Lean.Expr) → m α) : m α := do
+  let .const structureName _ := type.getAppFn
+    | monadLift (Lean.throwError m!"`{type}` applies no structure." : Lean.MetaM α)
+  Lean.Meta.withLocalDeclD `self type fun self ↦ do
+    let fields := (Lean.getStructureFields (← (Lean.getEnv : Lean.MetaM _)) structureName).toList
+    loop structureName self fields [] [] []
+where
+  /-- Takes the fields of the structure one at a time, the type parameters and the other fields in
+  order. -/
+  loop (structureName : Lean.Name) (self : Lean.Expr) (remaining : List Lean.Name)
+      (parameters : List Lean.Expr)
+      (others : List (Lean.Name × Lean.Expr)) (replacements : List (Lean.Expr × Lean.Expr)) :
+      m α := do
+    match remaining with
+    | [] => computation parameters others
+    | field :: rest =>
+      let projection ← Lean.Meta.mkProjection self field
+      let fieldType ← Lean.Meta.inferType projection
+      if (← Lean.Meta.whnfR fieldType).isSort then
+        Lean.Meta.withLocalDeclD field fieldType fun parameter ↦
+          loop structureName self rest (parameters ++ [parameter]) others
+            ((projection, parameter) :: replacements)
+      else
+        let replaced := fieldType.replace fun part ↦
+          (replacements.find? fun (projected, _) ↦ projected == part).map Prod.snd
+        if replaced.containsFVar self.fvarId! then
+          monadLift (Lean.throwError m!"`{structureName ++ field}` has no field in TypeScript, as \
+            its type depends on a field whose value is no type." : Lean.MetaM α)
+        else
+          loop structureName self rest parameters (others ++ [(field, ← normalizedOf replaced)])
+            replacements
 
 mutual
 
@@ -201,6 +286,16 @@ partial def isData (name : Lean.Name) : Lean.MetaM Bool := do
 
 end
 
+/-- Gives a type parameter as TypeScript annotates it with its variance, `in` where it occurs
+negatively, `out` where it occurs positively, both where it occurs at both polarities, and neither
+where it does not occur. -/
+def annotationOf (parameter : String) (polarities : List Bool) : String :=
+  match polarities.contains false, polarities.contains true with
+  | true, true => s!"in out {parameter}"
+  | true, false => s!"in {parameter}"
+  | false, true => s!"out {parameter}"
+  | false, false => parameter
+
 /-- A kind of declaration of the theory, which the generator writes in a form of its own. -/
 inductive DeclarationKind where
   /-- A structure of data. -/
@@ -209,6 +304,9 @@ inductive DeclarationKind where
   | structure
   /-- A refinement of a type by a condition. -/
   | refinement (base : Lean.Expr) (condition : Lean.Name)
+  /-- A bundled structure, a type whose value applies a structure with a field whose value is a
+  type, such as `Endofunctor.Coalgebra (𝟭 (Type u))`. -/
+  | bundled
   /-- A type, a declaration whose value is a type. -/
   | type
   /-- A function, a declaration that takes parameters beyond its type parameters. -/
@@ -223,10 +321,14 @@ def kindOf (name : Lean.Name) : Lean.MetaM DeclarationKind := do
   if let some (base, condition) ← refinementOf name then return .refinement base condition
   let information ← Lean.getConstInfo name
   Lean.Meta.forallBoundedTelescope information.type (some (typeParameterCount information.type))
-    fun _ rest ↦ return match rest with
-      | .sort _ => .type
-      | .forallE .. => .function
-      | _ => .value
+    fun parameters rest ↦ do
+      match rest with
+      | .sort _ =>
+        if let some value := information.value? then
+          if (← bundledOf (value.beta parameters)).isSome then return .bundled
+        return .type
+      | .forallE .. => return .function
+      | _ => return .value
 
 /-- Gives the schema of Effect that a type of data of the theory takes, with every structure named
 without the namespace of its package, or fails with the reason where the type has none. -/
