@@ -184,5 +184,4 @@ const program = Command.make('reader').pipe(
 );
 
 // Layers provided here, at the entry point of the reader.
-// @effect-diagnostics-next-line strictEffectProvide:off
 NodeRuntime.runMain(program.pipe(Effect.provide(NodeServices.layer)));
