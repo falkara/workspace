@@ -52,6 +52,7 @@ structure Chromaticity where
   x : ℚ
   /-- The quotient of the tristimulus value $Y$ and the sum $X + Y + Z$. -/
   y : ℚ
+  deriving DecidableEq
 
 attribute [cite "17-23-052" cie2020internationalLightingVocabulary] Chromaticity
 attribute [cite "17-23-053" cie2020internationalLightingVocabulary] Chromaticity.x

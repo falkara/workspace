@@ -87,7 +87,7 @@ theorem relativeSpectralPowerAt_row (wavelength : Wavelength) :
     ∃ component ∈ illuminant, component.wavelength = wavelength.val ∧
       relativeSpectralPowerAt wavelength = component.relativeSpectralPower := by
   have bounds := wavelength.property
-  have index : wavelength.val - 300 < illuminant.length := by rw [illuminant_length]; omega
+  have index : wavelength.val - 300 < illuminant.length := by rw [length_illuminant]; omega
   refine ⟨illuminant[wavelength.val - 300], List.getElem_mem index, ?_, rfl⟩
   have row := congrArg (fun rows ↦ rows[wavelength.val - 300]?) illuminant_wavelengths
   simp only [List.getElem?_map, List.getElem?_eq_getElem index,

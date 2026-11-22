@@ -30,8 +30,8 @@ table gives the column of the distribution.
 
 ## Main Statements
 
-- `illuminant_length`: the illuminant holds a row for each of the 531 wavelengths from 300 nm to
-  830 nm.
+- `length_illuminant`: the illuminant holds a row for each wavelength from 300 nm to 830 nm in
+  steps of 1 nm, $(830 - 300) / 1 + 1 = 531$.
 
 ## Implementation Notes
 
@@ -617,11 +617,12 @@ attribute [cite "CIE_std_illum_D65.csv" cie2019standardIlluminantD65] illuminant
 
 /-! ### Theorems -/
 
-/-- The illuminant holds a row for each of the 531 wavelengths from 300 nm to 830 nm. -/
-theorem illuminant_length : illuminant.length = 531 := by
+/-- The illuminant holds a row for each wavelength from 300 nm to 830 nm in steps of 1 nm,
+$(830 - 300) / 1 + 1 = 531$. -/
+theorem length_illuminant : illuminant.length = 531 := by
   decide +kernel
 
-attribute [cite "CIE_std_illum_D65.csv" cie2019standardIlluminantD65] illuminant_length
+attribute [cite "CIE_std_illum_D65.csv" cie2019standardIlluminantD65] length_illuminant
 
 /-! ### Functions -/
 
@@ -629,7 +630,7 @@ attribute [cite "CIE_std_illum_D65.csv" cie2019standardIlluminantD65] illuminant
 $S(\lambda)$. -/
 def relativeSpectralPowerAt (wavelength : Wavelength) : ℚ :=
   (illuminant[wavelength.val - 300]'(by
-    have := wavelength.property; rw [illuminant_length]; omega)).relativeSpectralPower
+    have := wavelength.property; rw [length_illuminant]; omega)).relativeSpectralPower
 
 attribute [cite "S_D65(lambda)" cie2019standardIlluminantD65] relativeSpectralPowerAt
 

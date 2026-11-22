@@ -80,8 +80,8 @@ of proportionality, and the multiple of the tristimulus values of a color stimul
 on the sums of the standard.
 
 The sums pair every wavelength with the row of the observer in the same place, which a check of the
-observer proves to be the color-matching coefficients at the wavelength, as the kernel of Lean walks
-two lists zipped in step, while it reaches a row by its index by walking every row before it.
+observer proves to be the row at that wavelength, as the kernel of Lean walks two lists zipped in
+step, while it reaches a row by its index by walking every row before it.
 
 Each tristimulus value is the sum of a list of products, one list for each color-matching function,
 so the theorems of addition and of scaling follow from the theorems of Mathlib on the sum of a

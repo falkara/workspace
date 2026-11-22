@@ -5,7 +5,7 @@ Authors: Filip Falcon
 -/
 module
 
-public import Falkara.Presentation.Colorimetry.Wavelength
+public import Falkara.References -- shake: keep
 public import Mathlib.Data.Rat.Init
 meta import Falkara.Citation -- shake: keep
 
@@ -16,22 +16,14 @@ set_option linter.style.header false
 
 The module defines the observer as the CIE 1931 standard colorimetric observer by its
 color-matching functions $\bar{x}$, $\bar{y}$, and $\bar{z}$ at wavelengths from 360 nm to 830 nm
-in steps of 1 nm, and the color-matching coefficients of the observer at a wavelength.
+in steps of 1 nm.
 
 ## Main Definitions
 
-- `ColorMatchingCoefficients`: the three values of the color-matching functions at a given
-  wavelength, with the wavelength.
+- `ColorMatchingCoefficients`: the three values of the CIE color-matching functions $\bar{x}$,
+  $\bar{y}$, and $\bar{z}$ at a given wavelength, with the wavelength.
 - `observer`: the color-matching coefficients that define the observer, at wavelengths from 360 nm
   to 830 nm in steps of 1 nm.
-- `colorMatchingCoefficientsAt`: gives the color-matching coefficients of the observer at a
-  wavelength $\lambda$, the values $\bar{x}(\lambda)$, $\bar{y}(\lambda)$, and $\bar{z}(\lambda)$ of
-  the color-matching functions.
-
-## Main Statements
-
-- `observer_length`: the observer holds a row for each of the 471 wavelengths from 360 nm to
-  830 nm.
 
 ## Implementation Notes
 
@@ -41,14 +33,9 @@ color-matching coefficients at the wavelength of the row, as the vocabulary of t
 given wavelength, with the wavelength as the whole number of nanometers that the data table gives
 and each other value as the exact rational number that the decimal digits of the value denote.
 
-The color-matching coefficients at a wavelength are the row whose index is the wavelength less
-360 nm, as the rows run from 360 nm in steps of 1 nm, which a check of the observer proves, so the
-kernel of Lean reaches the row without comparing the wavelength with every row before it.
-
 The metadata of the data table interpolates linearly between two rows and extrapolates by zero
-beyond 360 nm to 830 nm, and neither enters the theory, as the color-matching coefficients at a
-wavelength take a whole number of nanometers from 360 nm to 830 nm, each of which is the wavelength
-of a row.
+beyond 360 nm to 830 nm, and neither enters the theory, as the theory takes the rows themselves,
+each at the wavelength the data table gives it.
 
 The observer holds its rows as a list rather than an array, as the kernel of Lean folds a list row
 by row, while it reduces a fold of an array through the loop of the fold and the bounds of every
@@ -61,15 +48,16 @@ namespace Falkara.Presentation.Colorimetry
 
 /-! ### Type -/
 
-/-- The three values of the color-matching functions at a given wavelength, with the wavelength. -/
+/-- The three values of the CIE color-matching functions $\bar{x}$, $\bar{y}$, and $\bar{z}$ at a
+given wavelength, with the wavelength. -/
 structure ColorMatchingCoefficients where
   /-- The wavelength, in nanometers. -/
   wavelength : ℕ
-  /-- The value of the color-matching function $\bar{x}$ at the wavelength. -/
+  /-- The dimensionless value of the color-matching function $\bar{x}$ at the wavelength. -/
   xBar : ℚ
-  /-- The value of the color-matching function $\bar{y}$ at the wavelength. -/
+  /-- The dimensionless value of the color-matching function $\bar{y}$ at the wavelength. -/
   yBar : ℚ
-  /-- The value of the color-matching function $\bar{z}$ at the wavelength. -/
+  /-- The dimensionless value of the color-matching function $\bar{z}$ at the wavelength. -/
   zBar : ℚ
   deriving DecidableEq
 
@@ -557,22 +545,5 @@ def observer : List ColorMatchingCoefficients := [
   ⟨830, 0.000001251141, 0.0000004518100, 0.000000000000⟩]
 
 attribute [cite "CIE_xyz_1931_2deg.csv" cie2019colorMatchingFunctions] observer
-
-/-! ### Theorems -/
-
-/-- The observer holds a row for each of the 471 wavelengths from 360 nm to 830 nm. -/
-theorem observer_length : observer.length = 471 := by
-  decide +kernel
-
-attribute [cite "CIE_xyz_1931_2deg.csv" cie2019colorMatchingFunctions] observer_length
-
-/-! ### Functions -/
-
-/-- Gives the color-matching coefficients of the observer at a wavelength $\lambda$, the values
-$\bar{x}(\lambda)$, $\bar{y}(\lambda)$, and $\bar{z}(\lambda)$ of the color-matching functions. -/
-def colorMatchingCoefficientsAt (wavelength : Wavelength) : ColorMatchingCoefficients :=
-  observer[wavelength.val - 360]'(by have := wavelength.property; rw [observer_length]; omega)
-
-attribute [cite "17-23-032" cie2020internationalLightingVocabulary] colorMatchingCoefficientsAt
 
 end Falkara.Presentation.Colorimetry

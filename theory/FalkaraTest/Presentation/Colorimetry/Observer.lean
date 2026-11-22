@@ -2,6 +2,7 @@ module
 
 meta import Falkara.Citation
 public import Falkara.Presentation.Colorimetry.Observer
+public import Falkara.Presentation.Colorimetry.Wavelength
 
 /-!
 # Observer
@@ -10,11 +11,9 @@ The module defines the checks of the observer against the data table
 [cie2019colorMatchingFunctions]. The checks compare the sum of the wavelengths $\lambda$, the sum of
 the values of each color-matching function $\bar{x}$, $\bar{y}$, and $\bar{z}$, and the values at
 one sample wavelength with the validation values of the data table, and the wavelengths with the
-range and the step that the data table gives. A further theorem proves that the color-matching
-coefficients at every wavelength from 360 nm to 830 nm are the row of the data table at that
-wavelength,
-and a last check that the wavelengths, paired in order with the rows, are each paired with the row
-at that wavelength, as the tristimulus values pair them.
+range and the step that the data table gives. A last check finds that the wavelengths, paired in
+order with the rows, are each paired with the row at that wavelength, as the tristimulus values
+pair them.
 
 ## Main Statements
 
@@ -28,17 +27,10 @@ at that wavelength, as the tristimulus values pair them.
   $(\bar{x}, \bar{y}, \bar{z})(479\,\mathrm{nm}) = (0.104\,297\,9, 0.133\,452\,8, 0.856\,619\,3)$.
 - `observer_wavelengths`: the wavelengths of the observer run from 360 nm to 830 nm in steps of
   1 nm, $\lambda_i = (360 + i)\,\mathrm{nm}$ for $i = 0, \ldots, 470$.
-- `colorMatchingCoefficientsAt_row`: the color-matching coefficients at every wavelength from
-  360 nm to 830 nm are the row of the data table at that wavelength.
 - `wavelengths_zip_observer`: the wavelengths from 360 nm to 830 nm, paired in order with the rows
   of the data table, are each paired with the row at that wavelength.
 
 ## Implementation Notes
-
-The color-matching coefficients at every wavelength are proved from the wavelengths of the rows for
-a wavelength of any value, rather than computed at each of the 471 wavelengths, as the kernel of
-Lean reaches a row by its index by walking every row before it, which takes gigabytes of memory
-over every wavelength.
 
 The checks are proved by `decide +kernel`, as `decide` reaches the maximum recursion depth of the
 elaborator on 471 rows and `native_decide` proves every statement by an axiom of its own, which
@@ -79,23 +71,6 @@ theorem observer_wavelengths :
   decide +kernel
 
 attribute [cite "lambda" cie2019colorMatchingFunctions] observer_wavelengths
-
-/-- The color-matching coefficients at every wavelength from 360 nm to 830 nm are the row of the
-data table at that wavelength. -/
-theorem colorMatchingCoefficientsAt_row (wavelength : Wavelength) :
-    colorMatchingCoefficientsAt wavelength ∈ observer ∧
-      (colorMatchingCoefficientsAt wavelength).wavelength = wavelength.val := by
-  have bounds := wavelength.property
-  have index : wavelength.val - 360 < observer.length := by rw [observer_length]; omega
-  refine ⟨List.getElem_mem index, ?_⟩
-  have row := congrArg (fun rows ↦ rows[wavelength.val - 360]?) observer_wavelengths
-  simp only [List.getElem?_map, List.getElem?_eq_getElem index,
-    List.getElem?_range (by omega : wavelength.val - 360 < 471)] at row
-  simp at row
-  unfold colorMatchingCoefficientsAt
-  omega
-
-attribute [cite "lambda" cie2019colorMatchingFunctions] colorMatchingCoefficientsAt_row
 
 /-- The wavelengths from 360 nm to 830 nm, paired in order with the rows of the data table, are
 each paired with the row at that wavelength. -/
