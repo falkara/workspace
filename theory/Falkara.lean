@@ -9,3 +9,4 @@ public import Falkara.Presentation.Colorimetry.Observer
 public import Falkara.Presentation.Colorimetry.Tristimulus
 public import Falkara.Presentation.Colorimetry.Wavelength
 public import Falkara.References
+public import Falkara.Simulation.Coalgebra

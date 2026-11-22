@@ -55,7 +55,9 @@ jobs:
       - name: Generate the TypeScript of the theory
         # Fails where a module of the library leaves out a redeclaration of the theory or gives it another comment.
         working-directory: theory
-        run: lake exe generator Presentation ../libraries/presentation/src
+        run: |
+          lake exe generator Presentation ../libraries/presentation/src
+          lake exe generator Simulation ../libraries/simulation/src
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -70,10 +72,10 @@ jobs:
         run: npm ci
       - name: Format the generated files
         # The generator writes the files unformatted and leaves their layout to oxfmt, as the repository formats every other file.
-        run: find libraries/presentation/src -name '*.theory.ts' -o -name '*.theory.test.ts' | xargs npx vp fmt
+        run: find libraries/presentation/src libraries/simulation/src -name '*.theory.ts' -o -name '*.theory.test.ts' | xargs npx vp fmt
       - name: Check that the generated files match the theory
         # A file that the generator changes or writes anew means the theory changed without its files.
         run: |
-          git status --porcelain -- libraries/presentation/src
-          git diff --exit-code -- libraries/presentation/src
-          test -z "$(git status --porcelain -- libraries/presentation/src)"
+          git status --porcelain -- libraries/presentation/src libraries/simulation/src
+          git diff --exit-code -- libraries/presentation/src libraries/simulation/src
+          test -z "$(git status --porcelain -- libraries/presentation/src libraries/simulation/src)"

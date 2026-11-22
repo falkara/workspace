@@ -1,0 +1,48 @@
+{
+  "name": "@falkara/simulation",
+  "version": "0.0.0",
+  "private": true,
+  "description": "An Effect-based TypeScript library of state-based systems, each a coalgebra of a functor as the theory of coalgebras defines it.",
+  "keywords": [
+    "automata",
+    "coalgebra",
+    "effect",
+    "simulation",
+    "state-machine"
+  ],
+  "homepage": "https://github.com/falkara/workspace/tree/main/libraries/simulation#readme",
+  "bugs": {
+    "url": "https://github.com/falkara/workspace/issues"
+  },
+  "license": "MIT",
+  "author": "Filip Falcon",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/falkara/workspace.git",
+    "directory": "libraries/simulation"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#src/*": "./src/*.ts"
+  },
+  "exports": {
+    "./Coalgebra": {
+      "types": "./dist/Coalgebra.d.mts",
+      "default": "./dist/Coalgebra.mjs"
+    }
+  },
+  "scripts": {
+    "prepack": "vp pack"
+  },
+  "devDependencies": {
+    "@effect/vitest": "4.1.0",
+    "effect": "4.1.3"
+  },
+  "peerDependencies": {
+    "effect": "^4.1.3"
+  }
+}

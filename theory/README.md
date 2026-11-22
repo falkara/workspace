@@ -1,6 +1,6 @@
 # Falkara Theory
 
-Falkara Theory states in Lean the mathematics that the packages of this repository compute, so that the kernel of Lean checks every definition before code follows it. For now it covers the colorimetry of Falkara Presentation, the CIE 1931 standard colorimetric observer and CIE standard illuminant D65, each held as exact rational numbers from the data tables of the CIE, and the filename of Falkara CLI, a portable filename of POSIX that names a file or a directory in the same way on every system.
+Falkara Theory states in Lean the mathematics that the packages of this repository compute, so that the kernel of Lean checks every definition before code follows it. For now it covers the colorimetry of Falkara Presentation, the CIE 1931 standard colorimetric observer and CIE standard illuminant D65, each held as exact rational numbers from the data tables of the CIE, the filename of Falkara CLI, a portable filename of POSIX that names a file or a directory in the same way on every system, and the systems of Falkara Simulation, each a coalgebra of an endofunctor as Mathlib states it.
 
 ## Data and Computation
 
@@ -34,10 +34,10 @@ A build reports the warnings of the linters as warnings, and `--wfail`, such as 
 
 ## Generation
 
-The generator writes the declarations that the theory marks `export_typescript` into Falkara Presentation, a file for every module of the theory, such as `Colorimetry/Tristimulus.theory.ts` for `Falkara/Presentation/Colorimetry/Tristimulus.lean`, beside which the package keeps a module of its own, such as `Colorimetry/Tristimulus.ts`. The module of the package redeclares the values of the theory, such as the white, which the generator writes as the kernel of Lean reduces them, and is bounded by the types of the theory, which it must implement, and by its theorems, which the generator writes as tests of the module, such as `Colorimetry/Tristimulus.theory.test.ts`. It reads the built theory, so `lake build` precedes it:
+The generator writes the declarations that the theory marks `export_typescript` into the package of their theory, such as Falkara Presentation, a file for every module of the theory, such as `Colorimetry/Tristimulus.theory.ts` for `Falkara/Presentation/Colorimetry/Tristimulus.lean`, beside which the package keeps a module of its own, such as `Colorimetry/Tristimulus.ts`. The module of the package redeclares the values of the theory, such as the white, which the generator writes as the kernel of Lean reduces them, and is bounded by the types of the theory, which it must implement, and by its theorems, which the generator writes as tests of the module, such as `Colorimetry/Tristimulus.theory.test.ts`. It reads the built theory, so `lake build` precedes it:
 
 1. `lake build` builds the theory the generator reads.
-2. `lake exe generator Presentation ../libraries/presentation/src` writes the files of TypeScript and fails where a module of the package, such as `Colorimetry/Tristimulus.ts`, redeclares a declaration of the theory with another comment than the theory gives it.
+2. `lake exe generator Presentation ../libraries/presentation/src` and `lake exe generator Simulation ../libraries/simulation/src` write the files of TypeScript of Falkara Presentation and Falkara Simulation and fail where a module of the package, such as `Colorimetry/Tristimulus.ts`, redeclares a declaration of the theory with another comment than the theory gives it.
 3. `npm run check:fix` in the root of the repository formats the files by oxfmt, as the generator writes them unformatted.
 
 ## Licensing

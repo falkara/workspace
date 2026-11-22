@@ -27,6 +27,8 @@ The module defines every work that the theory cites, each as a declaration that 
   colorimetry, each under a number of its own.
 - `ieee2024portableOperatingSystemInterface`: the standard of the IEEE and The Open Group that
   defines the interface of a portable operating system, with its filenames and pathnames.
+- `mathlibCommunity2020leanMathematicalLibrary`: the library of mathematics of Lean, Mathlib, which
+  the theory builds on, with a page of documentation for every declaration.
 - `microsoft2024namingFiles`: the page of the documentation of Windows that gives the rules for the
   names of files, paths, and namespaces.
 
@@ -109,6 +111,16 @@ def ieee2024portableOperatingSystemInterface : Citation.Work where
     Interface (POSIX™) Base Specifications, Issue 8"
   year := 2024
   doi := some "10.1109/IEEESTD.2024.10555529"
+
+/-- The library of mathematics of Lean, Mathlib, which the theory builds on, with a page of
+documentation for every declaration, which the full name of the declaration finds. -/
+def mathlibCommunity2020leanMathematicalLibrary : Citation.Work where
+  author := "The mathlib Community"
+  title := "The Lean Mathematical Library"
+  year := 2020
+  publisher := some "Association for Computing Machinery, New York, US"
+  doi := some "10.1145/3372885.3373824"
+  itemAddress := some "https://leanprover-community.github.io/mathlib4_docs/find/#doc/"
 
 /-- The page of the documentation of Windows that gives the rules for the names of files, paths,
 and namespaces. -/
