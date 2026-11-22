@@ -2,6 +2,7 @@ module
 
 meta import Falkara.ExportTypeScript
 public import GeneratorTest.Fixture.Walker
+import all GeneratorTest.Fixture.Clock
 import all GeneratorTest.Fixture.Coordinate
 import all GeneratorTest.Fixture.Walker
 meta import Generator.Redeclaration
@@ -11,7 +12,9 @@ meta import Generator.Redeclaration
 
 The module defines the checks of the redeclarations in a module of TypeScript: a structure is
 redeclared as its schema, its type, and its constructor, a structure that takes an interface as its
-type and its constructor, a type as its type alone, found by the text up to its `=` even where the
+type and its constructor, a bundled structure as its type, with a functor as a type parameter
+constrained to a type lambda, and its constructor, a functor as its type alone, a type as its type
+alone, found by the text up to its `=` even where the
 redeclaration breaks over lines, a value is redeclared from the generated module, and a function is
 implemented under its name, each with the comment of the theory. The check gives no reason for a
 module that holds every redeclaration with the comment of the theory, even beside a name that
@@ -116,3 +119,13 @@ info: [("export type Walker<State, Input, Trace> =", "/** A walker that takes a 
       "export type StepMove<State, Input, Trace> = Theory.StepMove<\
         \n  State,\n  Input,\n  Trace\n>;\n")
     (← Generator.redeclarationsOf `Geometry ``Geometry.Step.Move)
+
+/--
+info: [("export type Clockwork<F extends HKT.TypeLambda, V> =", "/** A clockwork that moves every state by a functor. */\n"),
+  ("export const clockwork = Theory.clockwork;", "/** Creates a clockwork that moves every state by a functor. */\n"),
+  ("export type ChimeFunctor<B> =", "/** The functor of the chimes, which gives a chime and the next state. */\n")]
+-/
+#guard_msgs in
+#eval show Lean.MetaM (List (String × String)) from do
+  return (← Generator.redeclarationsOf `Geometry ``Geometry.Clockwork) ++
+    (← Generator.redeclarationsOf `Geometry ``Geometry.ChimeFunctor)

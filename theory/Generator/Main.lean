@@ -142,7 +142,7 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
     | .dataStructure | .structure => fieldConstants name
     | _ => ((environment.find? name).map fun information ↦
       information.type.getUsedConstants.toList ++
-        if kind matches .type | .bundled | .refinement .. then
+        if kind matches .type | .bundled | .functor | .refinement .. then
           (information.value?.map (·.getUsedConstants.toList)).getD []
         else []).getD []
   let others := (namedBySchemas ++ named).eraseDups.filter fun name ↦

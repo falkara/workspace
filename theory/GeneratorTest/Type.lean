@@ -8,9 +8,9 @@ meta import Lean.Elab.Term
 # Type
 
 The module defines the checks of the types of TypeScript that the types of the theory take: a
-rational number, an option, an array, a list, a function type, a declaration marked
+rational number, an option, an array, a list, a product, a function type, a declaration marked
 `export_typescript`, and a structure with type parameters applied to its arguments take their
-types, while a declaration without the mark, a type of any other form, such as a product, and a
+types, while a declaration without the mark, a type of any other form, such as a sum, and a
 function type with an unnamed parameter take none. The checks compare as well the schemas of Effect
 that the types of data take: a rational number, an option, an array, a list, and a structure marked
 `export_typescript` take their schemas, while a function type, a structure with type parameters,
@@ -74,10 +74,15 @@ def unnamedFunction : Rat → Rat :=
 #guard_msgs in
 #eval (Generator.typeOf .anonymous (Lean.mkConst ``Nat)).run' []
 
-/-- error: `Prod` has no declaration in TypeScript, as the theory never marks it `export_typescript`. -/
+/-- info: "readonly [Rational.Rational, ReadonlyArray<Rational.Rational>]" -/
 #guard_msgs in
 #eval show Lean.Elab.TermElabM String from do
-  (Generator.typeOf .anonymous (← Lean.Elab.Term.elabType (← `(Rat × Rat)))).run' []
+  (Generator.typeOf .anonymous (← Lean.Elab.Term.elabType (← `(Rat × List Rat)))).run' []
+
+/-- error: `Sum` has no declaration in TypeScript, as the theory never marks it `export_typescript`. -/
+#guard_msgs in
+#eval show Lean.Elab.TermElabM String from do
+  (Generator.typeOf .anonymous (← Lean.Elab.Term.elabType (← `(Rat ⊕ Rat)))).run' []
 
 /-- error: `Rat → Rat` has no type in TypeScript, as TypeScript names every parameter and the theory names none. -/
 #guard_msgs in

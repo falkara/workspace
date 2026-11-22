@@ -23,11 +23,15 @@ a field for every field of the structure and a type parameter for every type par
 with its variance, such as `interface Machine<in out State, in Input, out Output>`, and a
 constructor that gives a value as a caller writes it. A bundled structure, a type that applies a
 structure of Mathlib with a field whose value is a type, such as
-`Endofunctor.Coalgebra (𝟭 (Type u))`, takes the same interface and constructor, with a type
-parameter in place of every field whose value is a type, such as
-`interface IdentityCoalgebra<in out V> { readonly str: (value: V) => V }`. A refinement takes the
-schema of its type with
-a filter that calls its condition and the brand of its name, as
+`Endofunctor.Coalgebra F`, takes the same interface and constructor, with a type parameter in
+place of every field whose value is a type, and a functor that is a parameter constrained to a type
+lambda of Effect, such as `interface Coalgebra<in out F extends HKT.TypeLambda, in out V>` with
+`readonly str: (value: V) => HKT.Kind<F, never, never, never, V>`. A functor on types takes an
+interface that extends the type lambda of Effect, with the object of the functor at the object of
+the lambda as its type, such as `interface StreamFunctor<out B> extends HKT.TypeLambda` with
+`readonly type: readonly [B, this['Target']]`.
+A refinement takes the schema of its type with a filter that calls its condition and the brand of
+its name, as
 `Schema.String.pipe(Schema.check(Schema.makeFilter(isSegment)), Schema.brand('Segment'))`, and a
 type of the same name for what the schema decodes. A type takes a type alias with a type parameter
 for every type parameter of the type, annotated with its variance. A function takes a type of its
@@ -176,16 +180,15 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
       `export_typescript`."
   let typeName := pascalCaseOf (wordsOf moduleNamespace name)
   let valueName := camelCaseOf (wordsOf moduleNamespace name)
-  let information ← Lean.getConstInfo name
-  Lean.Meta.forallBoundedTelescope information.type (some (typeParameterCount information.type))
-      fun parameters rest ↦ do
+  parametersOf (← Lean.getConstInfo name) fun parameters rest value? ↦ do
     let names ← parameters.toList.mapM fun parameter ↦
       return (← parameter.fvarId!.getUserName).toString
     let arguments := if names.isEmpty then "" else s!"<{", ".intercalate names}>"
     let variances ← variancesOf name
-    let generics := if names.isEmpty then "" else
-      s!"<{", ".intercalate ((names.zip variances).map fun (parameter, polarities) ↦
-        annotationOf parameter polarities)}>"
+    let annotated ← ((parameters.toList.zip names).zip variances).mapM
+      fun ((parameter, parameterName), polarities) ↦
+        genericOf parameter (annotationOf parameterName polarities)
+    let generics := if names.isEmpty then "" else s!"<{", ".intercalate annotated}>"
     match ← kindOf name with
     | .dataStructure =>
       let fields ← (← fieldTypesOf name parameters).mapM fun (field, fieldType) ↦ do
@@ -212,33 +215,46 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
           {← effectNameOf "Schema" "brand" .value}('{typeName}'));\n\n" ++
         s!"{← commentOf name}export type {typeName} = typeof {typeName}.Type;\n"
     | .bundled =>
-      let some value := information.value?
+      let some value := value?
         | Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory gives the \
             type no value."
-      let .const structureName _ := (value.beta parameters).getAppFn
+      let .const structureName _ := value.getAppFn
         | Lean.throwError m!"`{name}` applies no structure."
-      bundledFieldsOf (value.beta parameters) fun bundledParameters fields ↦ do
+      bundledFieldsOf value fun bundledParameters fields ↦ do
         let allParameters := parameters.toList ++ bundledParameters
         let allNames ← allParameters.mapM fun parameter ↦
           return (← parameter.fvarId!.getUserName).toString
         let allArguments := if allNames.isEmpty then "" else s!"<{", ".intercalate allNames}>"
         let annotations ← (allParameters.zip allNames).mapM fun (parameter, parameterName) ↦ do
-          return annotationOf parameterName
-            (← fields.flatMapM fun (_, fieldType) ↦ polaritiesOf parameter true fieldType)
+          genericOf parameter (annotationOf parameterName
+            (← fields.flatMapM fun (_, fieldType) ↦ polaritiesOf parameter true fieldType))
         let allGenerics := if allNames.isEmpty then "" else s!"<{", ".intercalate annotations}>"
+        -- The constructor declares the parameters with their constraints and applies the
+        -- interface to them by their names alone.
+        let constrained ← (allParameters.zip allNames).mapM fun (parameter, parameterName) ↦
+          genericOf parameter parameterName
+        let declared := if allNames.isEmpty then "" else s!"<{", ".intercalate constrained}>"
         let fieldLines ← fields.mapM fun (field, fieldType) ↦ do
           return s!"{← commentOf (structureName ++ field)}readonly {field}: \
             {← typeOf moduleNamespace fieldType};\n"
         return s!"{← commentOf name}export interface {typeName}{allGenerics} \
             \{\n{String.join fieldLines}}\n\n" ++
           s!"{← commentOf name (some "Creates")}export const {valueName} = \
-            {allArguments}(fields: {typeName}{allArguments}): {typeName}{allArguments} => fields;\n"
+            {declared}(fields: {typeName}{allArguments}): {typeName}{allArguments} => fields;\n"
+    | .functor =>
+      let some value := value?
+        | Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory gives the \
+            functor no value."
+      lambdaObjectOf value rest fun object ↦ do
+        return s!"{← commentOf name}export interface {typeName}{generics} extends \
+          {← effectNameOf "HKT" "TypeLambda" .type} \{\n\
+          readonly type: {← typeOf moduleNamespace object};\n}\n"
     | .type =>
-      let some value := information.value?
+      let some value := value?
         | Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory gives the \
             type no value."
       return s!"{← commentOf name}export type {typeName}{generics} = \
-        {← typeOf moduleNamespace (value.beta parameters)};\n"
+        {← typeOf moduleNamespace value};\n"
     | .function =>
       let (signature, result) ← signatureOf moduleNamespace [] rest
       return s!"{← commentOf name}export type {typeName} = \

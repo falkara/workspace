@@ -16,7 +16,14 @@ constructor that brands a value, a function takes a type of its signature, and a
 constant that holds the value, a rational number as an integer or a quotient and a structure as its
 constructor, all named without the namespace of their module and with their documentation
 comments. A bundled structure of Mathlib, the clock of the fixture `Clock`, takes an interface with
-a type parameter in place of its state space and a function in place of its transition. A value of
+a type parameter in place of its state space and a function in place of its transition, and the
+chiming clock of the fixture takes its chimes as a type parameter before the state space, which
+TypeScript reads as covariant, and a pair as a tuple that TypeScript keeps read-only. The clockwork
+of the fixture, the coalgebra of Mathlib with its category and its functor as parameters, takes its
+category as the category of types and its functor as a type parameter
+constrained to a type lambda of Effect, which `HKT.Kind` applies to the state space, and the functor
+of the chimes takes an interface that extends the type lambda, with the pair of a chime and the
+object of the lambda, `this['Target']`, as its type. A value of
 a type with no value in TypeScript, a value of a structure of another module, and a declaration
 without the mark `export_typescript` take none.
 
@@ -166,3 +173,41 @@ export const clock = <V>(fields: Clock<V>): Clock<V> => fields;
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
   IO.print (← (Generator.declarationOf `Geometry ``Geometry.Clock).run' [])
+
+/--
+info: /** A clock that chimes and ticks from every state to its next state. */
+export interface ChimingClock<out B, in out V> {
+/** structure morphism of the coalgebra */
+readonly str: (value: V) => readonly [B, V];
+}
+
+/** Creates a clock that chimes and ticks from every state to its next state. */
+export const chimingClock = <B, V>(fields: ChimingClock<B, V>): ChimingClock<B, V> => fields;
+-/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.ChimingClock).run' [])
+
+/--
+info: /** A clockwork that moves every state by a functor. */
+export interface Clockwork<in out F extends HKT.TypeLambda, in out V> {
+/** structure morphism of the coalgebra */
+readonly str: (value: V) => HKT.Kind<F, never, never, never, V>;
+}
+
+/** Creates a clockwork that moves every state by a functor. */
+export const clockwork = <F extends HKT.TypeLambda, V>(fields: Clockwork<F, V>): Clockwork<F, V> => fields;
+-/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.Clockwork).run' [])
+
+/--
+info: /** The functor of the chimes, which gives a chime and the next state. */
+export interface ChimeFunctor<out B> extends HKT.TypeLambda {
+readonly type: readonly [B, this['Target']];
+}
+-/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.ChimeFunctor).run' [])

@@ -17,8 +17,10 @@ declarations the generator writes. A module imports the generated module as `The
 the schema, the type, and the constructor of every structure, such as
 `export const Tristimulus = Theory.Tristimulus;`, redeclares the schema and the type of every
 refinement, such as `export const Segment = Theory.Segment;`, redeclares the type and the
-constructor of every structure that takes an interface and every type, such as
-`export type MachineOutcome<State, Output> =`, redeclares every value, such as
+constructor of every structure that takes an interface and of every bundled structure, with a
+functor that is a parameter constrained as the interface constrains it, such as
+`export type Coalgebra<F extends HKT.TypeLambda, V> =`, redeclares the type of every type and every
+functor, such as `export type MachineOutcome<State, Output> =`, redeclares every value, such as
 `export const whiteTristimulus = Theory.whiteTristimulus;`, and implements every function under
 the name its contract gives it, such as `export const chromaticityOf`. Every redeclaration and every
 implementation takes the documentation comment that the generator writes for the declaration,
@@ -60,9 +62,8 @@ def redeclarationsOf (moduleNamespace name : Lean.Name) :
   let typeName := pascalCaseOf (wordsOf moduleNamespace name)
   let valueName := camelCaseOf (wordsOf moduleNamespace name)
   let information ← Lean.getConstInfo name
-  let names ← Lean.Meta.forallBoundedTelescope information.type
-    (some (typeParameterCount information.type)) fun parameters _ ↦
-      parameters.toList.mapM fun parameter ↦ return (← parameter.fvarId!.getUserName).toString
+  let names ← parametersOf information fun parameters _ _ ↦
+    parameters.toList.mapM fun parameter ↦ return (← parameter.fvarId!.getUserName).toString
   let arguments := if names.isEmpty then "" else s!"<{", ".intercalate names}>"
   match ← kindOf name with
   | .dataStructure =>
@@ -83,20 +84,20 @@ def redeclarationsOf (moduleNamespace name : Lean.Name) :
         ← commentOf name (some "A schema of")),
       (s!"export type {typeName} = Theory.{typeName};", ← commentOf name)]
   | .bundled =>
-    let some value := information.value?
-      | Lean.throwError m!"`{name}` has no redeclaration, as the theory gives the type no value."
-    let bundledNames ← Lean.Meta.forallBoundedTelescope information.type
-      (some (typeParameterCount information.type)) fun parameters _ ↦
-        bundledFieldsOf (value.beta parameters) fun bundledParameters _ ↦
-          (parameters.toList ++ bundledParameters).mapM fun parameter ↦
-            return (← parameter.fvarId!.getUserName).toString
+    -- The redeclaration declares the parameters with their constraints, as the interface does.
+    let bundledNames ← parametersOf information fun parameters _ value? ↦ do
+      let some value := value?
+        | Lean.throwError m!"`{name}` has no redeclaration, as the theory gives the type no value."
+      bundledFieldsOf value fun bundledParameters _ ↦
+        (parameters.toList ++ bundledParameters).mapM fun parameter ↦ do
+          (genericOf parameter (← parameter.fvarId!.getUserName).toString).run' []
     let allArguments := if bundledNames.isEmpty then "" else
       s!"<{", ".intercalate bundledNames}>"
     return [
       (s!"export type {typeName}{allArguments} =", ← commentOf name),
       (s!"export const {valueName} = Theory.{valueName};",
         ← commentOf name (some "Creates"))]
-  | .type => return [(s!"export type {typeName}{arguments} =", ← commentOf name)]
+  | .type | .functor => return [(s!"export type {typeName}{arguments} =", ← commentOf name)]
   | .value =>
     return [(s!"export const {valueName} = Theory.{valueName};",
       ← commentOf name)]

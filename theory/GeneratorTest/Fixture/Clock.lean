@@ -2,18 +2,25 @@ module
 
 meta import Falkara.ExportTypeScript
 public import Mathlib.CategoryTheory.Endofunctor.Algebra
+public import Mathlib.CategoryTheory.Limits.Types.Products
 
 /-!
 # Clock
 
-The module defines the bundled structure that the checks of the generator write, a clock, which is
+The module defines the bundled structures that the checks of the generator write, a clock, which is
 a coalgebra of the identity functor on types of Mathlib: a field whose value is a type, its state
 space, and a field whose value is a morphism of the category of types into the object of a functor,
-its transition.
+its transition, and a chiming clock, which is a coalgebra of the functor $X \mapsto B \times X$, a
+transition into a pair, with a type parameter of its own, its chimes. The module defines as well a
+clockwork, the coalgebra of Mathlib as it stands, with its category and its functor as parameters,
+and the functor of the chimes, a functor on types that the checks write as a type lambda of Effect.
 
 ## Main Definitions
 
 - `Clock`: a clock that ticks from every state to its next state.
+- `ChimingClock`: a clock that chimes and ticks from every state to its next state.
+- `Clockwork`: a clockwork that moves every state by a functor.
+- `ChimeFunctor`: the functor of the chimes, which gives a chime and the next state.
 -/
 
 @[expose] public section
@@ -28,6 +35,17 @@ universe u
 abbrev Clock : Type (u + 1) :=
   Endofunctor.Coalgebra (𝟭 (Type u))
 
-attribute [export_typescript] Clock
+/-- A clock that chimes and ticks from every state to its next state. -/
+abbrev ChimingClock (B : Type u) : Type (u + 1) :=
+  Endofunctor.Coalgebra (Limits.Types.binaryProductFunctor.obj B)
+
+/-- A clockwork that moves every state by a functor. -/
+abbrev Clockwork := @Endofunctor.Coalgebra
+
+/-- The functor of the chimes, which gives a chime and the next state. -/
+abbrev ChimeFunctor (B : Type u) : Type u ⥤ Type u :=
+  Limits.Types.binaryProductFunctor.obj B
+
+attribute [export_typescript] Clock ChimingClock Clockwork ChimeFunctor
 
 end Geometry
