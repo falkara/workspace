@@ -20,26 +20,27 @@ in steps of 1 nm.
 
 ## Main Definitions
 
-- `ColorMatchingCoefficients`: the three values of the CIE color-matching functions $\bar{x}$,
+- `ColorMatchingCoefficients`: a triple of the values of the CIE color-matching functions $\bar{x}$,
   $\bar{y}$, and $\bar{z}$ at a given wavelength, with the wavelength.
-- `observer`: the color-matching coefficients that define the observer, at wavelengths from 360 nm
-  to 830 nm in steps of 1 nm.
+- `observer`: the color-matching coefficients that define the CIE 1931 standard colorimetric
+  observer, at wavelengths from 360 nm to 830 nm in steps of 1 nm.
 
 ## Implementation Notes
 
 The observer holds every row of the data table [cie2019colorMatchingFunctions] as the
 color-matching coefficients at the wavelength of the row, as the vocabulary of the CIE
 [cie2020internationalLightingVocabulary] names the three values of the color-matching functions at a
-given wavelength, with the wavelength as the whole number of nanometers that the data table gives
-and each other value as the exact rational number that the decimal digits of the value denote.
+given wavelength. Each row holds the wavelength as the whole number of nanometers that the data
+table gives and each other value as the exact rational number that the decimal digits of the value
+denote.
 
-The metadata of the data table interpolates linearly between two rows and extrapolates by zero
-beyond 360 nm to 830 nm, and neither enters the theory, as the theory takes the rows themselves,
-each at the wavelength the data table gives it.
+The metadata of the data table names linear interpolation between two rows and extrapolation by
+zero beyond 360 nm to 830 nm, and neither enters the theory, as the theory takes the rows
+themselves, each at the wavelength the data table gives it.
 
 The observer holds its rows as a list rather than an array, as the kernel of Lean folds a list row
-by row, while it reduces a fold of an array through the loop of the fold and the bounds of every
-index, which takes gigabytes of memory over the rows of a data table.
+by row, while the kernel reduces a fold of an array through the loop of the fold and the bounds of
+every index, which takes gigabytes of memory over the rows of a data table.
 -/
 
 @[expose] public section
@@ -48,8 +49,8 @@ namespace Falkara.Presentation.Colorimetry
 
 /-! ### Type -/
 
-/-- The three values of the CIE color-matching functions $\bar{x}$, $\bar{y}$, and $\bar{z}$ at a
-given wavelength, with the wavelength. -/
+/-- A triple of the values of the CIE color-matching functions $\bar{x}$, $\bar{y}$, and $\bar{z}$
+at a given wavelength, with the wavelength. -/
 structure ColorMatchingCoefficients where
   /-- The wavelength, in nanometers. -/
   wavelength : ℕ
@@ -69,8 +70,8 @@ attribute [cite "z_bar(lambda)" cie2019colorMatchingFunctions] ColorMatchingCoef
 
 /-! ### Data -/
 
-/-- The color-matching coefficients that define the observer, at wavelengths from 360 nm to 830 nm
-in steps of 1 nm. -/
+/-- The color-matching coefficients that define the CIE 1931 standard colorimetric observer, at
+wavelengths from 360 nm to 830 nm in steps of 1 nm. -/
 def observer : List ColorMatchingCoefficients := [
   ⟨360, 0.000129900000, 0.0000039170000, 0.000606100000⟩,
   ⟨361, 0.000145847000, 0.0000043935810, 0.000680879200⟩,

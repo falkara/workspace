@@ -11,15 +11,15 @@ The module defines the checks of the observer against the data table
 [cie2019colorMatchingFunctions]. The checks compare the sum of the wavelengths $\lambda$, the sum of
 the values of each color-matching function $\bar{x}$, $\bar{y}$, and $\bar{z}$, and the values at
 one sample wavelength with the validation values of the data table, and the wavelengths with the
-range and the step that the data table gives. A last check finds that the wavelengths, paired in
-order with the rows, are each paired with the row at that wavelength, as the tristimulus values
-pair them.
+range and the step that the data table gives. A last check finds that pairing the wavelengths in
+order with the rows of the observer, as `tristimulusOf` pairs them, pairs each wavelength with the
+row at that wavelength.
 
 ## Main Statements
 
 - `observer_sumOfColumns`: the sum of the wavelengths and the sum of the values of each
   color-matching function equal the validation values of the data table,
-  $\sum \lambda = 280\,245$, $\sum \bar{x}(\lambda) = 106.865\,469\,489\,595$,
+  $\sum \lambda = 280\,245\,\mathrm{nm}$, $\sum \bar{x}(\lambda) = 106.865\,469\,489\,595$,
   $\sum \bar{y}(\lambda) = 106.856\,917\,101\,171\,9$, and
   $\sum \bar{z}(\lambda) = 106.892\,251\,278\,636$.
 - `observer_sampleRow`: the values at the sample wavelength equal the validation values of the
@@ -27,8 +27,9 @@ pair them.
   $(\bar{x}, \bar{y}, \bar{z})(479\,\mathrm{nm}) = (0.104\,297\,9, 0.133\,452\,8, 0.856\,619\,3)$.
 - `observer_wavelengths`: the wavelengths of the observer run from 360 nm to 830 nm in steps of
   1 nm, $\lambda_i = (360 + i)\,\mathrm{nm}$ for $i = 0, \ldots, 470$.
-- `wavelengths_zip_observer`: the wavelengths from 360 nm to 830 nm, paired in order with the rows
-  of the data table, are each paired with the row at that wavelength.
+- `wavelengths_zip_observer`: the wavelengths $w_i$ from 360 nm to 830 nm and the rows of the
+  observer are equal in number, and pairing the wavelengths in order with the rows pairs each
+  wavelength with the row at that wavelength, $w_i = \lambda_i$ for $i = 0, \ldots, 470$.
 
 ## Implementation Notes
 
@@ -43,15 +44,15 @@ public section
 namespace Falkara.Presentation.Colorimetry
 
 /-- The sum of the wavelengths and the sum of the values of each color-matching function equal the
-validation values of the data table, $\sum \lambda = 280\,245$,
+validation values of the data table, $\sum \lambda = 280\,245\,\mathrm{nm}$,
 $\sum \bar{x}(\lambda) = 106.865\,469\,489\,595$,
 $\sum \bar{y}(\lambda) = 106.856\,917\,101\,171\,9$, and
 $\sum \bar{z}(\lambda) = 106.892\,251\,278\,636$. -/
 theorem observer_sumOfColumns :
-    observer.foldl (fun sum stimulus ↦ sum + stimulus.wavelength) 0 = 280245 ∧
-      observer.foldl (fun sum stimulus ↦ sum + stimulus.xBar) 0 = 106.865469489595 ∧
-      observer.foldl (fun sum stimulus ↦ sum + stimulus.yBar) 0 = 106.8569171011719 ∧
-      observer.foldl (fun sum stimulus ↦ sum + stimulus.zBar) 0 = 106.892251278636 := by
+    observer.foldl (fun sum coefficients ↦ sum + coefficients.wavelength) 0 = 280245 ∧
+      observer.foldl (fun sum coefficients ↦ sum + coefficients.xBar) 0 = 106.865469489595 ∧
+      observer.foldl (fun sum coefficients ↦ sum + coefficients.yBar) 0 = 106.8569171011719 ∧
+      observer.foldl (fun sum coefficients ↦ sum + coefficients.zBar) 0 = 106.892251278636 := by
   decide +kernel
 
 attribute [cite "sumOfColumns" cie2019colorMatchingFunctions] observer_sumOfColumns
@@ -72,8 +73,9 @@ theorem observer_wavelengths :
 
 attribute [cite "lambda" cie2019colorMatchingFunctions] observer_wavelengths
 
-/-- The wavelengths from 360 nm to 830 nm, paired in order with the rows of the data table, are
-each paired with the row at that wavelength. -/
+/-- The wavelengths $w_i$ from 360 nm to 830 nm and the rows of the observer are equal in number,
+and pairing the wavelengths in order with the rows pairs each wavelength with the row at that
+wavelength, $w_i = \lambda_i$ for $i = 0, \ldots, 470$. -/
 theorem wavelengths_zip_observer :
     wavelengths.length = observer.length ∧
       (wavelengths.zip observer).all fun pair ↦ pair.2.wavelength = pair.1.val := by
