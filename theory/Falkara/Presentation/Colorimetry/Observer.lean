@@ -16,17 +16,17 @@ set_option linter.style.header false
 
 The module defines the observer as the CIE 1931 standard colorimetric observer by its
 color-matching functions $\bar{x}$, $\bar{y}$, and $\bar{z}$ at wavelengths from 360 nm to 830 nm
-in steps of 1 nm, and the monochromatic stimulus of the observer at a wavelength.
+in steps of 1 nm, and the color-matching coefficients of the observer at a wavelength.
 
 ## Main Definitions
 
-- `MonochromaticStimulus`: a monochromatic stimulus with the values of the color-matching functions
-  at its wavelength.
-- `observer`: the monochromatic stimuli that define the observer, at wavelengths from 360 nm to
-  830 nm in steps of 1 nm.
-- `monochromaticStimulusAt`: gives the monochromatic stimulus of the observer at a wavelength
-  $\lambda$, with the values $\bar{x}(\lambda)$, $\bar{y}(\lambda)$, and $\bar{z}(\lambda)$ of the
-  color-matching functions.
+- `ColorMatchingCoefficients`: the three values of the color-matching functions at a given
+  wavelength, with the wavelength.
+- `observer`: the color-matching coefficients that define the observer, at wavelengths from 360 nm
+  to 830 nm in steps of 1 nm.
+- `colorMatchingCoefficientsAt`: gives the color-matching coefficients of the observer at a
+  wavelength $\lambda$, the values $\bar{x}(\lambda)$, $\bar{y}(\lambda)$, and $\bar{z}(\lambda)$ of
+  the color-matching functions.
 
 ## Main Statements
 
@@ -35,13 +35,20 @@ in steps of 1 nm, and the monochromatic stimulus of the observer at a wavelength
 
 ## Implementation Notes
 
-The observer holds every row of the data table [cie2019colorMatchingFunctions] as a monochromatic
-stimulus, with its wavelength as the whole number of nanometers that the data table gives and each
-other value as the exact rational number that the decimal digits of the value denote.
+The observer holds every row of the data table [cie2019colorMatchingFunctions] as the
+color-matching coefficients at the wavelength of the row, as the vocabulary of the CIE
+[cie2020internationalLightingVocabulary] names the three values of the color-matching functions at a
+given wavelength, with the wavelength as the whole number of nanometers that the data table gives
+and each other value as the exact rational number that the decimal digits of the value denote.
 
-The monochromatic stimulus at a wavelength is the row whose index is the wavelength less 360 nm, as
-the rows run from 360 nm in steps of 1 nm, which a check of the observer proves, so the kernel of
-Lean reaches the row without comparing the wavelength with every row before it.
+The color-matching coefficients at a wavelength are the row whose index is the wavelength less
+360 nm, as the rows run from 360 nm in steps of 1 nm, which a check of the observer proves, so the
+kernel of Lean reaches the row without comparing the wavelength with every row before it.
+
+The metadata of the data table interpolates linearly between two rows and extrapolates by zero
+beyond 360 nm to 830 nm, and neither enters the theory, as the color-matching coefficients at a
+wavelength take a whole number of nanometers from 360 nm to 830 nm, each of which is the wavelength
+of a row.
 
 The observer holds its rows as a list rather than an array, as the kernel of Lean folds a list row
 by row, while it reduces a fold of an array through the loop of the fold and the bounds of every
@@ -54,29 +61,29 @@ namespace Falkara.Presentation.Colorimetry
 
 /-! ### Type -/
 
-/-- A monochromatic stimulus with the values of the color-matching functions at its wavelength. -/
-structure MonochromaticStimulus where
+/-- The three values of the color-matching functions at a given wavelength, with the wavelength. -/
+structure ColorMatchingCoefficients where
   /-- The wavelength, in nanometers. -/
   wavelength : ℕ
-  /-- The value of the color-matching function $\bar{x}$ at the wavelength of the stimulus. -/
+  /-- The value of the color-matching function $\bar{x}$ at the wavelength. -/
   xBar : ℚ
-  /-- The value of the color-matching function $\bar{y}$ at the wavelength of the stimulus. -/
+  /-- The value of the color-matching function $\bar{y}$ at the wavelength. -/
   yBar : ℚ
-  /-- The value of the color-matching function $\bar{z}$ at the wavelength of the stimulus. -/
+  /-- The value of the color-matching function $\bar{z}$ at the wavelength. -/
   zBar : ℚ
   deriving DecidableEq
 
-attribute [cite "columnHeaders" cie2019colorMatchingFunctions] MonochromaticStimulus
-attribute [cite "lambda" cie2019colorMatchingFunctions] MonochromaticStimulus.wavelength
-attribute [cite "x_bar(lambda)" cie2019colorMatchingFunctions] MonochromaticStimulus.xBar
-attribute [cite "y_bar(lambda)" cie2019colorMatchingFunctions] MonochromaticStimulus.yBar
-attribute [cite "z_bar(lambda)" cie2019colorMatchingFunctions] MonochromaticStimulus.zBar
+attribute [cite "17-23-032" cie2020internationalLightingVocabulary] ColorMatchingCoefficients
+attribute [cite "lambda" cie2019colorMatchingFunctions] ColorMatchingCoefficients.wavelength
+attribute [cite "x_bar(lambda)" cie2019colorMatchingFunctions] ColorMatchingCoefficients.xBar
+attribute [cite "y_bar(lambda)" cie2019colorMatchingFunctions] ColorMatchingCoefficients.yBar
+attribute [cite "z_bar(lambda)" cie2019colorMatchingFunctions] ColorMatchingCoefficients.zBar
 
 /-! ### Data -/
 
-/-- The monochromatic stimuli that define the observer, at wavelengths from 360 nm to 830 nm in
-steps of 1 nm. -/
-def observer : List MonochromaticStimulus := [
+/-- The color-matching coefficients that define the observer, at wavelengths from 360 nm to 830 nm
+in steps of 1 nm. -/
+def observer : List ColorMatchingCoefficients := [
   ⟨360, 0.000129900000, 0.0000039170000, 0.000606100000⟩,
   ⟨361, 0.000145847000, 0.0000043935810, 0.000680879200⟩,
   ⟨362, 0.000163802100, 0.0000049296040, 0.000765145600⟩,
@@ -561,11 +568,11 @@ attribute [cite "CIE_xyz_1931_2deg.csv" cie2019colorMatchingFunctions] observer_
 
 /-! ### Functions -/
 
-/-- Gives the monochromatic stimulus of the observer at a wavelength $\lambda$, with the values
+/-- Gives the color-matching coefficients of the observer at a wavelength $\lambda$, the values
 $\bar{x}(\lambda)$, $\bar{y}(\lambda)$, and $\bar{z}(\lambda)$ of the color-matching functions. -/
-def monochromaticStimulusAt (wavelength : Wavelength) : MonochromaticStimulus :=
+def colorMatchingCoefficientsAt (wavelength : Wavelength) : ColorMatchingCoefficients :=
   observer[wavelength.val - 360]'(by have := wavelength.property; rw [observer_length]; omega)
 
-attribute [cite "columnHeaders" cie2019colorMatchingFunctions] monochromaticStimulusAt
+attribute [cite "17-23-032" cie2020internationalLightingVocabulary] colorMatchingCoefficientsAt
 
 end Falkara.Presentation.Colorimetry
