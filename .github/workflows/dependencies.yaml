@@ -71,7 +71,7 @@ jobs:
       - name: Install the dependencies
         run: npm ci
       - name: Run Claude
-        uses: anthropics/claude-code-action@dcb57747bfceeaa1fa72638cae52295d1d853d4a # v1.0.199
+        uses: anthropics/claude-code-action@c84e279f859e2591391e95bd309286eb111c345f # v1.0.284
         with:
           trigger_phrase: '/update-dependency'
           prompt: ${{ github.event_name == 'pull_request' && '/update-dependency' || '' }}
