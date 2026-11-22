@@ -11,8 +11,9 @@ The module defines the checks of the illuminant against the data table
 the values of the relative spectral distribution $S$, and the value at one sample wavelength with
 the validation values of the data table, and the wavelengths with the range and the step that the
 data table gives. A further check compares the value of the distribution at 560 nm with 100, as the
-data table gives it, and a last check compares the distribution as a function of the wavelength at
-every wavelength from 360 nm to 830 nm with the row of the data table at that wavelength.
+data table gives it, and a last theorem proves that the distribution as a function of the
+wavelength gives at every wavelength from 360 nm to 830 nm the row of the data table at that
+wavelength.
 
 ## Main Statements
 
@@ -25,10 +26,15 @@ every wavelength from 360 nm to 830 nm with the row of the data table at that wa
   1 nm, $\lambda_i = (300 + i)\,\mathrm{nm}$ for $i = 0, \ldots, 530$.
 - `illuminant_normalization`: the relative spectral distribution of the illuminant is 100 at
   560 nm, $S(560\,\mathrm{nm}) = 100$.
-- `relativeSpectralPowerAt_wavelengths`: the distribution as a function of the wavelength gives the
-  row of the data table at every wavelength from 360 nm to 830 nm, $S(\lambda)$.
+- `relativeSpectralPowerAt_row`: the distribution as a function of the wavelength gives the row of
+  the data table at every wavelength from 360 nm to 830 nm, $S(\lambda)$.
 
 ## Implementation Notes
+
+The distribution at every wavelength is proved from the wavelengths of the rows for a wavelength
+of any value, rather than computed at each of the 471 wavelengths, as the kernel of Lean reaches a
+row by its index by walking every row before it, which takes gigabytes of memory over every
+wavelength.
 
 The checks are proved by `decide +kernel`, as `decide` reaches the maximum recursion depth of the
 elaborator on 531 rows and `native_decide` proves every statement by an axiom of its own, which
@@ -77,11 +83,18 @@ attribute [cite "S_D65(lambda)" cie2019standardIlluminantD65] illuminant_normali
 
 /-- The distribution as a function of the wavelength gives the row of the data table at every
 wavelength from 360 nm to 830 nm, $S(\lambda)$. -/
-theorem relativeSpectralPowerAt_wavelengths :
-    wavelengths.map relativeSpectralPowerAt =
-      (illuminant.drop 60).map (·.relativeSpectralPower) := by
-  decide +kernel
+theorem relativeSpectralPowerAt_row (wavelength : Wavelength) :
+    ∃ component ∈ illuminant, component.wavelength = wavelength.val ∧
+      relativeSpectralPowerAt wavelength = component.relativeSpectralPower := by
+  have bounds := wavelength.property
+  have index : wavelength.val - 300 < illuminant.length := by rw [illuminant_length]; omega
+  refine ⟨illuminant[wavelength.val - 300], List.getElem_mem index, ?_, rfl⟩
+  have row := congrArg (fun rows ↦ rows[wavelength.val - 300]?) illuminant_wavelengths
+  simp only [List.getElem?_map, List.getElem?_eq_getElem index,
+    List.getElem?_range (by omega : wavelength.val - 300 < 531)] at row
+  simp at row
+  omega
 
-attribute [cite "S_D65(lambda)" cie2019standardIlluminantD65] relativeSpectralPowerAt_wavelengths
+attribute [cite "S_D65(lambda)" cie2019standardIlluminantD65] relativeSpectralPowerAt_row
 
 end Falkara.Presentation.Colorimetry
