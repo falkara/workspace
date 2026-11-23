@@ -30,6 +30,10 @@
     "#src/*": "./src/*.ts"
   },
   "exports": {
+    "./BinaryProductFunctor": {
+      "types": "./dist/BinaryProductFunctor.d.mts",
+      "default": "./dist/BinaryProductFunctor.mjs"
+    },
     "./Coalgebra": {
       "types": "./dist/Coalgebra.d.mts",
       "default": "./dist/Coalgebra.mjs"

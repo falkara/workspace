@@ -80,6 +80,12 @@ polarities at which the parameter occurs in the fields or the value of the decla
 - `lambdaObjectOf`: runs a computation on the object of a functor on types at the object of a type
   lambda of Effect, `this['Target']`, as `normalizedOf` reads the object, given the type of the
   functor.
+- `curriedTargetOf?`: gives the type of the functors on types that a curried functor gives, a
+  functor from types into the functors on types, such as `Type u ⥤ Type u ⥤ Type u`, where the
+  type is the type of one.
+- `curriedObjectOf`: runs a computation on the object of a curried functor at a type parameter, the
+  functor on types that the curried functor gives, with the parameter named as the definition of
+  the curried functor names its object, given the type of the curried functor.
 - `DeclarationKind`: a kind of declaration of the theory, which the generator writes in a form of
   its own.
 - `kindOf`: gives the kind of a declaration of the theory.
@@ -126,6 +132,12 @@ takes a type, which TypeScript has no syntax for, so a coalgebra of any functor 
 as `CategoryTheory.Endofunctor.Coalgebra` is one structure for every functor. The object of the
 lambda is a local whose name is the text TypeScript writes for it, `this['Target']`, so the type of
 the lambda is written as every other type.
+
+A curried functor takes a type lambda with a type parameter for the type it maps, as a type lambda
+of Effect gives a type and never another type lambda, so the theory names a curried functor of
+Mathlib, such as `CategoryTheory.Limits.Types.binaryProductFunctor`, as it stands. The parameter
+takes the name that the definition of the curried functor gives the type it maps, such as `X`, as
+the declaration of the theory binds no such parameter of its own.
 
 A category that is a parameter, such as the category of `CategoryTheory.Endofunctor.Coalgebra`,
 takes the category of types, as TypeScript has no category but its types and its functions, so the
@@ -424,6 +436,31 @@ def lambdaObjectOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
     computation (← (normalizedOf (Lean.mkAppN (.const `CategoryTheory.Functor.obj levels)
       (functorType.getAppArgs ++ #[functor, target])) : Lean.MetaM Lean.Expr))
 
+/-- Gives the type of the functors on types that a curried functor gives, a functor from types into
+the functors on types, such as `Type u ⥤ Type u ⥤ Type u`, where the type is the type of one. -/
+def curriedTargetOf? (type : Lean.Expr) : Option Lean.Expr :=
+  if type.isAppOfArity `CategoryTheory.Functor 4 && (type.getArg! 0).isSort &&
+      isFunctorType (type.getArg! 2) then some (type.getArg! 2)
+  else none
+
+/-- Runs a computation on the object of a curried functor at a type parameter, the functor on types
+that the curried functor gives, with the parameter named as the definition of the curried functor
+names its object, given the type of the curried functor, or fails with the reason where the
+definition names no object. -/
+def curriedObjectOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
+    [MonadLiftT Lean.MetaM m] {α : Type} (functor functorType : Lean.Expr)
+    (computation : Lean.Expr → Lean.Expr → m α) : m α := do
+  let .const _ levels := functorType.getAppFn
+    | monadLift (Lean.throwError m!"`{functorType}` is no type of a functor." : Lean.MetaM α)
+  let object := Lean.mkAppN (.const `CategoryTheory.Functor.obj levels)
+    (functorType.getAppArgs ++ #[functor])
+  -- The definition gives the object as a function, whose binder names the object.
+  let .lam name .. ← monadLift (Lean.Meta.whnfD object : Lean.MetaM Lean.Expr)
+    | monadLift (Lean.throwError m!"`{functor}` has no type in TypeScript, as its definition \
+        names no object." : Lean.MetaM α)
+  Lean.Meta.withLocalDeclD name (functorType.getArg! 0) fun parameter ↦
+    computation parameter (Lean.mkApp object parameter)
+
 /-- A kind of declaration of the theory, which the generator writes in a form of its own. -/
 inductive DeclarationKind where
   /-- A structure of data. -/
@@ -439,6 +476,9 @@ inductive DeclarationKind where
   | type
   /-- A functor on types, such as `Limits.Types.binaryProductFunctor.obj B`. -/
   | functor
+  /-- A curried functor, a functor from types into the functors on types, such as
+  `Limits.Types.binaryProductFunctor`. -/
+  | curriedFunctor
   /-- A function, a declaration that takes parameters beyond its type parameters. -/
   | function
   /-- A value, a declaration that takes no parameters beyond its type parameters. -/
@@ -456,7 +496,9 @@ def kindOf (name : Lean.Name) : Lean.MetaM DeclarationKind := do
           if (← bundledOf value).isSome then return .bundled
         return .type
       | .forallE .. => return .function
-      | _ => return if isFunctorType rest then .functor else .value
+      | _ =>
+        if isFunctorType rest then return .functor
+        return if (curriedTargetOf? rest).isSome then .curriedFunctor else .value
 
 /-- Gives the schema of Effect that a type of data of the theory takes, with every structure named
 without the namespace of its package, or fails with the reason where the type has none. -/

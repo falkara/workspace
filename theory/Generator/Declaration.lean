@@ -28,10 +28,11 @@ place of every field whose value is a type, and a functor that is a parameter co
 lambda of Effect, such as `interface Coalgebra<in out F extends HKT.TypeLambda, in out V>` with
 `readonly str: (value: V) => HKT.Kind<F, never, never, never, V>`. A functor on types takes an
 interface that extends the type lambda of Effect, with the object of the functor at the object of
-the lambda as its type, such as `interface StreamFunctor<out B> extends HKT.TypeLambda` with
-`readonly type: readonly [B, this['Target']]`.
-A refinement takes the schema of its type with a filter that calls its condition and the brand of
-its name, as
+the lambda as its type, and a curried functor, a functor from types into the functors on types,
+takes the same interface with a type parameter for the type it maps, named as its definition names
+it, such as `interface BinaryProductFunctor<out X> extends HKT.TypeLambda` with
+`readonly type: readonly [X, this['Target']]`. A refinement takes the schema of its type with a
+filter that calls its condition and the brand of its name, as
 `Schema.String.pipe(Schema.check(Schema.makeFilter(isSegment)), Schema.brand('Segment'))`, and a
 type of the same name for what the schema decodes. A type takes a type alias with a type parameter
 for every type parameter of the type, annotated with its variance. A function takes a type of its
@@ -249,6 +250,21 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
         return s!"{← commentOf name}export interface {typeName}{generics} extends \
           {← effectNameOf "HKT" "TypeLambda" .type} \{\n\
           readonly type: {← typeOf moduleNamespace object};\n}\n"
+    | .curriedFunctor =>
+      let some value := value?
+        | Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory gives the \
+            functor no value."
+      let some targetType := curriedTargetOf? rest
+        | Lean.throwError m!"`{name}` is no curried functor."
+      -- The object of the curried functor takes a type parameter after those of the declaration.
+      curriedObjectOf value rest fun parameter functor ↦
+        lambdaObjectOf functor targetType fun object ↦ do
+          let parameterName := (← parameter.fvarId!.getUserName).toString
+          let objectGeneric := annotationOf parameterName (← polaritiesOf parameter true object)
+          return s!"{← commentOf name}export interface {typeName}\
+            <{", ".intercalate (annotated ++ [objectGeneric])}> extends \
+            {← effectNameOf "HKT" "TypeLambda" .type} \{\n\
+            readonly type: {← typeOf moduleNamespace object};\n}\n"
     | .type =>
       let some value := value?
         | Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory gives the \

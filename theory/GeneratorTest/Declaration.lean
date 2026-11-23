@@ -211,3 +211,13 @@ readonly type: readonly [B, this['Target']];
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
   IO.print (← (Generator.declarationOf `Geometry ``Geometry.ChimeFunctor).run' [])
+
+/--
+info: /** The curried functor of the chimes, which maps every type of chimes to the functor of the chimes. */
+export interface ChimesFunctor<out X> extends HKT.TypeLambda {
+readonly type: readonly [X, this['Target']];
+}
+-/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.chimesFunctor).run' [])

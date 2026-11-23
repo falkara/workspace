@@ -13,7 +13,9 @@ space, and a field whose value is a morphism of the category of types into the o
 its transition, and a chiming clock, which is a coalgebra of the functor $X \mapsto B \times X$, a
 transition into a pair, with a type parameter of its own, its chimes. The module defines as well a
 clockwork, the coalgebra of Mathlib as it stands, with its category and its functor as parameters,
-and the functor of the chimes, a functor on types that the checks write as a type lambda of Effect.
+the functor of the chimes, a functor on types that the checks write as a type lambda of Effect, and
+the curried functor of the chimes, the product functor of Mathlib as it stands, which the checks
+write as a type lambda with a type parameter for the type of chimes.
 
 ## Main Definitions
 
@@ -21,6 +23,8 @@ and the functor of the chimes, a functor on types that the checks write as a typ
 - `ChimingClock`: a clock that chimes and ticks from every state to its next state.
 - `Clockwork`: a clockwork that moves every state by a functor.
 - `ChimeFunctor`: the functor of the chimes, which gives a chime and the next state.
+- `chimesFunctor`: the curried functor of the chimes, which maps every type of chimes to the
+  functor of the chimes.
 -/
 
 @[expose] public section
@@ -46,6 +50,10 @@ abbrev Clockwork := @Endofunctor.Coalgebra
 abbrev ChimeFunctor (B : Type u) : Type u ⥤ Type u :=
   Limits.Types.binaryProductFunctor.obj B
 
-attribute [export_typescript] Clock ChimingClock Clockwork ChimeFunctor
+/-- The curried functor of the chimes, which maps every type of chimes to the functor of the
+chimes. -/
+abbrev chimesFunctor := Limits.Types.binaryProductFunctor
+
+attribute [export_typescript] Clock ChimingClock Clockwork ChimeFunctor chimesFunctor
 
 end Geometry

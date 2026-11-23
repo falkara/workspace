@@ -123,9 +123,12 @@ info: [("export type Walker<State, Input, Trace> =", "/** A walker that takes a 
 /--
 info: [("export type Clockwork<F extends HKT.TypeLambda, V> =", "/** A clockwork that moves every state by a functor. */\n"),
   ("export const clockwork = Theory.clockwork;", "/** Creates a clockwork that moves every state by a functor. */\n"),
-  ("export type ChimeFunctor<B> =", "/** The functor of the chimes, which gives a chime and the next state. */\n")]
+  ("export type ChimeFunctor<B> =", "/** The functor of the chimes, which gives a chime and the next state. */\n"),
+  ("export type ChimesFunctor<X> =",
+    "/** The curried functor of the chimes, which maps every type of chimes to the functor of the chimes. */\n")]
 -/
 #guard_msgs in
 #eval show Lean.MetaM (List (String × String)) from do
   return (← Generator.redeclarationsOf `Geometry ``Geometry.Clockwork) ++
-    (← Generator.redeclarationsOf `Geometry ``Geometry.ChimeFunctor)
+    (← Generator.redeclarationsOf `Geometry ``Geometry.ChimeFunctor) ++
+    (← Generator.redeclarationsOf `Geometry ``Geometry.chimesFunctor)

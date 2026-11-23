@@ -19,8 +19,9 @@ the schema, the type, and the constructor of every structure, such as
 refinement, such as `export const Segment = Theory.Segment;`, redeclares the type and the
 constructor of every structure that takes an interface and of every bundled structure, with a
 functor that is a parameter constrained as the interface constrains it, such as
-`export type Coalgebra<F extends HKT.TypeLambda, V> =`, redeclares the type of every type and every
-functor, such as `export type MachineOutcome<State, Output> =`, redeclares every value, such as
+`export type Coalgebra<F extends HKT.TypeLambda, V> =`, redeclares the type of every type, every
+functor, and every curried functor, the last with the type parameter of the type it maps, such as
+`export type MachineOutcome<State, Output> =`, redeclares every value, such as
 `export const whiteTristimulus = Theory.whiteTristimulus;`, and implements every function under
 the name its contract gives it, such as `export const chromaticityOf`. Every redeclaration and every
 implementation takes the documentation comment that the generator writes for the declaration,
@@ -98,6 +99,16 @@ def redeclarationsOf (moduleNamespace name : Lean.Name) :
       (s!"export const {valueName} = Theory.{valueName};",
         ← commentOf name (some "Creates"))]
   | .type | .functor => return [(s!"export type {typeName}{arguments} =", ← commentOf name)]
+  | .curriedFunctor =>
+    -- The object of the curried functor takes a type parameter after those of the declaration.
+    let allNames ← parametersOf information fun parameters rest value? ↦ do
+      let some value := value?
+        | Lean.throwError m!"`{name}` has no redeclaration, as the theory gives the functor no \
+            value."
+      curriedObjectOf value rest fun parameter _ ↦
+        (parameters.toList ++ [parameter]).mapM fun parameter ↦
+          return (← parameter.fvarId!.getUserName).toString
+    return [(s!"export type {typeName}<{", ".intercalate allNames}> =", ← commentOf name)]
   | .value =>
     return [(s!"export const {valueName} = Theory.{valueName};",
       ← commentOf name)]
