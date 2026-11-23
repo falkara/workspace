@@ -1,5 +1,6 @@
 module
 
+import all GeneratorTest.Fixture.Bell
 import all GeneratorTest.Fixture.Clock
 import all GeneratorTest.Fixture.Coordinate
 import all GeneratorTest.Fixture.Point
@@ -21,7 +22,9 @@ structures take type parameters or a function writes them as interfaces, imports
 another module that an interface names as a type, and imports nothing from Effect where its
 declarations name no module of Effect. A module with functors ends with a contract that takes an
 instance of its class of functors for every functor, a function of the type parameters of the
-functor and of an instance of every functor among them.
+functor and of an instance of every functor among them. A module whose bundled structure applies a
+functor of another module imports nothing from that module, as the fields of the structure reduce
+the functor away.
 -/
 
 /--
@@ -230,3 +233,19 @@ type _Implemented<Implementation extends Contract = typeof Module> = Implementat
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
   IO.print (← Generator.fileOf `GeneratorTest `Geometry `GeneratorTest.Fixture.Clock)
+
+/--
+info: // Written by the generator of the theory from `GeneratorTest.Fixture.Bell`, so every change by hand is lost when the generator runs.
+
+/** A bell that rings a chime and moves to its next state. */
+export interface Bell<out B, in out V> {
+/** structure morphism of the coalgebra */
+readonly str: (value: V) => readonly [B, V];
+}
+
+/** Creates a bell that rings a chime and moves to its next state. */
+export const bell = <B, V>(fields: Bell<B, V>): Bell<B, V> => fields;
+-/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← Generator.fileOf `GeneratorTest `Geometry `GeneratorTest.Fixture.Bell)

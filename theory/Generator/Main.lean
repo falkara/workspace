@@ -148,15 +148,24 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
       let path := pathOf theory checkModule
       s!"import \{ {", ".intercalate (names.map fun condition ↦
         camelCaseOf (wordsOf packageNamespace condition))} } from '#src/{path}.check';\n"
+  -- A bundled structure names the types of its fields as TypeScript reads them, so a declaration
+  -- that its value names and its fields reduce away, such as the functor of a stream coalgebra, is
+  -- named nowhere in the file.
+  let bundledConstants ← kinds.flatMapM fun
+    | (name, .bundled) => do
+      parametersOf (← Lean.getConstInfo name) fun _ _ value? ↦ do
+        let some value := value? | return []
+        bundledFieldsOf value fun _ fields ↦
+          return fields.flatMap fun (_, fieldType) ↦ fieldType.getUsedConstants.toList
+    | _ => return []
   -- An interface names the types of its fields, and a type and a refinement the types of their
   -- values.
-  let named := kinds.flatMap fun (name, kind) ↦
+  let named := bundledConstants ++ kinds.flatMap fun (name, kind) ↦
     match kind with
     | .dataStructure | .structure => fieldConstants name
     | _ => ((environment.find? name).map fun information ↦
       information.type.getUsedConstants.toList ++
-        if kind matches .type | .bundled | .functor | .curriedFunctor | .functorClass |
-            .refinement .. then
+        if kind matches .type | .functor | .curriedFunctor | .functorClass | .refinement .. then
           (information.value?.map (·.getUsedConstants.toList)).getD []
         else []).getD []
   -- The contract names the class of functors in the type of every instance.

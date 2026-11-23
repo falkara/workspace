@@ -42,6 +42,10 @@
       "types": "./dist/Coyoneda.d.mts",
       "default": "./dist/Coyoneda.mjs"
     },
+    "./DeterministicAutomaton": {
+      "types": "./dist/DeterministicAutomaton.d.mts",
+      "default": "./dist/DeterministicAutomaton.mjs"
+    },
     "./Functor": {
       "types": "./dist/Functor.d.mts",
       "default": "./dist/Functor.mjs"
@@ -53,6 +57,18 @@
     "./FunctorConst": {
       "types": "./dist/FunctorConst.d.mts",
       "default": "./dist/FunctorConst.mjs"
+    },
+    "./MealyMachine": {
+      "types": "./dist/MealyMachine.d.mts",
+      "default": "./dist/MealyMachine.mjs"
+    },
+    "./SequenceCoalgebra": {
+      "types": "./dist/SequenceCoalgebra.d.mts",
+      "default": "./dist/SequenceCoalgebra.mjs"
+    },
+    "./StreamCoalgebra": {
+      "types": "./dist/StreamCoalgebra.d.mts",
+      "default": "./dist/StreamCoalgebra.mjs"
     }
   },
   "scripts": {

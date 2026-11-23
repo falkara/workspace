@@ -27,6 +27,8 @@ The module defines every work that the theory cites, each as a declaration that 
   colorimetry, each under a number of its own.
 - `ieee2024portableOperatingSystemInterface`: the standard of the IEEE and The Open Group that
   defines the interface of a portable operating system, with its filenames and pathnames.
+- `jacobs2017introductionCoalgebra`: the textbook of Jacobs on coalgebras, which names the kinds of
+  state-based systems by the functors whose coalgebras they are.
 - `mathlibCommunity2020leanMathematicalLibrary`: the library of mathematics of Lean, Mathlib, which
   the theory builds on, with a page of documentation for every declaration.
 - `microsoft2024namingFiles`: the page of the documentation of Windows that gives the rules for the
@@ -111,6 +113,15 @@ def ieee2024portableOperatingSystemInterface : Citation.Work where
     Interface (POSIX™) Base Specifications, Issue 8"
   year := 2024
   doi := some "10.1109/IEEESTD.2024.10555529"
+
+/-- The textbook of Jacobs on coalgebras, which names the kinds of state-based systems by the
+functors whose coalgebras they are. -/
+def jacobs2017introductionCoalgebra : Citation.Work where
+  author := "Bart Jacobs"
+  title := "Introduction to Coalgebra: Towards Mathematics of States and Observation"
+  year := 2017
+  publisher := some "Cambridge University Press, Cambridge, GB"
+  doi := some "10.1017/CBO9781316823187"
 
 /-- The library of mathematics of Lean, Mathlib, which the theory builds on, with a page of
 documentation for every declaration, which the full name of the declaration finds. -/
