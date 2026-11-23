@@ -21,7 +21,7 @@ structures take type parameters or a function writes them as interfaces, imports
 another module that an interface names as a type, and imports nothing from Effect where its
 declarations name no module of Effect. A module with functors ends with a contract that takes an
 instance of its class of functors for every functor, a function of the type parameters of the
-functor.
+functor and of an instance of every functor among them.
 -/
 
 /--
@@ -182,6 +182,11 @@ export interface ChimesFunctor<out X> extends HKT.TypeLambda {
 readonly type: readonly [X, this['Target']];
 }
 
+/** The curried functor of the dials, which maps every type of settings to the functor that turns a setting into the next state. */
+export interface DialsFunctor<in k> extends HKT.TypeLambda {
+readonly type: (value: k) => this['Target'];
+}
+
 /** A gear, a functor that a clockwork moves its states by. */
 export interface Gear<in out F extends HKT.TypeLambda> extends HKT.TypeClass<F> {
 /** The action of a functor on morphisms. */
@@ -202,12 +207,21 @@ map_id: <X>(value: HKT.Kind<F, never, never, never, X>): boolean => equivalence<
 map_comp: <X, Y, Z>(f: (value: X) => Y, g: (value: Y) => Z, value: HKT.Kind<F, never, never, never, X>): boolean => equivalence<Z>((instance.map<X, Z>(Function.flow(f, g)))(value), (Function.flow(instance.map<X, Y>(f), instance.map<Y, Z>(g)))(value)),
 });
 
+/** A gear train, which moves every state by one gear and then by another. */
+export interface GearTrain<in out F extends HKT.TypeLambda, in out G extends HKT.TypeLambda> extends HKT.TypeLambda {
+readonly type: HKT.Kind<G, never, never, never, HKT.Kind<F, never, never, never, this['Target']>>;
+}
+
 /** The functions of the theory that the module `Fixture/Clock` of the package implements. */
 interface Contract {
 /** Gives the functor of the chimes, which gives a chime and the next state. */
 readonly chimeFunctor: <B>() => Gear<ChimeFunctor<B>>;
 /** Gives the curried functor of the chimes, which maps every type of chimes to the functor of the chimes. */
 readonly chimesFunctor: <X>() => Gear<ChimesFunctor<X>>;
+/** Gives the curried functor of the dials, which maps every type of settings to the functor that turns a setting into the next state. */
+readonly dialsFunctor: <k>() => Gear<DialsFunctor<k>>;
+/** Gives a gear train, which moves every state by one gear and then by another. */
+readonly gearTrain: <F extends HKT.TypeLambda, G extends HKT.TypeLambda>(F: Gear<F>, G: Gear<G>) => Gear<GearTrain<F, G>>;
 }
 
 /** The module `Fixture/Clock` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */

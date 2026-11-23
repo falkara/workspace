@@ -38,9 +38,21 @@
       "types": "./dist/Coalgebra.d.mts",
       "default": "./dist/Coalgebra.mjs"
     },
+    "./Coyoneda": {
+      "types": "./dist/Coyoneda.d.mts",
+      "default": "./dist/Coyoneda.mjs"
+    },
     "./Functor": {
       "types": "./dist/Functor.d.mts",
       "default": "./dist/Functor.mjs"
+    },
+    "./FunctorComp": {
+      "types": "./dist/FunctorComp.d.mts",
+      "default": "./dist/FunctorComp.mjs"
+    },
+    "./FunctorConst": {
+      "types": "./dist/FunctorConst.d.mts",
+      "default": "./dist/FunctorConst.mjs"
     }
   },
   "scripts": {

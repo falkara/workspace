@@ -24,7 +24,10 @@ of the fixture, the coalgebra of Mathlib with its category and its functor as pa
 category as the category of types and its functor as a type parameter
 constrained to a type lambda of Effect, which `HKT.Kind` applies to the state space, and the functor
 of the chimes takes an interface that extends the type lambda, with the pair of a chime and the
-object of the lambda, `this['Target']`, as its type. A value of
+object of the lambda, `this['Target']`, as its type. The curried functor of the dials, which maps
+the opposite of the types, takes a type parameter for a type of settings, which TypeScript reads as
+contravariant, and the gear train, a composite of two functors, takes a type parameter for each of
+them, which `HKT.Kind` applies one inside the other. A value of
 a type with no value in TypeScript, a value of a structure of another module, and a declaration
 without the mark `export_typescript` take none.
 
@@ -224,6 +227,16 @@ readonly type: readonly [X, this['Target']];
   IO.print (← (Generator.declarationOf `Geometry ``Geometry.chimesFunctor).run' [])
 
 /--
+info: /** The curried functor of the dials, which maps every type of settings to the functor that turns a setting into the next state. */
+export interface DialsFunctor<in k> extends HKT.TypeLambda {
+readonly type: (value: k) => this['Target'];
+}
+-/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.dialsFunctor).run' [])
+
+/--
 info: /** A gear, a functor that a clockwork moves its states by. */
 export interface Gear<in out F extends HKT.TypeLambda> extends HKT.TypeClass<F> {
 /** The action of a functor on morphisms. */
@@ -247,3 +260,13 @@ map_comp: <X, Y, Z>(f: (value: X) => Y, g: (value: Y) => Z, value: HKT.Kind<F, n
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
   IO.print (← (Generator.declarationOf `Geometry ``Geometry.Gear).run' [])
+
+/--
+info: /** A gear train, which moves every state by one gear and then by another. */
+export interface GearTrain<in out F extends HKT.TypeLambda, in out G extends HKT.TypeLambda> extends HKT.TypeLambda {
+readonly type: HKT.Kind<G, never, never, never, HKT.Kind<F, never, never, never, this['Target']>>;
+}
+-/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.GearTrain).run' [])

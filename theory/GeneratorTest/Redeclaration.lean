@@ -13,7 +13,8 @@ meta import Generator.Redeclaration
 The module defines the checks of the redeclarations in a module of TypeScript: a structure is
 redeclared as its schema, its type, and its constructor, a structure that takes an interface as its
 type and its constructor, a bundled structure as its type, with a functor as a type parameter
-constrained to a type lambda, and its constructor, a functor as its type alone, a type as its type
+constrained to a type lambda, and its constructor, a functor as its type, with a functor as a type
+parameter constrained to a type lambda, and its instance, a type as its type
 alone, found by the text up to its `=` even where the
 redeclaration breaks over lines, a value is redeclared from the generated module, and a function is
 implemented under its name, each with the comment of the theory. The check gives no reason for a
@@ -129,14 +130,23 @@ info: [("export type Clockwork<F extends HKT.TypeLambda, V> =", "/** A clockwork
     "/** The curried functor of the chimes, which maps every type of chimes to the functor of the chimes. */\n"),
   ("export const chimesFunctor",
     "/** Gives the curried functor of the chimes, which maps every type of chimes to the functor of the chimes. */\n"),
+  ("export type DialsFunctor<k> =",
+    "/** The curried functor of the dials, which maps every type of settings to the functor that turns a setting into the next state. */\n"),
+  ("export const dialsFunctor",
+    "/** Gives the curried functor of the dials, which maps every type of settings to the functor that turns a setting into the next state. */\n"),
   ("export type Gear<F extends HKT.TypeLambda> =", "/** A gear, a functor that a clockwork moves its states by. */\n"),
   ("export const gear = Theory.gear;", "/** Creates a gear, a functor that a clockwork moves its states by. */\n"),
   ("export const gearAxioms = Theory.gearAxioms;",
-    "/** Gives the axioms of a gear, a functor that a clockwork moves its states by. */\n")]
+    "/** Gives the axioms of a gear, a functor that a clockwork moves its states by. */\n"),
+  ("export type GearTrain<F extends HKT.TypeLambda, G extends HKT.TypeLambda> =",
+    "/** A gear train, which moves every state by one gear and then by another. */\n"),
+  ("export const gearTrain", "/** Gives a gear train, which moves every state by one gear and then by another. */\n")]
 -/
 #guard_msgs in
 #eval show Lean.MetaM (List (String × String)) from do
   return (← Generator.redeclarationsOf `Geometry ``Geometry.Clockwork) ++
     (← Generator.redeclarationsOf `Geometry ``Geometry.ChimeFunctor) ++
     (← Generator.redeclarationsOf `Geometry ``Geometry.chimesFunctor) ++
-    (← Generator.redeclarationsOf `Geometry ``Geometry.Gear)
+    (← Generator.redeclarationsOf `Geometry ``Geometry.dialsFunctor) ++
+    (← Generator.redeclarationsOf `Geometry ``Geometry.Gear) ++
+    (← Generator.redeclarationsOf `Geometry ``Geometry.GearTrain)

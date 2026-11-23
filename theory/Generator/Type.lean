@@ -10,6 +10,7 @@ public import Lean.Meta.AppBuilder
 public import Lean.Structure
 public import Generator.Import
 public import Generator.Name
+import Lean.Meta.WHNF
 
 /-!
 # Type
@@ -53,8 +54,9 @@ polarities at which the parameter occurs in the fields or the value of the decla
   the structure.
 - `normalizedOf`: gives a type of the theory as TypeScript reads it: a morphism `X ⟶ Y` of the
   category of types as the function type `(value : X) → Y`, an object `F.obj X` of a functor `F`
-  as the type it reduces to, such as `X` for the identity functor, and an object of a functor that
-  is a parameter as it stands, with its object as TypeScript reads it.
+  and a type taken out of the opposite of the types as the type it reduces to, such as `X` for the
+  identity functor, and an object of a functor that is a parameter as it stands, with its object as
+  TypeScript reads it.
 - `bundledOf`: gives the structure that a type of the theory applies, where the type is a bundled
   structure, one with a field whose value is a type, such as `Endofunctor.Coalgebra (𝟭 (Type u))`
   with its state space `V`.
@@ -85,11 +87,12 @@ polarities at which the parameter occurs in the fields or the value of the decla
   lambda of Effect, `this['Target']`, as `normalizedOf` reads the object, given the type of the
   functor.
 - `curriedTargetOf?`: gives the type of the functors on types that a curried functor gives, a
-  functor from types into the functors on types, such as `Type u ⥤ Type u ⥤ Type u`, where the
-  type is the type of one.
+  functor from types or from their opposite into the functors on types, such as
+  `Type u ⥤ Type u ⥤ Type u`, where the type is the type of one.
 - `curriedObjectOf`: runs a computation on the object of a curried functor at a type parameter, the
   functor on types that the curried functor gives, with the parameter named as the definition of
-  the curried functor names its object, given the type of the curried functor.
+  the curried functor names its object, and taken by `Opposite.op` where the curried functor maps
+  the opposite of the types, given the type of the curried functor.
 - `functorFieldsOf`: runs a computation on the fields of the type of the functors on types, with a
   local functor named `F` in place of the action of the functor on types, the type of every other
   field that is no proof, and the statement of every field that is an axiom, given the type of the
@@ -148,7 +151,14 @@ A curried functor takes a type lambda with a type parameter for the type it maps
 of Effect gives a type and never another type lambda, so the theory names a curried functor of
 Mathlib, such as `CategoryTheory.Limits.Types.binaryProductFunctor`, as it stands. The parameter
 takes the name that the definition of the curried functor gives the type it maps, such as `X`, as
-the declaration of the theory binds no such parameter of its own.
+the declaration of the theory binds no such parameter of its own. A curried functor from the
+opposite of the types, such as `CategoryTheory.coyoneda`, takes the same type lambda, as an object
+of the opposite of the types is a type that `Opposite.op` wraps, which TypeScript has no counterpart
+for.
+
+An object of a functor reduces until it is an object of a functor that is a parameter, such as
+`G.obj (F.obj X)` of a composite `F ⋙ G`, as a further step takes the object apart into the
+fields of the functor, which TypeScript has no type for.
 
 The type of the functors on types, such as `CategoryTheory.Functor (Type u) (Type u)`, takes a type
 class of Effect, `HKT.TypeClass`, whose type lambda stands for the action of a functor on types,
@@ -268,9 +278,9 @@ def fieldTypesOf (name : Lean.Name) (parameters : Array Lean.Expr) :
     | _ => Lean.throwError m!"`{name ++ field}` is no field of a structure."
 
 /-- Gives a type of the theory as TypeScript reads it: a morphism `X ⟶ Y` of the category of types
-as the function type `(value : X) → Y`, an object `F.obj X` of a functor `F` as the type it reduces
-to, such as `X` for the identity functor, and an object of a functor that is a parameter as it
-stands, with its object as TypeScript reads it. -/
+as the function type `(value : X) → Y`, an object `F.obj X` of a functor `F` and a type taken out of
+the opposite of the types as the type it reduces to, such as `X` for the identity functor, and an
+object of a functor that is a parameter as it stands, with its object as TypeScript reads it. -/
 partial def normalizedOf (type : Lean.Expr) : Lean.MetaM Lean.Expr := do
   match type with
   | .forallE name domain body info =>
@@ -280,13 +290,17 @@ partial def normalizedOf (type : Lean.Expr) : Lean.MetaM Lean.Expr := do
       return Lean.mkAppN type.getAppFn (type.getAppArgs.set! 5 (← normalizedOf object))
     match type.getAppFn, type.getAppArgs with
     -- The generator imports no Mathlib, so the names of Mathlib are written as names alone.
-    | .const `Quiver.Hom _, #[.sort _, _, source, target] =>
+    | .const `Quiver.Hom _, #[.sort _, _, source, target]
+    | .const `TypeCat.Hom _, #[source, target] =>
       -- The function binds its value, so the target refers to every outer binder one index further,
       -- and the annotation keeps the morphism a value of its own, which no signature takes apart.
       return Lean.mkAnnotation `morphism (.forallE `value (← normalizedOf source)
         ((← normalizedOf target).liftLooseBVars 0 1) .default)
-    | .const `Prefunctor.obj _, _ | .const `CategoryTheory.Functor.obj _, _ =>
-      let reduced ← Lean.Meta.whnfD type
+    | .const `Prefunctor.obj _, _ | .const `CategoryTheory.Functor.obj _, _
+    | .const `Opposite.unop _, _ =>
+      -- The reduction stops at an object of a functor that is a parameter, such as `G.obj X` of a
+      -- composite, which a further step would take apart into the fields of the functor.
+      let reduced ← Lean.Meta.whnfHeadPred type fun part ↦ return (parameterObjectOf part).isNone
       if reduced == type then return type
       normalizedOf reduced
     | function, arguments =>
@@ -472,16 +486,19 @@ def lambdaObjectOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
     computation (← (normalizedOf (Lean.mkAppN (.const `CategoryTheory.Functor.obj levels)
       (functorType.getAppArgs ++ #[functor, target])) : Lean.MetaM Lean.Expr))
 
-/-- Gives the type of the functors on types that a curried functor gives, a functor from types into
-the functors on types, such as `Type u ⥤ Type u ⥤ Type u`, where the type is the type of one. -/
+/-- Gives the type of the functors on types that a curried functor gives, a functor from types or
+from their opposite into the functors on types, such as `Type u ⥤ Type u ⥤ Type u`, where the type
+is the type of one. -/
 def curriedTargetOf? (type : Lean.Expr) : Option Lean.Expr :=
-  if type.isAppOfArity `CategoryTheory.Functor 4 && (type.getArg! 0).isSort &&
+  if type.isAppOfArity `CategoryTheory.Functor 4 && ((type.getArg! 0).isSort ||
+      (type.getArg! 0).isAppOfArity `Opposite 1 && (type.getArg! 0).appArg!.isSort) &&
       isFunctorType (type.getArg! 2) then some (type.getArg! 2)
   else none
 
 /-- Runs a computation on the object of a curried functor at a type parameter, the functor on types
 that the curried functor gives, with the parameter named as the definition of the curried functor
-names its object, given the type of the curried functor, or fails with the reason where the
+names its object, and with the parameter taken by `Opposite.op` where the curried functor maps the
+opposite of the types, given the type of the curried functor, or fails with the reason where the
 definition names no object. -/
 def curriedObjectOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
     [MonadLiftT Lean.MetaM m] {α : Type} (functor functorType : Lean.Expr)
@@ -494,8 +511,14 @@ def curriedObjectOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
   let .lam name .. ← monadLift (Lean.Meta.whnfD object : Lean.MetaM Lean.Expr)
     | monadLift (Lean.throwError m!"`{functor}` has no type in TypeScript, as its definition \
         names no object." : Lean.MetaM α)
-  Lean.Meta.withLocalDeclD name (functorType.getArg! 0) fun parameter ↦
-    computation parameter (Lean.mkApp object parameter)
+  -- An object of the opposite of the types is a type, which `Opposite.op` takes into the opposite.
+  if let .app (.const `Opposite oppositeLevels) type := functorType.getArg! 0 then
+    Lean.Meta.withLocalDeclD name type fun parameter ↦
+      computation parameter
+        (Lean.mkApp object (Lean.mkApp2 (.const `Opposite.op oppositeLevels) type parameter))
+  else
+    Lean.Meta.withLocalDeclD name (functorType.getArg! 0) fun parameter ↦
+      computation parameter (Lean.mkApp object parameter)
 
 /-- Runs a computation on the fields of the type of the functors on types, with a local functor
 named `F` in place of the action of the functor on types and the type of every other field that is

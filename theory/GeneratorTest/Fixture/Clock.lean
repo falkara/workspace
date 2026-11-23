@@ -3,6 +3,7 @@ module
 meta import Falkara.ExportTypeScript
 public import Mathlib.CategoryTheory.Endofunctor.Algebra
 public import Mathlib.CategoryTheory.Limits.Types.Products
+public import Mathlib.CategoryTheory.Yoneda
 
 /-!
 # Clock
@@ -15,8 +16,12 @@ transition into a pair, with a type parameter of its own, its chimes. The module
 clockwork, the coalgebra of Mathlib as it stands, with its category and its functor as parameters,
 the functor of the chimes, a functor on types that the checks write as a type lambda of Effect, and
 the curried functor of the chimes, the product functor of Mathlib as it stands, which the checks
-write as a type lambda with a type parameter for the type of chimes, and a gear, the functor of
-Mathlib as it stands, which the checks write as a type class of Effect.
+write as a type lambda with a type parameter for the type of chimes, the curried functor of the
+dials, the coyoneda embedding of Mathlib as it stands, which maps the opposite of the types and
+which the checks write as a type lambda with a type parameter for the type of settings, a gear, the
+functor of Mathlib as it stands, which the checks write as a type class of Effect, and a gear train,
+the composite of Mathlib as it stands, which the checks write as a type lambda with a type parameter
+for each of its functors.
 
 ## Main Definitions
 
@@ -26,7 +31,10 @@ Mathlib as it stands, which the checks write as a type class of Effect.
 - `ChimeFunctor`: the functor of the chimes, which gives a chime and the next state.
 - `chimesFunctor`: the curried functor of the chimes, which maps every type of chimes to the
   functor of the chimes.
+- `dialsFunctor`: the curried functor of the dials, which maps every type of settings to the
+  functor that turns a setting into the next state.
 - `Gear`: a gear, a functor that a clockwork moves its states by.
+- `GearTrain`: a gear train, which moves every state by one gear and then by another.
 -/
 
 @[expose] public section
@@ -56,9 +64,17 @@ abbrev ChimeFunctor (B : Type u) : Type u ⥤ Type u :=
 chimes. -/
 abbrev chimesFunctor := Limits.Types.binaryProductFunctor
 
+/-- The curried functor of the dials, which maps every type of settings to the functor that turns a
+setting into the next state. -/
+abbrev dialsFunctor := @coyoneda
+
 /-- A gear, a functor that a clockwork moves its states by. -/
 abbrev Gear := @CategoryTheory.Functor
 
-attribute [export_typescript] Clock ChimingClock Clockwork ChimeFunctor chimesFunctor Gear
+/-- A gear train, which moves every state by one gear and then by another. -/
+abbrev GearTrain := @Functor.comp
+
+attribute [export_typescript] Clock ChimingClock Clockwork ChimeFunctor chimesFunctor dialsFunctor
+  Gear GearTrain
 
 end Geometry

@@ -11,4 +11,7 @@ public import Falkara.Presentation.Colorimetry.Wavelength
 public import Falkara.References
 public import Falkara.Simulation.BinaryProductFunctor
 public import Falkara.Simulation.Coalgebra
+public import Falkara.Simulation.Coyoneda
 public import Falkara.Simulation.Functor
+public import Falkara.Simulation.FunctorComp
+public import Falkara.Simulation.FunctorConst

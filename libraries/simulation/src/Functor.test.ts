@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from '@effect/vitest';
-import { type HKT, Schema } from 'effect';
+import { Equal, type HKT, Option, Schema } from 'effect';
 import * as Functor from '#src/Functor';
 
 /** A type lambda of the choices of a state, the states that may follow it. */
@@ -16,6 +16,12 @@ const axioms = Functor.functorAxioms(
   (self, that) =>
     self.length === that.length && self.every((state, index) => state === that[index]),
 );
+
+/** The functor of the options of Effect, which takes the action on morphisms that Effect gives. */
+const option = Functor.functor<Option.OptionTypeLambda>({ map: Option.map });
+
+/** The axioms of the functor of the options, with the options equal where Effect tells them equal. */
+const optionAxioms = Functor.functorAxioms(option, Equal.equals);
 
 describe('Functor', () => {
   it('makes a functor of a type lambda that a consumer brings', () => {
@@ -39,6 +45,27 @@ describe('Functor', () => {
         (room: number) => room + 1,
         (room: number) => `${room}`,
         rooms,
+      ),
+  );
+
+  it('makes a functor of a type lambda of Effect', () => {
+    expect(option.map((room: number) => `${room}`)(Option.some(1))).toStrictEqual(Option.some('1'));
+  });
+
+  it.prop(
+    'keeps the identity of the functor of the options',
+    [Schema.Option(Schema.Finite)],
+    ([room]) => optionAxioms.map_id(room),
+  );
+
+  it.prop(
+    'keeps the composition of the functor of the options',
+    [Schema.Option(Schema.Finite)],
+    ([room]) =>
+      optionAxioms.map_comp(
+        (value: number) => value + 1,
+        (value: number) => `${value}`,
+        room,
       ),
   );
 });

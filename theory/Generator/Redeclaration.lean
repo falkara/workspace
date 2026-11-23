@@ -22,7 +22,8 @@ predicates of its axioms, and of
 every bundled structure, with a
 functor that is a parameter constrained as the interface constrains it, such as
 `export type Coalgebra<F extends HKT.TypeLambda, V> =`, redeclares the type of every type, every
-functor, and every curried functor, the last with the type parameter of the type it maps, such as
+functor, with a functor that is a parameter constrained in the same way, and every curried functor,
+the last with the type parameter of the type it maps, such as
 `export type MachineOutcome<State, Output> =`, implements the instance of the class of functors
 that every functor and every curried functor takes, such as `export const binaryProductFunctor`,
 redeclares every value, such as
@@ -104,7 +105,14 @@ def redeclarationsOf (moduleNamespace name : Lean.Name) :
         ← commentOf name (some "Creates"))]
   | .type => return [(s!"export type {typeName}{arguments} =", ← commentOf name)]
   | .functor =>
-    return [(s!"export type {typeName}{arguments} =", ← commentOf name),
+    -- The redeclaration declares a functor that is a parameter with its constraint, as the
+    -- interface does.
+    let constrained ← parametersOf information fun parameters _ _ ↦
+      parameters.toList.mapM fun parameter ↦ do
+        (genericOf parameter (← parameter.fvarId!.getUserName).toString).run' []
+    let constrainedArguments := if constrained.isEmpty then "" else
+      s!"<{", ".intercalate constrained}>"
+    return [(s!"export type {typeName}{constrainedArguments} =", ← commentOf name),
       (s!"export const {valueName}", ← commentOf name (some "Gives"))]
   | .functorClass =>
     -- The redeclaration declares the type lambda with its constraint, as the interface does.

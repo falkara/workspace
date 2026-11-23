@@ -74,7 +74,7 @@ TypeScript, and the generator refuses it.
   theory marks one.
 - `instanceTypeOf`: gives the type of TypeScript of the instance of the class of functors that a
   functor or a curried functor of the theory takes, a function of the type parameters of the
-  functor that gives the instance.
+  functor and of an instance of every functor among them that gives the instance.
 - `declarationOf`: gives the declaration of TypeScript that a declaration of the theory marked
   `export_typescript` takes, named without the namespace of its module, or fails with the reason
   where the declaration has none.
@@ -255,8 +255,9 @@ def functorClassOf : Lean.MetaM (Option Lean.Name) := do
     return (← kindOf name) matches .functorClass
 
 /-- Gives the type of TypeScript of the instance of the class of functors that a functor or a
-curried functor of the theory takes, a function of the type parameters of the functor that gives
-the instance, or fails with the reason where the theory marks no class of functors. -/
+curried functor of the theory takes, a function of the type parameters of the functor and of an
+instance for every functor among them that gives the instance, or fails with the reason where the
+theory marks no class of functors. -/
 def instanceTypeOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
   let some functorClass ← functorClassOf
     | Lean.throwError m!"`{name}` has no instance in TypeScript, as the theory marks no class of \
@@ -266,14 +267,19 @@ def instanceTypeOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
   let kind ← kindOf name
   parametersOf (← Lean.getConstInfo name) fun parameters rest value? ↦ do
     -- The instance takes the type parameters of the functor, and the object of a curried functor
-    -- after them.
+    -- after them, and an instance of every functor among them, such as the functors of a
+    -- composite, whose action on morphisms the instance applies.
     let written := fun (all : List Lean.Expr) ↦ do
       let names ← all.mapM fun parameter ↦ return (← parameter.fvarId!.getUserName).toString
       let generics ← (all.zip names).mapM fun (parameter, parameterName) ↦
         genericOf parameter parameterName
+      let instances ← (all.zip names).filterMapM fun (parameter, parameterName) ↦ do
+        if isFunctorType (← parameter.fvarId!.getType) then
+          return some s!"{parameterName}: {className}<{parameterName}>"
+        return none
       let arguments := if names.isEmpty then "" else s!"<{", ".intercalate names}>"
       let declared := if names.isEmpty then "" else s!"<{", ".intercalate generics}>"
-      return s!"{declared}() => {className}<{typeName}{arguments}>"
+      return s!"{declared}({", ".intercalate instances}) => {className}<{typeName}{arguments}>"
     if kind matches .curriedFunctor then
       let some value := value?
         | Lean.throwError m!"`{name}` has no instance in TypeScript, as the theory gives the \
