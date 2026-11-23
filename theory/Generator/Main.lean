@@ -8,8 +8,8 @@ module
 public import Lean.Meta.Basic
 import Generator.Comment
 import Generator.Declaration
+import Generator.Export
 import Generator.Path
-import Generator.Redeclaration
 import Generator.Theorem
 import Generator.Type
 
@@ -37,8 +37,9 @@ where that module leaves a function out or gives it another type, as a signature
 requires of the module. The program writes the theorems of a module marked `export_typescript` into
 the file of tests of the same name, such as `Colorimetry/Tristimulus.theory.test.ts`, by the module
 `Theorem`. The program then checks the module of the package beside every file, such as
-`Colorimetry/Tristimulus.ts`, by the module `Redeclaration`, and fails with a reason for every
-redeclaration whose comment differs from the theory.
+`Colorimetry/Tristimulus.ts`, by the module `Export`, and fails with a reason for every declaration
+that the module leaves out of its re-exports and every implementation whose comment differs from
+the theory.
 
 ## Main Definitions
 
@@ -57,8 +58,8 @@ package, so that the package keeps a module of its own beside every module of th
 keeps a module for every data type.
 
 A file takes the suffix `.theory.ts`, which names what the file holds, the declarations of the
-theory, as the import `Theory` of the module of the package names them, rather than how the file
-comes about; its header and the file `.gitattributes` mark it as generated.
+theory, which the module of the package re-exports, rather than how the file comes about; its
+header and the file `.gitattributes` mark it as generated.
 
 The program writes the declarations of a module in the order of their lines, as the theory states
 them.
@@ -239,10 +240,13 @@ def main (arguments : List String) : IO Unit := do
       let text ← Generator.runIn environment (Generator.fileOf theory packageNamespace module)
       IO.FS.writeFile (path.addExtension "theory.ts") text
       if ← (path.addExtension "ts").pathExists then
-        let redeclarations ← Generator.runIn environment
-          (declarations.flatMapM (Generator.redeclarationsOf packageNamespace))
+        let reexports ← Generator.runIn environment
+          (declarations.flatMapM (Generator.reexportsOf packageNamespace))
+        let implementations ← Generator.runIn environment
+          (declarations.flatMapM (Generator.implementationsOf packageNamespace))
         let mismatches := Generator.mismatchesOf (path.addExtension "ts").toString
-          (← IO.FS.readFile (path.addExtension "ts")) redeclarations
+          s!"#src/{Generator.pathOf theory module}.theory"
+          (← IO.FS.readFile (path.addExtension "ts")) reexports implementations
         unless mismatches.isEmpty do
           throw (IO.userError ("\n\n".intercalate mismatches))
     let theorems ← Generator.runIn environment (Generator.markedDeclarationsOf module true)

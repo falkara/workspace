@@ -53,7 +53,7 @@ jobs:
         # The generator lies outside the default targets, so the step names it beside the theory.
         run: lake shake Falkara Generator
       - name: Generate the TypeScript of the theory
-        # Fails where a module of the library leaves out a redeclaration of the theory or gives it another comment.
+        # Fails where a module of the library leaves a declaration of the theory out of its re-exports or gives an implementation another comment.
         working-directory: theory
         run: |
           lake exe generator Presentation ../libraries/presentation/src
