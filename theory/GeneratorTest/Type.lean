@@ -8,10 +8,11 @@ meta import Lean.Elab.Term
 # Type
 
 The module defines the checks of the types of TypeScript that the types of the theory take: a
-rational number, an option, an array, a list, a product, a function type, a declaration marked
-`export_typescript`, and a structure with type parameters applied to its arguments take their
-types, while a declaration without the mark, a type of any other form, such as a sum, and a
-function type with an unnamed parameter take none. The checks compare as well the schemas of Effect
+rational number, an option, an array, a list, a product, a function type, with the name Lean gives
+a parameter that the source leaves unnamed, a function type with implicit type parameters, a
+declaration marked `export_typescript`, and a structure with type parameters applied to its
+arguments take their types, while a declaration without the mark and a type of any other form,
+such as a sum, take none. The checks compare as well the schemas of Effect
 that the types of data take: a rational number, an option, an array, a list, and a structure marked
 `export_typescript` take their schemas, while a function type, a structure with type parameters,
 and a type of any other form take none. The checks compare as well the variance of the type
@@ -23,8 +24,8 @@ polarities and one that a function gives at the positive polarity alone.
 - `MarkedStructure`: the structure that the checks mark `export_typescript`.
 - `UnmarkedStructure`: the structure that the checks leave unmarked.
 - `namedFunction`: the function whose type the checks write with a named parameter.
-- `unnamedFunction`: the function whose type the checks refuse, as the type leaves its parameter
-  unnamed.
+- `unnamedFunction`: the function whose type leaves its parameter unnamed.
+- `genericFunction`: the function whose type takes implicit type parameters.
 - `Pair`: the structure with type parameters that the checks write, a first value and the function
   that gives a second value from it.
 -/
@@ -57,9 +58,13 @@ structure UnmarkedStructure where
 def namedFunction : (wavelength : Rat) → Option (Array MarkedStructure) :=
   fun _ ↦ none
 
-/-- The function whose type the checks refuse, as the type leaves its parameter unnamed. -/
+/-- The function whose type leaves its parameter unnamed. -/
 def unnamedFunction : Rat → Rat :=
   fun wavelength ↦ wavelength
+
+/-- The function whose type takes implicit type parameters. -/
+def genericFunction {X Y : Type} (morphism : X → Y) (value : X) : Y :=
+  morphism value
 
 /-- info: "(wavelength: Rational.Rational) => Option.Option<ReadonlyArray<MarkedStructure>>" -/
 #guard_msgs in
@@ -84,10 +89,15 @@ def unnamedFunction : Rat → Rat :=
 #eval show Lean.Elab.TermElabM String from do
   (Generator.typeOf .anonymous (← Lean.Elab.Term.elabType (← `(Rat ⊕ Rat)))).run' []
 
-/-- error: `Rat → Rat` has no type in TypeScript, as TypeScript names every parameter and the theory names none. -/
+/-- info: "(a: Rational.Rational) => Rational.Rational" -/
 #guard_msgs in
 #eval show Lean.MetaM String from do
   (Generator.typeOf .anonymous (← Lean.getConstInfo ``unnamedFunction).type).run' []
+
+/-- info: "<X, Y>(morphism: (a: X) => Y, value: X) => Y" -/
+#guard_msgs in
+#eval show Lean.MetaM String from do
+  (Generator.typeOf .anonymous (← Lean.getConstInfo ``genericFunction).type).run' []
 
 /-- info: "Schema.Option(Schema.Array(MarkedStructure))" -/
 #guard_msgs in

@@ -31,7 +31,11 @@ interface that extends the type lambda of Effect, with the object of the functor
 the lambda as its type, and a curried functor, a functor from types into the functors on types,
 takes the same interface with a type parameter for the type it maps, named as its definition names
 it, such as `interface BinaryProductFunctor<out X> extends HKT.TypeLambda` with
-`readonly type: readonly [X, this['Target']]`. A refinement takes the schema of its type with a
+`readonly type: readonly [X, this['Target']]`. The type of the functors on types takes an interface
+that extends the type class of Effect with a type parameter `F` for the functor, a field for every
+field that is no proof, and a constructor, such as
+`interface Functor<in out F extends HKT.TypeLambda> extends HKT.TypeClass<F>` with its field `map`.
+A refinement takes the schema of its type with a
 filter that calls its condition and the brand of its name, as
 `Schema.String.pipe(Schema.check(Schema.makeFilter(isSegment)), Schema.brand('Segment'))`, and a
 type of the same name for what the schema decodes. A type takes a type alias with a type parameter
@@ -250,6 +254,22 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
         return s!"{← commentOf name}export interface {typeName}{generics} extends \
           {← effectNameOf "HKT" "TypeLambda" .type} \{\n\
           readonly type: {← typeOf moduleNamespace object};\n}\n"
+    | .functorClass =>
+      let some value := value?
+        | Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory gives the \
+            type no value."
+      let .const structureName _ := value.getAppFn
+        | Lean.throwError m!"`{name}` applies no structure."
+      functorFieldsOf value fun functor fields ↦ do
+        let generic ← genericOf functor (annotationOf "F"
+          (← fields.flatMapM fun (_, fieldType) ↦ polaritiesOf functor true fieldType))
+        let fieldLines ← fields.mapM fun (field, fieldType) ↦ do
+          return s!"{← commentOf (structureName ++ field)}readonly {field}: \
+            {← typeOf moduleNamespace fieldType};\n"
+        return s!"{← commentOf name}export interface {typeName}<{generic}> extends \
+            {← effectNameOf "HKT" "TypeClass" .type}<F> \{\n{String.join fieldLines}}\n\n" ++
+          s!"{← commentOf name (some "Creates")}export const {valueName} = \
+            <{← genericOf functor "F"}>(fields: {typeName}<F>): {typeName}<F> => fields;\n"
     | .curriedFunctor =>
       let some value := value?
         | Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory gives the \

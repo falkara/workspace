@@ -125,10 +125,13 @@ info: [("export type Clockwork<F extends HKT.TypeLambda, V> =", "/** A clockwork
   ("export const clockwork = Theory.clockwork;", "/** Creates a clockwork that moves every state by a functor. */\n"),
   ("export type ChimeFunctor<B> =", "/** The functor of the chimes, which gives a chime and the next state. */\n"),
   ("export type ChimesFunctor<X> =",
-    "/** The curried functor of the chimes, which maps every type of chimes to the functor of the chimes. */\n")]
+    "/** The curried functor of the chimes, which maps every type of chimes to the functor of the chimes. */\n"),
+  ("export type Gear<F extends HKT.TypeLambda> =", "/** A gear, a functor that a clockwork moves its states by. */\n"),
+  ("export const gear = Theory.gear;", "/** Creates a gear, a functor that a clockwork moves its states by. */\n")]
 -/
 #guard_msgs in
 #eval show Lean.MetaM (List (String × String)) from do
   return (← Generator.redeclarationsOf `Geometry ``Geometry.Clockwork) ++
     (← Generator.redeclarationsOf `Geometry ``Geometry.ChimeFunctor) ++
-    (← Generator.redeclarationsOf `Geometry ``Geometry.chimesFunctor)
+    (← Generator.redeclarationsOf `Geometry ``Geometry.chimesFunctor) ++
+    (← Generator.redeclarationsOf `Geometry ``Geometry.Gear)

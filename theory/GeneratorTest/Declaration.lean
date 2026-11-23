@@ -6,6 +6,7 @@ public import GeneratorTest.Fixture.Coordinate
 meta import Generator.Declaration
 import all GeneratorTest.Fixture.Clock
 import all Mathlib.CategoryTheory.Endofunctor.Algebra
+import all Mathlib.CategoryTheory.Functor.Basic
 
 /-!
 # Declaration
@@ -221,3 +222,17 @@ readonly type: readonly [X, this['Target']];
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
   IO.print (← (Generator.declarationOf `Geometry ``Geometry.chimesFunctor).run' [])
+
+/--
+info: /** A gear, a functor that a clockwork moves its states by. */
+export interface Gear<in out F extends HKT.TypeLambda> extends HKT.TypeClass<F> {
+/** The action of a functor on morphisms. */
+readonly map: <X, Y>(a: (value: X) => Y, value: HKT.Kind<F, never, never, never, X>) => HKT.Kind<F, never, never, never, Y>;
+}
+
+/** Creates a gear, a functor that a clockwork moves its states by. */
+export const gear = <F extends HKT.TypeLambda>(fields: Gear<F>): Gear<F> => fields;
+-/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.Gear).run' [])

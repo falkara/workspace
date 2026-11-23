@@ -15,7 +15,8 @@ transition into a pair, with a type parameter of its own, its chimes. The module
 clockwork, the coalgebra of Mathlib as it stands, with its category and its functor as parameters,
 the functor of the chimes, a functor on types that the checks write as a type lambda of Effect, and
 the curried functor of the chimes, the product functor of Mathlib as it stands, which the checks
-write as a type lambda with a type parameter for the type of chimes.
+write as a type lambda with a type parameter for the type of chimes, and a gear, the functor of
+Mathlib as it stands, which the checks write as a type class of Effect.
 
 ## Main Definitions
 
@@ -25,6 +26,7 @@ write as a type lambda with a type parameter for the type of chimes.
 - `ChimeFunctor`: the functor of the chimes, which gives a chime and the next state.
 - `chimesFunctor`: the curried functor of the chimes, which maps every type of chimes to the
   functor of the chimes.
+- `Gear`: a gear, a functor that a clockwork moves its states by.
 -/
 
 @[expose] public section
@@ -54,6 +56,9 @@ abbrev ChimeFunctor (B : Type u) : Type u ⥤ Type u :=
 chimes. -/
 abbrev chimesFunctor := Limits.Types.binaryProductFunctor
 
-attribute [export_typescript] Clock ChimingClock Clockwork ChimeFunctor chimesFunctor
+/-- A gear, a functor that a clockwork moves its states by. -/
+abbrev Gear := @CategoryTheory.Functor
+
+attribute [export_typescript] Clock ChimingClock Clockwork ChimeFunctor chimesFunctor Gear
 
 end Geometry

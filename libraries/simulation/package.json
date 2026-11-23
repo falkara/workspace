@@ -37,6 +37,10 @@
     "./Coalgebra": {
       "types": "./dist/Coalgebra.d.mts",
       "default": "./dist/Coalgebra.mjs"
+    },
+    "./Functor": {
+      "types": "./dist/Functor.d.mts",
+      "default": "./dist/Functor.mjs"
     }
   },
   "scripts": {

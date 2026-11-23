@@ -17,7 +17,8 @@ public import Generator.Name
 The module defines the type of TypeScript that a type of the theory takes: `Rational.Rational`
 for a rational number, `string` for a string, `boolean` for a boolean, `Option.Option` for an
 option, `ReadonlyArray` for an array or a list, a read-only tuple `readonly [X, Y]` for a product
-`X × Y`, a function type for a function type of the theory, `HKT.Kind<F, never, never, never, X>`
+`X × Y`, a function type for a function type of the theory, a generic function type for a function
+type whose leading parameters are implicit types, `HKT.Kind<F, never, never, never, X>`
 for an object `F.obj X` of a functor `F` that is a parameter, the name of a type parameter for the
 parameter, and the name of a declaration marked
 `export_typescript` for the type that the declaration defines, with its arguments where it takes
@@ -64,6 +65,9 @@ polarities at which the parameter occurs in the fields or the value of the decla
   field.
 - `typeOf`: gives the type of TypeScript that a type of the theory takes, with every declaration
   named without the namespace of its package, or fails with the reason where the type has none.
+- `genericFunctionOf`: gives the generic function type of TypeScript that a function type of the
+  theory takes whose leading parameters are implicit types, with the type parameters already
+  written before the rest of the type.
 - `signatureOf`: gives the parameters and the result of TypeScript that a function type of the
   theory takes, with the parameters already written before the rest of the type.
 - `isDataType`: tells whether a type of the theory is a type of data: a rational number, a string, a
@@ -86,6 +90,9 @@ polarities at which the parameter occurs in the fields or the value of the decla
 - `curriedObjectOf`: runs a computation on the object of a curried functor at a type parameter, the
   functor on types that the curried functor gives, with the parameter named as the definition of
   the curried functor names its object, given the type of the curried functor.
+- `functorFieldsOf`: runs a computation on the fields of the type of the functors on types, with a
+  local functor named `F` in place of the action of the functor on types and the type of every
+  other field that is no proof, given the type of the functors.
 - `DeclarationKind`: a kind of declaration of the theory, which the generator writes in a form of
   its own.
 - `kindOf`: gives the kind of a declaration of the theory.
@@ -114,8 +121,11 @@ A declaration takes the name that the module `Name` gives it in Pascal case, suc
 namespace has no counterpart in a module of TypeScript.
 
 A function type takes every parameter by its name in the theory, as TypeScript names every
-parameter of a function type, so the generator refuses a parameter that the theory leaves unnamed,
-such as the parameter of `Rat → Rat`.
+parameter of a function type, and a parameter that the source leaves unnamed, such as the parameter
+of `Rat → Rat` or the morphism of `CategoryTheory.Functor.map`, takes the name that Lean gives it,
+`a`, as a declaration of Mathlib names no such parameter that the theory could name instead. Leading
+implicit parameters over types, such as `{X Y : Type u}`, take the type parameters of a generic
+function type.
 
 A type parameter is a leading binder over a type, which the generator binds as a free variable, so
 a type of the theory names the parameter by the name the theory gives it.
@@ -138,6 +148,12 @@ of Effect gives a type and never another type lambda, so the theory names a curr
 Mathlib, such as `CategoryTheory.Limits.Types.binaryProductFunctor`, as it stands. The parameter
 takes the name that the definition of the curried functor gives the type it maps, such as `X`, as
 the declaration of the theory binds no such parameter of its own.
+
+The type of the functors on types, such as `CategoryTheory.Functor (Type u) (Type u)`, takes a type
+class of Effect, `HKT.TypeClass`, whose type lambda stands for the action of a functor on types,
+which TypeScript writes as a type and never as a value. The other fields that are no proofs, such
+as the action on morphisms, take the fields of the type class, and the proofs, such as `map_id`,
+take none, as a value of TypeScript carries no proof.
 
 A category that is a parameter, such as the category of `CategoryTheory.Endofunctor.Coalgebra`,
 takes the category of types, as TypeScript has no category but its types and its functions, so the
@@ -263,7 +279,9 @@ partial def normalizedOf (type : Lean.Expr) : Lean.MetaM Lean.Expr := do
     match type.getAppFn, type.getAppArgs with
     -- The generator imports no Mathlib, so the names of Mathlib are written as names alone.
     | .const `Quiver.Hom _, #[.sort _, _, source, target] =>
-      return .forallE `value (← normalizedOf source) (← normalizedOf target) .default
+      -- The function binds its value, so the target refers to every outer binder one index further.
+      return .forallE `value (← normalizedOf source) ((← normalizedOf target).liftLooseBVars 0 1)
+        .default
     | .const `Prefunctor.obj _, _ | .const `CategoryTheory.Functor.obj _, _ =>
       let reduced ← Lean.Meta.whnfD type
       if reduced == type then return type
@@ -328,6 +346,7 @@ mutual
 without the namespace of its package, or fails with the reason where the type has none. -/
 partial def typeOf (packageNamespace : Lean.Name) (type : Lean.Expr) : TypeScriptM String := do
   match type with
+  | .forallE _ (.sort _) _ .implicit => genericFunctionOf packageNamespace [] type
   | .forallE .. =>
     let (parameters, result) ← signatureOf packageNamespace [] type
     return s!"({", ".intercalate parameters}) => {result}"
@@ -359,6 +378,18 @@ partial def typeOf (packageNamespace : Lean.Name) (type : Lean.Expr) : TypeScrip
     return s!"{typeName}<{", ".intercalate arguments}>"
   | _ => Lean.throwError m!"`{type}` has no type in TypeScript."
 
+/-- Gives the generic function type of TypeScript that a function type of the theory takes whose
+leading parameters are implicit types, such as `{X Y : Type u} → (X ⟶ Y) → …`, with the type
+parameters already written before the rest of the type. -/
+partial def genericFunctionOf (packageNamespace : Lean.Name) (generics : List String)
+    (type : Lean.Expr) : TypeScriptM String := do
+  match type with
+  | .forallE name (.sort level) body .implicit =>
+    Lean.Meta.withLocalDecl name .implicit (.sort level) fun parameter ↦
+      genericFunctionOf packageNamespace (generics ++ [name.toString])
+        (body.instantiate1 parameter)
+  | _ => return s!"<{", ".intercalate generics}>{← typeOf packageNamespace type}"
+
 /-- Gives the parameters and the result of TypeScript that a function type of the theory takes,
 with the parameters already written before the rest of the type. -/
 partial def signatureOf (packageNamespace : Lean.Name) (parameters : List String)
@@ -368,11 +399,12 @@ partial def signatureOf (packageNamespace : Lean.Name) (parameters : List String
     if body.hasLooseBVars then
       Lean.throwError m!"`{type}` has no type in TypeScript, as its result depends on its \
         parameter `{name}`."
-    if name.isAnonymous || name.hasMacroScopes then
+    if name.isAnonymous then
       Lean.throwError m!"`{type}` has no type in TypeScript, as TypeScript names every parameter \
         and the theory names none."
+    -- A parameter that the source leaves unnamed takes the name Lean gives it, such as `a`.
     signatureOf packageNamespace
-      (parameters ++ [s!"{name}: {← typeOf packageNamespace domain}"]) body
+      (parameters ++ [s!"{name.eraseMacroScopes}: {← typeOf packageNamespace domain}"]) body
   | .forallE name .. =>
     Lean.throwError
       m!"`{type}` has no type in TypeScript, as its parameter `{name}` is not explicit."
@@ -461,6 +493,27 @@ def curriedObjectOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
   Lean.Meta.withLocalDeclD name (functorType.getArg! 0) fun parameter ↦
     computation parameter (Lean.mkApp object parameter)
 
+/-- Runs a computation on the fields of the type of the functors on types, with a local functor
+named `F` in place of the action of the functor on types and the type of every other field that is
+no proof, as `normalizedOf` reads it, given the type of the functors. -/
+def functorFieldsOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
+    [MonadLiftT Lean.MetaM m] {α : Type} (functorType : Lean.Expr)
+    (computation : Lean.Expr → List (Lean.Name × Lean.Expr) → m α) : m α := do
+  let .const structureName _ := functorType.getAppFn
+    | monadLift (Lean.throwError m!"`{functorType}` is no type of a functor." : Lean.MetaM α)
+  -- A type class of Effect names its type lambda `F`, as the module `HKT` of Effect names it.
+  Lean.Meta.withLocalDeclD `F functorType fun functor ↦ do
+    let fields ← monadLift (do
+      let names := Lean.getStructureFieldsFlattened (← Lean.getEnv) structureName
+        (includeSubobjectFields := false)
+      names.toList.filterMapM fun field ↦ do
+        let fieldType ← Lean.Meta.inferType (← Lean.Meta.mkProjection functor field)
+        -- A proof has no value in TypeScript, and the action on types is the functor itself.
+        if ← Lean.Meta.isProp fieldType then return none
+        if let .forallE _ (.sort _) (.sort _) _ := fieldType then return none
+        return some (field, ← normalizedOf fieldType) : Lean.MetaM (List (Lean.Name × Lean.Expr)))
+    computation functor fields
+
 /-- A kind of declaration of the theory, which the generator writes in a form of its own. -/
 inductive DeclarationKind where
   /-- A structure of data. -/
@@ -479,6 +532,9 @@ inductive DeclarationKind where
   /-- A curried functor, a functor from types into the functors on types, such as
   `Limits.Types.binaryProductFunctor`. -/
   | curriedFunctor
+  /-- A class of functors, a type whose value is the type of the functors on types, such as
+  `CategoryTheory.Functor (Type u) (Type u)`. -/
+  | functorClass
   /-- A function, a declaration that takes parameters beyond its type parameters. -/
   | function
   /-- A value, a declaration that takes no parameters beyond its type parameters. -/
@@ -493,6 +549,7 @@ def kindOf (name : Lean.Name) : Lean.MetaM DeclarationKind := do
       match rest with
       | .sort _ =>
         if let some value := value then
+          if isFunctorType value then return .functorClass
           if (← bundledOf value).isSome then return .bundled
         return .type
       | .forallE .. => return .function

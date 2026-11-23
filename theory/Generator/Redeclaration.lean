@@ -17,7 +17,8 @@ declarations the generator writes. A module imports the generated module as `The
 the schema, the type, and the constructor of every structure, such as
 `export const Tristimulus = Theory.Tristimulus;`, redeclares the schema and the type of every
 refinement, such as `export const Segment = Theory.Segment;`, redeclares the type and the
-constructor of every structure that takes an interface and of every bundled structure, with a
+constructor of every structure that takes an interface, of every type of the functors, and of
+every bundled structure, with a
 functor that is a parameter constrained as the interface constrains it, such as
 `export type Coalgebra<F extends HKT.TypeLambda, V> =`, redeclares the type of every type, every
 functor, and every curried functor, the last with the type parameter of the type it maps, such as
@@ -99,6 +100,15 @@ def redeclarationsOf (moduleNamespace name : Lean.Name) :
       (s!"export const {valueName} = Theory.{valueName};",
         ← commentOf name (some "Creates"))]
   | .type | .functor => return [(s!"export type {typeName}{arguments} =", ← commentOf name)]
+  | .functorClass =>
+    -- The redeclaration declares the type lambda with its constraint, as the interface does.
+    let generic ← parametersOf information fun _ _ value? ↦ do
+      let some value := value?
+        | Lean.throwError m!"`{name}` has no redeclaration, as the theory gives the type no value."
+      functorFieldsOf value fun functor _ ↦ (genericOf functor "F").run' []
+    return [
+      (s!"export type {typeName}<{generic}> =", ← commentOf name),
+      (s!"export const {valueName} = Theory.{valueName};", ← commentOf name (some "Creates"))]
   | .curriedFunctor =>
     -- The object of the curried functor takes a type parameter after those of the declaration.
     let allNames ← parametersOf information fun parameters rest value? ↦ do

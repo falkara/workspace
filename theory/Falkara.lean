@@ -11,3 +11,4 @@ public import Falkara.Presentation.Colorimetry.Wavelength
 public import Falkara.References
 public import Falkara.Simulation.BinaryProductFunctor
 public import Falkara.Simulation.Coalgebra
+public import Falkara.Simulation.Functor
