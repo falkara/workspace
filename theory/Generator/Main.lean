@@ -30,8 +30,9 @@ the files of the other modules of the theory the declarations it names, as value
 names them and as types otherwise. A file whose module defines a refinement imports the condition
 of the refinement as a value from the module of checks that the package keeps beside the module of
 the package, such as `Filename.check.ts`, which imports no schema. A file whose module defines
-functions ends with a contract, an interface that names every function as the module of the
-package beside the file exports it, such as `chromaticityOf`, and a type that fails to compile
+functions or functors ends with a contract, an interface that names every function as the module of
+the package beside the file exports it, such as `chromaticityOf`, and the instance of the class of
+functors that every functor takes, such as `binaryProductFunctor`, and a type that fails to compile
 where that module leaves a function out or gives it another type, as a signature of a module in ML
 requires of the module. The program writes the theorems of a module marked `export_typescript` into
 the file of tests of the same name, such as `Colorimetry/Tristimulus.theory.test.ts`, by the module
@@ -98,7 +99,20 @@ of the theory of a package, named without the namespace of the package. -/
 def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := do
   let environment ← Lean.getEnv
   let declarations ← markedDeclarationsOf module false
-  let (texts, records) ← (declarations.mapM (declarationOf packageNamespace)).run []
+  let kinds ← declarations.mapM fun name ↦ return (name, ← kindOf name)
+  -- A functor takes an instance of the class of functors, a function that the module of the package
+  -- implements, as the action of a functor on morphisms has no value that the generator can write.
+  let instances := kinds.filterMap fun
+    | (name, .functor) | (name, .curriedFunctor) => some name
+    | _ => none
+  let ((texts, instanceMembers), records) ← (do
+      let texts ← declarations.mapM (declarationOf packageNamespace)
+      let members ← instances.mapM fun name ↦ do
+        return s!"{← commentOf name (some "Gives")}readonly \
+          {camelCaseOf (wordsOf packageNamespace name)}: \
+          {← instanceTypeOf packageNamespace name};\n"
+      return (texts, members) : TypeScriptM (List String × List String)).run []
+  let functorClass ← if instances.isEmpty then pure none else functorClassOf
   let body := "\n".intercalate texts
   let header := s!"// Written by the generator of the theory from `{module}`, so every change by \
     hand is lost when the generator runs.\n"
@@ -109,7 +123,6 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
       s!"\nimport \{ {", ".intercalate (imports.map fun (module, usage) ↦
         if usage == .value then module else s!"type {module}")} } from 'effect';\n"
     else s!"\nimport type \{ {", ".intercalate (imports.map Prod.fst)} } from 'effect';\n"
-  let kinds ← declarations.mapM fun name ↦ return (name, ← kindOf name)
   let fieldConstants := fun (name : Lean.Name) ↦
     (Lean.getStructureFields environment name).toList.flatMap fun field ↦
       ((environment.find? (name ++ field)).map (·.type.getUsedConstants.toList)).getD []
@@ -146,7 +159,8 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
             .refinement .. then
           (information.value?.map (·.getUsedConstants.toList)).getD []
         else []).getD []
-  let others := (namedBySchemas ++ named).eraseDups.filter fun name ↦
+  -- The contract names the class of functors in the type of every instance.
+  let others := (namedBySchemas ++ named ++ functorClass.toList).eraseDups.filter fun name ↦
     ExportTypeScript.tagAttribute.hasTag environment name &&
       (environment.getModuleIdxFor? name).map (·.toNat) !=
         (environment.getModuleIdx? module).map (·.toNat)
@@ -172,12 +186,13 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
     | (name, .function) => some name
     | _ => none
   let modulePath := pathOf theory module
-  let contractImport := if functions.isEmpty then [] else
+  let contractImport := if functions.isEmpty && instances.isEmpty then [] else
     [s!"import type * as Module from '#src/{modulePath}';\n"]
-  let members ← functions.mapM fun name ↦ do
+  let functionMembers ← functions.mapM fun name ↦ do
     let words := wordsOf packageNamespace name
     return s!"{← commentOf name}readonly {camelCaseOf words}: {pascalCaseOf words};\n"
-  let contract := if functions.isEmpty then "" else
+  let members := functionMembers ++ instanceMembers
+  let contract := if members.isEmpty then "" else
     s!"\n/** The functions of the theory that the module `{modulePath}` of the package \
       implements. */\n" ++
       s!"interface Contract \{\n{String.join members}}\n\n" ++

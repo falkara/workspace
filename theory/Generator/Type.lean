@@ -91,8 +91,9 @@ polarities at which the parameter occurs in the fields or the value of the decla
   functor on types that the curried functor gives, with the parameter named as the definition of
   the curried functor names its object, given the type of the curried functor.
 - `functorFieldsOf`: runs a computation on the fields of the type of the functors on types, with a
-  local functor named `F` in place of the action of the functor on types and the type of every
-  other field that is no proof, given the type of the functors.
+  local functor named `F` in place of the action of the functor on types, the type of every other
+  field that is no proof, and the statement of every field that is an axiom, given the type of the
+  functors.
 - `DeclarationKind`: a kind of declaration of the theory, which the generator writes in a form of
   its own.
 - `kindOf`: gives the kind of a declaration of the theory.
@@ -151,9 +152,10 @@ the declaration of the theory binds no such parameter of its own.
 
 The type of the functors on types, such as `CategoryTheory.Functor (Type u) (Type u)`, takes a type
 class of Effect, `HKT.TypeClass`, whose type lambda stands for the action of a functor on types,
-which TypeScript writes as a type and never as a value. The other fields that are no proofs, such
-as the action on morphisms, take the fields of the type class, and the proofs, such as `map_id`,
-take none, as a value of TypeScript carries no proof.
+which TypeScript writes as a type and never as a value. The other fields that are no axioms, such
+as the action on morphisms, take the fields of the type class, and the axioms, such as `map_id`,
+take no field, as a value of TypeScript carries no proof, but a predicate that tells of an instance
+whether it keeps the axiom.
 
 A category that is a parameter, such as the category of `CategoryTheory.Endofunctor.Coalgebra`,
 takes the category of types, as TypeScript has no category but its types and its functions, so the
@@ -279,9 +281,10 @@ partial def normalizedOf (type : Lean.Expr) : Lean.MetaM Lean.Expr := do
     match type.getAppFn, type.getAppArgs with
     -- The generator imports no Mathlib, so the names of Mathlib are written as names alone.
     | .const `Quiver.Hom _, #[.sort _, _, source, target] =>
-      -- The function binds its value, so the target refers to every outer binder one index further.
-      return .forallE `value (← normalizedOf source) ((← normalizedOf target).liftLooseBVars 0 1)
-        .default
+      -- The function binds its value, so the target refers to every outer binder one index further,
+      -- and the annotation keeps the morphism a value of its own, which no signature takes apart.
+      return Lean.mkAnnotation `morphism (.forallE `value (← normalizedOf source)
+        ((← normalizedOf target).liftLooseBVars 0 1) .default)
     | .const `Prefunctor.obj _, _ | .const `CategoryTheory.Functor.obj _, _ =>
       let reduced ← Lean.Meta.whnfD type
       if reduced == type then return type
@@ -353,6 +356,7 @@ partial def typeOf (packageNamespace : Lean.Name) (type : Lean.Expr) : TypeScrip
   -- A parameter keeps its name as TypeScript writes it, such as `this['Target']` for the object of
   -- a type lambda, which a name of Lean would escape.
   | .fvar parameter => return (← parameter.getUserName).toString (escape := false)
+  | .mdata _ inner => typeOf packageNamespace inner
   | .const ``Rat _ => effectNameOf "Rational" "Rational" .type
   | .const ``String _ => return "string"
   | .const ``Bool _ => return "boolean"
@@ -495,24 +499,30 @@ def curriedObjectOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
 
 /-- Runs a computation on the fields of the type of the functors on types, with a local functor
 named `F` in place of the action of the functor on types and the type of every other field that is
-no proof, as `normalizedOf` reads it, given the type of the functors. -/
+no proof, as `normalizedOf` reads it, and the statement of every field that is an axiom, given the
+type of the functors. -/
 def functorFieldsOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
     [MonadLiftT Lean.MetaM m] {α : Type} (functorType : Lean.Expr)
-    (computation : Lean.Expr → List (Lean.Name × Lean.Expr) → m α) : m α := do
+    (computation : Lean.Expr → List (Lean.Name × Lean.Expr) → List (Lean.Name × Lean.Expr) →
+      m α) : m α := do
   let .const structureName _ := functorType.getAppFn
     | monadLift (Lean.throwError m!"`{functorType}` is no type of a functor." : Lean.MetaM α)
   -- A type class of Effect names its type lambda `F`, as the module `HKT` of Effect names it.
   Lean.Meta.withLocalDeclD `F functorType fun functor ↦ do
-    let fields ← monadLift (do
+    let (fields, axioms) ← monadLift (do
       let names := Lean.getStructureFieldsFlattened (← Lean.getEnv) structureName
         (includeSubobjectFields := false)
-      names.toList.filterMapM fun field ↦ do
-        let fieldType ← Lean.Meta.inferType (← Lean.Meta.mkProjection functor field)
-        -- A proof has no value in TypeScript, and the action on types is the functor itself.
+      let typed ← names.toList.mapM fun field ↦ do
+        return (field, ← Lean.Meta.inferType (← Lean.Meta.mkProjection functor field))
+      -- An axiom has no value in TypeScript, and the action on types is the functor itself.
+      let axioms ← typed.filterM fun (_, fieldType) ↦ Lean.Meta.isProp fieldType
+      let fields ← typed.filterMapM fun (field, fieldType) ↦ do
         if ← Lean.Meta.isProp fieldType then return none
         if let .forallE _ (.sort _) (.sort _) _ := fieldType then return none
-        return some (field, ← normalizedOf fieldType) : Lean.MetaM (List (Lean.Name × Lean.Expr)))
-    computation functor fields
+        return some (field, ← normalizedOf fieldType)
+      return (fields, axioms) :
+        Lean.MetaM (List (Lean.Name × Lean.Expr) × List (Lean.Name × Lean.Expr)))
+    computation functor fields axioms
 
 /-- A kind of declaration of the theory, which the generator writes in a form of its own. -/
 inductive DeclarationKind where
@@ -588,6 +598,7 @@ partial def polaritiesOf (parameter : Lean.Expr) (positive : Bool) (type : Lean.
     Lean.MetaM (List Bool) := do
   match type with
   | .fvar _ => return if type == parameter then [positive] else []
+  | .mdata _ inner => polaritiesOf parameter positive inner
   | .forallE _ domain body _ =>
     return (← polaritiesOf parameter (!positive) domain) ++
       (← polaritiesOf parameter positive body)

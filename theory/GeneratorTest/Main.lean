@@ -1,8 +1,11 @@
 module
 
+import all GeneratorTest.Fixture.Clock
 import all GeneratorTest.Fixture.Coordinate
 import all GeneratorTest.Fixture.Point
 import all GeneratorTest.Fixture.Walker
+import all Mathlib.CategoryTheory.Endofunctor.Algebra
+import all Mathlib.CategoryTheory.Functor.Basic
 meta import Generator.Main
 
 /-!
@@ -16,7 +19,9 @@ another module imports nothing beyond Effect and ends with no contract, and a mo
 imports from Effect the module whose function writes the value as a value. A module whose
 structures take type parameters or a function writes them as interfaces, imports the structure of
 another module that an interface names as a type, and imports nothing from Effect where its
-declarations name no module of Effect.
+declarations name no module of Effect. A module with functors ends with a contract that takes an
+instance of its class of functors for every functor, a function of the type parameters of the
+functor.
 -/
 
 /--
@@ -132,3 +137,82 @@ type _Implemented<Implementation extends Contract = typeof Module> = Implementat
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
   IO.print (← Generator.fileOf `GeneratorTest `Geometry `GeneratorTest.Fixture.Walker)
+
+/--
+info: // Written by the generator of the theory from `GeneratorTest.Fixture.Clock`, so every change by hand is lost when the generator runs.
+
+import { Function, type HKT } from 'effect';
+
+import type * as Module from '#src/Fixture/Clock';
+
+/** A clock that ticks from every state to its next state. */
+export interface Clock<in out V> {
+/** structure morphism of the coalgebra */
+readonly str: (value: V) => V;
+}
+
+/** Creates a clock that ticks from every state to its next state. */
+export const clock = <V>(fields: Clock<V>): Clock<V> => fields;
+
+/** A clock that chimes and ticks from every state to its next state. */
+export interface ChimingClock<out B, in out V> {
+/** structure morphism of the coalgebra */
+readonly str: (value: V) => readonly [B, V];
+}
+
+/** Creates a clock that chimes and ticks from every state to its next state. */
+export const chimingClock = <B, V>(fields: ChimingClock<B, V>): ChimingClock<B, V> => fields;
+
+/** A clockwork that moves every state by a functor. */
+export interface Clockwork<in out F extends HKT.TypeLambda, in out V> {
+/** structure morphism of the coalgebra */
+readonly str: (value: V) => HKT.Kind<F, never, never, never, V>;
+}
+
+/** Creates a clockwork that moves every state by a functor. */
+export const clockwork = <F extends HKT.TypeLambda, V>(fields: Clockwork<F, V>): Clockwork<F, V> => fields;
+
+/** The functor of the chimes, which gives a chime and the next state. */
+export interface ChimeFunctor<out B> extends HKT.TypeLambda {
+readonly type: readonly [B, this['Target']];
+}
+
+/** The curried functor of the chimes, which maps every type of chimes to the functor of the chimes. */
+export interface ChimesFunctor<out X> extends HKT.TypeLambda {
+readonly type: readonly [X, this['Target']];
+}
+
+/** A gear, a functor that a clockwork moves its states by. */
+export interface Gear<in out F extends HKT.TypeLambda> extends HKT.TypeClass<F> {
+/** The action of a functor on morphisms. */
+readonly map: <X, Y>(a: (value: X) => Y) => (value: HKT.Kind<F, never, never, never, X>) => HKT.Kind<F, never, never, never, Y>;
+}
+
+/** Creates a gear, a functor that a clockwork moves its states by. */
+export const gear = <F extends HKT.TypeLambda>(fields: Gear<F>): Gear<F> => fields;
+
+/** Gives the axioms of a gear, a functor that a clockwork moves its states by. */
+export const gearAxioms = <F extends HKT.TypeLambda>(
+instance: Gear<F>,
+equivalence: <X>(self: HKT.Kind<F, never, never, never, X>, that: HKT.Kind<F, never, never, never, X>) => boolean,
+) => ({
+/** A functor preserves identity morphisms. */
+map_id: <X>(value: HKT.Kind<F, never, never, never, X>): boolean => equivalence<X>((instance.map<X, X>(Function.identity<X>))(value), (Function.identity<HKT.Kind<F, never, never, never, X>>)(value)),
+/** A functor preserves composition. */
+map_comp: <X, Y, Z>(f: (value: X) => Y, g: (value: Y) => Z, value: HKT.Kind<F, never, never, never, X>): boolean => equivalence<Z>((instance.map<X, Z>(Function.flow(f, g)))(value), (Function.flow(instance.map<X, Y>(f), instance.map<Y, Z>(g)))(value)),
+});
+
+/** The functions of the theory that the module `Fixture/Clock` of the package implements. */
+interface Contract {
+/** Gives the functor of the chimes, which gives a chime and the next state. */
+readonly chimeFunctor: <B>() => Gear<ChimeFunctor<B>>;
+/** Gives the curried functor of the chimes, which maps every type of chimes to the functor of the chimes. */
+readonly chimesFunctor: <X>() => Gear<ChimesFunctor<X>>;
+}
+
+/** The module `Fixture/Clock` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */
+type _Implemented<Implementation extends Contract = typeof Module> = Implementation;
+-/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← Generator.fileOf `GeneratorTest `Geometry `GeneratorTest.Fixture.Clock)

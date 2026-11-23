@@ -33,8 +33,10 @@ takes the same interface with a type parameter for the type it maps, named as it
 it, such as `interface BinaryProductFunctor<out X> extends HKT.TypeLambda` with
 `readonly type: readonly [X, this['Target']]`. The type of the functors on types takes an interface
 that extends the type class of Effect with a type parameter `F` for the functor, a field for every
-field that is no proof, and a constructor, such as
-`interface Functor<in out F extends HKT.TypeLambda> extends HKT.TypeClass<F>` with its field `map`.
+field that is no proof, a constructor, and the predicates of its axioms, a function of an instance
+and of an equivalence of the values of the functor, such as
+`interface Functor<in out F extends HKT.TypeLambda> extends HKT.TypeClass<F>` with its field `map`
+and `functorAxioms` with the predicates `map_id` and `map_comp`.
 A refinement takes the schema of its type with a
 filter that calls its condition and the brand of its name, as
 `Schema.String.pipe(Schema.check(Schema.makeFilter(isSegment)), Schema.brand('Segment'))`, and a
@@ -62,6 +64,17 @@ TypeScript, and the generator refuses it.
 - `initializerOf`: gives the expression of TypeScript that writes a value for a declaration of a
   module of the theory, or fails with the reason where the value takes a structure of another
   module.
+- `morphismOf`: gives the expression of TypeScript that a morphism of an axiom of a functor takes,
+  an identity as `Function.identity`, a composite as `Function.flow`, and the action of the functor
+  on a morphism as `instance.map`.
+- `axiomOf`: gives the predicate of TypeScript that an axiom of a functor takes, an equality of two
+  morphisms, as a function of the variables of the axiom and of a value of the source of the
+  morphisms that tells by `equivalence` whether the two morphisms give one value.
+- `functorClassOf`: gives the class of functors that the theory marks `export_typescript`, where the
+  theory marks one.
+- `instanceTypeOf`: gives the type of TypeScript of the instance of the class of functors that a
+  functor or a curried functor of the theory takes, a function of the type parameters of the
+  functor that gives the instance.
 - `declarationOf`: gives the declaration of TypeScript that a declaration of the theory marked
   `export_typescript` takes, named without the namespace of its module, or fails with the reason
   where the declaration has none.
@@ -175,6 +188,99 @@ partial def initializerOf (moduleNamespace name : Lean.Name) : Value → TypeScr
     return s!"{camelCaseOf (wordsOf moduleNamespace structureName)}\
       (\{ {", ".intercalate written} })"
 
+/-- Gives the expression of TypeScript that a morphism of an axiom of a functor takes: a variable by
+its name, an identity as `Function.identity`, a composite as `Function.flow`, and the action of the
+functor on a morphism as `instance.map`, each with its types, or fails with the reason where the
+morphism has none. -/
+partial def morphismOf (moduleNamespace : Lean.Name) (functor morphism : Lean.Expr) :
+    TypeScriptM String := do
+  -- The generator imports no Mathlib, so the names of Mathlib are written as names alone.
+  if let .fvar parameter := morphism then return (← parameter.getUserName).toString
+  if morphism.isAppOfArity `CategoryTheory.CategoryStruct.id 3 then
+    return s!"{← effectNameOf "Function" "identity" .value}\
+      <{← typeOf moduleNamespace (← normalizedOf (morphism.getArg! 2))}>"
+  if morphism.isAppOfArity `CategoryTheory.CategoryStruct.comp 7 then
+    return s!"{← effectNameOf "Function" "flow" .value}\
+      ({← morphismOf moduleNamespace functor (morphism.getArg! 5)}, \
+      {← morphismOf moduleNamespace functor (morphism.getArg! 6)})"
+  if morphism.isAppOfArity `CategoryTheory.Functor.map 8 && morphism.getArg! 4 == functor then
+    return s!"instance.map<{← typeOf moduleNamespace (morphism.getArg! 5)}, \
+      {← typeOf moduleNamespace (morphism.getArg! 6)}>\
+      ({← morphismOf moduleNamespace functor (morphism.getArg! 7)})"
+  Lean.throwError m!"`{morphism}` has no expression in TypeScript."
+
+/-- Gives the predicate of TypeScript that an axiom of a functor takes, an equality of two
+morphisms, as a function of the variables of the axiom and of a value of the source of the
+morphisms that tells by `equivalence` whether the two morphisms give one value, or fails with the
+reason where the axiom has none. -/
+def axiomOf (moduleNamespace : Lean.Name) (functor statement : Lean.Expr) : TypeScriptM String :=
+  loop statement.getForallArity statement [] []
+where
+  /-- Takes the variables of the axiom one at a time, the types as type parameters and every other
+  variable as a parameter, with at most as many steps as the axiom has variables. -/
+  loop (remaining : Nat) (statement : Lean.Expr) (generics parameters : List String) :
+      TypeScriptM String := do
+    match remaining, statement with
+    | remaining + 1, .forallE name domain body binderInfo =>
+      Lean.Meta.withLocalDecl name binderInfo domain fun bound ↦ do
+        if domain.isSort then
+          loop remaining (body.instantiate1 bound) (generics ++ [name.toString]) parameters
+        else
+          loop remaining (body.instantiate1 bound) generics
+            (parameters ++ [s!"{name}: {← typeOf moduleNamespace (← normalizedOf domain)}"])
+    | _, _ =>
+      let .app (.app (.app (.const ``Eq _) morphismType) left) right := statement
+        | Lean.throwError m!"`{statement}` has no predicate in TypeScript, as it is no equality."
+      let #[_, _, source, target] := morphismType.getAppArgs
+        | Lean.throwError m!"`{statement}` has no predicate in TypeScript, as it equates no \
+            morphisms."
+      -- Two morphisms are equal where they give one value at every value of their source.
+      let equivalenceArgument ← match parameterObjectOf (← normalizedOf target) with
+        | some (_, object) => pure s!"<{← typeOf moduleNamespace object}>"
+        | none => pure ""
+      let allParameters := parameters ++
+        [s!"value: {← typeOf moduleNamespace (← normalizedOf source)}"]
+      return s!"<{", ".intercalate generics}>({", ".intercalate allParameters}): boolean => \
+        equivalence{equivalenceArgument}(({← morphismOf moduleNamespace functor left})(value), \
+        ({← morphismOf moduleNamespace functor right})(value))"
+
+/-- Gives the class of functors that the theory marks `export_typescript`, the declaration whose
+value is the type of the functors on types, where the theory marks one. -/
+def functorClassOf : Lean.MetaM (Option Lean.Name) := do
+  let environment ← Lean.getEnv
+  let extension := ExportTypeScript.tagAttribute.ext
+  let imported := (List.range environment.header.moduleNames.size).flatMap fun index ↦
+    (extension.getModuleEntries environment index).toList
+  (imported ++ (extension.getState environment).toList).findM? fun name ↦
+    return (← kindOf name) matches .functorClass
+
+/-- Gives the type of TypeScript of the instance of the class of functors that a functor or a
+curried functor of the theory takes, a function of the type parameters of the functor that gives
+the instance, or fails with the reason where the theory marks no class of functors. -/
+def instanceTypeOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
+  let some functorClass ← functorClassOf
+    | Lean.throwError m!"`{name}` has no instance in TypeScript, as the theory marks no class of \
+        functors `export_typescript`."
+  let className := pascalCaseOf (wordsOf moduleNamespace functorClass)
+  let typeName := pascalCaseOf (wordsOf moduleNamespace name)
+  let kind ← kindOf name
+  parametersOf (← Lean.getConstInfo name) fun parameters rest value? ↦ do
+    -- The instance takes the type parameters of the functor, and the object of a curried functor
+    -- after them.
+    let written := fun (all : List Lean.Expr) ↦ do
+      let names ← all.mapM fun parameter ↦ return (← parameter.fvarId!.getUserName).toString
+      let generics ← (all.zip names).mapM fun (parameter, parameterName) ↦
+        genericOf parameter parameterName
+      let arguments := if names.isEmpty then "" else s!"<{", ".intercalate names}>"
+      let declared := if names.isEmpty then "" else s!"<{", ".intercalate generics}>"
+      return s!"{declared}() => {className}<{typeName}{arguments}>"
+    if kind matches .curriedFunctor then
+      let some value := value?
+        | Lean.throwError m!"`{name}` has no instance in TypeScript, as the theory gives the \
+            functor no value."
+      curriedObjectOf value rest fun parameter _ ↦ written (parameters.toList ++ [parameter])
+    else written parameters.toList
+
 /-- Gives the declaration of TypeScript that a declaration of the theory marked `export_typescript`
 takes, named without the namespace of its module, or fails with the reason where the declaration
 has none. -/
@@ -260,16 +366,27 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
             type no value."
       let .const structureName _ := value.getAppFn
         | Lean.throwError m!"`{name}` applies no structure."
-      functorFieldsOf value fun functor fields ↦ do
+      functorFieldsOf value fun functor fields axioms ↦ do
         let generic ← genericOf functor (annotationOf "F"
           (← fields.flatMapM fun (_, fieldType) ↦ polaritiesOf functor true fieldType))
         let fieldLines ← fields.mapM fun (field, fieldType) ↦ do
           return s!"{← commentOf (structureName ++ field)}readonly {field}: \
             {← typeOf moduleNamespace fieldType};\n"
+        -- The axioms take predicates of an instance, which tell by an equivalence of the values
+        -- of the functor whether the instance keeps each axiom.
+        let kind := fun (object : String) ↦ do
+          return s!"{← effectNameOf "HKT" "Kind" .type}<F, never, never, never, {object}>"
+        let axiomLines ← axioms.mapM fun (field, statement) ↦ do
+          return s!"{← commentOf (structureName ++ field)}{field}: \
+            {← axiomOf moduleNamespace functor statement},\n"
         return s!"{← commentOf name}export interface {typeName}<{generic}> extends \
             {← effectNameOf "HKT" "TypeClass" .type}<F> \{\n{String.join fieldLines}}\n\n" ++
           s!"{← commentOf name (some "Creates")}export const {valueName} = \
-            <{← genericOf functor "F"}>(fields: {typeName}<F>): {typeName}<F> => fields;\n"
+            <{← genericOf functor "F"}>(fields: {typeName}<F>): {typeName}<F> => fields;\n\n" ++
+          s!"{← commentOf name (some "Gives the axioms of")}export const {valueName}Axioms = \
+            <{← genericOf functor "F"}>(\ninstance: {typeName}<F>,\nequivalence: \
+            <X>(self: {← kind "X"}, that: {← kind "X"}) => boolean,\n) => (\{\n\
+            {String.join axiomLines}});\n"
     | .curriedFunctor =>
       let some value := value?
         | Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory gives the \
