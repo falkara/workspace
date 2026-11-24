@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["es2022"], // Built-in API checked against Vite's default build target.
+    "lib": ["es2022"], // Built-in API checked against the default build target of Vite.
     "module": "preserve" // Imports resolved by Rolldown instead.
   },
   "include": ["**/*.ts"]

@@ -1,32 +1,18 @@
 import { defineConfig } from 'vite-plus';
 
-/** The modules of the library, each of which Vite+ packs as an entry with its declarations. */
-const entry = [
-  'src/Color.ts',
-  'src/Colorimetry.ts',
-  'src/Fluid.ts',
-  'src/Layout.ts',
-  'src/Length.ts',
-  'src/Space.ts',
-  'src/Typography.ts',
-  'src/Viewport.ts',
-];
-
 export default defineConfig({
   pack: {
-    entry,
-    // Every module ships as a file of its own, so that a consumer's bundler leaves out the modules it never imports.
+    // The modules of the library, each packed by Vite+ as an entry with its declarations so that a module that holds types alone still exists as JavaScript for the declarations of another module to name.
+    entry: ['src/**/*.ts', '!src/**/*.test.ts'],
+    // Every module ships as a file of its own, so that the bundler of a consumer leaves out the modules the consumer never imports.
     unbundle: true,
-    // JSR reads the types of each JavaScript module from the declarations it names, beside the module, as it generates none for JavaScript. An entry has declarations, and so does every module in the directory of an entry, such as `Colorimetry/Tristimulus`, whose types the entry exports; any other internal module packed beside them, such as Real, has none to name, and no public type reaches it.
-    banner: ({ fileName }) =>
-      entry.includes(`src/${fileName.replace(/\.mjs$/, '.ts')}`) || fileName.includes('/')
-        ? {
-            js: `/* @ts-self-types="./${fileName.replace(/^.*\//, '').replace(/\.mjs$/, '.d.mts')}" */`,
-          }
-        : undefined,
+    // JSR generates no types for JavaScript and reads the types of every JavaScript module from the declarations that the module names beside it.
+    banner: ({ fileName }) => ({
+      js: `/* @ts-self-types="./${fileName.replace(/^.*\//, '').replace(/\.mjs$/, '.d.mts')}" */`,
+    }),
   },
   test: {
     // Type tests checked by TypeScript beside the tests Vitest runs.
-    typecheck: { enabled: true, include: ['src/**/*.test.ts'] },
+    typecheck: { enabled: true, include: ['**/*.test.ts'] },
   },
 });

@@ -32,3 +32,20 @@ jobs:
         run: npm run check
       - name: Test
         run: npx vp test
+      - name: Set up Deno
+        # Deno checks a library as JSR publishes it, which the jsr package on npm only wraps.
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: '2.9.8'
+      - name: Check the presentation library as JSR publishes it
+        # Packs the library and checks what JSR would publish: every export names a module, every module names its types, and the types check.
+        working-directory: libraries/presentation
+        run: |
+          npx vp pack
+          deno publish --dry-run --set-version "$(node --print "require('./package.json').version")"
+      - name: Check the simulation library as JSR publishes it
+        # Packs the library and checks what JSR would publish: every export names a module, every module names its types, and the types check.
+        working-directory: libraries/simulation
+        run: |
+          npx vp pack
+          deno publish --dry-run --set-version "$(node --print "require('./package.json').version")"
