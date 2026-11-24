@@ -178,7 +178,7 @@ readonly str: (v: V) => V;
 }
 
 /** Creates a `Clock` from its field `str`. */
-export const clock = <V>(fields: Clock<V>): Clock<V> => fields;
+export const clock = <V>(fields: Clock<V>) => fields;
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
@@ -192,7 +192,7 @@ readonly str: (v: V) => readonly [B, V];
 }
 
 /** Creates a `ChimingClock` from its field `str`. */
-export const chimingClock = <B, V>(fields: ChimingClock<B, V>): ChimingClock<B, V> => fields;
+export const chimingClock = <B, V>(fields: ChimingClock<B, V>) => fields;
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
@@ -206,7 +206,7 @@ readonly str: (v: V) => HKT.Kind<F, never, never, never, V>;
 }
 
 /** Creates a `Clockwork` from its field `str`, with its `F` as the type argument of the first call. */
-export const clockwork = <F extends HKT.TypeLambda>() => <V>(fields: Clockwork<F, V>): Clockwork<F, V> => fields;
+export const clockwork = <F extends HKT.TypeLambda>() => <V>(fields: Clockwork<F, V>) => fields;
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
@@ -250,7 +250,7 @@ readonly map: <X, Y>(a: (x: X) => Y) => (value: HKT.Kind<Motion, never, never, n
 }
 
 /** Creates a `Gear` from its field `map`. */
-export const gear = <Motion extends HKT.TypeLambda>(fields: Gear<Motion>): Gear<Motion> => fields;
+export const gear = <Motion extends HKT.TypeLambda>(fields: Gear<Motion>) => fields;
 
 /** Gives the axioms of a `Gear` as predicates of an instance. */
 export const gearAxioms = <Motion extends HKT.TypeLambda>(
@@ -285,7 +285,7 @@ readonly beam: Shade;
 }
 
 /** Creates a `Lantern` from its field `beam`. */
-export const lantern = <Shade>(fields: Lantern<Shade>): Lantern<Shade> => fields;
+export const lantern = <Shade>(fields: Lantern<Shade>) => fields;
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do

@@ -353,7 +353,7 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
           \{\n{String.join fields}}\n\n" ++
         s!"{← derivedCommentOf name s!"Creates {articledOf typeName} from its \
             {fieldsOf fieldNames}."}export const {valueName} = \
-          {arguments}(fields: {typeName}{arguments}): {typeName}{arguments} => fields;\n"
+          {arguments}(fields: {typeName}{arguments}) => fields;\n"
     | .refinement base condition =>
       return s!"{← commentOf name (some "A schema of")}export const {typeName} = \
           {← schemaOf moduleNamespace base}.pipe({← effectNameOf "Schema" "check" .value}(\
@@ -394,8 +394,7 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
           return isFunctorType (← parameter.fvarId!.getType)
         let functors := (allParameters.zip isFunctors).filterMap fun (parameter, isFunctor) ↦
           if isFunctor then some parameter else none
-        let constructor := s!"(fields: {typeName}{allArguments}): {typeName}{allArguments} => \
-          fields;\n"
+        let constructor := s!"(fields: {typeName}{allArguments}) => fields;\n"
         if functors.isEmpty then
           return s!"{← commentOf name}export interface {typeName}{allGenerics} \
               \{\n{String.join fieldLines}}\n\n" ++
@@ -453,8 +452,8 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
             {String.join fieldLines}}\n\n" ++
           s!"{← derivedCommentOf name s!"Creates {articledOf typeName} from its \
               {fieldsOf fieldNames}."}export const {valueName} = \
-            <{← genericOf functor functorName}>(fields: {typeName}<{functorName}>): \
-            {typeName}<{functorName}> => fields;\n\n" ++
+            <{← genericOf functor functorName}>(fields: {typeName}<{functorName}>) => \
+            fields;\n\n" ++
           s!"{← derivedCommentOf name s!"Gives the axioms of {articledOf typeName} as \
               predicates of an instance."}export const {valueName}Axioms = \
             <{← genericOf functor functorName}>(\ninstance: {typeName}<{functorName}>,\n\

@@ -24,5 +24,5 @@ export interface Coalgebra<out Endofunctor extends HKT.TypeLambda, in out State>
  */
 export const coalgebra =
   <Endofunctor extends HKT.TypeLambda>() =>
-  <State>(fields: Coalgebra<Endofunctor, State>): Coalgebra<Endofunctor, State> =>
+  <State>(fields: Coalgebra<Endofunctor, State>) =>
     fields;

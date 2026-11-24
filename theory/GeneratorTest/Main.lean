@@ -99,7 +99,7 @@ readonly trace: Trace;
 }
 
 /** Creates a `Step` from its fields `state` and `trace`. */
-export const step = <State, Trace>(fields: Step<State, Trace>): Step<State, Trace> => fields;
+export const step = <State, Trace>(fields: Step<State, Trace>) => fields;
 
 /** A function that gives the step from a state upon an input. */
 export type StepMove<in out State, in Input, out Trace> = (currentState: State, input: Input) => Step<State, Trace>;
@@ -111,7 +111,7 @@ readonly move: StepMove<State, Input, Trace>;
 }
 
 /** Creates a `Walker` from its field `move`. */
-export const walker = <State, Input, Trace>(fields: Walker<State, Input, Trace>): Walker<State, Input, Trace> => fields;
+export const walker = <State, Input, Trace>(fields: Walker<State, Input, Trace>) => fields;
 
 /** Gives the state a walker reaches from a state upon an input. */
 export type WalkerNext = <State, Input, Trace>(walker: Walker<State, Input, Trace>, state: State, input: Input) => State;
@@ -123,7 +123,7 @@ readonly turn: (coordinate: Coordinate) => Coordinate;
 }
 
 /** Creates a `Course` from its field `turn`. */
-export const course = (fields: Course): Course => fields;
+export const course = (fields: Course) => fields;
 
 /** A contract of the functions of the theory that the module `Fixture/Walker` of the package implements. */
 interface Contract {
@@ -151,7 +151,7 @@ readonly str: (v: V) => V;
 }
 
 /** Creates a `Clock` from its field `str`. */
-export const clock = <V>(fields: Clock<V>): Clock<V> => fields;
+export const clock = <V>(fields: Clock<V>) => fields;
 
 /** A clock that chimes and ticks from every state to its next state. */
 export interface ChimingClock<out B, in out V> {
@@ -160,7 +160,7 @@ readonly str: (v: V) => readonly [B, V];
 }
 
 /** Creates a `ChimingClock` from its field `str`. */
-export const chimingClock = <B, V>(fields: ChimingClock<B, V>): ChimingClock<B, V> => fields;
+export const chimingClock = <B, V>(fields: ChimingClock<B, V>) => fields;
 
 /** A clockwork that moves every state by a functor. */
 export interface Clockwork<out F extends HKT.TypeLambda, in out V> {
@@ -169,7 +169,7 @@ readonly str: (v: V) => HKT.Kind<F, never, never, never, V>;
 }
 
 /** Creates a `Clockwork` from its field `str`, with its `F` as the type argument of the first call. */
-export const clockwork = <F extends HKT.TypeLambda>() => <V>(fields: Clockwork<F, V>): Clockwork<F, V> => fields;
+export const clockwork = <F extends HKT.TypeLambda>() => <V>(fields: Clockwork<F, V>) => fields;
 
 /** The functor of the chimes, which gives a chime and the next state. */
 export interface ChimeFunctor<out B> extends HKT.TypeLambda {
@@ -193,7 +193,7 @@ readonly map: <X, Y>(a: (x: X) => Y) => (value: HKT.Kind<Motion, never, never, n
 }
 
 /** Creates a `Gear` from its field `map`. */
-export const gear = <Motion extends HKT.TypeLambda>(fields: Gear<Motion>): Gear<Motion> => fields;
+export const gear = <Motion extends HKT.TypeLambda>(fields: Gear<Motion>) => fields;
 
 /** Gives the axioms of a `Gear` as predicates of an instance. */
 export const gearAxioms = <Motion extends HKT.TypeLambda>(
@@ -239,7 +239,7 @@ readonly str: (v: V) => readonly [B, V];
 }
 
 /** Creates a `Bell` from its field `str`. */
-export const bell = <B, V>(fields: Bell<B, V>): Bell<B, V> => fields;
+export const bell = <B, V>(fields: Bell<B, V>) => fields;
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do

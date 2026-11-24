@@ -22,9 +22,7 @@ export interface Functor<
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor
  */
-export const functor = <Endofunctor extends HKT.TypeLambda>(
-  fields: Functor<Endofunctor>,
-): Functor<Endofunctor> => fields;
+export const functor = <Endofunctor extends HKT.TypeLambda>(fields: Functor<Endofunctor>) => fields;
 
 /**
  * Gives the axioms of a `Functor` as predicates of an instance.

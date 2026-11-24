@@ -18,6 +18,4 @@ export interface StreamCoalgebra<out Output, in out State> {
  *
  * @see https://doi.org/10.1017/CBO9781316823187 Corollary 2.3.6.1
  */
-export const streamCoalgebra = <Output, State>(
-  fields: StreamCoalgebra<Output, State>,
-): StreamCoalgebra<Output, State> => fields;
+export const streamCoalgebra = <Output, State>(fields: StreamCoalgebra<Output, State>) => fields;

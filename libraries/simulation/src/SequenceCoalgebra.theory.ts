@@ -20,6 +20,5 @@ export interface SequenceCoalgebra<out Output, in out State> {
  *
  * @see https://doi.org/10.1017/CBO9781316823187 Section 2.2.1
  */
-export const sequenceCoalgebra = <Output, State>(
-  fields: SequenceCoalgebra<Output, State>,
-): SequenceCoalgebra<Output, State> => fields;
+export const sequenceCoalgebra = <Output, State>(fields: SequenceCoalgebra<Output, State>) =>
+  fields;

@@ -18,6 +18,5 @@ export interface MealyMachine<in Input, out Output, in out State> {
  *
  * @see https://doi.org/10.1017/CBO9781316823187 Exercise 2.3.2
  */
-export const mealyMachine = <Input, Output, State>(
-  fields: MealyMachine<Input, Output, State>,
-): MealyMachine<Input, Output, State> => fields;
+export const mealyMachine = <Input, Output, State>(fields: MealyMachine<Input, Output, State>) =>
+  fields;

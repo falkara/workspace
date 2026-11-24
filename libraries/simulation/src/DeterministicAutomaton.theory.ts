@@ -20,4 +20,4 @@ export interface DeterministicAutomaton<in Input, out Output, in out State> {
  */
 export const deterministicAutomaton = <Input, Output, State>(
   fields: DeterministicAutomaton<Input, Output, State>,
-): DeterministicAutomaton<Input, Output, State> => fields;
+) => fields;
