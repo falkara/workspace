@@ -26,14 +26,17 @@ declarations of every module of the theory, such as
 without the namespace of the package, such as `Falkara.Presentation`, as the folders of the theory
 order its files and its namespace orders its names, as Mathlib keeps them apart. A file imports
 from Effect the modules its declarations name, `Brand`, `Schema`, and every module whose function a
-value calls, such as `Rational.fromBigInt`, as values and every other module as a type, and from
-the files of the other modules of the theory the declarations it names, as values where a schema
-names them and as types otherwise. A file whose module defines a refinement imports the condition
+value calls, such as `Rational.fromBigInt`, as values and every other module as a type, and every
+other module of the theory whose declarations it names as a namespace after the last word of the
+module, such as `import type * as Functor from '#src/Functor.theory';`, as a value where a schema
+names one of its declarations and as a type otherwise, as Effect imports its modules, so that a
+declaration of another module takes the name of its module, such as `Functor.Functor`. A file whose
+module defines a refinement imports the condition
 of the refinement as a value from the module of checks that the package keeps beside the module of
 the package, such as `Filename.check.ts`, which imports no schema. A file whose module defines
 functions or functors ends with a contract, an interface that names every function as the module of
-the package beside the file exports it, such as `chromaticityOf`, and the instance of the class of
-functors that every functor takes, such as `binaryProductFunctor`, and a type that fails to compile
+the package beside the file exports it, such as `behavior`, and the instance of the class of
+functors that every functor takes, such as `functor`, and a type that fails to compile
 where that module leaves a function out or gives it another type, as a signature of a module in ML
 requires of the module. The program writes the theorems of a module marked `export_typescript` into
 the file of tests of the same name, such as `Colorimetry/Tristimulus.theory.test.ts`, by the module
@@ -99,6 +102,9 @@ def markedDeclarationsOf (module : Lean.Name) (theorems : Bool) :
 /-- Gives the file of TypeScript that holds the declarations marked `export_typescript` of a module
 of the theory of a package, named without the namespace of the package. -/
 def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := do
+  -- The file names the declarations of its own module alone and every other after the namespace of
+  -- its module.
+  Lean.withEnv ((← Lean.getEnv).setMainModule module) do
   let environment ← Lean.getEnv
   let declarations ← markedDeclarationsOf module false
   let kinds ← declarations.mapM fun name ↦ return (name, ← kindOf name)
@@ -111,7 +117,7 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
       let texts ← declarations.mapM (declarationOf packageNamespace)
       let members ← instances.mapM fun name ↦ do
         return s!"{← instanceCommentOf packageNamespace name}readonly \
-          {camelCaseOf (wordsOf packageNamespace name)}: \
+          {← instanceNameOf packageNamespace name}: \
           {← instanceTypeOf packageNamespace name};\n"
       return (texts, members) : TypeScriptM (List String × List String)).run []
   let functorClass ← if instances.isEmpty then pure none else functorClassOf
@@ -140,16 +146,16 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
   let conditions := kinds.filterMap fun
     | (_, .refinement _ condition) => some condition
     | _ => none
-  let checkLines := (conditions.filterMap fun condition ↦
+  let checkLines ← (conditions.filterMap fun condition ↦
     (environment.getModuleIdxFor? condition).bind fun index ↦
-      environment.header.moduleNames[index.toNat]?).eraseDups.map
-    fun checkModule ↦
+      environment.header.moduleNames[index.toNat]?).eraseDups.mapM
+    fun checkModule ↦ do
       let names := conditions.filter fun condition ↦
         ((environment.getModuleIdxFor? condition).bind fun index ↦
           environment.header.moduleNames[index.toNat]?) == some checkModule
       let path := pathOf theory checkModule
-      s!"import \{ {", ".intercalate (names.map fun condition ↦
-        camelCaseOf (wordsOf packageNamespace condition))} } from '#src/{path}.check';\n"
+      let conditionNames ← names.mapM (valueNameOf packageNamespace)
+      return s!"import \{ {", ".intercalate conditionNames} } from '#src/{path}.check';\n"
   -- A bundled structure that extends the label of its structure names the label and the functors of
   -- its value, and any other bundled structure names the types of its fields as TypeScript reads
   -- them, so a declaration that its value names and its fields reduce away is named nowhere.
@@ -181,19 +187,16 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
   let otherModules := (others.filterMap fun name ↦
     (environment.getModuleIdxFor? name).bind fun index ↦
       environment.header.moduleNames[index.toNat]?).eraseDups
-  let theoryLines := otherModules.map fun otherModule ↦
-    let names := others.filter fun name ↦
+  -- A file imports every other module of the theory as a namespace named after the last word of
+  -- the module, as a value where a schema names one of its declarations and as a type otherwise.
+  let theoryLines := otherModules.filterMap fun otherModule ↦ do
+    let .str _ namespaceName := otherModule | none
+    let path := pathOf theory otherModule
+    let value := others.any fun name ↦ namedBySchemas.contains name &&
       ((environment.getModuleIdxFor? name).bind fun index ↦
         environment.header.moduleNames[index.toNat]?) == some otherModule
-    let typeNames := names.map fun name ↦
-      (pascalCaseOf (wordsOf packageNamespace name), namedBySchemas.contains name)
-    let path := pathOf theory otherModule
-    if typeNames.any Prod.snd then
-      s!"import \{ {", ".intercalate (typeNames.map fun (typeName, value) ↦
-        if value then typeName else s!"type {typeName}")} } from '#src/{path}.theory';\n"
-    else
-      s!"import type \{ {", ".intercalate (typeNames.map Prod.fst)} } \
-        from '#src/{path}.theory';\n"
+    some s!"import {if value then "" else "type "}* as {namespaceName} from \
+      '#src/{path}.theory';\n"
   -- The contract names the module of the package as a type alone, so the two modules import each
   -- other only as types.
   let functions := kinds.filterMap fun
@@ -203,8 +206,8 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
   let contractImport := if functions.isEmpty && instances.isEmpty then [] else
     [s!"import type * as Module from '#src/{modulePath}';\n"]
   let functionMembers ← functions.mapM fun name ↦ do
-    let words := wordsOf packageNamespace name
-    return s!"{← commentOf name}readonly {camelCaseOf words}: {pascalCaseOf words};\n"
+    return s!"{← commentOf name}readonly {← valueNameOf packageNamespace name}: \
+      {← typeNameOf packageNamespace name};\n"
   let members := functionMembers ++ instanceMembers
   let contract := if members.isEmpty then "" else
     s!"\n/** A contract of the functions of the theory that the module `{modulePath}` of the \

@@ -2,19 +2,19 @@ import { describe, expectTypeOf, it } from '@effect/vitest';
 import { Schema } from 'effect';
 
 import * as Coalgebra from '#src/Coalgebra';
-import { functorAxioms } from '#src/Functor';
-import { type BinaryProductFunctor, binaryProductFunctor } from '#src/Functor/BinaryProductFunctor';
+import * as Functor from '#src/Functor';
+import * as BinaryProductFunctor from '#src/Functor/BinaryProductFunctor';
 
 /** The axioms of the functor of binary products with outputs in the strings, with two pairs equal where both of their parts are. */
-const axioms = functorAxioms(
-  binaryProductFunctor<string>(),
+const axioms = Functor.axioms(
+  BinaryProductFunctor.functor<string>(),
   (self, that) => self[0] === that[0] && self[1] === that[1],
 );
 
 describe('BinaryProductFunctor', () => {
   it('gives the coalgebra structure of a coalgebra an output and the next state', () => {
-    const countdown = Coalgebra.coalgebra<BinaryProductFunctor<string>>()({
-      structure: (state: number) => [`${state}`, state - 5],
+    const countdown = Coalgebra.make<BinaryProductFunctor.BinaryProductFunctor<string>, number>({
+      structure: (state) => [`${state}`, state - 5],
     });
 
     expectTypeOf(countdown.structure).returns.toEqualTypeOf<readonly [string, number]>();

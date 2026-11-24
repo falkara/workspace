@@ -36,13 +36,13 @@ is 1, as that of an adapted white is [cie2020internationalLightingVocabulary].
   the sums of their amounts, $X_1 + X_2$, $Y_1 + Y_2$, and $Z_1 + Z_2$.
 - `Tristimulus.scale`: gives the tristimulus values of a factor $c$ of units of a color stimulus as
   the products of the factor and its amounts, $cX$, $cY$, and $cZ$.
-- `tristimulusOf`: gives the tristimulus values of a color stimulus function
+- `Tristimulus.ofColorStimulusFunction`: gives the tristimulus values of a color stimulus function
   $\varphi_\lambda(\lambda)$ as the sums over the wavelengths $\lambda$ from 360 nm to 830 nm,
   $X = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{x}(\lambda)\,\Delta\lambda$,
   $Y = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{y}(\lambda)\,\Delta\lambda$, and
   $Z = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{z}(\lambda)\,\Delta\lambda$ with
   $\Delta\lambda = 1\,\mathrm{nm}$.
-- `whiteTristimulus`: the tristimulus values of the white, those of CIE standard illuminant D65
+- `Tristimulus.white`: the tristimulus values of the white, those of CIE standard illuminant D65
   scaled so that their luminance factor $Y$ is 1,
   $X = \sum_{\lambda} S(\lambda)\,\bar{x}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$,
   $Y = 1$, and
@@ -57,12 +57,12 @@ is 1, as that of an adapted white is [cie2020internationalLightingVocabulary].
 - `Tristimulus.scale_add`: a factor of units of the additive mixture of two color stimuli is the
   mixture of that factor of units of each, $c\,(X_1 + X_2) = c\,X_1 + c\,X_2$ and likewise for $Y$
   and $Z$.
-- `tristimulusOf_add`: the tristimulus values of the additive mixture of two color stimulus
-  functions are the sums of their tristimulus values,
+- `Tristimulus.ofColorStimulusFunction_add`: the tristimulus values of the additive mixture of two
+  color stimulus functions are the sums of their tristimulus values,
   $X(\varphi_1 + \varphi_2) = X(\varphi_1) + X(\varphi_2)$ and likewise for $Y$ and $Z$.
-- `tristimulusOf_scale`: the tristimulus values of a color stimulus function multiplied by a factor
-  $c$ are the products of the factor and its tristimulus values, $X(c\,\varphi) = c\,X(\varphi)$
-  and likewise for $Y$ and $Z$.
+- `Tristimulus.ofColorStimulusFunction_scale`: the tristimulus values of a color stimulus function
+  multiplied by a factor $c$ are the products of the factor and its tristimulus values,
+  $X(c\,\varphi) = c\,X(\varphi)$ and likewise for $Y$ and $Z$.
 
 ## Implementation Notes
 
@@ -138,13 +138,14 @@ $X = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{x}(\lambda)\,\Delta\lambda$,
 $Y = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{y}(\lambda)\,\Delta\lambda$, and
 $Z = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{z}(\lambda)\,\Delta\lambda$ with
 $\Delta\lambda = 1\,\mathrm{nm}$. -/
-def tristimulusOf (colorStimulusFunction : (wavelength : Wavelength) → ℚ) : Tristimulus :=
+def Tristimulus.ofColorStimulusFunction (colorStimulusFunction : (wavelength : Wavelength) → ℚ) :
+    Tristimulus :=
   let pairs := wavelengths.zip observer
   ⟨(pairs.map fun pair ↦ colorStimulusFunction pair.1 * pair.2.xBar).sum,
     (pairs.map fun pair ↦ colorStimulusFunction pair.1 * pair.2.yBar).sum,
     (pairs.map fun pair ↦ colorStimulusFunction pair.1 * pair.2.zBar).sum⟩
 
-attribute [cite "Abstract" cie2019tristimulusValues] tristimulusOf
+attribute [cite "Abstract" cie2019tristimulusValues] Tristimulus.ofColorStimulusFunction
 
 /-! ### Data -/
 
@@ -153,10 +154,11 @@ luminance factor $Y$ is 1,
 $X = \sum_{\lambda} S(\lambda)\,\bar{x}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$,
 $Y = 1$, and
 $Z = \sum_{\lambda} S(\lambda)\,\bar{z}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$. -/
-def whiteTristimulus : Tristimulus :=
-  (tristimulusOf relativeSpectralPowerAt).scale (tristimulusOf relativeSpectralPowerAt).Y⁻¹
+def Tristimulus.white : Tristimulus :=
+  (Tristimulus.ofColorStimulusFunction relativeSpectralPowerAt).scale
+    (Tristimulus.ofColorStimulusFunction relativeSpectralPowerAt).Y⁻¹
 
-attribute [cite "17-23-081" cie2020internationalLightingVocabulary] whiteTristimulus
+attribute [cite "17-23-081" cie2020internationalLightingVocabulary] Tristimulus.white
 
 /-! ### Theorems -/
 
@@ -193,28 +195,32 @@ end Tristimulus
 /-- The tristimulus values of the additive mixture of two color stimulus functions are the sums of
 their tristimulus values, $X(\varphi_1 + \varphi_2) = X(\varphi_1) + X(\varphi_2)$ and likewise for
 $Y$ and $Z$. -/
-theorem tristimulusOf_add (first second : (wavelength : Wavelength) → ℚ) :
-    tristimulusOf (fun wavelength ↦ first wavelength + second wavelength) =
-      (tristimulusOf first).add (tristimulusOf second) := by
-  simp only [tristimulusOf, Tristimulus.add, add_mul, List.sum_map_add]
+theorem Tristimulus.ofColorStimulusFunction_add (first second : (wavelength : Wavelength) → ℚ) :
+    Tristimulus.ofColorStimulusFunction (fun wavelength ↦ first wavelength + second wavelength) =
+      (Tristimulus.ofColorStimulusFunction first).add
+        (Tristimulus.ofColorStimulusFunction second) := by
+  simp only [Tristimulus.ofColorStimulusFunction, Tristimulus.add, add_mul, List.sum_map_add]
 
-attribute [cite "17-23-033" cie2020internationalLightingVocabulary] tristimulusOf_add
+attribute [cite "17-23-033" cie2020internationalLightingVocabulary]
+  Tristimulus.ofColorStimulusFunction_add
 
 /-- The tristimulus values of a color stimulus function multiplied by a factor $c$ are the products
 of the factor and its tristimulus values, $X(c\,\varphi) = c\,X(\varphi)$ and likewise for $Y$ and
 $Z$. -/
-theorem tristimulusOf_scale (colorStimulusFunction : (wavelength : Wavelength) → ℚ)
-    (factor : ℚ) :
-    tristimulusOf (fun wavelength ↦ factor * colorStimulusFunction wavelength) =
-      (tristimulusOf colorStimulusFunction).scale factor := by
-  simp only [tristimulusOf, Tristimulus.scale, mul_assoc, List.sum_map_mul_left]
+theorem Tristimulus.ofColorStimulusFunction_scale
+    (colorStimulusFunction : (wavelength : Wavelength) → ℚ) (factor : ℚ) :
+    Tristimulus.ofColorStimulusFunction
+        (fun wavelength ↦ factor * colorStimulusFunction wavelength) =
+      (Tristimulus.ofColorStimulusFunction colorStimulusFunction).scale factor := by
+  simp only [Tristimulus.ofColorStimulusFunction, Tristimulus.scale, mul_assoc,
+    List.sum_map_mul_left]
 
-attribute [cite "Abstract" cie2019tristimulusValues] tristimulusOf_scale
+attribute [cite "Abstract" cie2019tristimulusValues] Tristimulus.ofColorStimulusFunction_scale
 
 /-! ### Export -/
 
 attribute [export_typescript]
-  Tristimulus Tristimulus.add Tristimulus.scale whiteTristimulus
+  Tristimulus Tristimulus.add Tristimulus.scale Tristimulus.white
   Tristimulus.add_comm Tristimulus.add_assoc Tristimulus.scale_add
 
 end Falkara.Presentation

@@ -3,6 +3,7 @@ import { Effect, Exit, Option, pipe, Rational, Schema, SchemaIssue } from 'effec
 
 import * as Color from '#src/Color';
 import * as Colorimetry from '#src/Colorimetry';
+import * as Tristimulus from '#src/Colorimetry/Tristimulus';
 import * as Typography from '#src/Typography';
 
 /** The relative luminance of a color of the given lightness and chroma at a hue of 0, whose cosine and sine are 1 and 0 exactly, converted by the matrices of CSS Color 4 exactly, apart from the code of Color. */
@@ -1492,7 +1493,7 @@ describe('types', () => {
     // @ts-expect-error The cube roots of the cone responses are not the responses, which they must first be cubed into.
     Colorimetry.transform(Color.lmsToXyz, roots);
     // @ts-expect-error The matrix of the cone responses converts to XYZ, not from it.
-    Colorimetry.transform(Color.lmsToXyz, Colorimetry.xyzOf(Colorimetry.whiteTristimulus));
+    Colorimetry.transform(Color.lmsToXyz, Colorimetry.xyzOf(Tristimulus.white));
     // @ts-expect-error The matrix of Oklab is not one of a medium.
     Colorimetry.transform(Colorimetry.srgb.xyzToLinear, roots);
   });

@@ -2,6 +2,8 @@ import { describe, expect, expectTypeOf, it } from '@effect/vitest';
 import { Effect, Equal, Exit, Option, Rational, Record, Schema, SchemaIssue } from 'effect';
 
 import * as Colorimetry from '#src/Colorimetry';
+import * as Chromaticity from '#src/Colorimetry/Chromaticity';
+import * as Tristimulus from '#src/Colorimetry/Tristimulus';
 
 /** Rows of the CIE 1931 2° observer as the CIE dataset publishes them, SHA-256 `fa663e3535a7e0763a745993a1f0a192eb0275ac46ad2d1befd7626841e713c1`. */
 const rows = {
@@ -27,8 +29,8 @@ const rows = {
 
 /** The cross product of two vectors in XYZ, colors or directions, 0 exactly when they are parallel. */
 const cross = (
-  first: Colorimetry.Tristimulus,
-  second: Colorimetry.Tristimulus,
+  first: Tristimulus.Tristimulus,
+  second: Tristimulus.Tristimulus,
 ): {
   readonly X: Rational.Rational;
   readonly Y: Rational.Rational;
@@ -42,7 +44,7 @@ const cross = (
 /** The linear channels of a color in a medium. */
 const channelsOf = (
   medium: Colorimetry.Medium,
-  color: Colorimetry.Tristimulus,
+  color: Tristimulus.Tristimulus,
 ): ReadonlyArray<Rational.Rational> =>
   Colorimetry.transform(medium.xyzToLinear, Colorimetry.xyzOf(color));
 
@@ -72,14 +74,11 @@ describe('complementaryWavelength', () => {
       // The spectral light added back is the opposite of the direction of a complementary wavelength.
       expect(
         direction &&
-          Colorimetry.tristimulusAdd(
-            Colorimetry.tristimulusAdd(
-              Colorimetry.whiteTristimulus,
-              Colorimetry.tristimulusScale(direction, amount),
-            ),
-            Colorimetry.tristimulusScale(direction, Rational.negate(amount)),
+          Tristimulus.add(
+            Tristimulus.add(Tristimulus.white, Tristimulus.scale(direction, amount)),
+            Tristimulus.scale(direction, Rational.negate(amount)),
           ),
-      ).toEqual(Colorimetry.whiteTristimulus);
+      ).toEqual(Tristimulus.white);
     }
   });
 
@@ -87,7 +86,7 @@ describe('complementaryWavelength', () => {
     const exit = Colorimetry.complementaryWavelength(rows[518]);
     const direction = Exit.isSuccess(exit) ? exit.value.direction : undefined;
     const light = Exit.isSuccess(exit)
-      ? Colorimetry.chromaticityOf(exit.value.spectralLight).pipe(Option.getOrUndefined)
+      ? Chromaticity.ofTristimulus(exit.value.spectralLight).pipe(Option.getOrUndefined)
       : undefined;
 
     for (const amount of [
@@ -97,19 +96,16 @@ describe('complementaryWavelength', () => {
     ]) {
       const color =
         direction &&
-        Colorimetry.chromaticityOf(
-          Colorimetry.tristimulusAdd(
-            Colorimetry.whiteTristimulus,
-            Colorimetry.tristimulusScale(direction, amount),
-          ),
+        Chromaticity.ofTristimulus(
+          Tristimulus.add(Tristimulus.white, Tristimulus.scale(direction, amount)),
         ).pipe(Option.getOrUndefined);
       const towardsLight = light && {
-        x: Rational.subtract(light.x, Colorimetry.whiteChromaticity.x),
-        y: Rational.subtract(light.y, Colorimetry.whiteChromaticity.y),
+        x: Rational.subtract(light.x, Chromaticity.white.x),
+        y: Rational.subtract(light.y, Chromaticity.white.y),
       };
       const towardsColor = color && {
-        x: Rational.subtract(color.x, Colorimetry.whiteChromaticity.x),
-        y: Rational.subtract(color.y, Colorimetry.whiteChromaticity.y),
+        x: Rational.subtract(color.x, Chromaticity.white.x),
+        y: Rational.subtract(color.y, Chromaticity.white.y),
       };
 
       expect(
@@ -209,9 +205,9 @@ describe('complementaryWavelength', () => {
     for (const factor of [Rational.makeUnsafe(1n, 7n), Rational.fromBigInt(2n)]) {
       const exit = Colorimetry.complementaryWavelength({
         wavelength: 518,
-        xBar: Rational.multiply(Colorimetry.whiteTristimulus.X, factor),
-        yBar: Rational.multiply(Colorimetry.whiteTristimulus.Y, factor),
-        zBar: Rational.multiply(Colorimetry.whiteTristimulus.Z, factor),
+        xBar: Rational.multiply(Tristimulus.white.X, factor),
+        yBar: Rational.multiply(Tristimulus.white.Y, factor),
+        zBar: Rational.multiply(Tristimulus.white.Z, factor),
       });
 
       expect(
@@ -273,11 +269,11 @@ describe('dominantWavelength', () => {
   it('refuses a spectral light parallel to the white, with the reason', () => {
     const exit = Colorimetry.dominantWavelength({
       wavelength: 518,
-      xBar: Colorimetry.whiteChromaticity.x,
-      yBar: Colorimetry.whiteChromaticity.y,
+      xBar: Chromaticity.white.x,
+      yBar: Chromaticity.white.y,
       zBar: Rational.subtract(
         Rational.fromBigInt(1n),
-        Rational.sum(Colorimetry.whiteChromaticity.x, Colorimetry.whiteChromaticity.y),
+        Rational.sum(Chromaticity.white.x, Chromaticity.white.y),
       ),
     });
 
@@ -456,9 +452,7 @@ describe('media', () => {
         x: Rational.makeUnsafe(3127n, 10000n),
         y: Rational.makeUnsafe(3290n, 10000n),
       });
-      expect(Colorimetry.onExactWhite(medium).white, medium.colorSpace).toEqual(
-        Colorimetry.whiteChromaticity,
-      );
+      expect(Colorimetry.onExactWhite(medium).white, medium.colorSpace).toEqual(Chromaticity.white);
     }
   });
 
@@ -473,12 +467,12 @@ describe('media', () => {
   });
 
   it('hold their primaries within their gamut and reject a color beyond it', () => {
-    const red = Colorimetry.tristimulus({
+    const red = Tristimulus.make({
       X: Colorimetry.srgb.linearToXyz[0][0],
       Y: Colorimetry.srgb.linearToXyz[1][0],
       Z: Colorimetry.srgb.linearToXyz[2][0],
     });
-    const greenOfRec2020 = Colorimetry.tristimulus({
+    const greenOfRec2020 = Tristimulus.make({
       X: Colorimetry.rec2020.linearToXyz[0][1],
       Y: Colorimetry.rec2020.linearToXyz[1][1],
       Z: Colorimetry.rec2020.linearToXyz[2][1],
@@ -499,7 +493,7 @@ describe('media', () => {
       Exit.isSuccess(
         Colorimetry.inGamut(
           Colorimetry.srgb,
-          Colorimetry.tristimulus({
+          Tristimulus.make({
             X: Rational.multiply(red.X, Rational.fromBigInt(2n)),
             Y: Rational.multiply(red.Y, Rational.fromBigInt(2n)),
             Z: Rational.multiply(red.Z, Rational.fromBigInt(2n)),
@@ -511,7 +505,7 @@ describe('media', () => {
   });
 
   it('let BT.2100 with PQ reach above the white up to 10 000 cd/m², with the white at the 203 cd/m² of HDR Reference White', () => {
-    const white = Colorimetry.tristimulus({
+    const white = Tristimulus.make({
       X: Rational.sumAll(Colorimetry.rec2100Pq.linearToXyz[0]),
       Y: Rational.sumAll(Colorimetry.rec2100Pq.linearToXyz[1]),
       Z: Rational.sumAll(Colorimetry.rec2100Pq.linearToXyz[2]),
@@ -523,7 +517,7 @@ describe('media', () => {
       Exit.isSuccess(
         Colorimetry.inGamut(
           Colorimetry.rec2100Pq,
-          Colorimetry.tristimulus({
+          Tristimulus.make({
             X: Rational.multiply(white.X, Rational.makeUnsafe(10000n, 203n)),
             Y: Rational.multiply(white.Y, Rational.makeUnsafe(10000n, 203n)),
             Z: Rational.multiply(white.Z, Rational.makeUnsafe(10000n, 203n)),
@@ -536,7 +530,7 @@ describe('media', () => {
       Exit.isSuccess(
         Colorimetry.inGamut(
           Colorimetry.rec2100Pq,
-          Colorimetry.tristimulus({
+          Tristimulus.make({
             X: Rational.multiply(white.X, Rational.makeUnsafe(10001n, 203n)),
             Y: Rational.multiply(white.Y, Rational.makeUnsafe(10001n, 203n)),
             Z: Rational.multiply(white.Z, Rational.makeUnsafe(10001n, 203n)),
@@ -549,7 +543,7 @@ describe('media', () => {
       Exit.isSuccess(
         Colorimetry.inGamut(
           Colorimetry.rec2100Hlg,
-          Colorimetry.tristimulus({
+          Tristimulus.make({
             X: Rational.multiply(white.X, Rational.fromBigInt(2n)),
             Y: Rational.multiply(white.Y, Rational.fromBigInt(2n)),
             Z: Rational.multiply(white.Z, Rational.fromBigInt(2n)),
@@ -570,7 +564,7 @@ describe('media', () => {
               Exit.getSuccess(
                 Colorimetry.inGamut(
                   medium,
-                  Colorimetry.tristimulus({
+                  Tristimulus.make({
                     X: Rational.multiply(Rational.sumAll(medium.linearToXyz[0]), scale),
                     Y: Rational.multiply(Rational.sumAll(medium.linearToXyz[1]), scale),
                     Z: Rational.multiply(Rational.sumAll(medium.linearToXyz[2]), scale),
@@ -610,7 +604,7 @@ describe('media', () => {
           Exit.getSuccess(
             Colorimetry.inGamut(
               medium,
-              Colorimetry.tristimulus({
+              Tristimulus.make({
                 X: Rational.sumAll(medium.linearToXyz[0]),
                 Y: Rational.sumAll(medium.linearToXyz[1]),
                 Z: Rational.sumAll(medium.linearToXyz[2]),
@@ -642,7 +636,7 @@ describe('purest', () => {
       Colorimetry.rec2100Pq,
       Colorimetry.rec2100Hlg,
     ].flatMap((medium) => [medium, Colorimetry.onExactWhite(medium)]);
-    const light = Colorimetry.tristimulus({
+    const light = Tristimulus.make({
       X: rows[518].xBar,
       Y: rows[518].yBar,
       Z: rows[518].zBar,
@@ -653,7 +647,7 @@ describe('purest', () => {
       Colorimetry.dominantWavelength(rows[518]),
     ]) {
       for (const medium of media) {
-        const label = `${medium.colorSpace} ${medium.white === Colorimetry.whiteChromaticity ? 'on the exact white' : ''}`;
+        const label = `${medium.colorSpace} ${medium.white === Chromaticity.white ? 'on the exact white' : ''}`;
         const direction = Exit.isSuccess(hue) ? hue.value.direction : undefined;
         const exit = Exit.isSuccess(hue)
           ? Colorimetry.inMedium(Colorimetry.purest({ hue: hue.value }), medium)
@@ -661,15 +655,15 @@ describe('purest', () => {
         const color = exit && Exit.isSuccess(exit) ? exit.value : undefined;
         // The color is α·W + β·D exactly when it lies in the plane of the two, and then its cross product with D is α·(W × D) and with W is β·(D × W).
         const alongWhite = color && direction && cross(color, direction);
-        const alongDirection = color && direction && cross(color, Colorimetry.whiteTristimulus);
-        const whiteByDirection = direction && cross(Colorimetry.whiteTristimulus, direction);
+        const alongDirection = color && direction && cross(color, Tristimulus.white);
+        const whiteByDirection = direction && cross(Tristimulus.white, direction);
 
         expect(
           color &&
             Rational.sumAll([
-              Rational.multiply(color.X, cross(Colorimetry.whiteTristimulus, light).X),
-              Rational.multiply(color.Y, cross(Colorimetry.whiteTristimulus, light).Y),
-              Rational.multiply(color.Z, cross(Colorimetry.whiteTristimulus, light).Z),
+              Rational.multiply(color.X, cross(Tristimulus.white, light).X),
+              Rational.multiply(color.Y, cross(Tristimulus.white, light).Y),
+              Rational.multiply(color.Z, cross(Tristimulus.white, light).Z),
             ]),
           `${label}: the determinant of the white, the spectral light and the color is 0`,
         ).toEqual(Rational.fromBigInt(0n));
@@ -698,15 +692,15 @@ describe('purest', () => {
           `${label}: β is positive, as D × W is −(W × D)`,
         ).toBe(true);
 
-        const view = color && Colorimetry.chromaticityOf(color).pipe(Option.getOrUndefined);
-        const lightView = Colorimetry.chromaticityOf(light).pipe(Option.getOrUndefined);
+        const view = color && Chromaticity.ofTristimulus(color).pipe(Option.getOrUndefined);
+        const lightView = Chromaticity.ofTristimulus(light).pipe(Option.getOrUndefined);
         const towardsColor = view && {
-          x: Rational.subtract(view.x, Colorimetry.whiteChromaticity.x),
-          y: Rational.subtract(view.y, Colorimetry.whiteChromaticity.y),
+          x: Rational.subtract(view.x, Chromaticity.white.x),
+          y: Rational.subtract(view.y, Chromaticity.white.y),
         };
         const towardsLight = lightView && {
-          x: Rational.subtract(lightView.x, Colorimetry.whiteChromaticity.x),
-          y: Rational.subtract(lightView.y, Colorimetry.whiteChromaticity.y),
+          x: Rational.subtract(lightView.x, Chromaticity.white.x),
+          y: Rational.subtract(lightView.y, Chromaticity.white.y),
         };
 
         expect(
@@ -756,7 +750,7 @@ describe('purest', () => {
               Exit.isSuccess(
                 Colorimetry.inGamut(
                   medium,
-                  Colorimetry.tristimulusAdd(color, Colorimetry.tristimulusScale(direction, more)),
+                  Tristimulus.add(color, Tristimulus.scale(direction, more)),
                 ),
               ),
             `${label}: more of the direction leaves the gamut`,
@@ -769,7 +763,7 @@ describe('purest', () => {
   it('gives the spectral light itself where the gamut holds it, as Rec. 2020 and BT.2100 hold 532 nm and 630 nm, rather than a color purer than any light', () => {
     for (const row of [rows[532], rows[630]]) {
       const hue = Colorimetry.dominantWavelength(row);
-      const light = Colorimetry.tristimulus({ X: row.xBar, Y: row.yBar, Z: row.zBar });
+      const light = Tristimulus.make({ X: row.xBar, Y: row.yBar, Z: row.zBar });
 
       for (const medium of [
         Colorimetry.rec2020,
@@ -786,7 +780,7 @@ describe('purest', () => {
           color && cross(color, light),
           `${medium.colorSpace} at ${row.wavelength} nm: the spectral light alone, α = 0`,
         ).toEqual(
-          Colorimetry.tristimulus({
+          Tristimulus.make({
             X: Rational.fromBigInt(0n),
             Y: Rational.fromBigInt(0n),
             Z: Rational.fromBigInt(0n),
@@ -995,19 +989,19 @@ describe('types', () => {
   const hue = Option.getOrThrow(Exit.getSuccess(Colorimetry.complementaryWavelength(rows[518])));
 
   it('hold the direction of a hue as tristimulus values, as the theory holds a change of a color', () => {
-    expectTypeOf(hue.direction).toEqualTypeOf<Colorimetry.Tristimulus>();
-    expectTypeOf(Colorimetry.chromaticityOf(hue.spectralLight)).toEqualTypeOf<
-      Option.Option<Colorimetry.Chromaticity>
+    expectTypeOf(hue.direction).toEqualTypeOf<Tristimulus.Tristimulus>();
+    expectTypeOf(Chromaticity.ofTristimulus(hue.spectralLight)).toEqualTypeOf<
+      Option.Option<Chromaticity.Chromaticity>
     >();
   });
 
   it('add and scale tristimulus values into tristimulus values', () => {
     expectTypeOf(
-      Colorimetry.tristimulusAdd(Colorimetry.whiteTristimulus, hue.direction),
-    ).toEqualTypeOf<Colorimetry.Tristimulus>();
+      Tristimulus.add(Tristimulus.white, hue.direction),
+    ).toEqualTypeOf<Tristimulus.Tristimulus>();
     expectTypeOf(
-      Colorimetry.tristimulusScale(hue.direction, Rational.fromBigInt(2n)),
-    ).toEqualTypeOf<Colorimetry.Tristimulus>();
+      Tristimulus.scale(hue.direction, Rational.fromBigInt(2n)),
+    ).toEqualTypeOf<Tristimulus.Tristimulus>();
   });
 
   it('apply a matrix only to a vector of the space it converts from, and give a vector of the space it converts to', () => {
@@ -1144,10 +1138,7 @@ describe('definitions', () => {
 
         return yield* Colorimetry.inGamut(
           medium,
-          Colorimetry.tristimulusAdd(
-            color,
-            Colorimetry.tristimulusScale(hue.direction, Rational.fromBigInt(1n)),
-          ),
+          Tristimulus.add(color, Tristimulus.scale(hue.direction, Rational.fromBigInt(1n))),
         );
       }),
     );
@@ -1183,15 +1174,10 @@ describe('definitions', () => {
   });
 
   it('decide exactly whether a color lies in a gamut, naming the channel that leaves it', () => {
-    expect(
-      Exit.isSuccess(Colorimetry.inGamut(Colorimetry.srgb, Colorimetry.whiteTristimulus)),
-    ).toBe(false);
+    expect(Exit.isSuccess(Colorimetry.inGamut(Colorimetry.srgb, Tristimulus.white))).toBe(false);
     expect(
       Exit.isSuccess(
-        Colorimetry.inGamut(
-          Colorimetry.onExactWhite(Colorimetry.srgb),
-          Colorimetry.whiteTristimulus,
-        ),
+        Colorimetry.inGamut(Colorimetry.onExactWhite(Colorimetry.srgb), Tristimulus.white),
       ),
     ).toBe(true);
   });
@@ -1204,7 +1190,7 @@ describe('types of definitions', () => {
 
   it('give a color proven to lie in the gamut of the medium it was worked out in', () => {
     expectTypeOf(color).toEqualTypeOf<Colorimetry.InGamut<typeof Colorimetry.srgb>>();
-    expectTypeOf(color).toExtend<Colorimetry.Tristimulus>();
+    expectTypeOf(color).toExtend<Tristimulus.Tristimulus>();
     expectTypeOf(Colorimetry.write(Colorimetry.srgb, color)).toBeString();
     expectTypeOf(Colorimetry.writeMedia(brand)).toEqualTypeOf<
       Exit.Exit<
@@ -1226,7 +1212,7 @@ describe('types of definitions', () => {
     // @ts-expect-error A color on the white of the standard is not proven on the exact white.
     Colorimetry.write(Colorimetry.onExactWhite(Colorimetry.srgb), color);
     // @ts-expect-error A color not proven to lie in any gamut is not written.
-    Colorimetry.write(Colorimetry.srgb, Colorimetry.whiteTristimulus);
+    Colorimetry.write(Colorimetry.srgb, Tristimulus.white);
   });
 
   it('take in byMedium only the names of media', () => {
@@ -1243,7 +1229,7 @@ describe('types of definitions', () => {
       Colorimetry.Definition<Schema.SchemaError>
     >();
     // @ts-expect-error A color proven in sRGB is not one of whichever medium the rule is given.
-    Colorimetry.define(() => Colorimetry.inGamut(Colorimetry.srgb, Colorimetry.whiteTristimulus));
+    Colorimetry.define(() => Colorimetry.inGamut(Colorimetry.srgb, Tristimulus.white));
   });
 });
 
@@ -1258,7 +1244,7 @@ describe('mixtures', () => {
   const black = Colorimetry.define((medium) =>
     Colorimetry.inGamut(
       medium,
-      Colorimetry.tristimulus({
+      Tristimulus.make({
         X: Rational.fromBigInt(0n),
         Y: Rational.fromBigInt(0n),
         Z: Rational.fromBigInt(0n),
@@ -1280,7 +1266,7 @@ describe('mixtures', () => {
     }
     expect(
       Colorimetry.inMedium(Colorimetry.white, Colorimetry.onExactWhite(Colorimetry.srgb)),
-    ).toEqual(Exit.succeed(Colorimetry.whiteTristimulus));
+    ).toEqual(Exit.succeed(Tristimulus.white));
   });
 
   it('give the base at a share of 0 and the tint at a share of 1, each at the luminance given', () => {

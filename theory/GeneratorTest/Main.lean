@@ -32,23 +32,23 @@ takes a type parameter for the state space and a stream of Effect for a stream o
 info: // Written by the generator of the theory from `GeneratorTest.Fixture.Point`, so every change by hand is lost when the generator runs.
 import { Brand, type Option, Schema } from 'effect';
 
-import { Coordinate } from '#src/Fixture/Coordinate.theory';
+import * as Coordinate from '#src/Fixture/Coordinate.theory';
 import type * as Module from '#src/Fixture/Point';
 
 /** A schema of a point by its first coordinate. */
 export const Point = Schema.Struct({
 /** The first coordinate of the point. */
-first: Coordinate,
+first: Coordinate.Coordinate,
 }).pipe(Schema.brand('Point'));
 
 /** A point by its first coordinate. */
 export type Point = typeof Point.Type;
 
 /** Brands a `Point` from its field `first` without a check. */
-export const point = Brand.nominal<Point>();
+export const make = Brand.nominal<Point>();
 
 /** Gives the point at a coordinate. */
-export type PointAt = (coordinate: Coordinate) => Option.Option<Point>;
+export type PointAt = (coordinate: Coordinate.Coordinate) => Option.Option<Point>;
 
 /** A contract of the functions of the theory that the module `Fixture/Point` of the package implements. */
 interface Contract {
@@ -67,6 +67,8 @@ type _Implemented<Implementation extends Contract = typeof Module> = Implementat
 info: // Written by the generator of the theory from `GeneratorTest.Fixture.Coordinate`, so every change by hand is lost when the generator runs.
 import { Brand, Rational, Schema } from 'effect';
 
+import type * as Module from '#src/Fixture/Coordinate';
+
 /** A schema of a coordinate of a point. */
 export const Coordinate = Schema.Struct({
 /** The value of the coordinate. */
@@ -77,10 +79,25 @@ value: Schema.Rational,
 export type Coordinate = typeof Coordinate.Type;
 
 /** Brands a `Coordinate` from its field `value` without a check. */
-export const coordinate = Brand.nominal<Coordinate>();
+export const make = Brand.nominal<Coordinate>();
 
 /** The coordinate whose value is 1. */
-export const unit: Coordinate = coordinate({ value: Rational.fromBigInt(1n) });
+export const unit: Coordinate = make({ value: Rational.fromBigInt(1n) });
+
+/** The coordinate shifted by an offset. */
+export interface Shift {
+(coordinate: Coordinate, offset: Rational.Rational): Coordinate;
+(offset: Rational.Rational): (coordinate: Coordinate) => Coordinate;
+}
+
+/** A contract of the functions of the theory that the module `Fixture/Coordinate` of the package implements. */
+interface Contract {
+/** The coordinate shifted by an offset. */
+readonly shift: Shift;
+}
+
+/** A check of the module `Fixture/Coordinate` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */
+type _Implemented<Implementation extends Contract = typeof Module> = Implementation;
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
@@ -88,7 +105,7 @@ export const unit: Coordinate = coordinate({ value: Rational.fromBigInt(1n) });
 
 /--
 info: // Written by the generator of the theory from `GeneratorTest.Fixture.Walker`, so every change by hand is lost when the generator runs.
-import type { Coordinate } from '#src/Fixture/Coordinate.theory';
+import type * as Coordinate from '#src/Fixture/Coordinate.theory';
 import type * as Module from '#src/Fixture/Walker';
 
 /** A step of a walk, the state it reaches and the trace it leaves. */
@@ -112,15 +129,15 @@ readonly move: StepMove<State, Input, Trace>;
 }
 
 /** Creates a `Walker` from its field `move`. */
-export const walker = <State, Input, Trace>(fields: Walker<State, Input, Trace>) => fields;
+export const make = <State, Input, Trace>(fields: Walker<State, Input, Trace>) => fields;
 
 /** Gives the state a walker reaches from a state upon an input. */
-export type WalkerNext = <State, Input, Trace>(walker: Walker<State, Input, Trace>, state: State, input: Input) => State;
+export type Next = <State, Input, Trace>(walker: Walker<State, Input, Trace>, state: State, input: Input) => State;
 
 /** A course that turns every coordinate into another. */
 export interface Course {
 /** The function that gives the coordinate the course turns a coordinate into. */
-readonly turn: (coordinate: Coordinate) => Coordinate;
+readonly turn: (coordinate: Coordinate.Coordinate) => Coordinate.Coordinate;
 }
 
 /** Creates a `Course` from its field `turn`. */
@@ -129,7 +146,7 @@ export const course = (fields: Course) => fields;
 /** A contract of the functions of the theory that the module `Fixture/Walker` of the package implements. */
 interface Contract {
 /** Gives the state a walker reaches from a state upon an input. */
-readonly walkerNext: WalkerNext;
+readonly next: Next;
 }
 
 /** A check of the module `Fixture/Walker` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */
@@ -152,7 +169,7 @@ readonly str: (v: V) => V;
 }
 
 /** Creates a `Clock` from its field `str`. */
-export const clock = <V>(fields: Clock<V>) => fields;
+export const make = <V>(fields: Clock<V>) => fields;
 
 /** A clock that chimes and ticks from every state to its next state. */
 export interface ChimingClock<out B, in out V> {
@@ -169,8 +186,8 @@ export interface Clockwork<out F extends HKT.TypeLambda, in out V> {
 readonly str: (v: V) => HKT.Kind<F, never, never, never, V>;
 }
 
-/** Creates a `Clockwork` from its field `str`, with its `F` as the type argument of the first call. */
-export const clockwork = <F extends HKT.TypeLambda>() => <V>(fields: Clockwork<F, V>) => fields;
+/** Creates a `Clockwork` from its field `str`. */
+export const clockwork = <F extends HKT.TypeLambda, V>(fields: Clockwork<F, V>) => fields;
 
 /** The functor of the chimes, which gives a chime and the next state. */
 export interface ChimeFunctor<out B> extends HKT.TypeLambda {
@@ -236,21 +253,29 @@ info: // Written by the generator of the theory from `GeneratorTest.Fixture.Bell
 import type { Stream } from 'effect';
 
 import type * as Module from '#src/Fixture/Bell';
-import type { Clockwork, ChimesFunctor } from '#src/Fixture/Clock.theory';
+import type * as Clock from '#src/Fixture/Clock.theory';
 
 /** A bell that rings a chime and moves to its next state. */
-export interface Bell<out B, in out V> extends Clockwork<ChimesFunctor<B>, V> {}
+export interface Bell<out B, in out V> extends Clock.Clockwork<Clock.ChimesFunctor<B>, V> {}
 
 /** Creates a `Bell` from its field `str`. */
-export const bell = <B, V>(fields: Bell<B, V>) => fields;
+export const make = <B, V>(fields: Bell<B, V>) => fields;
 
 /** The peal of a bell, the stream of the chimes that it rings from a state on. */
-export type BellPeal = <B, V>(bell: Bell<B, V>, state: V) => Stream.Stream<B>;
+export type Peal = <B, V>(bell: Bell<B, V>, state: V) => Stream.Stream<B>;
+
+/** The answer of a bell to the chimes it hears, every chime it hears with the chime it rings. */
+export interface Answer {
+<B, V, E = never, R = never>(bell: Bell<B, V>, state: V, heard: Stream.Stream<B, E, R>): Stream.Stream<readonly [B, B], E, R>;
+<B, V>(bell: Bell<B, V>, state: V): <E = never, R = never>(heard: Stream.Stream<B, E, R>) => Stream.Stream<readonly [B, B], E, R>;
+}
 
 /** A contract of the functions of the theory that the module `Fixture/Bell` of the package implements. */
 interface Contract {
 /** The peal of a bell, the stream of the chimes that it rings from a state on. */
-readonly bellPeal: BellPeal;
+readonly peal: Peal;
+/** The answer of a bell to the chimes it hears, every chime it hears with the chime it rings. */
+readonly answer: Answer;
 }
 
 /** A check of the module `Fixture/Bell` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */

@@ -10,13 +10,15 @@ public import Mathlib.Data.Stream.Defs
 The module defines a bundled structure that the checks of the generator write from the functor of
 another module of the theory, a bell, which is a coalgebra of the curried functor of the chimes of
 the module `Clock` at a type of chimes, and which extends the clockwork of that module at the
-functor, and a function of a bell and one of its states, whose type names the state space of the
-bell and a stream.
+functor, a function of a bell and one of its states, whose type names the state space of the
+bell and a stream, and a function that takes a stream as its last parameter.
 
 ## Main Definitions
 
 - `Bell`: a bell that rings a chime and moves to its next state.
 - `Bell.peal`: the peal of a bell, the stream of the chimes that it rings from a state on.
+- `Bell.answer`: the answer of a bell to the chimes it hears, every chime it hears with the chime
+  it rings.
 -/
 
 @[expose] public section
@@ -31,6 +33,10 @@ abbrev Bell (B : Type) :=
 def Bell.peal {B : Type} (bell : Bell B) (state : bell.V) : Stream' B :=
   Stream'.corec' bell.str state
 
-attribute [export_typescript] Bell Bell.peal
+/-- The answer of a bell to the chimes it hears, every chime it hears with the chime it rings. -/
+def Bell.answer {B : Type} (bell : Bell B) (state : bell.V) (heard : Stream' B) : Stream' (B × B) :=
+  Stream'.zip Prod.mk heard (bell.peal state)
+
+attribute [export_typescript] Bell Bell.peal Bell.answer
 
 end Geometry

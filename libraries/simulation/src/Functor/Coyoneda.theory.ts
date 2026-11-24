@@ -1,7 +1,7 @@
 // Written by the generator of the theory from `Falkara.Simulation.Functor.Coyoneda`, so every change by hand is lost when the generator runs.
 import type { HKT } from 'effect';
 
-import type { Functor } from '#src/Functor.theory';
+import type * as Functor from '#src/Functor.theory';
 import type * as Module from '#src/Functor/Coyoneda';
 
 /**
@@ -20,7 +20,7 @@ interface Contract {
    *
    * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.coyoneda
    */
-  readonly coyoneda: <Exponent>() => Functor<Coyoneda<Exponent>>;
+  readonly functor: <Exponent>() => Functor.Functor<Coyoneda<Exponent>>;
 }
 
 /** A check of the module `Functor/Coyoneda` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */

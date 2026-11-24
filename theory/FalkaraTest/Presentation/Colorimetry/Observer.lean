@@ -12,8 +12,8 @@ The module defines the checks of the observer against the data table
 the values of each color-matching function $\bar{x}$, $\bar{y}$, and $\bar{z}$, and the values at
 one sample wavelength with the validation values of the data table, and the wavelengths with the
 range and the step that the data table gives. A last check finds that pairing the wavelengths in
-order with the rows of the observer, as `tristimulusOf` pairs them, pairs each wavelength with the
-row at that wavelength.
+order with the rows of the observer, as `Tristimulus.ofColorStimulusFunction` pairs them, pairs
+each wavelength with the row at that wavelength.
 
 ## Main Statements
 

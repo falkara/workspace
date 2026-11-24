@@ -2,34 +2,30 @@ import { Function, type HKT } from 'effect';
 
 import * as Theory from '#src/Functor.theory';
 
-export {
-  type Functor,
-  functor,
-  functorAxioms,
-  type FunctorComp,
-  type FunctorConst,
-} from '#src/Functor.theory';
+export { axioms, type Comp, type Const, type Functor, make } from '#src/Functor.theory';
 
 /**
- * Gives the `Functor` instance of a `FunctorComp`.
+ * Gives the `Functor` instance of a `Functor.Comp`.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor.comp
  */
-export const functorComp = <
+export const comp = <
   FirstEndofunctor extends HKT.TypeLambda,
   SecondEndofunctor extends HKT.TypeLambda,
 >(
   firstEndofunctor: Theory.Functor<FirstEndofunctor>,
   secondEndofunctor: Theory.Functor<SecondEndofunctor>,
-): Theory.Functor<Theory.FunctorComp<FirstEndofunctor, SecondEndofunctor>> =>
-  Theory.functor<Theory.FunctorComp<FirstEndofunctor, SecondEndofunctor>>({
+): Theory.Functor<Theory.Comp<FirstEndofunctor, SecondEndofunctor>> =>
+  Theory.make<Theory.Comp<FirstEndofunctor, SecondEndofunctor>>({
     map: (a) => secondEndofunctor.map(firstEndofunctor.map(a)),
   });
 
 /**
- * Gives the `Functor` instance of a `FunctorConst`.
+ * Gives the `Functor` instance of a `Functor.Const`.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor.const
  */
-export const functorConst = <Constant>(): Theory.Functor<Theory.FunctorConst<Constant>> =>
-  Theory.functor<Theory.FunctorConst<Constant>>({ map: () => Function.identity });
+const const_ = <Constant>(): Theory.Functor<Theory.Const<Constant>> =>
+  Theory.make<Theory.Const<Constant>>({ map: () => Function.identity });
+
+export { const_ as const };

@@ -41,28 +41,34 @@ export type Tristimulus = typeof Tristimulus.Type;
  *
  * @see https://cie.co.at/eilvterm/17-23-045
  */
-export const tristimulus = Brand.nominal<Tristimulus>();
+export const make = Brand.nominal<Tristimulus>();
 
 /**
  * Gives the tristimulus values of the additive mixture of two color stimuli as the sums of their amounts, $X_1 + X_2$, $Y_1 + Y_2$, and $Z_1 + Z_2$.
  *
  * @see https://cie.co.at/eilvterm/17-23-040
  */
-export type TristimulusAdd = (first: Tristimulus, second: Tristimulus) => Tristimulus;
+export interface Add {
+  (first: Tristimulus, second: Tristimulus): Tristimulus;
+  (second: Tristimulus): (first: Tristimulus) => Tristimulus;
+}
 
 /**
  * Gives the tristimulus values of a factor $c$ of units of a color stimulus as the products of the factor and its amounts, $cX$, $cY$, and $cZ$.
  *
  * @see https://cie.co.at/eilvterm/17-23-040
  */
-export type TristimulusScale = (tristimulus: Tristimulus, factor: Rational.Rational) => Tristimulus;
+export interface Scale {
+  (tristimulus: Tristimulus, factor: Rational.Rational): Tristimulus;
+  (factor: Rational.Rational): (tristimulus: Tristimulus) => Tristimulus;
+}
 
 /**
  * The tristimulus values of the white, those of CIE standard illuminant D65 scaled so that their luminance factor $Y$ is 1, $X = \sum_{\lambda} S(\lambda)\,\bar{x}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$, $Y = 1$, and $Z = \sum_{\lambda} S(\lambda)\,\bar{z}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$.
  *
  * @see https://cie.co.at/eilvterm/17-23-081
  */
-export const whiteTristimulus: Tristimulus = tristimulus({
+export const white: Tristimulus = make({
   X: Rational.makeUnsafe(71740714395483087745n, 75479154764200873016n),
   Y: Rational.fromBigInt(1n),
   Z: Rational.makeUnsafe(10272984088266781770n, 9434894345525109127n),
@@ -75,13 +81,13 @@ interface Contract {
    *
    * @see https://cie.co.at/eilvterm/17-23-040
    */
-  readonly tristimulusAdd: TristimulusAdd;
+  readonly add: Add;
   /**
    * Gives the tristimulus values of a factor $c$ of units of a color stimulus as the products of the factor and its amounts, $cX$, $cY$, and $cZ$.
    *
    * @see https://cie.co.at/eilvterm/17-23-040
    */
-  readonly tristimulusScale: TristimulusScale;
+  readonly scale: Scale;
 }
 
 /** A check of the module `Colorimetry/Tristimulus` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */

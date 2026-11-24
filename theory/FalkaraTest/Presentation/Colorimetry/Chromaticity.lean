@@ -14,9 +14,9 @@ Table 9.1 of CIE 015 rounds them, with the values that the theory sets beside th
 
 ## Main Statements
 
-- `z_eq_of_chromaticityOf_eq_some`: the coordinate $z$ of the chromaticity of tristimulus values is
-  the quotient of $Z$ and the sum of the values, $z = Z / (X + Y + Z)$.
-- `chromaticityOf_whiteTristimulus_rounded`: the chromaticity coordinates of the white round to
+- `Chromaticity.z_eq_of_ofTristimulus_eq_some`: the coordinate $z$ of the chromaticity of
+  tristimulus values is the quotient of $Z$ and the sum of the values, $z = Z / (X + Y + Z)$.
+- `Chromaticity.ofTristimulus_white_rounded`: the chromaticity coordinates of the white round to
   $x = 0.312\,73$ and $y = 0.329\,02$ at five decimal places, where Table 9.1 of CIE 015 gives
   $x = 0.312\,71$ and $y = 0.329\,03$.
 
@@ -33,27 +33,28 @@ namespace Falkara.Presentation
 
 /-- The coordinate $z$ of the chromaticity of tristimulus values is the quotient of $Z$ and the sum
 of the values, $z = Z / (X + Y + Z)$. -/
-theorem z_eq_of_chromaticityOf_eq_some {tristimulus : Tristimulus} {chromaticity : Chromaticity}
-    (chromaticityOf_eq_some : chromaticityOf tristimulus = some chromaticity) :
+theorem Chromaticity.z_eq_of_ofTristimulus_eq_some {tristimulus : Tristimulus}
+    {chromaticity : Chromaticity}
+    (ofTristimulus_eq_some : Chromaticity.ofTristimulus tristimulus = some chromaticity) :
     chromaticity.z = tristimulus.Z / (tristimulus.X + tristimulus.Y + tristimulus.Z) := by
-  unfold chromaticityOf at chromaticityOf_eq_some
-  split at chromaticityOf_eq_some
+  unfold Chromaticity.ofTristimulus at ofTristimulus_eq_some
+  split at ofTristimulus_eq_some
   · contradiction
-  · cases chromaticityOf_eq_some
+  · cases ofTristimulus_eq_some
     unfold Chromaticity.z
     grind
 
 attribute [cite "17-23-053" cie2020internationalLightingVocabulary]
-  z_eq_of_chromaticityOf_eq_some
+  Chromaticity.z_eq_of_ofTristimulus_eq_some
 
 /-- The chromaticity coordinates of the white round to $x = 0.312\,73$ and $y = 0.329\,02$ at five
 decimal places, where Table 9.1 of CIE 015 gives $x = 0.312\,71$ and $y = 0.329\,03$. -/
-theorem chromaticityOf_whiteTristimulus_rounded :
-    (chromaticityOf whiteTristimulus).map (fun chromaticity ↦
+theorem Chromaticity.ofTristimulus_white_rounded :
+    (Chromaticity.ofTristimulus Tristimulus.white).map (fun chromaticity ↦
       ((chromaticity.x * 100000 + 1 / 2).floor, (chromaticity.y * 100000 + 1 / 2).floor)) =
       some (31273, 32902) := by
   decide +kernel
 
-attribute [cite "Table 9.1" cie2018colorimetry] chromaticityOf_whiteTristimulus_rounded
+attribute [cite "Table 9.1" cie2018colorimetry] Chromaticity.ofTristimulus_white_rounded
 
 end Falkara.Presentation

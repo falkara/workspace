@@ -1,16 +1,16 @@
 import { Option, Rational } from 'effect';
 
 import * as Theory from '#src/Colorimetry/Chromaticity.theory';
-import { whiteTristimulus } from '#src/Colorimetry/Tristimulus';
+import * as Tristimulus from '#src/Colorimetry/Tristimulus';
 
-export { Chromaticity, chromaticity } from '#src/Colorimetry/Chromaticity.theory';
+export { Chromaticity, make } from '#src/Colorimetry/Chromaticity.theory';
 
 /**
  * Gives the chromaticity coordinate $z$ of the chromaticity, $z = 1 - x - y$.
  *
  * @see https://cie.co.at/eilvterm/17-23-053
  */
-export const chromaticityZ: Theory.ChromaticityZ = (chromaticity) =>
+export const z: Theory.Z = (chromaticity) =>
   Rational.subtract(Rational.subtract(Rational.fromBigInt(1n), chromaticity.x), chromaticity.y);
 
 /**
@@ -18,23 +18,23 @@ export const chromaticityZ: Theory.ChromaticityZ = (chromaticity) =>
  *
  * @see https://cie.co.at/eilvterm/17-23-053
  */
-export const chromaticityOf: Theory.ChromaticityOf = (color) =>
+export const ofTristimulus: Theory.OfTristimulus = (color) =>
   Option.zipWith(
     Rational.divide(color.X, Rational.sumAll([color.X, color.Y, color.Z])),
     Rational.divide(color.Y, Rational.sumAll([color.X, color.Y, color.Z])),
-    (x, y) => Theory.chromaticity({ x, y }),
+    (x, y) => Theory.make({ x, y }),
   );
 
 /** The chromaticity coordinates of the library's white. */
-export const whiteChromaticity: Theory.Chromaticity = Theory.chromaticity({
+export const white: Theory.Chromaticity = Theory.make({
   x: Rational.divideUnsafe(
-    whiteTristimulus.X,
+    Tristimulus.white.X,
     // The tristimulus values of the white are positive, so their sum is and the division cannot fail.
-    Rational.sumAll([whiteTristimulus.X, whiteTristimulus.Y, whiteTristimulus.Z]),
+    Rational.sumAll([Tristimulus.white.X, Tristimulus.white.Y, Tristimulus.white.Z]),
   ),
   y: Rational.divideUnsafe(
-    whiteTristimulus.Y,
+    Tristimulus.white.Y,
     // The tristimulus values of the white are positive, so their sum is and the division cannot fail.
-    Rational.sumAll([whiteTristimulus.X, whiteTristimulus.Y, whiteTristimulus.Z]),
+    Rational.sumAll([Tristimulus.white.X, Tristimulus.white.Y, Tristimulus.white.Z]),
   ),
 });

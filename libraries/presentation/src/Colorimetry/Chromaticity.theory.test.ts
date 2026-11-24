@@ -12,14 +12,14 @@ describe('Colorimetry/Chromaticity', () => {
    * @see https://cie.co.at/eilvterm/17-23-053
    */
   it.prop(
-    'chromaticityOf_scale',
+    'Chromaticity.ofTristimulus_scale',
     { tristimulus: Tristimulus.Tristimulus, factor: Schema.Rational },
     ({ tristimulus, factor }) => {
       if (Equal.equals(factor, Rational.fromBigInt(0n))) {
         return;
       }
-      const actual = Chromaticity.chromaticityOf(Tristimulus.tristimulusScale(tristimulus, factor));
-      const expected = Chromaticity.chromaticityOf(tristimulus);
+      const actual = Chromaticity.ofTristimulus(Tristimulus.scale(tristimulus, factor));
+      const expected = Chromaticity.ofTristimulus(tristimulus);
       expect(actual).toEqual(expected);
     },
   );

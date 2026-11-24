@@ -27,7 +27,7 @@ describe('Fixture/Point', () => {
 /** The point at a coordinate is the point whose first coordinate it is. */
 it.prop('pointAt_first', { coordinate: Coordinate.Coordinate }, ({ coordinate }) => {
 const actual = Point.pointAt(coordinate);
-const expected = Option.some(Point.point({ first: coordinate }));
+const expected = Option.some(Point.make({ first: coordinate }));
 expect(actual).toEqual(expected);
 });
 

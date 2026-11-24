@@ -53,7 +53,7 @@ attribute [export_typescript] origin
 
 end Geometry
 
-/-- info: (["Point", "point", "origin"], [("export const pointOf", "/** The function that the checks implement. */\n")]) -/
+/-- info: (["Point", "point", "origin"], [("pointOf", "/** The function that the checks implement. */\n")]) -/
 #guard_msgs in
 #eval show Lean.MetaM (List String × List (String × String)) from do
   return ((← Generator.reexportsOf `Geometry ``Geometry.Point) ++
@@ -105,7 +105,26 @@ info: ["Geometry.ts: `export const pointOf` is missing, which the module takes w
     "export type { Point } from '#src/Geometry.theory';\n"
     ["Point"] (← Generator.implementationsOf `Geometry ``Geometry.pointOf)
 
-/-- info: ["Walker", "walker", "StepMove"] -/
+/-- info: [] -/
+#guard_msgs in
+#eval show Lean.MetaM (List String) from do
+  return Generator.mismatchesOf "Geometry.ts" "#src/Geometry.theory"
+    ("/** The function that the checks implement. */\n" ++
+      "export function pointOf(coordinate: number): Point;\n" ++
+      "export function pointOf(coordinate: number): Point {\n" ++
+      "  return point({ x: coordinate });\n}\n")
+    [] (← Generator.implementationsOf `Geometry ``Geometry.pointOf)
+
+/-- info: [] -/
+#guard_msgs in
+#eval show Lean.MetaM (List String) from do
+  return Generator.mismatchesOf "Functor.ts" "#src/Functor.theory"
+    ("/** Gives the `Functor` instance of a `Functor.Const`. */\n" ++
+      "const const_ = () => make({ map: () => Function.identity });\n\n" ++
+      "export { const_ as const };\n")
+    [] [("const_", "/** Gives the `Functor` instance of a `Functor.Const`. */\n")]
+
+/-- info: ["Walker", "make", "StepMove"] -/
 #guard_msgs in
 #eval show Lean.MetaM (List String) from do
   return (← Generator.reexportsOf `Geometry ``Geometry.Walker) ++
@@ -124,10 +143,10 @@ info: ["Clockwork", "clockwork", "ChimeFunctor", "ChimesFunctor", "DialsFunctor"
     (← Generator.reexportsOf `Geometry ``Geometry.GearTrain)
 
 /--
-info: [("export const chimeFunctor", "/** Gives the `Gear` instance of a `ChimeFunctor`. */\n"),
-  ("export const chimesFunctor", "/** Gives the `Gear` instance of a `ChimesFunctor`. */\n"),
-  ("export const dialsFunctor", "/** Gives the `Gear` instance of a `DialsFunctor`. */\n"),
-  ("export const gearTrain", "/** Gives the `Gear` instance of a `GearTrain`. */\n")]
+info: [("chimeFunctor", "/** Gives the `Gear` instance of a `ChimeFunctor`. */\n"),
+  ("chimesFunctor", "/** Gives the `Gear` instance of a `ChimesFunctor`. */\n"),
+  ("dialsFunctor", "/** Gives the `Gear` instance of a `DialsFunctor`. */\n"),
+  ("gearTrain", "/** Gives the `Gear` instance of a `GearTrain`. */\n")]
 -/
 #guard_msgs in
 #eval show Lean.MetaM (List (String × String)) from do

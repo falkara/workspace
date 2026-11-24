@@ -4,19 +4,19 @@ import { type HKT, Option } from 'effect';
 import * as Coalgebra from '#src/Coalgebra';
 
 describe('Coalgebra', () => {
-  it('infers the state space from the coalgebra structure and gives it the form of the endofunctor', () => {
-    const countdown = Coalgebra.coalgebra<Option.OptionTypeLambda>()({
-      structure: (state: number) => (state > 0 ? Option.some(state - 1) : Option.none()),
+  it('takes the coalgebra structure from the state space into the form of the endofunctor', () => {
+    const countdown = Coalgebra.make<Option.OptionTypeLambda, number>({
+      structure: (state) => (state > 0 ? Option.some(state - 1) : Option.none()),
     });
 
-    expectTypeOf(countdown).toEqualTypeOf<Coalgebra.Coalgebra<Option.OptionTypeLambda, number>>();
+    expectTypeOf(countdown.structure).parameter(0).toEqualTypeOf<number>();
     expectTypeOf(countdown.structure).returns.toEqualTypeOf<Option.Option<number>>();
   });
 
   it('refuses a coalgebra structure that gives another form than the endofunctor', () => {
-    Coalgebra.coalgebra<Option.OptionTypeLambda>()({
+    Coalgebra.make<Option.OptionTypeLambda, number>({
       // @ts-expect-error The coalgebra structure gives an option of the state.
-      structure: (state: number) => state,
+      structure: (state) => state,
     });
   });
 

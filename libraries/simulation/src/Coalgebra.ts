@@ -1,1 +1,1 @@
-export { type Coalgebra, coalgebra } from '#src/Coalgebra.theory';
+export { type Coalgebra, make } from '#src/Coalgebra.theory';

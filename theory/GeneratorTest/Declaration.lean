@@ -178,7 +178,7 @@ readonly str: (v: V) => V;
 }
 
 /** Creates a `Clock` from its field `str`. */
-export const clock = <V>(fields: Clock<V>) => fields;
+export const make = <V>(fields: Clock<V>) => fields;
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
@@ -205,8 +205,8 @@ export interface Clockwork<out F extends HKT.TypeLambda, in out V> {
 readonly str: (v: V) => HKT.Kind<F, never, never, never, V>;
 }
 
-/** Creates a `Clockwork` from its field `str`, with its `F` as the type argument of the first call. */
-export const clockwork = <F extends HKT.TypeLambda>() => <V>(fields: Clockwork<F, V>) => fields;
+/** Creates a `Clockwork` from its field `str`. */
+export const clockwork = <F extends HKT.TypeLambda, V>(fields: Clockwork<F, V>) => fields;
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do

@@ -23,7 +23,7 @@ the values that break it, and the conclusion $l = r$ takes `expect(actual).toEqu
 
 The expressions of a theorem take the functions, the constructors, and the fields of the module of
 the package, imported under the name of its module of the theory, such as
-`Tristimulus.tristimulusAdd(first, second)`, and rational literals, $+$, $-$, $\cdot$, and options
+`Tristimulus.add(first, second)`, and rational literals, $+$, $-$, $\cdot$, and options
 from Effect. Every other expression has no form in TypeScript, and the generator refuses it.
 
 ## Main Definitions
@@ -99,8 +99,6 @@ partial def expressionOf (packageNamespace : Lean.Name) (expression : Lean.Expr)
   | .const ``Option.some _, [_, value] => callEffect "Option" "some" [value]
   | .const ``Option.none _, [_] => callEffect "Option" "none" []
   | .const name _, arguments =>
-    let valueName := fun (declaration : Lean.Name) ↦
-      camelCaseOf (wordsOf packageNamespace declaration)
     if let some projection := environment.getProjectionFnInfo? name then
       if ExportTypeScript.isExported environment name.getPrefix then
         if let (.str _ field, some value) := (name, arguments[projection.numParams]?) then
@@ -115,12 +113,14 @@ partial def expressionOf (packageNamespace : Lean.Name) (expression : Lean.Expr)
         let values := (fields.zip (written.map Prod.fst)).map fun (field, value) ↦
           s!"{field}: {value}"
         return (s!"{← moduleAliasOf constructor.induct}.\
-            {valueName constructor.induct}(\{ {", ".intercalate values} })",
+            {← constructorNameOf packageNamespace constructor.induct}\
+            (\{ {", ".intercalate values} })",
           constructor.induct :: written.flatMap Prod.snd)
     if ExportTypeScript.isExported environment name &&
         !(environment.find? name matches some (.thmInfo _)) && arguments.length > 0 then
       if (← kindOf name) matches .function then
-        return ← call s!"{← moduleAliasOf name}.{valueName name}" arguments [name]
+        return ← call s!"{← moduleAliasOf name}.{← valueNameOf packageNamespace name}" arguments
+          [name]
     Lean.throwError m!"`{expression}` has no expression in a test of TypeScript."
   | _, _ => Lean.throwError m!"`{expression}` has no expression in a test of TypeScript."
 
@@ -138,7 +138,7 @@ partial def arbitraryOf (packageNamespace : Lean.Name) (type : Lean.Expr) :
     unless ExportTypeScript.isExported (← Lean.getEnv) name &&
         (← kindOf name) matches .dataStructure do
       Lean.throwError m!"`{name}` has no schema that a test can draw from."
-    return (s!"{← moduleAliasOf name}.{pascalCaseOf (wordsOf packageNamespace name)}", [name])
+    return (s!"{← moduleAliasOf name}.{← typeNameOf packageNamespace name}", [name])
   | _ => Lean.throwError m!"`{type}` has no schema that a test can draw from."
 
 /-- Gives the test of TypeScript that a theorem of the theory marked `export_typescript` takes,

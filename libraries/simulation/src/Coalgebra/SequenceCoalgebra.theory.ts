@@ -1,18 +1,18 @@
 // Written by the generator of the theory from `Falkara.Simulation.Coalgebra.SequenceCoalgebra`, so every change by hand is lost when the generator runs.
 import type { Option, Stream } from 'effect';
 
-import type { Coalgebra } from '#src/Coalgebra.theory';
+import type * as Coalgebra from '#src/Coalgebra.theory';
 import type * as Module from '#src/Coalgebra/SequenceCoalgebra';
-import type { FunctorComp } from '#src/Functor.theory';
-import type { BinaryProductFunctor } from '#src/Functor/BinaryProductFunctor.theory';
+import type * as Functor from '#src/Functor.theory';
+import type * as BinaryProductFunctor from '#src/Functor/BinaryProductFunctor.theory';
 
 /**
  * A sequence coalgebra, which gives from every state either nothing or an output and the next state.
  *
  * @see https://doi.org/10.1017/CBO9781316823187 Section 2.2.1
  */
-export interface SequenceCoalgebra<out Output, in out State> extends Coalgebra<
-  FunctorComp<BinaryProductFunctor<Output>, Option.OptionTypeLambda>,
+export interface SequenceCoalgebra<out Output, in out State> extends Coalgebra.Coalgebra<
+  Functor.Comp<BinaryProductFunctor.BinaryProductFunctor<Output>, Option.OptionTypeLambda>,
   State
 > {}
 
@@ -21,15 +21,14 @@ export interface SequenceCoalgebra<out Output, in out State> extends Coalgebra<
  *
  * @see https://doi.org/10.1017/CBO9781316823187 Section 2.2.1
  */
-export const sequenceCoalgebra = <Output, State>(fields: SequenceCoalgebra<Output, State>) =>
-  fields;
+export const make = <Output, State>(fields: SequenceCoalgebra<Output, State>) => fields;
 
 /**
  * The behavior of a sequence coalgebra, which gives from every state the sequence of the outputs that the coalgebra gives from the state on until it gives nothing.
  *
  * @see https://doi.org/10.1017/CBO9781316823187 Definition 2.3.1
  */
-export type SequenceCoalgebraBehavior = <Output, State>(
+export type Behavior = <Output, State>(
   coalgebra: SequenceCoalgebra<Output, State>,
   state: State,
 ) => Stream.Stream<Output>;
@@ -41,7 +40,7 @@ interface Contract {
    *
    * @see https://doi.org/10.1017/CBO9781316823187 Definition 2.3.1
    */
-  readonly sequenceCoalgebraBehavior: SequenceCoalgebraBehavior;
+  readonly behavior: Behavior;
 }
 
 /** A check of the module `Coalgebra/SequenceCoalgebra` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */

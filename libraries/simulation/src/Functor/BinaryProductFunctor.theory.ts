@@ -1,7 +1,7 @@
 // Written by the generator of the theory from `Falkara.Simulation.Functor.BinaryProductFunctor`, so every change by hand is lost when the generator runs.
 import type { HKT } from 'effect';
 
-import type { Functor } from '#src/Functor.theory';
+import type * as Functor from '#src/Functor.theory';
 import type * as Module from '#src/Functor/BinaryProductFunctor';
 
 /**
@@ -20,7 +20,7 @@ interface Contract {
    *
    * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Limits.Types.binaryProductFunctor
    */
-  readonly binaryProductFunctor: <Factor>() => Functor<BinaryProductFunctor<Factor>>;
+  readonly functor: <Factor>() => Functor.Functor<BinaryProductFunctor<Factor>>;
 }
 
 /** A check of the module `Functor/BinaryProductFunctor` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */

@@ -5,6 +5,8 @@
   "exports": {
     "./Color": "./dist/Color.mjs",
     "./Colorimetry": "./dist/Colorimetry.mjs",
+    "./Colorimetry/Chromaticity": "./dist/Colorimetry/Chromaticity.mjs",
+    "./Colorimetry/Tristimulus": "./dist/Colorimetry/Tristimulus.mjs",
     "./Fluid": "./dist/Fluid.mjs",
     "./Layout": "./dist/Layout.mjs",
     "./Length": "./dist/Length.mjs",

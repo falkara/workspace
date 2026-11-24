@@ -43,6 +43,14 @@
       "types": "./dist/Colorimetry.d.mts",
       "default": "./dist/Colorimetry.mjs"
     },
+    "./Colorimetry/Chromaticity": {
+      "types": "./dist/Colorimetry/Chromaticity.d.mts",
+      "default": "./dist/Colorimetry/Chromaticity.mjs"
+    },
+    "./Colorimetry/Tristimulus": {
+      "types": "./dist/Colorimetry/Tristimulus.d.mts",
+      "default": "./dist/Colorimetry/Tristimulus.mjs"
+    },
     "./Fluid": {
       "types": "./dist/Fluid.d.mts",
       "default": "./dist/Fluid.mjs"

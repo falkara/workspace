@@ -9,7 +9,7 @@ public import Falkara.ExportTypeScript
 public import Lean.Meta.AppBuilder
 public import Lean.Structure
 public import Generator.Import
-public import Generator.Name
+import Generator.Name
 import Lean.Meta.WHNF
 
 /-!
@@ -67,6 +67,16 @@ polarities at which the parameter occurs in the fields or the value of the decla
   attribute `export_typescript` names it or else as the field, and the type of every other
   field, with every such type parameter in place of the projection of its field, as `normalizedOf`
   reads it, or fails with the reason where the type of a field depends on another field.
+- `moduleOf`: gives the module of the theory that declares a declaration.
+- `typeNameOf`, `valueNameOf`, `constructorNameOf`, `axiomsNameOf`: give the name that a declaration
+  of the theory takes in TypeScript as a type, as a value, as the constructor of a structure, and as
+  the axioms of a class of functors, after the name of its module, such as `make` for the
+  constructor of `StreamCoalgebra` in the module `StreamCoalgebra`.
+- `displayNameOf`: gives the name of a declaration of the theory as a comment names it, such as
+  `Functor.Comp` for `Functor.comp`.
+- `referenceOf`: gives the name under which a file of TypeScript refers to a declaration of the
+  theory, after the namespace of its module where the declaration lies in another module, such as
+  `Functor.Functor` in the module `Coyoneda`.
 - `typeOf`: gives the type of TypeScript that a type of the theory takes, with every declaration
   named without the namespace of its package and the value of a morphism named after its type where
   its type is a type parameter, or fails with the reason where the type has none.
@@ -432,6 +442,65 @@ where
       Lean.Meta.withLocalDeclD name fieldType fun parameter ↦
         withFields binders body rest (parameters ++ [(binder, structureName ++ field, parameter)])
 
+/-- Gives the module of the theory that declares a declaration, or the module being written where
+the declaration lies in no imported module. -/
+def moduleOf (name : Lean.Name) : Lean.MetaM Lean.Name := do
+  let environment ← Lean.getEnv
+  return ((environment.getModuleIdxFor? name).bind fun index ↦
+    environment.header.moduleNames[index.toNat]?).getD environment.mainModule
+
+/-- Gives the name that a declaration of the theory takes in TypeScript as a type, in Pascal case
+after the name of its module, such as `Comp` for `Functor.comp` in the module `Functor`, or the name
+of the module where the declaration takes it, such as `StreamCoalgebra`. -/
+def typeNameOf (packageNamespace name : Lean.Name) : Lean.MetaM String := do
+  return match localWordsOf packageNamespace (← moduleOf name) name with
+    | [] => pascalCaseOf (wordsOf packageNamespace name)
+    | words => pascalCaseOf words
+
+/-- Gives the name that a declaration of the theory takes in TypeScript as a value or a function, in
+camel case after the name of its module, such as `behavior` for `StreamCoalgebra.behavior` in the
+module `StreamCoalgebra`. -/
+def valueNameOf (packageNamespace name : Lean.Name) : Lean.MetaM String := do
+  return match localWordsOf packageNamespace (← moduleOf name) name with
+    | [] => camelCaseOf (wordsOf packageNamespace name)
+    | words => camelCaseOf words
+
+/-- Gives the name of the constructor of a structure in TypeScript: `make` for the structure that
+takes the name of its module, as Effect names a constructor, and its name in camel case
+otherwise. -/
+def constructorNameOf (packageNamespace structureName : Lean.Name) : Lean.MetaM String := do
+  return match localWordsOf packageNamespace (← moduleOf structureName) structureName with
+    | [] => "make"
+    | words => camelCaseOf words
+
+/-- Gives the name of the axioms of a class of functors in TypeScript: `axioms` for the class that
+takes the name of its module, and its name in camel case followed by `Axioms` otherwise. -/
+def axiomsNameOf (packageNamespace className : Lean.Name) : Lean.MetaM String := do
+  return match localWordsOf packageNamespace (← moduleOf className) className with
+    | [] => "axioms"
+    | words => s!"{camelCaseOf words}Axioms"
+
+/-- Gives the name of a declaration of the theory as a comment names it, after the name of its
+module where the name drops it, such as `Functor.Comp` for `Functor.comp`. -/
+def displayNameOf (packageNamespace name : Lean.Name) : Lean.MetaM String := do
+  let module ← moduleOf name
+  match localWordsOf packageNamespace module name, module with
+  | [], _ => return pascalCaseOf (wordsOf packageNamespace name)
+  | words, .str _ last =>
+    return if words == wordsOf packageNamespace name then pascalCaseOf words
+      else s!"{last}.{pascalCaseOf words}"
+  | words, _ => return pascalCaseOf words
+
+/-- Gives the name under which a file of TypeScript refers to a name of a declaration of the
+theory: the name alone where the declaration lies in the module being written, and the name after
+the namespace of its module otherwise, as a file imports every other module as a namespace, such as
+`Functor.Comp`. -/
+def referenceOf (name : Lean.Name) (written : String) : Lean.MetaM String := do
+  let module ← moduleOf name
+  if module == (← Lean.getEnv).mainModule then return written
+  let .str _ last := module | return written
+  return s!"{last}.{written}"
+
 mutual
 
 /-- Gives the type of TypeScript that a type of the theory takes, with every declaration named
@@ -448,6 +517,12 @@ partial def typeOf (packageNamespace : Lean.Name) (type : Lean.Expr) : TypeScrip
   -- a type lambda, which a name of Lean would escape.
   | .fvar parameter => return (← parameter.getUserName).toString (escape := false)
   | .mdata _ inner =>
+    -- A stream of a function that takes a stream carries the failure `E` and the requirements `R`
+    -- of the streams the function takes, as `Stream.map` of Effect carries them.
+    if let some (.app (.const name _) element) := Lean.annotation? `channels type then
+      if name == `Stream' || name == `Stream'.Seq then
+        return s!"{← effectNameOf "Stream" "Stream" .type}\
+          <{← typeOf packageNamespace element}, E, R>"
     -- The value of a morphism takes the name of its type where its type is a type parameter whose
     -- name TypeScript writes as it stands, and keeps the name `value` otherwise.
     if let (some _, .forallE _ (.fvar parameter) body info) :=
@@ -480,7 +555,7 @@ partial def typeOf (packageNamespace : Lean.Name) (type : Lean.Expr) : TypeScrip
     unless ExportTypeScript.isExported (← Lean.getEnv) name do
       Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never marks it \
         `export_typescript`."
-    let typeName := pascalCaseOf (wordsOf packageNamespace name)
+    let typeName ← referenceOf name (← typeNameOf packageNamespace name)
     let arguments ← type.getAppArgs.toList.mapM (typeOf packageNamespace)
     if arguments.isEmpty then return typeName
     return s!"{typeName}<{", ".intercalate arguments}>"
@@ -725,7 +800,7 @@ where
 /-- Gives the type lambda of Effect that a functor on types of the theory takes in TypeScript: a
 functor that is a parameter by its name, an object of a curried functor marked `export_typescript`,
 such as `BinaryProductFunctor<Output>` for `binaryProductFunctor.obj Output`, an application of a
-functor marked `export_typescript`, such as `FunctorComp<F, G>` for `Functor.comp F G`, and the
+functor marked `export_typescript`, such as `Functor.Comp<F, G>` for `Functor.comp F G`, and the
 functor of the options, `ofTypeFunctor Option`, as `Option.OptionTypeLambda` of Effect, or fails
 with the reason where the functor has none. -/
 partial def typeLambdaOf (packageNamespace : Lean.Name) (functor : Lean.Expr) :
@@ -742,7 +817,8 @@ partial def typeLambdaOf (packageNamespace : Lean.Name) (functor : Lean.Expr) :
         `export_typescript`."
     -- An object of the opposite of the types is a type that `Opposite.op` takes into the opposite.
     let object := if object.isAppOfArity `Opposite.op 2 then object.appArg! else object
-    return s!"{pascalCaseOf (wordsOf packageNamespace name)}<{← typeOf packageNamespace object}>"
+    return s!"{← referenceOf name (← typeNameOf packageNamespace name)}\
+      <{← typeOf packageNamespace object}>"
   | .const `CategoryTheory.ofTypeFunctor _, arguments =>
     unless arguments[0]? matches some (Lean.Expr.const ``Option _) do
       Lean.throwError m!"`{functor}` has no type lambda in TypeScript."
@@ -755,7 +831,7 @@ partial def typeLambdaOf (packageNamespace : Lean.Name) (functor : Lean.Expr) :
       if isFunctorType (← Lean.Meta.inferType argument) then typeLambdaOf packageNamespace argument
       else typeOf packageNamespace argument
     let typeArguments := if written.isEmpty then "" else s!"<{", ".intercalate written}>"
-    return s!"{pascalCaseOf (wordsOf packageNamespace name)}{typeArguments}"
+    return s!"{← referenceOf name (← typeNameOf packageNamespace name)}{typeArguments}"
   | _, _ => Lean.throwError m!"`{functor}` has no type lambda in TypeScript."
 
 /-- Gives the schema of Effect that a type of data of the theory takes, with every structure named
@@ -778,7 +854,7 @@ partial def schemaOf (packageNamespace : Lean.Name) (type : Lean.Expr) : TypeScr
     unless ← isDataType type do
       Lean.throwError m!"`{name}` has no schema in TypeScript, as it is neither a structure whose \
         every field takes a schema nor a refinement."
-    return pascalCaseOf (wordsOf packageNamespace name)
+    referenceOf name (← typeNameOf packageNamespace name)
   | _ => Lean.throwError m!"`{type}` has no schema in TypeScript."
 
 mutual

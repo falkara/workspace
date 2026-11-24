@@ -14,8 +14,8 @@ describe('Colorimetry/Tristimulus', () => {
     'Tristimulus.add_comm',
     { first: Tristimulus.Tristimulus, second: Tristimulus.Tristimulus },
     ({ first, second }) => {
-      const actual = Tristimulus.tristimulusAdd(first, second);
-      const expected = Tristimulus.tristimulusAdd(second, first);
+      const actual = Tristimulus.add(first, second);
+      const expected = Tristimulus.add(second, first);
       expect(actual).toEqual(expected);
     },
   );
@@ -33,8 +33,8 @@ describe('Colorimetry/Tristimulus', () => {
       third: Tristimulus.Tristimulus,
     },
     ({ first, second, third }) => {
-      const actual = Tristimulus.tristimulusAdd(Tristimulus.tristimulusAdd(first, second), third);
-      const expected = Tristimulus.tristimulusAdd(first, Tristimulus.tristimulusAdd(second, third));
+      const actual = Tristimulus.add(Tristimulus.add(first, second), third);
+      const expected = Tristimulus.add(first, Tristimulus.add(second, third));
       expect(actual).toEqual(expected);
     },
   );
@@ -48,13 +48,10 @@ describe('Colorimetry/Tristimulus', () => {
     'Tristimulus.scale_add',
     { first: Tristimulus.Tristimulus, second: Tristimulus.Tristimulus, factor: Schema.Rational },
     ({ first, second, factor }) => {
-      const actual = Tristimulus.tristimulusScale(
-        Tristimulus.tristimulusAdd(first, second),
-        factor,
-      );
-      const expected = Tristimulus.tristimulusAdd(
-        Tristimulus.tristimulusScale(first, factor),
-        Tristimulus.tristimulusScale(second, factor),
+      const actual = Tristimulus.scale(Tristimulus.add(first, second), factor);
+      const expected = Tristimulus.add(
+        Tristimulus.scale(first, factor),
+        Tristimulus.scale(second, factor),
       );
       expect(actual).toEqual(expected);
     },

@@ -12,24 +12,21 @@ import {
   Schema,
 } from 'effect';
 
-import { type Chromaticity, chromaticity, whiteChromaticity } from '#src/Colorimetry/Chromaticity';
-import { type Tristimulus, tristimulus, whiteTristimulus } from '#src/Colorimetry/Tristimulus';
+import * as Chromaticity from '#src/Colorimetry/Chromaticity';
+import * as Tristimulus from '#src/Colorimetry/Tristimulus';
 import * as Real from '#src/Real';
 
-export * from '#src/Colorimetry/Chromaticity';
-export * from '#src/Colorimetry/Tristimulus';
-
 /**
- * A hue given by a wavelength, as a mixture of two lights, which add as vectors in XYZ: the library's white, W, `whiteTristimulus`, and a direction, D, the spectral light S = (x̄, ȳ, z̄) of the wavelength for a dominant wavelength and its opposite, −S, for a complementary one. Its colors are α·W + β·D with α > 0 and β ≥ 0. The colors of a dominant wavelength mix the white with its spectral light, and a color of a complementary wavelength, mixed with its spectral light, gives white, as CIE S 017 defines the two. Every operation of colorimetry is linear in XYZ, so the hue is held there; the chromaticity of its spectral light, `chromaticityOf(spectralLight)`, is only a view.
+ * A hue given by a wavelength, as a mixture of two lights, which add as vectors in XYZ: the library's white, W, `Tristimulus.white`, and a direction, D, the spectral light S = (x̄, ȳ, z̄) of the wavelength for a dominant wavelength and its opposite, −S, for a complementary one. Its colors are α·W + β·D with α > 0 and β ≥ 0. The colors of a dominant wavelength mix the white with its spectral light, and a color of a complementary wavelength, mixed with its spectral light, gives white, as CIE S 017 defines the two. Every operation of colorimetry is linear in XYZ, so the hue is held there; the chromaticity of its spectral light, `Chromaticity.ofTristimulus(spectralLight)`, is only a view.
  *
  * @see https://cie.co.at/eilvterm/17-23-062
  * @see https://cie.co.at/eilvterm/17-23-063
  */
 export interface Hue {
   /** The spectral light S of the wavelength, a light, as the observer's values are published. */
-  readonly spectralLight: Tristimulus;
+  readonly spectralLight: Tristimulus.Tristimulus;
   /** The change mixed with the white: S for a dominant wavelength and −S, tristimulus values below 0, for a complementary one. */
-  readonly direction: Tristimulus;
+  readonly direction: Tristimulus.Tristimulus;
 }
 
 /**
@@ -98,20 +95,20 @@ export const DominantWavelengthOptions = Schema.Struct({
         // Parallel exactly when every component of the cross product of the spectral light and the white is 0.
         !Rational.isZero(
           Rational.subtract(
-            Rational.multiply(row.yBar, whiteTristimulus.Z),
-            Rational.multiply(row.zBar, whiteTristimulus.Y),
+            Rational.multiply(row.yBar, Tristimulus.white.Z),
+            Rational.multiply(row.zBar, Tristimulus.white.Y),
           ),
         ) ||
         !Rational.isZero(
           Rational.subtract(
-            Rational.multiply(row.zBar, whiteTristimulus.X),
-            Rational.multiply(row.xBar, whiteTristimulus.Z),
+            Rational.multiply(row.zBar, Tristimulus.white.X),
+            Rational.multiply(row.xBar, Tristimulus.white.Z),
           ),
         ) ||
         !Rational.isZero(
           Rational.subtract(
-            Rational.multiply(row.xBar, whiteTristimulus.Y),
-            Rational.multiply(row.yBar, whiteTristimulus.X),
+            Rational.multiply(row.xBar, Tristimulus.white.Y),
+            Rational.multiply(row.yBar, Tristimulus.white.X),
           ),
         ) ||
         'Expected a spectral light not parallel to the white, so that mixing it with the white changes the hue, as no spectral light of the observer has the chromaticity of the white',
@@ -131,8 +128,8 @@ export const dominantWavelength = (
   options: DominantWavelengthOptions,
 ): Exit.Exit<Hue, Schema.SchemaError> =>
   Exit.map(Schema.decodeExit(DominantWavelengthOptions)(options, { errors: 'all' }), (row) => ({
-    spectralLight: tristimulus({ X: row.xBar, Y: row.yBar, Z: row.zBar }),
-    direction: tristimulus({ X: row.xBar, Y: row.yBar, Z: row.zBar }),
+    spectralLight: Tristimulus.make({ X: row.xBar, Y: row.yBar, Z: row.zBar }),
+    direction: Tristimulus.make({ X: row.xBar, Y: row.yBar, Z: row.zBar }),
   }));
 
 /**
@@ -201,20 +198,20 @@ export const ComplementaryWavelengthOptions = Schema.Struct({
         // Parallel exactly when every component of the cross product of the spectral light and the white is 0.
         !Rational.isZero(
           Rational.subtract(
-            Rational.multiply(row.yBar, whiteTristimulus.Z),
-            Rational.multiply(row.zBar, whiteTristimulus.Y),
+            Rational.multiply(row.yBar, Tristimulus.white.Z),
+            Rational.multiply(row.zBar, Tristimulus.white.Y),
           ),
         ) ||
         !Rational.isZero(
           Rational.subtract(
-            Rational.multiply(row.zBar, whiteTristimulus.X),
-            Rational.multiply(row.xBar, whiteTristimulus.Z),
+            Rational.multiply(row.zBar, Tristimulus.white.X),
+            Rational.multiply(row.xBar, Tristimulus.white.Z),
           ),
         ) ||
         !Rational.isZero(
           Rational.subtract(
-            Rational.multiply(row.xBar, whiteTristimulus.Y),
-            Rational.multiply(row.yBar, whiteTristimulus.X),
+            Rational.multiply(row.xBar, Tristimulus.white.Y),
+            Rational.multiply(row.yBar, Tristimulus.white.X),
           ),
         ) ||
         'Expected a spectral light not parallel to the white, so that mixing it with the white changes the hue, as no spectral light of the observer has the chromaticity of the white',
@@ -236,8 +233,8 @@ export const complementaryWavelength = (
   Exit.map(
     Schema.decodeExit(ComplementaryWavelengthOptions)(options, { errors: 'all' }),
     (row) => ({
-      spectralLight: tristimulus({ X: row.xBar, Y: row.yBar, Z: row.zBar }),
-      direction: tristimulus({
+      spectralLight: Tristimulus.make({ X: row.xBar, Y: row.yBar, Z: row.zBar }),
+      direction: Tristimulus.make({
         X: Rational.negate(row.xBar),
         Y: Rational.negate(row.yBar),
         Z: Rational.negate(row.zBar),
@@ -260,7 +257,7 @@ export type Matrix<From extends string, To extends string> = readonly [
 ] & { readonly '~spaces'?: { readonly from: From; readonly to: To } };
 
 /** The vector in XYZ of tristimulus values, of a color or of a change of one. */
-export const xyzOf = (value: Tristimulus): Vector<'XYZ'> => [value.X, value.Y, value.Z];
+export const xyzOf = (value: Tristimulus.Tristimulus): Vector<'XYZ'> => [value.X, value.Y, value.Z];
 
 /** The product of a matrix and a vector of the space it converts from, worked out exactly: the vector in the space it converts to. The space of the vector is not inferred from the vector, so that a vector of another space is refused rather than widening it. */
 export const transform = <From extends string, To extends string>(
@@ -346,9 +343,9 @@ const inverseOf = <From extends string, To extends string>([
 
 /** The chromaticity coordinates of the three primaries of a medium. */
 export interface Primaries {
-  readonly red: Chromaticity;
-  readonly green: Chromaticity;
-  readonly blue: Chromaticity;
+  readonly red: Chromaticity.Chromaticity;
+  readonly green: Chromaticity.Chromaticity;
+  readonly blue: Chromaticity.Chromaticity;
 }
 
 /** The identifiers with which CSS writes the media in `color()`, each of which also names a transfer function. */
@@ -395,7 +392,7 @@ export interface Medium<
   /** The identifier with which CSS writes the medium in `color()`, which also names its transfer function. */
   readonly colorSpace: Space;
   readonly primaries: Primaries;
-  readonly white: Chromaticity;
+  readonly white: Chromaticity.Chromaticity;
   /** From linear channels to tristimulus values relative to the white, whose Y is 1. */
   readonly linearToXyz: Matrix<LinearSpace<Space, White>, 'XYZ'>;
   /** From tristimulus values relative to the white to linear channels, the inverse of `linearToXyz`. */
@@ -408,7 +405,7 @@ export interface Medium<
 const mediumOf = <Space extends ColorSpace, White extends MediumWhite>(
   colorSpace: Space,
   primaries: Primaries,
-  white: Chromaticity,
+  white: Chromaticity.Chromaticity,
   peak: RelativeToWhite,
 ): Medium<Space, White> => {
   // The y of every primary and of every white is positive, so none of the divisions by it below can fail.
@@ -465,13 +462,13 @@ const mediumOf = <Space extends ColorSpace, White extends MediumWhite>(
 };
 
 /**
- * The white of every standard medium as its standard writes it, D65 at (0.3127, 0.3290), so that its conversions match CSS Color 4 and the browsers to the last bit. It differs from `whiteChromaticity`, which is worked out from the spectrum of D65, in the fifth decimal place, the rounding of the standards. ITU-R BT.2100-3 refers to D65 as defined in ISO 11664-2:2007, while the library takes its spectrum from the 2022 edition, which leaves the spectrum of D65 unchanged.
+ * The white of every standard medium as its standard writes it, D65 at (0.3127, 0.3290), so that its conversions match CSS Color 4 and the browsers to the last bit. It differs from `Chromaticity.white`, which is worked out from the spectrum of D65, in the fifth decimal place, the rounding of the standards. ITU-R BT.2100-3 refers to D65 as defined in ISO 11664-2:2007, while the library takes its spectrum from the 2022 edition, which leaves the spectrum of D65 unchanged.
  *
  * @see https://www.w3.org/TR/2026/CRD-css-color-4-20261103/#d65
  * @see https://www.itu.int/rec/R-REC-BT.2020-2-201510-I/en
  * @see https://www.itu.int/rec/R-REC-BT.2100-3-202502-I/en
  */
-export const standardWhiteChromaticity: Chromaticity = chromaticity({
+export const standardWhiteChromaticity: Chromaticity.Chromaticity = Chromaticity.make({
   x: Rational.makeUnsafe(3127n, 10000n),
   y: Rational.makeUnsafe(3290n, 10000n),
 });
@@ -565,12 +562,18 @@ export const hlgScale = Rational.makeUnsafe(37743n, 10000n);
 export const srgb: Medium<'srgb', 'standard'> = mediumOf(
   'srgb',
   {
-    red: chromaticity({ x: Rational.makeUnsafe(640n, 1000n), y: Rational.makeUnsafe(330n, 1000n) }),
-    green: chromaticity({
+    red: Chromaticity.make({
+      x: Rational.makeUnsafe(640n, 1000n),
+      y: Rational.makeUnsafe(330n, 1000n),
+    }),
+    green: Chromaticity.make({
       x: Rational.makeUnsafe(300n, 1000n),
       y: Rational.makeUnsafe(600n, 1000n),
     }),
-    blue: chromaticity({ x: Rational.makeUnsafe(150n, 1000n), y: Rational.makeUnsafe(60n, 1000n) }),
+    blue: Chromaticity.make({
+      x: Rational.makeUnsafe(150n, 1000n),
+      y: Rational.makeUnsafe(60n, 1000n),
+    }),
   },
   standardWhiteChromaticity,
   relativeToWhite(Rational.fromBigInt(1n)),
@@ -584,12 +587,18 @@ export const srgb: Medium<'srgb', 'standard'> = mediumOf(
 export const displayP3: Medium<'display-p3', 'standard'> = mediumOf(
   'display-p3',
   {
-    red: chromaticity({ x: Rational.makeUnsafe(680n, 1000n), y: Rational.makeUnsafe(320n, 1000n) }),
-    green: chromaticity({
+    red: Chromaticity.make({
+      x: Rational.makeUnsafe(680n, 1000n),
+      y: Rational.makeUnsafe(320n, 1000n),
+    }),
+    green: Chromaticity.make({
       x: Rational.makeUnsafe(265n, 1000n),
       y: Rational.makeUnsafe(690n, 1000n),
     }),
-    blue: chromaticity({ x: Rational.makeUnsafe(150n, 1000n), y: Rational.makeUnsafe(60n, 1000n) }),
+    blue: Chromaticity.make({
+      x: Rational.makeUnsafe(150n, 1000n),
+      y: Rational.makeUnsafe(60n, 1000n),
+    }),
   },
   standardWhiteChromaticity,
   relativeToWhite(Rational.fromBigInt(1n)),
@@ -604,12 +613,18 @@ export const displayP3: Medium<'display-p3', 'standard'> = mediumOf(
 export const rec2020: Medium<'rec2020', 'standard'> = mediumOf(
   'rec2020',
   {
-    red: chromaticity({ x: Rational.makeUnsafe(708n, 1000n), y: Rational.makeUnsafe(292n, 1000n) }),
-    green: chromaticity({
+    red: Chromaticity.make({
+      x: Rational.makeUnsafe(708n, 1000n),
+      y: Rational.makeUnsafe(292n, 1000n),
+    }),
+    green: Chromaticity.make({
       x: Rational.makeUnsafe(170n, 1000n),
       y: Rational.makeUnsafe(797n, 1000n),
     }),
-    blue: chromaticity({ x: Rational.makeUnsafe(131n, 1000n), y: Rational.makeUnsafe(46n, 1000n) }),
+    blue: Chromaticity.make({
+      x: Rational.makeUnsafe(131n, 1000n),
+      y: Rational.makeUnsafe(46n, 1000n),
+    }),
   },
   standardWhiteChromaticity,
   relativeToWhite(Rational.fromBigInt(1n)),
@@ -642,11 +657,11 @@ export const rec2100Hlg: Medium<'rec2100-hlg', 'standard'> = mediumOf(
   relativeToWhite(Rational.fromBigInt(1n)),
 );
 
-/** The same medium on the library's exact white, `whiteChromaticity`, with its matrices derived again from that white, for physical exactness. It is written with the same identifier, such as `color(srgb …)`, and its channels are worked out from the exact white, but a browser reads them on the white the standard writes, so its colors differ from the browser's in the fifth decimal place. */
+/** The same medium on the library's exact white, `Chromaticity.white`, with its matrices derived again from that white, for physical exactness. It is written with the same identifier, such as `color(srgb …)`, and its channels are worked out from the exact white, but a browser reads them on the white the standard writes, so its colors differ from the browser's in the fifth decimal place. */
 export const onExactWhite = <Space extends ColorSpace>(
   medium: Medium<Space>,
 ): Medium<Space, 'exact'> =>
-  mediumOf(medium.colorSpace, medium.primaries, whiteChromaticity, medium.peak);
+  mediumOf(medium.colorSpace, medium.primaries, Chromaticity.white, medium.peak);
 
 /**
  * The deepest channel the library judges colors in: 16 bits, the most an image format such as PNG holds, so that its steps are whole numbers.
@@ -667,7 +682,7 @@ export const decimalPlaces = ((): number => {
 
 /** A color of the given medium, the linear channels of a color decided to be from 0 to the peak of the medium; the space of the channels is the brand, so that it names the medium on its white. */
 export type InGamut<M extends Medium> = Brand.Branded<
-  Tristimulus,
+  Tristimulus.Tristimulus,
   `in the gamut of ${NonNullable<M['xyzToLinear']['~spaces']>['to']}`
 >;
 
@@ -683,15 +698,15 @@ export class OutOfGamut extends Schema.TaggedError<OutOfGamut, { readonly brand:
 ) {}
 
 /** A color marked as lying in the gamut of a medium, which only the library does, once the color is decided to lie there. The brand exists in the type alone, so the color is marked as it is: the precise type is the signature, which the checker holds compatible with the implementation, as the color in the gamut of a medium is a color. */
-function markInGamut<M extends Medium>(medium: M, color: Tristimulus): InGamut<M>;
-function markInGamut(_medium: Medium, color: Tristimulus): Tristimulus {
+function markInGamut<M extends Medium>(medium: M, color: Tristimulus.Tristimulus): InGamut<M>;
+function markInGamut(_medium: Medium, color: Tristimulus.Tristimulus): Tristimulus.Tristimulus {
   return color;
 }
 
 /** A color proven to lie in the gamut of a medium, each of its linear channels from 0 to the peak of the medium, decided exactly; or the failure naming the first channel that leaves it and its value. Only through it, or through a definition, does a color reach `write`, so that nothing reaches CSS outside a gamut. */
 export const inGamut = <M extends Medium>(
   medium: M,
-  color: Tristimulus,
+  color: Tristimulus.Tristimulus,
 ): Exit.Exit<InGamut<M>, OutOfGamut> => {
   const channels = transform(medium.xyzToLinear, xyzOf(color));
   const outside = [0, 1, 2].find(
@@ -710,7 +725,7 @@ export const inGamut = <M extends Medium>(
 };
 
 /** A color written in the CSS syntax of a medium, whatever its channels, which only a color proven to lie in the gamut of the medium reaches from outside the module. */
-const written = (medium: Medium, color: Tristimulus): string => {
+const written = (medium: Medium, color: Tristimulus.Tristimulus): string => {
   const encoded = transform(medium.xyzToLinear, xyzOf(color)).map((channel) => {
     const magnitude = Real.fromRational(Rational.abs(channel));
     const sign = Real.fromRational(Rational.fromBigInt(Rational.isNegative(channel) ? -1n : 1n));
@@ -899,7 +914,7 @@ export const purest = (options: PurestOptions): Definition<Schema.SchemaError> =
     Exit.map(
       Schema.decodeExit(PurestInMedium)({ ...options, medium }, { errors: 'all' }),
       (options) => {
-        const white = transform(options.medium.xyzToLinear, xyzOf(whiteTristimulus));
+        const white = transform(options.medium.xyzToLinear, xyzOf(Tristimulus.white));
         const direction = transform(options.medium.xyzToLinear, xyzOf(options.hue.direction));
         // The β at which each channel the direction lowers reaches 0, with α = 1: every channel of the white is positive, as the white lies inside every gamut, so only a channel the direction lowers ever reaches 0.
         const limits = [0, 1, 2]
@@ -939,7 +954,7 @@ export const purest = (options: PurestOptions): Definition<Schema.SchemaError> =
           Rational.multiply(channels[2], scale),
         ]);
         // No channel is below 0 and the largest is the headroom, at most the peak of the medium, so the color lies in its gamut.
-        return markInGamut(medium, tristimulus({ X, Y, Z }));
+        return markInGamut(medium, Tristimulus.make({ X, Y, Z }));
       },
     ),
 });
@@ -960,7 +975,7 @@ export const white: Definition = {
       Rational.fromBigInt(1n),
     ]);
     // Every channel is 1, from 0 to the peak of the medium, which is at least 1, so the white lies in its gamut.
-    return Exit.succeed(markInGamut(medium, tristimulus({ X, Y, Z })));
+    return Exit.succeed(markInGamut(medium, Tristimulus.make({ X, Y, Z })));
   },
 };
 
@@ -1059,7 +1074,7 @@ export const mix = <EBase, ETint>(
       }
       return yield* inGamut(
         medium,
-        tristimulus({
+        Tristimulus.make({
           // The Y of the mixture is positive, so the divisions cannot fail.
           X: Rational.divideUnsafe(Rational.multiply(mixture.X, amounts.luminance), mixture.Y),
           Y: amounts.luminance,
@@ -1142,7 +1157,7 @@ export function inMedia<E, Selected extends { readonly [name: string]: Medium }>
 export function inMedia<E>(
   definition: Definition<E>,
   selected: { readonly [name: string]: Medium } = media,
-): Exit.Exit<{ readonly [name: string]: Tristimulus }, FailedInMedium<E, string>> {
+): Exit.Exit<{ readonly [name: string]: Tristimulus.Tristimulus }, FailedInMedium<E, string>> {
   const evaluated = Record.map(selected, (medium) => definition.rule(medium));
   const failures = Record.keys(evaluated).flatMap((name) => {
     const exit = evaluated[name];
