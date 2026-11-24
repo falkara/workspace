@@ -517,9 +517,16 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
       return s!"{← commentOf name}export type {typeName}{generics} = \
         {← typeOf moduleNamespace value};\n"
     | .function =>
-      let (signature, result) ← signatureOf moduleNamespace [] rest
-      return s!"{← commentOf name}export type {typeName} = \
-        {arguments}({", ".intercalate signature}) => {result};\n"
+      -- A bundled structure among the parameters gives the function a type parameter for every
+      -- field whose value is a type, such as `State` of a coalgebra.
+      unbundledOf rest fun bundledParameters unbundled ↦ do
+        let (signature, result) ← signatureOf moduleNamespace [] unbundled
+        let bundledNames ← bundledParameters.mapM fun parameter ↦
+          return (← parameter.fvarId!.getUserName).toString
+        let allNames := names ++ bundledNames
+        let allArguments := if allNames.isEmpty then "" else s!"<{", ".intercalate allNames}>"
+        return s!"{← commentOf name}export type {typeName} = \
+          {allArguments}({", ".intercalate signature}) => {result};\n"
     | .value =>
       unless names.isEmpty do
         Lean.throwError m!"`{name}` has no value in TypeScript, as it takes type parameters."

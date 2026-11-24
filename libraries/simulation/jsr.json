@@ -1,0 +1,18 @@
+{
+  "$schema": "https://jsr.io/schema/config-file.v1.json",
+  "name": "@falkara/simulation",
+  "license": "MIT",
+  "exports": {
+    "./Coalgebra": "./dist/Coalgebra.mjs",
+    "./Coalgebra/DeterministicAutomaton": "./dist/Coalgebra/DeterministicAutomaton.mjs",
+    "./Coalgebra/MealyMachine": "./dist/Coalgebra/MealyMachine.mjs",
+    "./Coalgebra/SequenceCoalgebra": "./dist/Coalgebra/SequenceCoalgebra.mjs",
+    "./Coalgebra/StreamCoalgebra": "./dist/Coalgebra/StreamCoalgebra.mjs",
+    "./Functor": "./dist/Functor.mjs",
+    "./Functor/BinaryProductFunctor": "./dist/Functor/BinaryProductFunctor.mjs",
+    "./Functor/Coyoneda": "./dist/Functor/Coyoneda.mjs"
+  },
+  "publish": {
+    "include": ["dist", "README.md", "LICENSE"]
+  }
+}

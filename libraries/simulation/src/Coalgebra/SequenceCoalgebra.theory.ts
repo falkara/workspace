@@ -1,7 +1,8 @@
 // Written by the generator of the theory from `Falkara.Simulation.Coalgebra.SequenceCoalgebra`, so every change by hand is lost when the generator runs.
-import type { Option } from 'effect';
+import type { Option, Stream } from 'effect';
 
 import type { Coalgebra } from '#src/Coalgebra.theory';
+import type * as Module from '#src/Coalgebra/SequenceCoalgebra';
 import type { FunctorComp } from '#src/Functor.theory';
 import type { BinaryProductFunctor } from '#src/Functor/BinaryProductFunctor.theory';
 
@@ -22,3 +23,26 @@ export interface SequenceCoalgebra<out Output, in out State> extends Coalgebra<
  */
 export const sequenceCoalgebra = <Output, State>(fields: SequenceCoalgebra<Output, State>) =>
   fields;
+
+/**
+ * The behavior of a sequence coalgebra, which gives from every state the sequence of the outputs that the coalgebra gives from the state on until it gives nothing.
+ *
+ * @see https://doi.org/10.1017/CBO9781316823187 Definition 2.3.1
+ */
+export type SequenceCoalgebraBehavior = <Output, State>(
+  coalgebra: SequenceCoalgebra<Output, State>,
+  state: State,
+) => Stream.Stream<Output>;
+
+/** A contract of the functions of the theory that the module `Coalgebra/SequenceCoalgebra` of the package implements. */
+interface Contract {
+  /**
+   * The behavior of a sequence coalgebra, which gives from every state the sequence of the outputs that the coalgebra gives from the state on until it gives nothing.
+   *
+   * @see https://doi.org/10.1017/CBO9781316823187 Definition 2.3.1
+   */
+  readonly sequenceCoalgebraBehavior: SequenceCoalgebraBehavior;
+}
+
+/** A check of the module `Coalgebra/SequenceCoalgebra` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */
+type _Implemented<Implementation extends Contract = typeof Module> = Implementation;

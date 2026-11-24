@@ -24,7 +24,8 @@ declarations name no module of Effect. A module with functors ends with a contra
 instance of its class of functors for every functor, a function of the type parameters of the
 functor and of an instance of every functor among them. A module whose bundled structure applies a
 functor of another module to a structure that the theory labels extends the label at the functor
-and imports both as types from their module.
+and imports both as types from their module, and its function of a bundled structure and a state
+takes a type parameter for the state space and a stream of Effect for a stream of Mathlib.
 -/
 
 /--
@@ -232,6 +233,9 @@ type _Implemented<Implementation extends Contract = typeof Module> = Implementat
 
 /--
 info: // Written by the generator of the theory from `GeneratorTest.Fixture.Bell`, so every change by hand is lost when the generator runs.
+import type { Stream } from 'effect';
+
+import type * as Module from '#src/Fixture/Bell';
 import type { Clockwork, ChimesFunctor } from '#src/Fixture/Clock.theory';
 
 /** A bell that rings a chime and moves to its next state. */
@@ -239,6 +243,18 @@ export interface Bell<out B, in out V> extends Clockwork<ChimesFunctor<B>, V> {}
 
 /** Creates a `Bell` from its field `str`. */
 export const bell = <B, V>(fields: Bell<B, V>) => fields;
+
+/** The peal of a bell, the stream of the chimes that it rings from a state on. */
+export type BellPeal = <B, V>(bell: Bell<B, V>, state: V) => Stream.Stream<B>;
+
+/** A contract of the functions of the theory that the module `Fixture/Bell` of the package implements. */
+interface Contract {
+/** The peal of a bell, the stream of the chimes that it rings from a state on. */
+readonly bellPeal: BellPeal;
+}
+
+/** A check of the module `Fixture/Bell` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */
+type _Implemented<Implementation extends Contract = typeof Module> = Implementation;
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do

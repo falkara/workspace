@@ -8,7 +8,8 @@ meta import Lean.Elab.Term
 # Type
 
 The module defines the checks of the types of TypeScript that the types of the theory take: a
-rational number, an option, an array, a list, a product, a function type, with the name Lean gives
+rational number, an option, an array, a list, an infinite stream and a sequence of Mathlib, both
+as a stream of Effect, a product, a function type, with the name Lean gives
 a parameter that the source leaves unnamed, a function type with implicit type parameters, a
 declaration marked `export_typescript`, and a structure with type parameters applied to its
 arguments take their types, while a declaration without the mark and a type of any other form,
@@ -52,6 +53,17 @@ structure UnmarkedStructure where
 #guard_msgs in
 #eval show Lean.Elab.TermElabM String from do
   (Generator.typeOf .anonymous (← Lean.Elab.Term.elabType (← `(List Rat)))).run' []
+
+-- The checks import no Mathlib, so they name the stream and the sequence of Mathlib alone.
+/-- info: "Stream.Stream<Rational.Rational>" -/
+#guard_msgs in
+#eval (Generator.typeOf .anonymous
+  (Lean.mkApp (Lean.mkConst `Stream' [.zero]) (Lean.mkConst ``Rat))).run' []
+
+/-- info: "Stream.Stream<Rational.Rational>" -/
+#guard_msgs in
+#eval (Generator.typeOf .anonymous
+  (Lean.mkApp (Lean.mkConst `Stream'.Seq [.zero]) (Lean.mkConst ``Rat))).run' []
 
 /-- The function whose type the checks write with a named parameter. -/
 @[nolint unusedArguments]

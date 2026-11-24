@@ -384,6 +384,54 @@ where
           loop structureName self rest parameters (others ++ [(field, ← normalizedOf replaced)])
             replacements
 
+/-- Runs a computation on a function type of the theory whose parameters include bundled
+structures, with a type parameter in place of every field whose value is a type of every such
+parameter, named as the attribute `export_typescript` names the field, and the function type with
+the type of every such parameter applied to its type parameters, as TypeScript writes it, and every
+projection of such a field replaced by its type parameter, such as
+`(coalgebra : StreamCoalgebra Output) → (state : State) → Stream' Output` with the type parameter
+`State` for `(coalgebra : StreamCoalgebra Output) → (state : coalgebra.V) → Stream' Output`. -/
+def unbundledOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
+    [MonadLiftT Lean.MetaM m] {α : Type} (type : Lean.Expr)
+    (computation : List Lean.Expr → Lean.Expr → m α) : m α :=
+  Lean.Meta.forallTelescope type fun binders body ↦ do
+    let bundled ← monadLift (binders.toList.filterMapM fun binder ↦ do
+      -- A kind of system names the structure through its abbreviation, which the check unfolds.
+      let some structureName ← bundledOf (← Lean.Meta.whnfR (← binder.fvarId!.getType))
+        | return none
+      let fields ← (Lean.getStructureFields (← Lean.getEnv) structureName).toList.filterM
+        fun field ↦ do
+          return (← Lean.Meta.whnfR (← Lean.Meta.inferType
+            (← Lean.Meta.mkProjection binder field))).isSort
+      return some (binder, structureName, fields) :
+        Lean.MetaM (List (Lean.Expr × Lean.Name × List Lean.Name)))
+    withFields binders body (bundled.flatMap fun (binder, structureName, fields) ↦
+      fields.map fun field ↦ (binder, structureName, field)) []
+where
+  /-- Takes the fields whose values are types one at a time, each with a type parameter, and then
+  rebuilds the function type with the type parameters in place of their projections. -/
+  withFields (binders : Array Lean.Expr) (body : Lean.Expr) :
+      List (Lean.Expr × Lean.Name × Lean.Name) → List (Lean.Expr × Lean.Name × Lean.Expr) → m α
+    | [], parameters => do
+      let replaced := fun (expression : Lean.Expr) ↦ expression.replace fun part ↦
+        parameters.findSome? fun (binder, projection, parameter) ↦
+          if part.isAppOf projection && part.getAppArgs.back? == some binder then some parameter
+          else none
+      let rebuilt ← monadLift (binders.foldrM (init := replaced body) fun binder rest ↦ do
+        let declaration ← binder.fvarId!.getDecl
+        let applied := (parameters.filter (·.1 == binder)).map (·.2.2)
+        return .forallE declaration.userName
+          (Lean.mkAppN (replaced declaration.type) applied.toArray) (rest.abstract #[binder])
+          declaration.binderInfo : Lean.MetaM Lean.Expr)
+      computation (parameters.map (·.2.2)) rebuilt
+    | (binder, structureName, field) :: rest, parameters => do
+      let name := Lean.Name.mkSimple (← monadLift (fieldNameOf structureName field :
+        Lean.MetaM String))
+      let fieldType ← monadLift (do
+        Lean.Meta.inferType (← Lean.Meta.mkProjection binder field) : Lean.MetaM Lean.Expr)
+      Lean.Meta.withLocalDeclD name fieldType fun parameter ↦
+        withFields binders body rest (parameters ++ [(binder, structureName ++ field, parameter)])
+
 mutual
 
 /-- Gives the type of TypeScript that a type of the theory takes, with every declaration named
@@ -410,6 +458,10 @@ partial def typeOf (packageNamespace : Lean.Name) (type : Lean.Expr) : TypeScrip
           (.forallE (.mkSimple parameterName.decapitalize) (.fvar parameter) body info)
     typeOf packageNamespace inner
   | .const ``Rat _ => effectNameOf "Rational" "Rational" .type
+  -- An infinite stream and a sequence of Mathlib are a stream of Effect, which pulls its elements
+  -- as it needs them and ends where the sequence does.
+  | .app (.const `Stream' _) element | .app (.const `Stream'.Seq _) element =>
+    return s!"{← effectNameOf "Stream" "Stream" .type}<{← typeOf packageNamespace element}>"
   | .const ``String _ => return "string"
   | .const ``Bool _ => return "boolean"
   | .app (.const ``Option _) element =>
