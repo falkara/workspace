@@ -18,10 +18,12 @@ the functor of the chimes, a functor on types that the checks write as a type la
 the curried functor of the chimes, the product functor of Mathlib as it stands, which the checks
 write as a type lambda with a type parameter for the type of chimes, the curried functor of the
 dials, the coyoneda embedding of Mathlib as it stands, which maps the opposite of the types and
-which the checks write as a type lambda with a type parameter for the type of settings, a gear, the
-functor of Mathlib as it stands, which the checks write as a type class of Effect, and a gear train,
-the composite of Mathlib as it stands, which the checks write as a type lambda with a type parameter
-for each of its functors.
+which the checks write as a type lambda with a type parameter for the type of settings, named
+`Setting` by a clause of the attribute `export_typescript`, a gear, the
+functor of Mathlib as it stands, which the checks write as a type class of Effect with its action on
+types named `Motion` by a clause of the attribute, and a gear train, the composite of
+Mathlib as it stands, which the checks write as a type lambda with a type parameter for each of its
+functors, named `Driver` and `Follower` by the attribute.
 
 ## Main Definitions
 
@@ -74,7 +76,12 @@ abbrev Gear := @CategoryTheory.Functor
 /-- A gear train, which moves every state by one gear and then by another. -/
 abbrev GearTrain := @Functor.comp
 
-attribute [export_typescript] Clock ChimingClock Clockwork ChimeFunctor chimesFunctor dialsFunctor
-  Gear GearTrain
+attribute [export_typescript] Clock ChimingClock Clockwork ChimeFunctor chimesFunctor
+
+attribute [export_typescript (k := "Setting")] dialsFunctor
+
+attribute [export_typescript (obj := "Motion")] Gear
+
+attribute [export_typescript (F := "Driver") (G := "Follower")] GearTrain
 
 end Geometry

@@ -9,7 +9,7 @@ public import Falkara.Simulation.BinaryProductFunctor
 public import Falkara.Simulation.Coyoneda
 public import Falkara.Simulation.FunctorComp
 public import Mathlib.CategoryTheory.Endofunctor.Algebra
-meta import Falkara.Citation -- shake: keep
+import Falkara.ExportTypeScript
 meta import Falkara.ExportTypeScript -- shake: keep
 
 /-!
@@ -35,9 +35,9 @@ namespace Falkara.Simulation
 /-! ### Definitions -/
 
 /-- A Mealy machine, which gives from every state upon every input an output and the next state. -/
-abbrev MealyMachine.{u} (A B : Type u) :=
+abbrev MealyMachine.{u} (Input Output : Type u) :=
   CategoryTheory.Endofunctor.Coalgebra
-    (Functor.comp (binaryProductFunctor.obj B) (coyoneda.obj (Opposite.op A)))
+    (Functor.comp (binaryProductFunctor.obj Output) (coyoneda.obj (Opposite.op Input)))
 
 attribute [cite "Exercise 2.3.2" jacobs2017introductionCoalgebra] MealyMachine
 

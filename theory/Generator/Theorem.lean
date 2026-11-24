@@ -102,22 +102,22 @@ partial def expressionOf (packageNamespace : Lean.Name) (expression : Lean.Expr)
     let valueName := fun (declaration : Lean.Name) ↦
       camelCaseOf (wordsOf packageNamespace declaration)
     if let some projection := environment.getProjectionFnInfo? name then
-      if ExportTypeScript.tagAttribute.hasTag environment name.getPrefix then
+      if ExportTypeScript.isExported environment name.getPrefix then
         if let (.str _ field, some value) := (name, arguments[projection.numParams]?) then
           let (script, named) ← expressionOf packageNamespace value
-          return (s!"{script}.{field}", named)
+          return (s!"{script}.{← fieldNameOf name.getPrefix (.mkSimple field)}", named)
     if let some (.ctorInfo constructor) := environment.find? name then
-      if ExportTypeScript.tagAttribute.hasTag environment constructor.induct then
+      if ExportTypeScript.isExported environment constructor.induct then
         let written ←
           (arguments.drop constructor.numParams).mapM (expressionOf packageNamespace)
-        let fields :=
-          (Lean.getStructureFields environment constructor.induct).toList.map (·.toString)
+        let fields ← (Lean.getStructureFields environment constructor.induct).toList.mapM
+          (fieldNameOf constructor.induct)
         let values := (fields.zip (written.map Prod.fst)).map fun (field, value) ↦
           s!"{field}: {value}"
         return (s!"{← moduleAliasOf constructor.induct}.\
             {valueName constructor.induct}(\{ {", ".intercalate values} })",
           constructor.induct :: written.flatMap Prod.snd)
-    if ExportTypeScript.tagAttribute.hasTag environment name &&
+    if ExportTypeScript.isExported environment name &&
         !(environment.find? name matches some (.thmInfo _)) && arguments.length > 0 then
       if (← kindOf name) matches .function then
         return ← call s!"{← moduleAliasOf name}.{valueName name}" arguments [name]
@@ -135,7 +135,7 @@ partial def arbitraryOf (packageNamespace : Lean.Name) (type : Lean.Expr) :
     let (script, named) ← arbitraryOf packageNamespace element
     return (s!"{← effectNameOf "Schema" "Option" .value}({script})", named)
   | .const name _ =>
-    unless ExportTypeScript.tagAttribute.hasTag (← Lean.getEnv) name &&
+    unless ExportTypeScript.isExported (← Lean.getEnv) name &&
         (← kindOf name) matches .dataStructure do
       Lean.throwError m!"`{name}` has no schema that a test can draw from."
     return (s!"{← moduleAliasOf name}.{pascalCaseOf (wordsOf packageNamespace name)}", [name])
@@ -212,7 +212,7 @@ def testFileOf (theory module : Lean.Name) (packageNamespace : Lean.Name)
     return s!"import * as {last} from '#src/{path}';\n")
   let modulePath := pathOf theory module
   return s!"// Written by the generator of the theory from `{module}`, so every change by hand is \
-      lost when the generator runs.\n\n" ++
+      lost when the generator runs.\n" ++
     s!"import \{ describe, expect, it } from '@effect/vitest';\n\
       {effectImport}\n{packageImports}\n" ++
     s!"describe('{modulePath}', () => \{\n{body}});\n"

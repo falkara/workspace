@@ -7,7 +7,7 @@ module
 
 public import Falkara.References -- shake: keep
 public import Mathlib.CategoryTheory.Limits.Types.Products
-meta import Falkara.Citation -- shake: keep
+import Falkara.ExportTypeScript
 meta import Falkara.ExportTypeScript -- shake: keep
 
 /-!
@@ -19,6 +19,14 @@ The module defines the curried functor of binary products as Mathlib
 ## Main Definitions
 
 - `binaryProductFunctor`: the curried functor of binary products.
+
+## Implementation Notes
+
+The type that the curried functor maps takes the type parameter `Factor` in TypeScript, as Jacobs
+[jacobs2017introductionCoalgebra] builds a polynomial functor as a product of functors, whose
+factor the type is. The curried functor takes a documentation comment of the theory in TypeScript,
+which writes it as the type of the functor it gives at a factor, a type whose comment opens with an
+article and names the factor as the type parameter does.
 -/
 
 @[expose] public section
@@ -36,6 +44,8 @@ attribute [cite "CategoryTheory.Limits.Types.binaryProductFunctor"
 
 /-! ### Export -/
 
-attribute [export_typescript] binaryProductFunctor
+attribute [export_typescript
+  "A functor of binary products, which maps every type to its binary product with the factor."
+  (X := "Factor")] binaryProductFunctor
 
 end Falkara.Simulation

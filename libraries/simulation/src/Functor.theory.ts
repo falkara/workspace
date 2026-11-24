@@ -1,5 +1,4 @@
 // Written by the generator of the theory from `Falkara.Simulation.Functor`, so every change by hand is lost when the generator runs.
-
 import { Function, type HKT } from 'effect';
 
 /**
@@ -7,43 +6,49 @@ import { Function, type HKT } from 'effect';
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor
  */
-export interface Functor<in out F extends HKT.TypeLambda> extends HKT.TypeClass<F> {
+export interface Functor<
+  in out Endofunctor extends HKT.TypeLambda,
+> extends HKT.TypeClass<Endofunctor> {
   /** The action of a functor on morphisms. */
   readonly map: <X, Y>(
-    a: (value: X) => Y,
-  ) => (value: HKT.Kind<F, never, never, never, X>) => HKT.Kind<F, never, never, never, Y>;
+    a: (x: X) => Y,
+  ) => (
+    value: HKT.Kind<Endofunctor, never, never, never, X>,
+  ) => HKT.Kind<Endofunctor, never, never, never, Y>;
 }
 
 /**
- * Creates a functor between categories, with its action on objects and its action on morphisms.
+ * Creates a `Functor` from its field `map`.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor
  */
-export const functor = <F extends HKT.TypeLambda>(fields: Functor<F>): Functor<F> => fields;
+export const functor = <Endofunctor extends HKT.TypeLambda>(
+  fields: Functor<Endofunctor>,
+): Functor<Endofunctor> => fields;
 
 /**
- * Gives the axioms of a functor between categories, with its action on objects and its action on morphisms.
+ * Gives the axioms of a `Functor` as predicates of an instance.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor
  */
-export const functorAxioms = <F extends HKT.TypeLambda>(
-  instance: Functor<F>,
+export const functorAxioms = <Endofunctor extends HKT.TypeLambda>(
+  instance: Functor<Endofunctor>,
   equivalence: <X>(
-    self: HKT.Kind<F, never, never, never, X>,
-    that: HKT.Kind<F, never, never, never, X>,
+    self: HKT.Kind<Endofunctor, never, never, never, X>,
+    that: HKT.Kind<Endofunctor, never, never, never, X>,
   ) => boolean,
 ) => ({
-  /** A functor preserves identity morphisms. */
-  map_id: <X>(value: HKT.Kind<F, never, never, never, X>): boolean =>
+  /** The predicate that tells whether the instance preserves identity morphisms. */
+  map_id: <X>(value: HKT.Kind<Endofunctor, never, never, never, X>): boolean =>
     equivalence<X>(
       instance.map<X, X>(Function.identity<X>)(value),
-      (Function.identity<HKT.Kind<F, never, never, never, X>>)(value),
+      (Function.identity<HKT.Kind<Endofunctor, never, never, never, X>>)(value),
     ),
-  /** A functor preserves composition. */
+  /** The predicate that tells whether the instance preserves composition. */
   map_comp: <X, Y, Z>(
-    f: (value: X) => Y,
-    g: (value: Y) => Z,
-    value: HKT.Kind<F, never, never, never, X>,
+    f: (x: X) => Y,
+    g: (y: Y) => Z,
+    value: HKT.Kind<Endofunctor, never, never, never, X>,
   ): boolean =>
     equivalence<Z>(
       instance.map<X, Z>(Function.flow(f, g))(value),

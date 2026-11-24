@@ -9,7 +9,7 @@ public import Falkara.Simulation.BinaryProductFunctor
 public import Falkara.Simulation.Coyoneda
 public import Falkara.Simulation.FunctorComp
 public import Mathlib.CategoryTheory.Endofunctor.Algebra
-meta import Falkara.Citation -- shake: keep
+import Falkara.ExportTypeScript
 meta import Falkara.ExportTypeScript -- shake: keep
 
 /-!
@@ -37,9 +37,9 @@ namespace Falkara.Simulation
 
 /-- A deterministic automaton, which gives from every state an output and the next state upon every
 input. -/
-abbrev DeterministicAutomaton.{u} (A B : Type u) :=
+abbrev DeterministicAutomaton.{u} (Input Output : Type u) :=
   CategoryTheory.Endofunctor.Coalgebra
-    (Functor.comp (coyoneda.obj (Opposite.op A)) (binaryProductFunctor.obj B))
+    (Functor.comp (coyoneda.obj (Opposite.op Input)) (binaryProductFunctor.obj Output))
 
 attribute [cite "Section 2.2.3" jacobs2017introductionCoalgebra] DeterministicAutomaton
 

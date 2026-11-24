@@ -17,7 +17,6 @@ open Generator
 
 /--
 info: // Written by the generator of the theory from `GeneratorTest.Fixture.Point`, so every change by hand is lost when the generator runs.
-
 import { describe, expect, it } from '@effect/vitest';
 import { Equal, Option } from 'effect';
 

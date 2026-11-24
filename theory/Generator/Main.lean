@@ -89,7 +89,7 @@ def markedDeclarationsOf (module : Lean.Name) (theorems : Bool) :
   let some index := environment.getModuleIdx? module | return []
   let some data := environment.header.moduleData[index.toNat]? | return []
   let marked := data.constNames.toList.filter fun name ↦
-    ExportTypeScript.tagAttribute.hasTag environment name &&
+    ExportTypeScript.isExported environment name &&
       (environment.find? name matches some (.thmInfo _)) == theorems
   let lines ← marked.mapM fun name ↦ do
     return (name, ((← Lean.findDeclarationRanges? name).map (·.range.pos.line)).getD 0)
@@ -109,7 +109,7 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
   let ((texts, instanceMembers), records) ← (do
       let texts ← declarations.mapM (declarationOf packageNamespace)
       let members ← instances.mapM fun name ↦ do
-        return s!"{← commentOf name (some "Gives")}readonly \
+        return s!"{← instanceCommentOf packageNamespace name}readonly \
           {camelCaseOf (wordsOf packageNamespace name)}: \
           {← instanceTypeOf packageNamespace name};\n"
       return (texts, members) : TypeScriptM (List String × List String)).run []
@@ -121,9 +121,9 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
   -- file, so a module the file names otherwise, as `Rational.Rational`, is imported as a type.
   let imports := effectImportsOf records
   let importLine := if imports.isEmpty then "" else if imports.any (·.snd == .value) then
-      s!"\nimport \{ {", ".intercalate (imports.map fun (module, usage) ↦
+      s!"import \{ {", ".intercalate (imports.map fun (module, usage) ↦
         if usage == .value then module else s!"type {module}")} } from 'effect';\n"
-    else s!"\nimport type \{ {", ".intercalate (imports.map Prod.fst)} } from 'effect';\n"
+    else s!"import type \{ {", ".intercalate (imports.map Prod.fst)} } from 'effect';\n"
   let fieldConstants := fun (name : Lean.Name) ↦
     (Lean.getStructureFields environment name).toList.flatMap fun field ↦
       ((environment.find? (name ++ field)).map (·.type.getUsedConstants.toList)).getD []
@@ -171,7 +171,7 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
         else []).getD []
   -- The contract names the class of functors in the type of every instance.
   let others := (namedBySchemas ++ named ++ functorClass.toList).eraseDups.filter fun name ↦
-    ExportTypeScript.tagAttribute.hasTag environment name &&
+    ExportTypeScript.isExported environment name &&
       (environment.getModuleIdxFor? name).map (·.toNat) !=
         (environment.getModuleIdx? module).map (·.toNat)
   let otherModules := (others.filterMap fun name ↦
@@ -203,16 +203,17 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
     return s!"{← commentOf name}readonly {camelCaseOf words}: {pascalCaseOf words};\n"
   let members := functionMembers ++ instanceMembers
   let contract := if members.isEmpty then "" else
-    s!"\n/** The functions of the theory that the module `{modulePath}` of the package \
-      implements. */\n" ++
+    s!"\n/** A contract of the functions of the theory that the module `{modulePath}` of the \
+      package implements. */\n" ++
       s!"interface Contract \{\n{String.join members}}\n\n" ++
-      s!"/** The module `{modulePath}` of the package, which fails to compile where the module \
-        leaves a function of the contract out or gives the function another type. */\n" ++
+      s!"/** A check of the module `{modulePath}` of the package, which fails to compile where the \
+        module leaves a function of the contract out or gives the function another type. */\n" ++
       "type _Implemented<Implementation extends Contract = typeof Module> = Implementation;\n"
-  let theoryImports :=
-    if theoryLines.isEmpty && checkLines.isEmpty && contractImport.isEmpty then "" else
-      s!"\n{String.join (checkLines ++ theoryLines ++ contractImport)}"
-  return s!"{header}{importLine}{theoryImports}\n{body}{contract}"
+  -- The header stands right above the first section, and a blank line parts every section from the
+  -- next.
+  let sections := [importLine, String.join (checkLines ++ theoryLines ++ contractImport),
+    s!"{body}{contract}"].filter (!·.isEmpty)
+  return s!"{header}{"\n".intercalate sections}"
 
 end Generator
 

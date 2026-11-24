@@ -1,9 +1,8 @@
 // Written by the generator of the theory from `Falkara.Presentation.Colorimetry.Chromaticity`, so every change by hand is lost when the generator runs.
-
 import { Brand, type Option, type Rational, Schema } from 'effect';
 
-import type { Tristimulus } from '#src/Colorimetry/Tristimulus.theory';
 import type * as Module from '#src/Colorimetry/Chromaticity';
+import type { Tristimulus } from '#src/Colorimetry/Tristimulus.theory';
 
 /**
  * A schema of a property of a color stimulus that its chromaticity coordinates $x$ and $y$ define.
@@ -33,7 +32,7 @@ export const Chromaticity = Schema.Struct({
 export type Chromaticity = typeof Chromaticity.Type;
 
 /**
- * Brands without a check a property of a color stimulus that its chromaticity coordinates $x$ and $y$ define.
+ * Brands a `Chromaticity` from its fields `x` and `y` without a check.
  *
  * @see https://cie.co.at/eilvterm/17-23-052
  */
@@ -53,7 +52,7 @@ export type ChromaticityZ = (chromaticity: Chromaticity) => Rational.Rational;
  */
 export type ChromaticityOf = (tristimulus: Tristimulus) => Option.Option<Chromaticity>;
 
-/** The functions of the theory that the module `Colorimetry/Chromaticity` of the package implements. */
+/** A contract of the functions of the theory that the module `Colorimetry/Chromaticity` of the package implements. */
 interface Contract {
   /**
    * Gives the chromaticity coordinate $z$ of the chromaticity, $z = 1 - x - y$.
@@ -69,5 +68,5 @@ interface Contract {
   readonly chromaticityOf: ChromaticityOf;
 }
 
-/** The module `Colorimetry/Chromaticity` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */
+/** A check of the module `Colorimetry/Chromaticity` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */
 type _Implemented<Implementation extends Contract = typeof Module> = Implementation;

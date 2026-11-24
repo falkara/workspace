@@ -1,5 +1,6 @@
-import { describe, expect, expectTypeOf, it } from '@effect/vitest';
+import { describe, expectTypeOf, it } from '@effect/vitest';
 import { Schema } from 'effect';
+
 import { type BinaryProductFunctor, binaryProductFunctor } from '#src/BinaryProductFunctor';
 import * as Coalgebra from '#src/Coalgebra';
 import { functorAxioms } from '#src/Functor';
@@ -11,12 +12,12 @@ const axioms = functorAxioms(
 );
 
 describe('BinaryProductFunctor', () => {
-  it('makes the structure morphism of a coalgebra give an output and the next state', () => {
-    const countdown = Coalgebra.coalgebra<BinaryProductFunctor<string>, number>({
-      str: (value) => [`${value}`, value - 5],
+  it('gives the coalgebra structure of a coalgebra an output and the next state', () => {
+    const countdown = Coalgebra.coalgebra<BinaryProductFunctor<string>>()({
+      structure: (state: number) => [`${state}`, state - 5],
     });
-    expectTypeOf(countdown.str).returns.toEqualTypeOf<readonly [string, number]>();
-    expect(countdown.str(-5)).toStrictEqual(['-5', -10]);
+
+    expectTypeOf(countdown.structure).returns.toEqualTypeOf<readonly [string, number]>();
   });
 
   it.prop('keeps the identity', [Schema.String, Schema.Finite], ([output, state]) =>

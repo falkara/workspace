@@ -9,7 +9,7 @@ import Mathlib.Algebra.BigOperators.Ring.List
 import Mathlib.Algebra.Ring.Rat
 public import Falkara.Presentation.Colorimetry.Illuminant
 public import Falkara.Presentation.Colorimetry.Observer
-meta import Falkara.Citation -- shake: keep
+import Falkara.ExportTypeScript
 meta import Falkara.ExportTypeScript -- shake: keep
 
 /-!

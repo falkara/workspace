@@ -6,7 +6,7 @@ Authors: Filip Falcon
 module
 
 public import Falkara.Presentation.Colorimetry.Tristimulus
-meta import Falkara.Citation -- shake: keep
+import Falkara.ExportTypeScript
 meta import Falkara.ExportTypeScript -- shake: keep
 
 /-!

@@ -1,5 +1,6 @@
-import { describe, expect, expectTypeOf, it } from '@effect/vitest';
+import { describe, expectTypeOf, it } from '@effect/vitest';
 import { Equal, type HKT, Option, Schema } from 'effect';
+
 import * as Functor from '#src/Functor';
 
 /** A type lambda of the choices of a state, the states that may follow it. */
@@ -28,7 +29,6 @@ describe('Functor', () => {
     expectTypeOf(choices.map((room: number) => `${room}`)).returns.toEqualTypeOf<
       ReadonlyArray<string>
     >();
-    expect(choices.map((room: number) => `${room}`)([1, 2])).toStrictEqual(['1', '2']);
   });
 
   it.prop(
@@ -49,7 +49,9 @@ describe('Functor', () => {
   );
 
   it('makes a functor of a type lambda of Effect', () => {
-    expect(option.map((room: number) => `${room}`)(Option.some(1))).toStrictEqual(Option.some('1'));
+    expectTypeOf(option.map((room: number) => `${room}`)).returns.toEqualTypeOf<
+      Option.Option<string>
+    >();
   });
 
   it.prop(

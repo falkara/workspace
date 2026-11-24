@@ -7,7 +7,7 @@ module
 
 public import Falkara.References -- shake: keep
 public import Mathlib.CategoryTheory.Functor.Basic
-meta import Falkara.Citation -- shake: keep
+import Falkara.ExportTypeScript
 meta import Falkara.ExportTypeScript -- shake: keep
 
 /-!
@@ -19,6 +19,15 @@ them.
 ## Main Definitions
 
 - `Functor`: a functor between categories.
+
+## Implementation Notes
+
+The action of a functor on objects takes the type parameter `Endofunctor` in TypeScript, as a
+functor on types is an endofunctor, which Jacobs [jacobs2017introductionCoalgebra] writes as a
+mapping of sets to sets, and the type lambda stands for the functor as it does in a coalgebra.
+
+The axioms take documentation comments of the theory in TypeScript, as each takes a predicate that
+tells whether an instance keeps it, whereas the comments of Mathlib state the axioms of a functor.
 -/
 
 @[expose] public section
@@ -34,6 +43,11 @@ attribute [cite "CategoryTheory.Functor" mathlibCommunity2020leanMathematicalLib
 
 /-! ### Export -/
 
-attribute [export_typescript] Functor
+attribute [export_typescript
+  (obj := "Endofunctor")
+  (map_id := "map_id"
+    "The predicate that tells whether the instance preserves identity morphisms.")
+  (map_comp := "map_comp" "The predicate that tells whether the instance preserves composition.")]
+  Functor
 
 end Falkara.Simulation

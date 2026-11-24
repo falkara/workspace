@@ -7,7 +7,7 @@ module
 
 public import Falkara.References -- shake: keep
 public import Mathlib.CategoryTheory.Yoneda
-meta import Falkara.Citation -- shake: keep
+import Falkara.ExportTypeScript
 meta import Falkara.ExportTypeScript -- shake: keep
 
 /-!
@@ -19,6 +19,14 @@ states it.
 ## Main Definitions
 
 - `coyoneda`: the coyoneda embedding.
+
+## Implementation Notes
+
+The type that the coyoneda embedding maps takes the type parameter `Exponent` in TypeScript, as
+the functor $Y \mapsto (k \to Y)$ is the exponent $Y^k$ of Jacobs [jacobs2017introductionCoalgebra],
+whose exponent the type is. The coyoneda embedding takes a documentation comment of the theory in
+TypeScript, which writes it as the type of the functor it gives at an exponent, a type whose comment
+opens with an article and names the exponent as the type parameter does.
 -/
 
 @[expose] public section
@@ -34,6 +42,8 @@ attribute [cite "CategoryTheory.coyoneda" mathlibCommunity2020leanMathematicalLi
 
 /-! ### Export -/
 
-attribute [export_typescript] coyoneda
+attribute [export_typescript
+  "An exponent functor, which maps every type to the functions from the exponent into the type."
+  (k := "Exponent")] coyoneda
 
 end Falkara.Simulation

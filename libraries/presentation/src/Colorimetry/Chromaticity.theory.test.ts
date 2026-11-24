@@ -1,10 +1,9 @@
 // Written by the generator of the theory from `Falkara.Presentation.Colorimetry.Chromaticity`, so every change by hand is lost when the generator runs.
-
 import { describe, expect, it } from '@effect/vitest';
 import { Equal, Rational, Schema } from 'effect';
 
-import * as Tristimulus from '#src/Colorimetry/Tristimulus';
 import * as Chromaticity from '#src/Colorimetry/Chromaticity';
+import * as Tristimulus from '#src/Colorimetry/Tristimulus';
 
 describe('Colorimetry/Chromaticity', () => {
   /**

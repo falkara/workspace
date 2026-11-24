@@ -7,6 +7,7 @@ module
 
 public import Lean.Meta.Basic
 import Generator.Comment
+import Generator.Declaration
 import Generator.Type
 
 /-!
@@ -77,7 +78,7 @@ def implementationsOf (moduleNamespace name : Lean.Name) :
   let valueName := camelCaseOf (wordsOf moduleNamespace name)
   match ← kindOf name with
   | .functor | .curriedFunctor =>
-    return [(s!"export const {valueName}", ← commentOf name (some "Gives"))]
+    return [(s!"export const {valueName}", ← instanceCommentOf moduleNamespace name)]
   | .function => return [(s!"export const {valueName}", ← commentOf name)]
   | _ => return []
 

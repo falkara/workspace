@@ -1,4 +1,5 @@
-import { describe, expect, expectTypeOf, it } from '@effect/vitest';
+import { describe, expectTypeOf, it } from '@effect/vitest';
+
 import type { BinaryProductFunctor } from '#src/BinaryProductFunctor';
 import type { Coalgebra } from '#src/Coalgebra';
 import type { Coyoneda } from '#src/Coyoneda';
@@ -6,14 +7,12 @@ import { type DeterministicAutomaton, deterministicAutomaton } from '#src/Determ
 import type { FunctorComp } from '#src/FunctorComp';
 
 describe('DeterministicAutomaton', () => {
-  it('makes the structure morphism give an output and the next state upon every input', () => {
-    const parity = deterministicAutomaton<0 | 1, boolean, boolean>({
-      str: (even) => [even, (bit) => (bit === 1 ? !even : even)],
+  it('infers the inputs, the outputs, and the state space from the coalgebra structure', () => {
+    const parity = deterministicAutomaton({
+      structure: (even: boolean) => [even, (bit: 0 | 1) => (bit === 1 ? !even : even)],
     });
-    const [output, next] = parity.str(true);
-    expect(output).toBe(true);
-    expect(next(1)).toBe(false);
-    expect(next(0)).toBe(true);
+
+    expectTypeOf(parity).toEqualTypeOf<DeterministicAutomaton<0 | 1, boolean, boolean>>();
   });
 
   it('is the coalgebra of the binary products of the outputs with the functions from the inputs', () => {

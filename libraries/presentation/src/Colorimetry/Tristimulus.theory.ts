@@ -1,5 +1,4 @@
 // Written by the generator of the theory from `Falkara.Presentation.Colorimetry.Tristimulus`, so every change by hand is lost when the generator runs.
-
 import { Brand, Rational, Schema } from 'effect';
 
 import type * as Module from '#src/Colorimetry/Tristimulus';
@@ -38,7 +37,7 @@ export const Tristimulus = Schema.Struct({
 export type Tristimulus = typeof Tristimulus.Type;
 
 /**
- * Brands without a check a triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system.
+ * Brands a `Tristimulus` from its fields `X`, `Y`, and `Z` without a check.
  *
  * @see https://cie.co.at/eilvterm/17-23-045
  */
@@ -69,7 +68,7 @@ export const whiteTristimulus: Tristimulus = tristimulus({
   Z: Rational.makeUnsafe(10272984088266781770n, 9434894345525109127n),
 });
 
-/** The functions of the theory that the module `Colorimetry/Tristimulus` of the package implements. */
+/** A contract of the functions of the theory that the module `Colorimetry/Tristimulus` of the package implements. */
 interface Contract {
   /**
    * Gives the tristimulus values of the additive mixture of two color stimuli as the sums of their amounts, $X_1 + X_2$, $Y_1 + Y_2$, and $Z_1 + Z_2$.
@@ -85,5 +84,5 @@ interface Contract {
   readonly tristimulusScale: TristimulusScale;
 }
 
-/** The module `Colorimetry/Tristimulus` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */
+/** A check of the module `Colorimetry/Tristimulus` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */
 type _Implemented<Implementation extends Contract = typeof Module> = Implementation;

@@ -6,8 +6,7 @@ Authors: Filip Falcon
 module
 
 public import Mathlib.Data.Nat.Notation
-public import Lean.Attributes
-import Lean.Elab.InfoTree.Main
+public import Lean.Elab.InfoTree.Main
 
 /-!
 # Citation
@@ -26,6 +25,8 @@ the citations of the module.
   file.
 - `Work`: a work that the theory cites, with the fields a bibliography gives it.
 - `Item`: an item of a work, such as a section, an equation, or a column of a data table.
+- `itemOf`: gives the item of a work by its label and the name of the work in the module
+  `Falkara.References`, or fails with the reason where the name is no declaration of a work.
 - `cite`: the syntax of the attribute that cites the item of a work a declaration states.
 - `citeAttribute`: the attribute that cites the item of a work a declaration states, refusing a
   name that is no declaration of a work.
@@ -77,6 +78,18 @@ structure Item where
   work : Lean.Name
   deriving Inhabited, Repr
 
+/-- Gives the item of a work by its label and the name of the work in the module
+`Falkara.References`, or fails with the reason where the name is no declaration of a work. -/
+def itemOf (label : Lean.StrLit) (work : Lean.Ident) : Lean.AttrM Item := do
+  -- The work is named as in the module `Falkara.References`, which holds every work.
+  let name ← Lean.Elab.realizeGlobalConstNoOverloadWithInfo
+    (Lean.mkIdentFrom work (`Falkara.References ++ work.getId))
+  let information ← Lean.getConstInfo name
+  unless information.type == Lean.mkConst ``Work do
+    Lean.throwError m!"`{name}` is no declaration of a work, as its type is \
+      `{information.type}` rather than `Citation.Work`."
+  return { label := label.getString, work := name }
+
 /-- The syntax of the attribute that cites the item of a work a declaration states. -/
 syntax (name := cite) "cite " str ident : attr
 
@@ -87,15 +100,7 @@ initialize citeAttribute : Lean.ParametricAttribute Item ←
     name := `cite
     descr := "cite the item of a work that a declaration states"
     getParam := fun _ attributeSyntax ↦ match attributeSyntax with
-      | `(attr| cite $label:str $work:ident) => do
-        -- The work is named as in the module `Falkara.References`, which holds every work.
-        let name ← Lean.Elab.realizeGlobalConstNoOverloadWithInfo
-          (Lean.mkIdentFrom work (`Falkara.References ++ work.getId))
-        let information ← Lean.getConstInfo name
-        unless information.type == Lean.mkConst ``Work do
-          Lean.throwError m!"`{name}` is no declaration of a work, as its type is \
-            `{information.type}` rather than `Citation.Work`."
-        pure { label := label.getString, work := name }
+      | `(attr| cite $label:str $work:ident) => itemOf label work
       | _ => Lean.throwError
         "A citation takes the label of the item as a string and the name of the work."
   }

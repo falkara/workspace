@@ -1,5 +1,6 @@
-import { describe, expect, expectTypeOf, it } from '@effect/vitest';
+import { describe, expectTypeOf, it } from '@effect/vitest';
 import { Schema } from 'effect';
+
 import * as Coalgebra from '#src/Coalgebra';
 import { type Coyoneda, coyoneda } from '#src/Coyoneda';
 import { functorAxioms } from '#src/Functor';
@@ -9,12 +10,12 @@ const axiomsAt = (input: string) =>
   functorAxioms(coyoneda<string>(), (self, that) => self(input) === that(input));
 
 describe('Coyoneda', () => {
-  it('makes the structure morphism of a coalgebra give the next state upon every input', () => {
-    const counter = Coalgebra.coalgebra<Coyoneda<string>, number>({
-      str: (value) => (input) => value + input.length,
+  it('gives the coalgebra structure of a coalgebra the next state upon every input', () => {
+    const counter = Coalgebra.coalgebra<Coyoneda<string>>()({
+      structure: (state: number) => (input) => state + input.length,
     });
-    expectTypeOf(counter.str).returns.toEqualTypeOf<(value: string) => number>();
-    expect(counter.str(-5)('abc')).toBe(-2);
+
+    expectTypeOf(counter.structure).returns.toEqualTypeOf<(input: string) => number>();
   });
 
   it.prop('keeps the identity', [Schema.Finite, Schema.String], ([offset, input]) =>

@@ -6,6 +6,8 @@ export default defineConfig({
     // The vendored schemas are kept byte-identical to what they were published as, so re-vendoring one stays a clean diff. The skills are formatted once, under `.agents`, which `.claude` links to.
     ignorePatterns: ['scripts/schemas/**', '.claude/**'],
     singleQuote: true,
+    // Imports ordered by oxfmt, so no file keeps an order of its own.
+    sortImports: true,
   },
   lint: {
     // The skills are checked once, under `.agents`, which `.claude` links to.

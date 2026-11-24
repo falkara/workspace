@@ -9,7 +9,7 @@ public import Falkara.Simulation.BinaryProductFunctor
 public import Falkara.Simulation.FunctorComp
 public import Mathlib.CategoryTheory.Endofunctor.Algebra
 import Mathlib.Tactic.TypeStar
-meta import Falkara.Citation -- shake: keep
+import Falkara.ExportTypeScript
 meta import Falkara.ExportTypeScript -- shake: keep
 
 /-!
@@ -27,9 +27,9 @@ namespace Falkara.Simulation
 
 /-- A sequence coalgebra, which gives from every state either nothing or an output and the next
 state. -/
-abbrev SequenceCoalgebra (B : Type*) :=
+abbrev SequenceCoalgebra (Output : Type*) :=
   CategoryTheory.Endofunctor.Coalgebra
-    (Functor.comp (binaryProductFunctor.obj B) (CategoryTheory.ofTypeFunctor Option))
+    (Functor.comp (binaryProductFunctor.obj Output) (CategoryTheory.ofTypeFunctor Option))
 
 attribute [cite "Section 2.2.1" jacobs2017introductionCoalgebra] SequenceCoalgebra
 

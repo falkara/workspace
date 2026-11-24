@@ -7,7 +7,7 @@ module
 
 public import Falkara.References -- shake: keep
 public import Mathlib.CategoryTheory.Functor.Basic
-meta import Falkara.Citation -- shake: keep
+import Falkara.ExportTypeScript
 meta import Falkara.ExportTypeScript -- shake: keep
 
 /-!
@@ -19,6 +19,14 @@ The module defines the composition of functors as Mathlib
 ## Main Definitions
 
 - `Functor.comp`: the composite of two functors.
+
+## Implementation Notes
+
+The two functors take the type parameters `FirstEndofunctor` and `SecondEndofunctor` in
+TypeScript, as a functor on types is an endofunctor, as a coalgebra names it, and Mathlib states
+that the composite applies the functor `F` first and then the functor `G`. The composite takes a
+documentation comment of the theory in TypeScript, which writes it as a type, whose comment opens
+with an article and names the endofunctors as the type parameters do.
 -/
 
 @[expose] public section
@@ -35,6 +43,10 @@ attribute [cite "CategoryTheory.Functor.comp" mathlibCommunity2020leanMathematic
 
 /-! ### Export -/
 
-attribute [export_typescript] Functor.comp
+attribute [export_typescript
+  "A composite of two endofunctors, which applies the first endofunctor and then the second \
+    endofunctor."
+  (F := "FirstEndofunctor")
+  (G := "SecondEndofunctor")] Functor.comp
 
 end Falkara.Simulation

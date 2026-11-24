@@ -2,6 +2,7 @@ module
 
 public import Falkara.Citation
 meta import Falkara.Citation
+meta import Falkara.ExportTypeScript
 meta import Generator.Comment
 
 /-!
@@ -11,8 +12,10 @@ The module defines the checks of the documentation comments of TypeScript that t
 the theory take: a declaration that cites an item of a work with a page for every item takes the
 page of the item, a declaration that cites any other work takes the DOI of the work, a declaration
 that cites no work takes its documentation comment alone, and a text given to open the comment takes
-the place of the first word. The checks cite works of their own, so they hold for the works of
-every theory, and take the DOI prefix 10.5555, which Crossref reserves for examples.
+the place of the first word. A declaration whose comment in TypeScript cites a work of its own takes
+the page of its item and the DOI of the work of its comment, and a field whose comment cites a work
+takes the DOI of the work. The checks cite works of their own, so they hold for the works of every
+theory, and take the DOI prefix 10.5555, which Crossref reserves for examples.
 
 ## Main Definitions
 
@@ -22,6 +25,8 @@ every theory, and take the DOI prefix 10.5555, which Crossref reserves for examp
 - `entryDeclaration`: the declaration that cites an entry of the vocabulary.
 - `tableDeclaration`: the declaration that cites a data table.
 - `uncitedDeclaration`: the declaration that cites no work.
+- `commentedDeclaration`: the declaration whose comment in TypeScript cites the table.
+- `Shelf`: the structure whose field takes a comment that cites the table.
 -/
 
 public section
@@ -72,7 +77,7 @@ info: /**
 info: /**
  * The declaration that cites a data table.
  *
- * @see https://doi.org/10.5555/checks
+ * @see https://doi.org/10.5555/checks sumOfColumns
  */
 -/
 #guard_msgs in
@@ -83,3 +88,43 @@ info: /**
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
   IO.print (← Generator.commentOf ``uncitedDeclaration (some "A schema of"))
+
+/-- The declaration whose comment in TypeScript cites the table. -/
+def commentedDeclaration : Nat := 0
+
+attribute [cite "17-23-053" vocabularyOfTheChecks] commentedDeclaration
+
+attribute [export_typescript
+  "A declaration in the terms of the table." cite "sumOfColumns" tableOfTheChecks]
+  commentedDeclaration
+
+/--
+info: /**
+ * A declaration in the terms of the table.
+ *
+ * @see https://example.com/term/17-23-053
+ * @see https://doi.org/10.5555/checks sumOfColumns
+ */
+-/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← Generator.commentOf ``commentedDeclaration)
+
+/-- The structure whose field takes a comment that cites the table. -/
+structure Shelf where
+  /-- The book on the shelf. -/
+  book : Nat
+
+attribute [export_typescript
+  (book := "book" "The book that the shelf holds." cite "sumOfColumns" tableOfTheChecks)] Shelf
+
+/--
+info: /**
+ * The book that the shelf holds.
+ *
+ * @see https://doi.org/10.5555/checks sumOfColumns
+ */
+-/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← Generator.fieldCommentOf ``Shelf `book)

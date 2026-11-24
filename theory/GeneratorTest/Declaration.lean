@@ -5,6 +5,7 @@ public import GeneratorTest.Fixture.Clock
 public import GeneratorTest.Fixture.Coordinate
 meta import Generator.Declaration
 import all GeneratorTest.Fixture.Clock
+import all GeneratorTest.Fixture.Lamp
 import all Mathlib.CategoryTheory.Endofunctor.Algebra
 import all Mathlib.CategoryTheory.Functor.Basic
 
@@ -22,12 +23,17 @@ chiming clock of the fixture takes its chimes as a type parameter before the sta
 TypeScript reads as covariant, and a pair as a tuple that TypeScript keeps read-only. The clockwork
 of the fixture, the coalgebra of Mathlib with its category and its functor as parameters, takes its
 category as the category of types and its functor as a type parameter
-constrained to a type lambda of Effect, which `HKT.Kind` applies to the state space, and the functor
+constrained to a type lambda of Effect, which `HKT.Kind` applies to the state space and which the
+first of the two calls of its constructor takes, and the functor
 of the chimes takes an interface that extends the type lambda, with the pair of a chime and the
 object of the lambda, `this['Target']`, as its type. The curried functor of the dials, which maps
 the opposite of the types, takes a type parameter for a type of settings, which TypeScript reads as
 contravariant, and the gear train, a composite of two functors, takes a type parameter for each of
-them, which `HKT.Kind` applies one inside the other. A value of
+them, which `HKT.Kind` applies one inside the other. The lantern of the fixture `Lamp` takes its
+type of lights as the type parameter and its light as the field, with its comment, that the clauses
+of the attribute `export_typescript` on the lantern give in another module. A function value takes
+the name of its type where its
+type is a type parameter, such as `state` for `State`, and `value` otherwise. A value of
 a type with no value in TypeScript, a value of a structure of another module, and a declaration
 without the mark `export_typescript` take none.
 
@@ -110,7 +116,7 @@ y: Schema.Rational,
 /** The structure that the checks write. */
 export type Point = typeof Point.Type;
 
-/** Brands without a check the structure that the checks write. */
+/** Brands a `Point` from its fields `x` and `y` without a check. */
 export const point = Brand.nominal<Point>();
 -/
 #guard_msgs in
@@ -168,10 +174,10 @@ export const corner: Point = point({ x: Rational.makeUnsafe(1n, 2n), y: Rational
 info: /** A clock that ticks from every state to its next state. */
 export interface Clock<in out V> {
 /** structure morphism of the coalgebra */
-readonly str: (value: V) => V;
+readonly str: (v: V) => V;
 }
 
-/** Creates a clock that ticks from every state to its next state. */
+/** Creates a `Clock` from its field `str`. */
 export const clock = <V>(fields: Clock<V>): Clock<V> => fields;
 -/
 #guard_msgs in
@@ -182,10 +188,10 @@ export const clock = <V>(fields: Clock<V>): Clock<V> => fields;
 info: /** A clock that chimes and ticks from every state to its next state. */
 export interface ChimingClock<out B, in out V> {
 /** structure morphism of the coalgebra */
-readonly str: (value: V) => readonly [B, V];
+readonly str: (v: V) => readonly [B, V];
 }
 
-/** Creates a clock that chimes and ticks from every state to its next state. */
+/** Creates a `ChimingClock` from its field `str`. */
 export const chimingClock = <B, V>(fields: ChimingClock<B, V>): ChimingClock<B, V> => fields;
 -/
 #guard_msgs in
@@ -194,13 +200,13 @@ export const chimingClock = <B, V>(fields: ChimingClock<B, V>): ChimingClock<B, 
 
 /--
 info: /** A clockwork that moves every state by a functor. */
-export interface Clockwork<in out F extends HKT.TypeLambda, in out V> {
+export interface Clockwork<out F extends HKT.TypeLambda, in out V> {
 /** structure morphism of the coalgebra */
-readonly str: (value: V) => HKT.Kind<F, never, never, never, V>;
+readonly str: (v: V) => HKT.Kind<F, never, never, never, V>;
 }
 
-/** Creates a clockwork that moves every state by a functor. */
-export const clockwork = <F extends HKT.TypeLambda, V>(fields: Clockwork<F, V>): Clockwork<F, V> => fields;
+/** Creates a `Clockwork` from its field `str`, with its `F` as the type argument of the first call. */
+export const clockwork = <F extends HKT.TypeLambda>() => <V>(fields: Clockwork<F, V>): Clockwork<F, V> => fields;
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
@@ -228,8 +234,8 @@ readonly type: readonly [X, this['Target']];
 
 /--
 info: /** The curried functor of the dials, which maps every type of settings to the functor that turns a setting into the next state. */
-export interface DialsFunctor<in k> extends HKT.TypeLambda {
-readonly type: (value: k) => this['Target'];
+export interface DialsFunctor<in Setting> extends HKT.TypeLambda {
+readonly type: (setting: Setting) => this['Target'];
 }
 -/
 #guard_msgs in
@@ -238,23 +244,23 @@ readonly type: (value: k) => this['Target'];
 
 /--
 info: /** A gear, a functor that a clockwork moves its states by. */
-export interface Gear<in out F extends HKT.TypeLambda> extends HKT.TypeClass<F> {
+export interface Gear<in out Motion extends HKT.TypeLambda> extends HKT.TypeClass<Motion> {
 /** The action of a functor on morphisms. */
-readonly map: <X, Y>(a: (value: X) => Y) => (value: HKT.Kind<F, never, never, never, X>) => HKT.Kind<F, never, never, never, Y>;
+readonly map: <X, Y>(a: (x: X) => Y) => (value: HKT.Kind<Motion, never, never, never, X>) => HKT.Kind<Motion, never, never, never, Y>;
 }
 
-/** Creates a gear, a functor that a clockwork moves its states by. */
-export const gear = <F extends HKT.TypeLambda>(fields: Gear<F>): Gear<F> => fields;
+/** Creates a `Gear` from its field `map`. */
+export const gear = <Motion extends HKT.TypeLambda>(fields: Gear<Motion>): Gear<Motion> => fields;
 
-/** Gives the axioms of a gear, a functor that a clockwork moves its states by. */
-export const gearAxioms = <F extends HKT.TypeLambda>(
-instance: Gear<F>,
-equivalence: <X>(self: HKT.Kind<F, never, never, never, X>, that: HKT.Kind<F, never, never, never, X>) => boolean,
+/** Gives the axioms of a `Gear` as predicates of an instance. */
+export const gearAxioms = <Motion extends HKT.TypeLambda>(
+instance: Gear<Motion>,
+equivalence: <X>(self: HKT.Kind<Motion, never, never, never, X>, that: HKT.Kind<Motion, never, never, never, X>) => boolean,
 ) => ({
 /** A functor preserves identity morphisms. */
-map_id: <X>(value: HKT.Kind<F, never, never, never, X>): boolean => equivalence<X>((instance.map<X, X>(Function.identity<X>))(value), (Function.identity<HKT.Kind<F, never, never, never, X>>)(value)),
+map_id: <X>(value: HKT.Kind<Motion, never, never, never, X>): boolean => equivalence<X>((instance.map<X, X>(Function.identity<X>))(value), (Function.identity<HKT.Kind<Motion, never, never, never, X>>)(value)),
 /** A functor preserves composition. */
-map_comp: <X, Y, Z>(f: (value: X) => Y, g: (value: Y) => Z, value: HKT.Kind<F, never, never, never, X>): boolean => equivalence<Z>((instance.map<X, Z>(Function.flow(f, g)))(value), (Function.flow(instance.map<X, Y>(f), instance.map<Y, Z>(g)))(value)),
+map_comp: <X, Y, Z>(f: (x: X) => Y, g: (y: Y) => Z, value: HKT.Kind<Motion, never, never, never, X>): boolean => equivalence<Z>((instance.map<X, Z>(Function.flow(f, g)))(value), (Function.flow(instance.map<X, Y>(f), instance.map<Y, Z>(g)))(value)),
 });
 -/
 #guard_msgs in
@@ -263,10 +269,24 @@ map_comp: <X, Y, Z>(f: (value: X) => Y, g: (value: Y) => Z, value: HKT.Kind<F, n
 
 /--
 info: /** A gear train, which moves every state by one gear and then by another. */
-export interface GearTrain<in out F extends HKT.TypeLambda, in out G extends HKT.TypeLambda> extends HKT.TypeLambda {
-readonly type: HKT.Kind<G, never, never, never, HKT.Kind<F, never, never, never, this['Target']>>;
+export interface GearTrain<in out Driver extends HKT.TypeLambda, out Follower extends HKT.TypeLambda> extends HKT.TypeLambda {
+readonly type: HKT.Kind<Follower, never, never, never, HKT.Kind<Driver, never, never, never, this['Target']>>;
 }
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
   IO.print (← (Generator.declarationOf `Geometry ``Geometry.GearTrain).run' [])
+
+/--
+info: /** A lantern, a lamp that shows a light. */
+export interface Lantern<out Shade> {
+/** The beam that the lamp casts. */
+readonly beam: Shade;
+}
+
+/** Creates a `Lantern` from its field `beam`. */
+export const lantern = <Shade>(fields: Lantern<Shade>): Lantern<Shade> => fields;
+-/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← (Generator.declarationOf `Geometry ``Geometry.Lantern).run' [])

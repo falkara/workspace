@@ -8,7 +8,7 @@ module
 public import Falkara.Simulation.BinaryProductFunctor
 public import Mathlib.CategoryTheory.Endofunctor.Algebra
 import Mathlib.Tactic.TypeStar
-meta import Falkara.Citation -- shake: keep
+import Falkara.ExportTypeScript
 meta import Falkara.ExportTypeScript -- shake: keep
 
 /-!
@@ -35,8 +35,8 @@ namespace Falkara.Simulation
 /-! ### Definitions -/
 
 /-- A stream coalgebra, which gives from every state an output and the next state. -/
-abbrev StreamCoalgebra (B : Type*) :=
-  CategoryTheory.Endofunctor.Coalgebra (binaryProductFunctor.obj B)
+abbrev StreamCoalgebra (Output : Type*) :=
+  CategoryTheory.Endofunctor.Coalgebra (binaryProductFunctor.obj Output)
 
 attribute [cite "Corollary 2.3.6.1" jacobs2017introductionCoalgebra] StreamCoalgebra
 

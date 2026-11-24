@@ -124,12 +124,10 @@ info: ["Clockwork", "clockwork", "ChimeFunctor", "ChimesFunctor", "DialsFunctor"
     (← Generator.reexportsOf `Geometry ``Geometry.GearTrain)
 
 /--
-info: [("export const chimeFunctor", "/** Gives the functor of the chimes, which gives a chime and the next state. */\n"),
-  ("export const chimesFunctor",
-    "/** Gives the curried functor of the chimes, which maps every type of chimes to the functor of the chimes. */\n"),
-  ("export const dialsFunctor",
-    "/** Gives the curried functor of the dials, which maps every type of settings to the functor that turns a setting into the next state. */\n"),
-  ("export const gearTrain", "/** Gives a gear train, which moves every state by one gear and then by another. */\n")]
+info: [("export const chimeFunctor", "/** Gives the `Gear` instance of a `ChimeFunctor`. */\n"),
+  ("export const chimesFunctor", "/** Gives the `Gear` instance of a `ChimesFunctor`. */\n"),
+  ("export const dialsFunctor", "/** Gives the `Gear` instance of a `DialsFunctor`. */\n"),
+  ("export const gearTrain", "/** Gives the `Gear` instance of a `GearTrain`. */\n")]
 -/
 #guard_msgs in
 #eval show Lean.MetaM (List (String × String)) from do

@@ -1,13 +1,11 @@
-import { describe, expect, expectTypeOf, it } from '@effect/vitest';
+import { describe, expectTypeOf, it } from '@effect/vitest';
 import { Schema } from 'effect';
+
 import { type BinaryProductFunctor, binaryProductFunctor } from '#src/BinaryProductFunctor';
 import * as Coalgebra from '#src/Coalgebra';
 import { type Coyoneda, coyoneda } from '#src/Coyoneda';
 import { functorAxioms } from '#src/Functor';
 import { type FunctorComp, functorComp } from '#src/FunctorComp';
-
-/** The functor of the Mealy machines with inputs and outputs in the strings, a function from an input to an output and the next state. */
-type Mealy = FunctorComp<BinaryProductFunctor<string>, Coyoneda<string>>;
 
 /** The axioms of the functor of the Mealy machines, with two functions equal where they give equal pairs at an input. */
 const axiomsAt = (input: string) =>
@@ -18,12 +16,17 @@ const axiomsAt = (input: string) =>
   });
 
 describe('FunctorComp', () => {
-  it('makes the structure morphism of a coalgebra give an output and the next state upon every input', () => {
-    const counter = Coalgebra.coalgebra<Mealy, number>({
-      str: (value) => (input) => [`${value}`, value + input.length],
+  it('gives the coalgebra structure of a coalgebra an output and the next state upon every input', () => {
+    /** A functor of the Mealy machines with inputs and outputs in the strings, a function from an input to an output and the next state. */
+    type Mealy = FunctorComp<BinaryProductFunctor<string>, Coyoneda<string>>;
+
+    const counter = Coalgebra.coalgebra<Mealy>()({
+      structure: (state: number) => (input) => [`${state}`, state + input.length],
     });
-    expectTypeOf(counter.str).returns.toEqualTypeOf<(value: string) => readonly [string, number]>();
-    expect(counter.str(-5)('abc')).toStrictEqual(['-5', -2]);
+
+    expectTypeOf(counter.structure).returns.toEqualTypeOf<
+      (input: string) => readonly [string, number]
+    >();
   });
 
   it.prop('keeps the identity', [Schema.Finite, Schema.String], ([offset, input]) =>

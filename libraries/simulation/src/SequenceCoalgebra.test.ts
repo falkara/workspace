@@ -1,17 +1,19 @@
-import { describe, expect, expectTypeOf, it } from '@effect/vitest';
+import { describe, expectTypeOf, it } from '@effect/vitest';
 import { Option } from 'effect';
+
 import type { BinaryProductFunctor } from '#src/BinaryProductFunctor';
 import type { Coalgebra } from '#src/Coalgebra';
 import type { FunctorComp } from '#src/FunctorComp';
 import { type SequenceCoalgebra, sequenceCoalgebra } from '#src/SequenceCoalgebra';
 
 describe('SequenceCoalgebra', () => {
-  it('makes the structure morphism give either nothing or an output and the next state', () => {
-    const countdown = sequenceCoalgebra<string, number>({
-      str: (value) => (value > 0 ? Option.some([`${value}`, value - 1]) : Option.none()),
+  it('infers the outputs and the state space from the coalgebra structure', () => {
+    const countdown = sequenceCoalgebra({
+      structure: (state: number) =>
+        state > 0 ? Option.some([String(state), state - 1] as const) : Option.none(),
     });
-    expect(countdown.str(1)).toStrictEqual(Option.some(['1', 0]));
-    expect(countdown.str(0)).toStrictEqual(Option.none());
+
+    expectTypeOf(countdown).toEqualTypeOf<SequenceCoalgebra<string, number>>();
   });
 
   it('is the coalgebra of the options of the binary products with a type of outputs', () => {

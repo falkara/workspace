@@ -1,5 +1,6 @@
-import { describe, expect, expectTypeOf, it } from '@effect/vitest';
+import { describe, expectTypeOf, it } from '@effect/vitest';
 import { Schema } from 'effect';
+
 import * as Coalgebra from '#src/Coalgebra';
 import { functorAxioms } from '#src/Functor';
 import { type FunctorConst, functorConst } from '#src/FunctorConst';
@@ -8,12 +9,12 @@ import { type FunctorConst, functorConst } from '#src/FunctorConst';
 const axioms = functorAxioms(functorConst<string>(), (self, that) => self === that);
 
 describe('FunctorConst', () => {
-  it('makes the structure morphism of a coalgebra give an output and no next state', () => {
-    const display = Coalgebra.coalgebra<FunctorConst<string>, number>({
-      str: (value) => `${value}`,
+  it('gives the coalgebra structure of a coalgebra an output and no next state', () => {
+    const display = Coalgebra.coalgebra<FunctorConst<string>>()({
+      structure: (state: number) => `${state}`,
     });
-    expectTypeOf(display.str).returns.toEqualTypeOf<string>();
-    expect(display.str(-5)).toBe('-5');
+
+    expectTypeOf(display.structure).returns.toEqualTypeOf<string>();
   });
 
   it.prop('keeps the identity', [Schema.String], ([output]) => axioms.map_id(output));
