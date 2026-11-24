@@ -11,9 +11,9 @@ Decisions shift from every number to the few choices that state the intent. Ever
 Nothing shows the idea better than a fluid type scale. Three choices go in and out comes either a whole scale or a precise no for anything past the standards.
 
 ```ts
-import { Effect, Rational } from 'effect';
 import * as Fluid from '@falkara/presentation/Fluid';
 import * as Typography from '@falkara/presentation/Typography';
+import { Effect, Rational } from 'effect';
 
 // Intent: how sharply headings rise on narrow and wide screens, and how large body text gets.
 const intent = {
