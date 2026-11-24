@@ -42,7 +42,7 @@ The chromaticity of tristimulus values that sum to 0 is `none`, as a quotient by
 
 @[expose] public section
 
-namespace Falkara.Presentation.Colorimetry
+namespace Falkara.Presentation
 
 /-! ### Type -/
 
@@ -99,4 +99,4 @@ attribute [cite "17-23-053" cie2020internationalLightingVocabulary] chromaticity
 
 attribute [export_typescript] Chromaticity Chromaticity.z chromaticityOf chromaticityOf_scale
 
-end Falkara.Presentation.Colorimetry
+end Falkara.Presentation

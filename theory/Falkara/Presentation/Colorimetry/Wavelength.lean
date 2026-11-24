@@ -33,7 +33,7 @@ give.
 
 @[expose] public section
 
-namespace Falkara.Presentation.Colorimetry
+namespace Falkara.Presentation
 
 /-! ### Type -/
 
@@ -51,4 +51,4 @@ def wavelengths : List Wavelength :=
 
 attribute [cite "Abstract" cie2019tristimulusValues] wavelengths
 
-end Falkara.Presentation.Colorimetry
+end Falkara.Presentation

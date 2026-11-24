@@ -5,9 +5,9 @@ Authors: Filip Falcon
 -/
 module
 
-public import Falkara.Simulation.BinaryProductFunctor
-public import Falkara.Simulation.Coyoneda
-public import Falkara.Simulation.FunctorComp
+public import Falkara.Simulation.Functor
+public import Falkara.Simulation.Functor.BinaryProductFunctor
+public import Falkara.Simulation.Functor.Coyoneda
 public import Mathlib.CategoryTheory.Endofunctor.Algebra
 import Falkara.ExportTypeScript
 meta import Falkara.ExportTypeScript -- shake: keep

@@ -23,8 +23,8 @@ another module that an interface names as a type, and imports nothing from Effec
 declarations name no module of Effect. A module with functors ends with a contract that takes an
 instance of its class of functors for every functor, a function of the type parameters of the
 functor and of an instance of every functor among them. A module whose bundled structure applies a
-functor of another module imports nothing from that module, as the fields of the structure reduce
-the functor away.
+functor of another module to a structure that the theory labels extends the label at the functor
+and imports both as types from their module.
 -/
 
 /--
@@ -189,7 +189,7 @@ readonly type: (setting: Setting) => this['Target'];
 /** A gear, a functor that a clockwork moves its states by. */
 export interface Gear<in out Motion extends HKT.TypeLambda> extends HKT.TypeClass<Motion> {
 /** The action of a functor on morphisms. */
-readonly map: <X, Y>(a: (x: X) => Y) => (value: HKT.Kind<Motion, never, never, never, X>) => HKT.Kind<Motion, never, never, never, Y>;
+readonly map: <X, Y>(f: (x: X) => Y) => (value: HKT.Kind<Motion, never, never, never, X>) => HKT.Kind<Motion, never, never, never, Y>;
 }
 
 /** Creates a `Gear` from its field `map`. */
@@ -232,11 +232,10 @@ type _Implemented<Implementation extends Contract = typeof Module> = Implementat
 
 /--
 info: // Written by the generator of the theory from `GeneratorTest.Fixture.Bell`, so every change by hand is lost when the generator runs.
+import type { Clockwork, ChimesFunctor } from '#src/Fixture/Clock.theory';
+
 /** A bell that rings a chime and moves to its next state. */
-export interface Bell<out B, in out V> {
-/** structure morphism of the coalgebra */
-readonly str: (v: V) => readonly [B, V];
-}
+export interface Bell<out B, in out V> extends Clockwork<ChimesFunctor<B>, V> {}
 
 /** Creates a `Bell` from its field `str`. */
 export const bell = <B, V>(fields: Bell<B, V>) => fields;

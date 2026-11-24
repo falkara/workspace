@@ -23,7 +23,8 @@ The program takes the directory of the theory of the package, such as `Presentat
 declarations of every module of the theory, such as
 `Falkara/Presentation/Colorimetry/Tristimulus.lean`, into the file of the path that the module
 `Path` gives in the directory of the source, such as `Colorimetry/Tristimulus.theory.ts`, named
-without the namespace of the module, such as `Falkara.Presentation.Colorimetry`. A file imports
+without the namespace of the package, such as `Falkara.Presentation`, as the folders of the theory
+order its files and its namespace orders its names, as Mathlib keeps them apart. A file imports
 from Effect the modules its declarations name, `Brand`, `Schema`, and every module whose function a
 value calls, such as `Rational.fromBigInt`, as values and every other module as a type, and from
 the files of the other modules of the theory the declarations it names, as values where a schema
@@ -149,14 +150,17 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
       let path := pathOf theory checkModule
       s!"import \{ {", ".intercalate (names.map fun condition ↦
         camelCaseOf (wordsOf packageNamespace condition))} } from '#src/{path}.check';\n"
-  -- A bundled structure names the types of its fields as TypeScript reads them, so a declaration
-  -- that its value names and its fields reduce away, such as the functor of a stream coalgebra, is
-  -- named nowhere in the file.
+  -- A bundled structure that extends the label of its structure names the label and the functors of
+  -- its value, and any other bundled structure names the types of its fields as TypeScript reads
+  -- them, so a declaration that its value names and its fields reduce away is named nowhere.
   let bundledConstants ← kinds.flatMapM fun
     | (name, .bundled) => do
       parametersOf (← Lean.getConstInfo name) fun _ _ value? ↦ do
         let some value := value? | return []
-        bundledFieldsOf value fun _ fields ↦
+        bundledFieldsOf value fun parameters fields ↦ do
+          if (← (extendedOf? packageNamespace name value parameters).run' []).isSome then
+            if let some label ← labelOf? name value.getAppFn.constName then
+              return label :: value.getUsedConstants.toList
           return fields.flatMap fun (_, fieldType) ↦ fieldType.getUsedConstants.toList
     | _ => return []
   -- An interface names the types of its fields, and a type and a refinement the types of their
@@ -210,9 +214,11 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
         module leaves a function of the contract out or gives the function another type. */\n" ++
       "type _Implemented<Implementation extends Contract = typeof Module> = Implementation;\n"
   -- The header stands right above the first section, and a blank line parts every section from the
-  -- next.
-  let sections := [importLine, String.join (checkLines ++ theoryLines ++ contractImport),
-    s!"{body}{contract}"].filter (!·.isEmpty)
+  -- next. The imports of the package take the order of their paths, as oxfmt sorts them, so that
+  -- the header stays above the import it opens with.
+  let packageLines := (checkLines ++ theoryLines ++ contractImport).mergeSort fun first second ↦
+    (first.splitOn " from ").getLast! ≤ (second.splitOn " from ").getLast!
+  let sections := [importLine, String.join packageLines, s!"{body}{contract}"].filter (!·.isEmpty)
   return s!"{header}{"\n".intercalate sections}"
 
 end Generator
@@ -233,18 +239,17 @@ def main (arguments : List String) : IO Unit := do
       else none
   let environment ← Lean.importModules (modules.map ({ module := · })).toArray {}
   for module in modules do
-    let packageNamespace := module.getPrefix
     let path := System.FilePath.mk directory / Generator.pathOf theory module
     let declarations ← Generator.runIn environment (Generator.markedDeclarationsOf module false)
     if !declarations.isEmpty then
       if let some parent := path.parent then IO.FS.createDirAll parent
-      let text ← Generator.runIn environment (Generator.fileOf theory packageNamespace module)
+      let text ← Generator.runIn environment (Generator.fileOf theory theory module)
       IO.FS.writeFile (path.addExtension "theory.ts") text
       if ← (path.addExtension "ts").pathExists then
         let reexports ← Generator.runIn environment
-          (declarations.flatMapM (Generator.reexportsOf packageNamespace))
+          (declarations.flatMapM (Generator.reexportsOf theory))
         let implementations ← Generator.runIn environment
-          (declarations.flatMapM (Generator.implementationsOf packageNamespace))
+          (declarations.flatMapM (Generator.implementationsOf theory))
         let mismatches := Generator.mismatchesOf (path.addExtension "ts").toString
           s!"#src/{Generator.pathOf theory module}.theory"
           (← IO.FS.readFile (path.addExtension "ts")) reexports implementations
@@ -253,5 +258,5 @@ def main (arguments : List String) : IO Unit := do
     let theorems ← Generator.runIn environment (Generator.markedDeclarationsOf module true)
     if !theorems.isEmpty then
       let text ← Generator.runIn environment
-        (Generator.testFileOf theory module packageNamespace theorems)
+        (Generator.testFileOf theory module theory theorems)
       IO.FS.writeFile (path.addExtension "theory.test.ts") text

@@ -45,7 +45,7 @@ every index, which takes gigabytes of memory over the rows of a data table.
 
 @[expose] public section
 
-namespace Falkara.Presentation.Colorimetry
+namespace Falkara.Presentation
 
 /-! ### Type -/
 
@@ -547,4 +547,4 @@ def observer : List ColorMatchingCoefficients := [
 
 attribute [cite "CIE_xyz_1931_2deg.csv" cie2019colorMatchingFunctions] observer
 
-end Falkara.Presentation.Colorimetry
+end Falkara.Presentation

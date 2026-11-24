@@ -6,19 +6,21 @@ Authors: Filip Falcon
 module
 
 public import Falkara.References -- shake: keep
-public import Mathlib.CategoryTheory.Functor.Basic
+public import Mathlib.CategoryTheory.Functor.Const
 import Falkara.ExportTypeScript
 meta import Falkara.ExportTypeScript -- shake: keep
 
 /-!
 # Functor
 
-The module defines the functors as Mathlib [mathlibCommunity2020leanMathematicalLibrary] states
-them.
+The module defines the functors, the composition of functors, and the curried functor of constant
+functors as Mathlib [mathlibCommunity2020leanMathematicalLibrary] states them.
 
 ## Main Definitions
 
 - `Functor`: a functor between categories.
+- `Functor.comp`: the composite of two functors.
+- `Functor.const`: the curried functor of constant functors.
 
 ## Implementation Notes
 
@@ -26,8 +28,18 @@ The action of a functor on objects takes the type parameter `Endofunctor` in Typ
 functor on types is an endofunctor, which Jacobs [jacobs2017introductionCoalgebra] writes as a
 mapping of sets to sets, and the type lambda stands for the functor as it does in a coalgebra.
 
-The axioms take documentation comments of the theory in TypeScript, as each takes a predicate that
-tells whether an instance keeps it, whereas the comments of Mathlib state the axioms of a functor.
+The functor and its axioms take documentation comments of the theory in TypeScript. The functor is
+an endofunctor there, whose action on objects is its type parameter, whereas the comment of Mathlib
+states a functor between categories with both actions, and each axiom takes a predicate that tells
+whether an instance keeps it, whereas the comments of Mathlib state the axioms of a functor.
+
+The two functors of a composite take the type parameters `FirstEndofunctor` and `SecondEndofunctor`
+in TypeScript, as Mathlib states that the composite applies the functor `F` first and then the
+functor `G`. The type that the curried functor of constant functors maps takes the type parameter
+`Constant`, as Jacobs calls the functor that maps every set to the same set a constant functor. The
+composite and the curried functor take documentation comments of the theory in TypeScript, which
+writes them as types, whose comments open with an article and name the endofunctors and the
+constant as the type parameters do.
 -/
 
 @[expose] public section
@@ -41,13 +53,37 @@ abbrev Functor := @CategoryTheory.Functor
 
 attribute [cite "CategoryTheory.Functor" mathlibCommunity2020leanMathematicalLibrary] Functor
 
+/-- The composite of two functors, which applies the functor $F$ and then the functor $G$. -/
+abbrev Functor.comp := @CategoryTheory.Functor.comp
+
+attribute [cite "CategoryTheory.Functor.comp" mathlibCommunity2020leanMathematicalLibrary]
+  Functor.comp
+
+/-- The curried functor of constant functors, which maps every type $X$ to the functor
+$Y \mapsto X$. -/
+abbrev Functor.const := @CategoryTheory.Functor.const
+
+attribute [cite "CategoryTheory.Functor.const" mathlibCommunity2020leanMathematicalLibrary]
+  Functor.const
+
 /-! ### Export -/
 
 attribute [export_typescript
+  "An endofunctor, with its action on objects as its type parameter and its action on morphisms."
   (obj := "Endofunctor")
   (map_id := "map_id"
     "The predicate that tells whether the instance preserves identity morphisms.")
   (map_comp := "map_comp" "The predicate that tells whether the instance preserves composition.")]
   Functor
+
+attribute [export_typescript
+  "A composite of two endofunctors, which applies the first endofunctor and then the second \
+    endofunctor."
+  (F := "FirstEndofunctor")
+  (G := "SecondEndofunctor")] Functor.comp
+
+attribute [export_typescript
+  "A constant functor, which maps every type to the constant."
+  (X := "Constant")] Functor.const
 
 end Falkara.Simulation

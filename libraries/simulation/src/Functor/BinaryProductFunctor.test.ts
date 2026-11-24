@@ -1,9 +1,9 @@
 import { describe, expectTypeOf, it } from '@effect/vitest';
 import { Schema } from 'effect';
 
-import { type BinaryProductFunctor, binaryProductFunctor } from '#src/BinaryProductFunctor';
 import * as Coalgebra from '#src/Coalgebra';
 import { functorAxioms } from '#src/Functor';
+import { type BinaryProductFunctor, binaryProductFunctor } from '#src/Functor/BinaryProductFunctor';
 
 /** The axioms of the functor of binary products with outputs in the strings, with two pairs equal where both of their parts are. */
 const axioms = functorAxioms(

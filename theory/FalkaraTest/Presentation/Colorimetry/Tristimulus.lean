@@ -35,7 +35,7 @@ asserts the result the compiler computes and lies beyond `propext`, `Classical.c
 
 public section
 
-namespace Falkara.Presentation.Colorimetry
+namespace Falkara.Presentation
 
 /-- The tristimulus values of the color stimulus function that is 1 at every wavelength equal the
 sums of the values of the color-matching functions,
@@ -62,4 +62,4 @@ theorem whiteTristimulus_rounded :
 
 attribute [cite "Table 9.1" cie2018colorimetry] whiteTristimulus_rounded
 
-end Falkara.Presentation.Colorimetry
+end Falkara.Presentation

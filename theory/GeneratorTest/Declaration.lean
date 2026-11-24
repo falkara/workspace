@@ -246,7 +246,7 @@ readonly type: (setting: Setting) => this['Target'];
 info: /** A gear, a functor that a clockwork moves its states by. */
 export interface Gear<in out Motion extends HKT.TypeLambda> extends HKT.TypeClass<Motion> {
 /** The action of a functor on morphisms. */
-readonly map: <X, Y>(a: (x: X) => Y) => (value: HKT.Kind<Motion, never, never, never, X>) => HKT.Kind<Motion, never, never, never, Y>;
+readonly map: <X, Y>(f: (x: X) => Y) => (value: HKT.Kind<Motion, never, never, never, X>) => HKT.Kind<Motion, never, never, never, Y>;
 }
 
 /** Creates a `Gear` from its field `map`. */

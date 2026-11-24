@@ -30,45 +30,37 @@
     "#src/*": "./src/*.ts"
   },
   "exports": {
-    "./BinaryProductFunctor": {
-      "types": "./dist/BinaryProductFunctor.d.mts",
-      "default": "./dist/BinaryProductFunctor.mjs"
-    },
     "./Coalgebra": {
       "types": "./dist/Coalgebra.d.mts",
       "default": "./dist/Coalgebra.mjs"
     },
-    "./Coyoneda": {
-      "types": "./dist/Coyoneda.d.mts",
-      "default": "./dist/Coyoneda.mjs"
+    "./Coalgebra/DeterministicAutomaton": {
+      "types": "./dist/Coalgebra/DeterministicAutomaton.d.mts",
+      "default": "./dist/Coalgebra/DeterministicAutomaton.mjs"
     },
-    "./DeterministicAutomaton": {
-      "types": "./dist/DeterministicAutomaton.d.mts",
-      "default": "./dist/DeterministicAutomaton.mjs"
+    "./Coalgebra/MealyMachine": {
+      "types": "./dist/Coalgebra/MealyMachine.d.mts",
+      "default": "./dist/Coalgebra/MealyMachine.mjs"
+    },
+    "./Coalgebra/SequenceCoalgebra": {
+      "types": "./dist/Coalgebra/SequenceCoalgebra.d.mts",
+      "default": "./dist/Coalgebra/SequenceCoalgebra.mjs"
+    },
+    "./Coalgebra/StreamCoalgebra": {
+      "types": "./dist/Coalgebra/StreamCoalgebra.d.mts",
+      "default": "./dist/Coalgebra/StreamCoalgebra.mjs"
     },
     "./Functor": {
       "types": "./dist/Functor.d.mts",
       "default": "./dist/Functor.mjs"
     },
-    "./FunctorComp": {
-      "types": "./dist/FunctorComp.d.mts",
-      "default": "./dist/FunctorComp.mjs"
+    "./Functor/BinaryProductFunctor": {
+      "types": "./dist/Functor/BinaryProductFunctor.d.mts",
+      "default": "./dist/Functor/BinaryProductFunctor.mjs"
     },
-    "./FunctorConst": {
-      "types": "./dist/FunctorConst.d.mts",
-      "default": "./dist/FunctorConst.mjs"
-    },
-    "./MealyMachine": {
-      "types": "./dist/MealyMachine.d.mts",
-      "default": "./dist/MealyMachine.mjs"
-    },
-    "./SequenceCoalgebra": {
-      "types": "./dist/SequenceCoalgebra.d.mts",
-      "default": "./dist/SequenceCoalgebra.mjs"
-    },
-    "./StreamCoalgebra": {
-      "types": "./dist/StreamCoalgebra.d.mts",
-      "default": "./dist/StreamCoalgebra.mjs"
+    "./Functor/Coyoneda": {
+      "types": "./dist/Functor/Coyoneda.d.mts",
+      "default": "./dist/Functor/Coyoneda.mjs"
     }
   },
   "scripts": {

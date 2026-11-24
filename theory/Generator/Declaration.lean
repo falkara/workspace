@@ -32,7 +32,10 @@ named as the attribute `export_typescript` names it. Its constructor takes the f
 parameters in a first call and the other type parameters in a second, such as
 `coalgebra<Option.OptionTypeLambda>()({ structure })`, as TypeScript infers no type lambda from the
 fields and gives no type argument while it infers the others, as `Schema.Class` of Effect does. A
-functor on types takes
+bundled structure that applies a structure that the theory labels to functors that TypeScript names
+extends the label at their type lambdas instead of repeating its fields, such as
+`interface StreamCoalgebra<out Output, in out State> extends Coalgebra<BinaryProductFunctor<Output>,
+State> {}`, as its value states it. A functor on types takes
 an interface that extends the type lambda of Effect, with the object of the functor at the object
 of the lambda as its type, and a curried functor, a functor from types into the functors on types,
 takes the same interface with a type parameter for the type it maps, named as the attribute
@@ -310,6 +313,30 @@ def instanceTypeOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
         written (parameters.toList ++ [parameter])
     else written parameters.toList
 
+/-- Gives the interface of TypeScript that a bundled structure extends, the declaration marked
+`export_typescript` that labels its structure at the type lambdas of the functors that its value
+applies the structure to and at the type parameters of its fields, such as
+`Coalgebra<BinaryProductFunctor<Output>, State>` for a stream coalgebra, where the theory labels the
+structure and TypeScript names every functor, and none otherwise. -/
+def extendedOf? (moduleNamespace name : Lean.Name) (value : Lean.Expr)
+    (bundledParameters : List Lean.Expr) : TypeScriptM (Option String) := do
+  let .const structureName _ := value.getAppFn | return none
+  let some label ← labelOf? name structureName | return none
+  let saved ← get
+  try
+    let written ← (← typeArgumentsOf value.getAppFn value.getAppArgs.toList).mapM fun argument ↦ do
+      if isFunctorType (← Lean.Meta.inferType argument) then typeLambdaOf moduleNamespace argument
+      else typeOf moduleNamespace argument
+    let names ← bundledParameters.mapM fun parameter ↦
+      return (← parameter.fvarId!.getUserName).toString
+    return some s!"{pascalCaseOf (wordsOf moduleNamespace label)}<\
+      {", ".intercalate (written ++ names)}>"
+  catch _ =>
+    -- A functor that TypeScript names nowhere, such as the identity functor, leaves the fields of
+    -- the structure unfolded, and the imports that the attempt recorded are dropped.
+    set saved
+    return none
+
 /-- Gives the declaration of TypeScript that a declaration of the theory marked `export_typescript`
 takes, named without the namespace of its module, or fails with the reason where the declaration
 has none. -/
@@ -395,9 +422,18 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
         let functors := (allParameters.zip isFunctors).filterMap fun (parameter, isFunctor) ↦
           if isFunctor then some parameter else none
         let constructor := s!"(fields: {typeName}{allArguments}) => fields;\n"
+        -- A bundled structure whose structure the theory labels extends the label at its functors,
+        -- as its value states it, and keeps the variance of its fields, which TypeScript checks
+        -- against the label.
+        let comment ← commentOf name
+        let interface := match ← extendedOf? moduleNamespace name value bundledParameters with
+          | some extended =>
+            s!"{comment}export interface {typeName}{allGenerics} extends {extended} \{}\n\n"
+          | none =>
+            s!"{comment}export interface {typeName}{allGenerics} \
+              \{\n{String.join fieldLines}}\n\n"
         if functors.isEmpty then
-          return s!"{← commentOf name}export interface {typeName}{allGenerics} \
-              \{\n{String.join fieldLines}}\n\n" ++
+          return interface ++
             s!"{← derivedCommentOf name s!"Creates {articledOf typeName} from its \
                 {fieldsOf fieldNames}."}export const {valueName} = {declared}{constructor}"
         let functorNames ← functors.mapM fun parameter ↦
@@ -410,8 +446,7 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
         let quoted := ", ".intercalate (functorNames.map (s!"`{·}`"))
         let arguments := if functorNames.length == 1 then "the type argument" else
           "the type arguments"
-        return s!"{← commentOf name}export interface {typeName}{allGenerics} \
-            \{\n{String.join fieldLines}}\n\n" ++
+        return interface ++
           s!"{← derivedCommentOf name s!"Creates {articledOf typeName} from its \
               {fieldsOf fieldNames}, with its {quoted} as {arguments} of the first call."}\
             export const {valueName} = <{", ".intercalate functorGenerics}>() => \

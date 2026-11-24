@@ -96,7 +96,7 @@ $y = 0.329\,02$.
 
 @[expose] public section
 
-namespace Falkara.Presentation.Colorimetry
+namespace Falkara.Presentation
 
 /-! ### Type -/
 
@@ -217,4 +217,4 @@ attribute [export_typescript]
   Tristimulus Tristimulus.add Tristimulus.scale whiteTristimulus
   Tristimulus.add_comm Tristimulus.add_assoc Tristimulus.scale_add
 
-end Falkara.Presentation.Colorimetry
+end Falkara.Presentation

@@ -5,8 +5,8 @@ Authors: Filip Falcon
 -/
 module
 
-public import Falkara.Simulation.BinaryProductFunctor
-public import Falkara.Simulation.FunctorComp
+public import Falkara.Simulation.Functor
+public import Falkara.Simulation.Functor.BinaryProductFunctor
 public import Mathlib.CategoryTheory.Endofunctor.Algebra
 import Mathlib.Tactic.TypeStar
 import Falkara.ExportTypeScript

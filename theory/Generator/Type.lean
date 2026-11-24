@@ -458,9 +458,13 @@ partial def signatureOf (packageNamespace : Lean.Name) (parameters : List String
     if name.isAnonymous then
       Lean.throwError m!"`{type}` has no type in TypeScript, as TypeScript names every parameter \
         and the theory names none."
-    -- A parameter that the source leaves unnamed takes the name Lean gives it, such as `a`.
+    -- A parameter that the source leaves unnamed takes `f` where it is a morphism, as Mathlib names
+    -- a morphism, and the name Lean gives it otherwise, such as `a`.
+    let parameterName :=
+      if name.hasMacroScopes && (Lean.annotation? `morphism domain).isSome then `f
+      else name.eraseMacroScopes
     signatureOf packageNamespace
-      (parameters ++ [s!"{name.eraseMacroScopes}: {← typeOf packageNamespace domain}"]) body
+      (parameters ++ [s!"{parameterName}: {← typeOf packageNamespace domain}"]) body
   | .forallE name .. =>
     Lean.throwError
       m!"`{type}` has no type in TypeScript, as its parameter `{name}` is not explicit."
@@ -634,6 +638,73 @@ def kindOf (name : Lean.Name) : Lean.MetaM DeclarationKind := do
       | _ =>
         if isFunctorType rest then return .functor
         return if (curriedTargetOf? rest).isSome then .curriedFunctor else .value
+
+/-- Gives the declaration marked `export_typescript` that labels a structure, other than a given
+declaration, where the theory marks one, such as `Coalgebra` for
+`CategoryTheory.Endofunctor.Coalgebra`. -/
+def labelOf? (name structureName : Lean.Name) : Lean.MetaM (Option Lean.Name) := do
+  let environment ← Lean.getEnv
+  return ((ExportTypeScript.exportsOf environment).map (·.declaration)).find? fun declaration ↦
+    declaration != name && ExportTypeScript.labels environment declaration structureName
+
+/-- Gives the arguments of an application at the type parameters of its function, the binders over
+a type or over a functor on types, leaving out every category and its instance, such as `F` and `G`
+of `Functor.comp (Type u) _ (Type u) _ (Type u) _ F G`. -/
+partial def typeArgumentsOf (function : Lean.Expr) (arguments : List Lean.Expr) :
+    Lean.MetaM (List Lean.Expr) := do
+  loop (← Lean.Meta.inferType function) arguments
+where
+  /-- Takes the binders of the type of the function and the arguments one at a time. -/
+  loop (type : Lean.Expr) : List Lean.Expr → Lean.MetaM (List Lean.Expr)
+    | [] => return []
+    | argument :: rest => do
+      let .forallE _ domain body _ ← Lean.Meta.whnf type | return []
+      let next := body.instantiate1 argument
+      -- A category is a binder over a type that the next binder, an instance of
+      -- `CategoryTheory.Category`, takes.
+      let isCategory := domain.isSort && match next with
+        | .forallE _ categoryClass _ .instImplicit =>
+          categoryClass.isAppOfArity `CategoryTheory.Category 1 && categoryClass.appArg! == argument
+        | _ => false
+      let kept ← loop next rest
+      return if !isCategory && (domain.isSort || isFunctorType domain) then argument :: kept
+        else kept
+
+/-- Gives the type lambda of Effect that a functor on types of the theory takes in TypeScript: a
+functor that is a parameter by its name, an object of a curried functor marked `export_typescript`,
+such as `BinaryProductFunctor<Output>` for `binaryProductFunctor.obj Output`, an application of a
+functor marked `export_typescript`, such as `FunctorComp<F, G>` for `Functor.comp F G`, and the
+functor of the options, `ofTypeFunctor Option`, as `Option.OptionTypeLambda` of Effect, or fails
+with the reason where the functor has none. -/
+partial def typeLambdaOf (packageNamespace : Lean.Name) (functor : Lean.Expr) :
+    TypeScriptM String := do
+  let environment ← Lean.getEnv
+  -- The generator imports no Mathlib, so the names of Mathlib are written as names alone.
+  match functor.getAppFn, functor.getAppArgs with
+  | .fvar _, #[] => typeOf packageNamespace functor
+  | .const `CategoryTheory.Functor.obj _, #[_, _, _, _, curried, object] =>
+    let .const name _ := curried.getAppFn
+      | Lean.throwError m!"`{functor}` has no type lambda in TypeScript."
+    unless ExportTypeScript.isExported environment name do
+      Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never marks it \
+        `export_typescript`."
+    -- An object of the opposite of the types is a type that `Opposite.op` takes into the opposite.
+    let object := if object.isAppOfArity `Opposite.op 2 then object.appArg! else object
+    return s!"{pascalCaseOf (wordsOf packageNamespace name)}<{← typeOf packageNamespace object}>"
+  | .const `CategoryTheory.ofTypeFunctor _, arguments =>
+    unless arguments[0]? matches some (Lean.Expr.const ``Option _) do
+      Lean.throwError m!"`{functor}` has no type lambda in TypeScript."
+    effectNameOf "Option" "OptionTypeLambda" .type
+  | .const name _, arguments =>
+    unless ExportTypeScript.isExported environment name do
+      Lean.throwError m!"`{functor}` has no type lambda in TypeScript, as the theory never marks \
+        `{name}` `export_typescript`."
+    let written ← (← typeArgumentsOf functor.getAppFn arguments.toList).mapM fun argument ↦ do
+      if isFunctorType (← Lean.Meta.inferType argument) then typeLambdaOf packageNamespace argument
+      else typeOf packageNamespace argument
+    let typeArguments := if written.isEmpty then "" else s!"<{", ".intercalate written}>"
+    return s!"{pascalCaseOf (wordsOf packageNamespace name)}{typeArguments}"
+  | _, _ => Lean.throwError m!"`{functor}` has no type lambda in TypeScript."
 
 /-- Gives the schema of Effect that a type of data of the theory takes, with every structure named
 without the namespace of its package, or fails with the reason where the type has none. -/

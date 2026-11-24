@@ -57,7 +57,7 @@ reaches the row without comparing the wavelength with every row before it.
 
 @[expose] public section
 
-namespace Falkara.Presentation.Colorimetry
+namespace Falkara.Presentation
 
 /-! ### Type -/
 
@@ -634,4 +634,4 @@ def relativeSpectralPowerAt (wavelength : Wavelength) : ℚ :=
 
 attribute [cite "S_D65(lambda)" cie2019standardIlluminantD65] relativeSpectralPowerAt
 
-end Falkara.Presentation.Colorimetry
+end Falkara.Presentation

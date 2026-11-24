@@ -41,7 +41,7 @@ asserts the result the compiler computes and lies beyond `propext`, `Classical.c
 
 public section
 
-namespace Falkara.Presentation.Colorimetry
+namespace Falkara.Presentation
 
 /-- The sum of the wavelengths and the sum of the values of each color-matching function equal the
 validation values of the data table, $\sum \lambda = 280\,245\,\mathrm{nm}$,
@@ -83,4 +83,4 @@ theorem wavelengths_zip_observer :
 
 attribute [cite "lambda" cie2019colorMatchingFunctions] wavelengths_zip_observer
 
-end Falkara.Presentation.Colorimetry
+end Falkara.Presentation

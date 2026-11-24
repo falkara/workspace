@@ -44,7 +44,7 @@ asserts the result the compiler computes and lies beyond `propext`, `Classical.c
 
 public section
 
-namespace Falkara.Presentation.Colorimetry
+namespace Falkara.Presentation
 
 /-- The sum of the wavelengths and the sum of the values of the relative spectral distribution equal
 the validation values of the data table, $\sum \lambda = 300\,015$ and
@@ -97,4 +97,4 @@ theorem relativeSpectralPowerAt_row (wavelength : Wavelength) :
 
 attribute [cite "S_D65(lambda)" cie2019standardIlluminantD65] relativeSpectralPowerAt_row
 
-end Falkara.Presentation.Colorimetry
+end Falkara.Presentation

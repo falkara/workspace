@@ -29,7 +29,7 @@ an axiom of its own, which asserts the result the compiler computes and lies bey
 
 public section
 
-namespace Falkara.Presentation.Colorimetry
+namespace Falkara.Presentation
 
 /-- The coordinate $z$ of the chromaticity of tristimulus values is the quotient of $Z$ and the sum
 of the values, $z = Z / (X + Y + Z)$. -/
@@ -56,4 +56,4 @@ theorem chromaticityOf_whiteTristimulus_rounded :
 
 attribute [cite "Table 9.1" cie2018colorimetry] chromaticityOf_whiteTristimulus_rounded
 
-end Falkara.Presentation.Colorimetry
+end Falkara.Presentation

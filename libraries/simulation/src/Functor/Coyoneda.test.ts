@@ -2,8 +2,8 @@ import { describe, expectTypeOf, it } from '@effect/vitest';
 import { Schema } from 'effect';
 
 import * as Coalgebra from '#src/Coalgebra';
-import { type Coyoneda, coyoneda } from '#src/Coyoneda';
 import { functorAxioms } from '#src/Functor';
+import { type Coyoneda, coyoneda } from '#src/Functor/Coyoneda';
 
 /** The axioms of the functor of the functions from the strings, with two functions equal where they agree at an input. */
 const axiomsAt = (input: string) =>

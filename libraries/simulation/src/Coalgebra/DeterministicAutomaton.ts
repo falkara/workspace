@@ -1,4 +1,4 @@
 export {
   type DeterministicAutomaton,
   deterministicAutomaton,
-} from '#src/DeterministicAutomaton.theory';
+} from '#src/Coalgebra/DeterministicAutomaton.theory';

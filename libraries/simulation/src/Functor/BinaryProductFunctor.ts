@@ -1,7 +1,7 @@
-import type * as Theory from '#src/BinaryProductFunctor.theory';
 import { functor, type Functor } from '#src/Functor';
+import type * as Theory from '#src/Functor/BinaryProductFunctor.theory';
 
-export type { BinaryProductFunctor } from '#src/BinaryProductFunctor.theory';
+export type { BinaryProductFunctor } from '#src/Functor/BinaryProductFunctor.theory';
 
 /**
  * Gives the `Functor` instance of a `BinaryProductFunctor`.

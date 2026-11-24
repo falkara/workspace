@@ -8,7 +8,8 @@ public import GeneratorTest.Fixture.Clock
 
 The module defines a bundled structure that the checks of the generator write from the functor of
 another module of the theory, a bell, which is a coalgebra of the curried functor of the chimes of
-the module `Clock` at a type of chimes, and whose fields name the functor nowhere once they reduce.
+the module `Clock` at a type of chimes, and which extends the clockwork of that module at the
+functor.
 
 ## Main Definitions
 

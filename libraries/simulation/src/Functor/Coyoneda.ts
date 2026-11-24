@@ -1,9 +1,9 @@
 import { Function } from 'effect';
 
-import type * as Theory from '#src/Coyoneda.theory';
 import { functor, type Functor } from '#src/Functor';
+import type * as Theory from '#src/Functor/Coyoneda.theory';
 
-export type { Coyoneda } from '#src/Coyoneda.theory';
+export type { Coyoneda } from '#src/Functor/Coyoneda.theory';
 
 /**
  * Gives the `Functor` instance of a `Coyoneda`.
