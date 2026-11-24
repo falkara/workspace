@@ -11,6 +11,8 @@ export default defineConfig({
       js: `/* @ts-self-types="./${fileName.replace(/^.*\//, '').replace(/\.mjs$/, '.d.mts')}" */`,
     }),
   },
+  // The public paths that the examples import, resolved by the paths of tsconfig.json to the source of the package.
+  resolve: { tsconfigPaths: true },
   test: {
     // Type tests checked by TypeScript beside the tests Vitest runs.
     typecheck: { enabled: true, include: ['**/*.test.ts'] },
