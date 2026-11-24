@@ -1,11 +1,11 @@
 name: Theory
 on:
-  # Only a change to the theory runs it, as a run takes minutes and the theory changes rarely.
+  # Only a change to the theory or to the workflow runs it, as a run takes minutes and the theory changes rarely.
   pull_request:
-    paths: [theory/**]
+    paths: [theory/**, .github/workflows/theory.yaml]
   push:
     branches: [main]
-    paths: [theory/**]
+    paths: [theory/**, .github/workflows/theory.yaml]
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   # A newer push makes the checks of an older one moot.
@@ -38,9 +38,9 @@ jobs:
           lake build --wfail GeneratorTest
           lake exe runLinter Generator
       - name: Lint the checks
-        # The checks have no root module, so the step names every module of their libraries, which the lint driver never lints.
+        # The checks have no root module, so the step names every module of their libraries, which the lint driver never lints. Each module is linted in a process of its own, as the environments that one process imports add up past the memory of the runner.
         working-directory: theory
-        run: find FalkaraTest GeneratorTest -name '*.lean' | sed 's/\.lean$//; s|/|.|g' | sort | xargs lake exe runLinter
+        run: find FalkaraTest GeneratorTest -name '*.lean' | sed 's/\.lean$//; s|/|.|g' | sort | xargs -n 1 lake exe runLinter
       - name: Check that the root modules import every module
         # The checks declare the same names in several modules, so their library has no root module, as the tests of Mathlib have none.
         working-directory: theory
