@@ -97,11 +97,11 @@ describe('Functor.Comp', () => {
       Coyoneda.Coyoneda<string>
     >;
 
-    const counter = Coalgebra.make<Mealy, number>({
+    const system = Coalgebra.make<Mealy, number>({
       structure: (state) => (input) => [`${state}`, state + input.length],
     });
 
-    expectTypeOf(counter.structure).returns.toEqualTypeOf<
+    expectTypeOf(system.structure).returns.toEqualTypeOf<
       (input: string) => readonly [string, number]
     >();
   });
@@ -121,11 +121,11 @@ describe('Functor.Comp', () => {
 
 describe('Functor.Const', () => {
   it('gives the coalgebra structure of a coalgebra an output and no next state', () => {
-    const display = Coalgebra.make<Functor.Const<string>, number>({
+    const system = Coalgebra.make<Functor.Const<string>, number>({
       structure: (state) => `${state}`,
     });
 
-    expectTypeOf(display.structure).returns.toEqualTypeOf<string>();
+    expectTypeOf(system.structure).returns.toEqualTypeOf<string>();
   });
 
   it.prop('keeps the identity', [Schema.String], ([output]) => constAxioms.map_id(output));

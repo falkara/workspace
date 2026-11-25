@@ -3,15 +3,28 @@ import { describe, expect, it } from '@effect/vitest';
 import { Effect, FileSystem, Path } from 'effect';
 
 describe('README', () => {
-  it.effect('shows the code that README.ts type-checks, block after block', () =>
+  it.effect('shows every block of code that a module of the folder README type-checks', () =>
     Effect.gen(function* () {
       const fileSystem = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
       const page = yield* fileSystem.readFileString(
         yield* path.fromFileUrl(new URL('../README.md', import.meta.url)),
       );
-      const code = yield* fileSystem.readFileString(
-        yield* path.fromFileUrl(new URL('README.ts', import.meta.url)),
+      const codes = yield* Effect.forEach(
+        [
+          'Spotlight',
+          'InPlace',
+          'SequenceCoalgebra',
+          'MealyMachine',
+          'DeterministicAutomaton',
+          'Coalgebra',
+          'Failing',
+        ],
+        (module) =>
+          Effect.flatMap(
+            path.fromFileUrl(new URL(`README/${module}.ts`, import.meta.url)),
+            (file) => fileSystem.readFileString(file),
+          ),
       );
 
       // A block inside a list takes the indentation of the list, which the code leaves out.
@@ -20,8 +33,13 @@ describe('README', () => {
           block.replaceAll(new RegExp(`^${indentation}`, 'gm'), '').trimEnd(),
       );
 
-      // The code opens with a comment of its own, which the page leaves out.
-      expect(code.slice(code.indexOf('\n\n') + 2)).toBe(`${blocks.join('\n\n')}\n`);
+      // A module ends with the names that the page defines in the blocks before its own, which the page leaves out.
+      expect(
+        codes.map(
+          (code) =>
+            code.split('\n// The names that the page defines in the blocks before this one.\n')[0],
+        ),
+      ).toStrictEqual(blocks.map((block) => `${block}\n`));
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 });

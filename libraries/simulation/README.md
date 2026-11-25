@@ -50,11 +50,11 @@ const generation = (board: Board): Board => {
 };
 
 // The stream coalgebra of the Game of Life, which gives from every board the board and its next generation.
-const life = StreamCoalgebra.make({ structure: (board: Board) => [board, generation(board)] });
+const system = StreamCoalgebra.make({ structure: (board: Board) => [board, generation(board)] });
 
 const blinker = HashSet.make('0,1', '1,1', '2,1');
 
-await StreamCoalgebra.behavior(life, blinker).pipe(
+await StreamCoalgebra.behavior(system, blinker).pipe(
   Stream.take(3),
   Stream.runCollect,
   Effect.runPromise,
@@ -68,7 +68,7 @@ await StreamCoalgebra.behavior(life, blinker).pipe(
 
 The stream never ends, so the code that reads the stream decides how far to go, here three generations.
 
-Every example on this page runs as a test in [`examples`](examples), one file for each module, beside more examples, such as a glider that moves across the board, and the code of the page type-checks as [`README.ts`](examples/README.ts), which a test keeps the same as the page. The rule of the Game of Life lives there in [`GameOfLife.ts`](examples/GameOfLife.ts).
+Every example on this page runs as a test in [`examples`](examples), one file for each module, beside more examples, such as a glider that moves across the board, and every block of code on the page type-checks as a module of its own in [`examples/README`](examples/README), which a test keeps the same as the page. The rule of the Game of Life lives there in [`GameOfLife.ts`](examples/GameOfLife.ts).
 
 ## Behavior
 
@@ -89,12 +89,12 @@ await StreamCoalgebra.behavior({ structure: (board) => [board, generation(board)
   ```ts
   import * as SequenceCoalgebra from '@falkara/simulation/Coalgebra/SequenceCoalgebra';
 
-  const game = SequenceCoalgebra.make({
+  const system = SequenceCoalgebra.make({
     structure: (board: Board) =>
       HashSet.isEmpty(board) ? Option.none() : Option.some([board, generation(board)]),
   });
 
-  await SequenceCoalgebra.behavior(game, HashSet.make('0,0', '1,0')).pipe(
+  await SequenceCoalgebra.behavior(system, HashSet.make('0,0', '1,0')).pipe(
     Stream.runCollect,
     Effect.runPromise,
   );
@@ -106,7 +106,7 @@ await StreamCoalgebra.behavior({ structure: (board) => [board, generation(board)
   ```ts
   import * as MealyMachine from '@falkara/simulation/Coalgebra/MealyMachine';
 
-  const play = MealyMachine.make({
+  const system = MealyMachine.make({
     structure: (board: Board) => (cell: string) => {
       const next = generation(HashSet.add(board, cell));
       return [HashSet.size(next), next];
@@ -114,7 +114,7 @@ await StreamCoalgebra.behavior({ structure: (board) => [board, generation(board)
   });
 
   await Stream.make('1,1', '5,5').pipe(
-    MealyMachine.behavior(play, HashSet.make('0,1', '2,1')),
+    MealyMachine.behavior(system, HashSet.make('0,1', '2,1')),
     Stream.runCollect,
     Effect.runPromise,
   );
@@ -126,7 +126,7 @@ await StreamCoalgebra.behavior({ structure: (board) => [board, generation(board)
   ```ts
   import * as DeterministicAutomaton from '@falkara/simulation/Coalgebra/DeterministicAutomaton';
 
-  const census = DeterministicAutomaton.make({
+  const system = DeterministicAutomaton.make({
     structure: (board: Board) => [
       HashSet.size(board),
       (cell: string) => generation(HashSet.add(board, cell)),
@@ -134,14 +134,14 @@ await StreamCoalgebra.behavior({ structure: (board) => [board, generation(board)
   });
 
   await Stream.make('1,1').pipe(
-    DeterministicAutomaton.behavior(census, HashSet.make('0,1', '2,1')),
+    DeterministicAutomaton.behavior(system, HashSet.make('0,1', '2,1')),
     Stream.runCollect,
     Effect.runPromise,
   );
   // [2, 3]: 2 before the move and 3 after it.
   ```
 
-A Mealy machine and a deterministic automaton read their inputs from any `Stream` of Effect and carry its errors and requirements on to their outputs, so inputs may come from a socket, a timer, or a user. The stream of inputs pipes into the behavior, as above, or comes as its last argument, as `MealyMachine.behavior(play, board, moves)`.
+A Mealy machine and a deterministic automaton read their inputs from any `Stream` of Effect and carry its errors and requirements on to their outputs, so inputs may come from a socket, a timer, or a user. The stream of inputs pipes into the behavior, as above, or comes as its last argument, as `MealyMachine.behavior(system, board, moves)`.
 
 ## Coalgebra
 
@@ -150,11 +150,11 @@ A kind of system that the library does not name is a coalgebra all the same. A [
 ```ts
 import * as Coalgebra from '@falkara/simulation/Coalgebra';
 
-const survival = Coalgebra.make<Option.OptionTypeLambda, Board>({
+const system = Coalgebra.make<Option.OptionTypeLambda, Board>({
   structure: (board) => (HashSet.isEmpty(board) ? Option.none() : Option.some(generation(board))),
 });
 
-survival.structure(blinker);
+system.structure(blinker);
 // Option.some(HashSet('1,0', '1,1', '1,2')), the column of three that follows the row.
 ```
 
@@ -167,12 +167,12 @@ interface Failing<Failure> extends HKT.TypeLambda {
   readonly type: Result.Result<this['Target'], Failure>;
 }
 
-const crowding = Coalgebra.make<Failing<'Overcrowded'>, Board>({
+const system = Coalgebra.make<Failing<'Overcrowded'>, Board>({
   structure: (board) =>
     HashSet.size(board) > 100 ? Result.fail('Overcrowded') : Result.succeed(generation(board)),
 });
 
-crowding.structure(blinker);
+system.structure(blinker);
 // Result.succeed(HashSet('1,0', '1,1', '1,2')), as three cells are far from a crowd.
 ```
 

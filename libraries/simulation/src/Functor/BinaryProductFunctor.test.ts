@@ -13,11 +13,11 @@ const axioms = Functor.axioms(
 
 describe('BinaryProductFunctor', () => {
   it('gives the coalgebra structure of a coalgebra an output and the next state', () => {
-    const countdown = Coalgebra.make<BinaryProductFunctor.BinaryProductFunctor<string>, number>({
+    const system = Coalgebra.make<BinaryProductFunctor.BinaryProductFunctor<string>, number>({
       structure: (state) => [`${state}`, state - 5],
     });
 
-    expectTypeOf(countdown.structure).returns.toEqualTypeOf<readonly [string, number]>();
+    expectTypeOf(system.structure).returns.toEqualTypeOf<readonly [string, number]>();
   });
 
   it.prop('keeps the identity', [Schema.String, Schema.Finite], ([output, state]) =>

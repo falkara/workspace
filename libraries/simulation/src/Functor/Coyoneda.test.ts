@@ -11,11 +11,11 @@ const axiomsAt = (input: string) =>
 
 describe('Coyoneda', () => {
   it('gives the coalgebra structure of a coalgebra the next state upon every input', () => {
-    const counter = Coalgebra.make<Coyoneda.Coyoneda<string>, number>({
+    const system = Coalgebra.make<Coyoneda.Coyoneda<string>, number>({
       structure: (state) => (input) => state + input.length,
     });
 
-    expectTypeOf(counter.structure).returns.toEqualTypeOf<(input: string) => number>();
+    expectTypeOf(system.structure).returns.toEqualTypeOf<(input: string) => number>();
   });
 
   it.prop('keeps the identity', [Schema.Finite, Schema.String], ([offset, input]) =>

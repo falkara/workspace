@@ -5,11 +5,11 @@ import * as DeterministicAutomaton from '#src/Coalgebra/DeterministicAutomaton';
 
 describe('DeterministicAutomaton', () => {
   it('infers the inputs, the outputs, and the state space from the coalgebra structure', () => {
-    const parity = DeterministicAutomaton.make({
+    const system = DeterministicAutomaton.make({
       structure: (even: boolean) => [even, (bit: 0 | 1) => (bit === 1 ? !even : even)],
     });
 
-    expectTypeOf(parity).toEqualTypeOf<
+    expectTypeOf(system).toEqualTypeOf<
       DeterministicAutomaton.DeterministicAutomaton<0 | 1, boolean, boolean>
     >();
   });
@@ -20,12 +20,12 @@ describe('DeterministicAutomaton', () => {
     ([flips]) =>
       Effect.gen(function* () {
         const bits = flips.map((flip) => (flip ? 1 : 0));
-        const parity = DeterministicAutomaton.make({
+        const system = DeterministicAutomaton.make({
           structure: (even: boolean) => [even, (bit: 0 | 1) => (bit === 1 ? !even : even)],
         });
 
         const outputs = yield* Stream.runCollect(
-          DeterministicAutomaton.behavior(parity, true, Stream.fromIterable(bits)),
+          DeterministicAutomaton.behavior(system, true, Stream.fromIterable(bits)),
         );
 
         expect(outputs).toStrictEqual(
@@ -40,29 +40,29 @@ describe('DeterministicAutomaton', () => {
     ([flips]) =>
       Effect.gen(function* () {
         const bits = Stream.fromIterable(flips.map((flip) => (flip ? 1 : 0)));
-        const parity = DeterministicAutomaton.make({
+        const system = DeterministicAutomaton.make({
           structure: (even: boolean) => [even, (bit: 0 | 1) => (bit === 1 ? !even : even)],
         });
 
-        const piped = yield* Stream.runCollect(
-          bits.pipe(DeterministicAutomaton.behavior(parity, true)),
+        const outputs = yield* Stream.runCollect(
+          bits.pipe(DeterministicAutomaton.behavior(system, true)),
         );
 
-        expect(piped).toStrictEqual(
-          yield* Stream.runCollect(DeterministicAutomaton.behavior(parity, true, bits)),
+        expect(outputs).toStrictEqual(
+          yield* Stream.runCollect(DeterministicAutomaton.behavior(system, true, bits)),
         );
       }),
   );
 
   it('passes on the failure and the requirements of the stream of inputs', () => {
-    const parity = DeterministicAutomaton.make({
+    const system = DeterministicAutomaton.make({
       structure: (even: boolean) => [even, (bit: 0 | 1) => (bit === 1 ? !even : even)],
     });
 
     const parities = (bits: Stream.Stream<0 | 1, 'Disconnected', 'Sensor'>) =>
-      DeterministicAutomaton.behavior(parity, true, bits);
+      DeterministicAutomaton.behavior(system, true, bits);
     const pipedParities = (bits: Stream.Stream<0 | 1, 'Disconnected', 'Sensor'>) =>
-      bits.pipe(DeterministicAutomaton.behavior(parity, true));
+      bits.pipe(DeterministicAutomaton.behavior(system, true));
 
     expectTypeOf(parities).returns.toEqualTypeOf<
       Stream.Stream<boolean, 'Disconnected', 'Sensor'>

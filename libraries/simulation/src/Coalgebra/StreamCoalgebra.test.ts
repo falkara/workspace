@@ -5,11 +5,11 @@ import * as StreamCoalgebra from '#src/Coalgebra/StreamCoalgebra';
 
 describe('StreamCoalgebra', () => {
   it('infers the outputs and the state space from the coalgebra structure', () => {
-    const countdown = StreamCoalgebra.make({
+    const system = StreamCoalgebra.make({
       structure: (state: number) => [`${state}`, state - 5],
     });
 
-    expectTypeOf(countdown).toEqualTypeOf<StreamCoalgebra.StreamCoalgebra<string, number>>();
+    expectTypeOf(system).toEqualTypeOf<StreamCoalgebra.StreamCoalgebra<string, number>>();
   });
 
   it.effect.prop(
@@ -17,12 +17,12 @@ describe('StreamCoalgebra', () => {
     [Schema.Int],
     ([start]) =>
       Effect.gen(function* () {
-        const counter = StreamCoalgebra.make({
+        const system = StreamCoalgebra.make({
           structure: (state: number) => [`${state}`, state + 1],
         });
 
         const outputs = yield* Stream.runCollect(
-          Stream.take(StreamCoalgebra.behavior(counter, start), 3),
+          Stream.take(StreamCoalgebra.behavior(system, start), 3),
         );
 
         expect(outputs).toStrictEqual([`${start}`, `${start + 1}`, `${start + 2}`]);

@@ -5,12 +5,12 @@ import * as SequenceCoalgebra from '#src/Coalgebra/SequenceCoalgebra';
 
 describe('SequenceCoalgebra', () => {
   it('infers the outputs and the state space from the coalgebra structure', () => {
-    const countdown = SequenceCoalgebra.make({
+    const system = SequenceCoalgebra.make({
       structure: (state: number) =>
         state > 0 ? Option.some([String(state), state - 1]) : Option.none(),
     });
 
-    expectTypeOf(countdown).toEqualTypeOf<SequenceCoalgebra.SequenceCoalgebra<string, number>>();
+    expectTypeOf(system).toEqualTypeOf<SequenceCoalgebra.SequenceCoalgebra<string, number>>();
   });
 
   it.effect.prop(
@@ -19,12 +19,12 @@ describe('SequenceCoalgebra', () => {
     ([seed]) =>
       Effect.gen(function* () {
         const start = Math.abs(seed) % 10;
-        const countdown = SequenceCoalgebra.make({
+        const system = SequenceCoalgebra.make({
           structure: (state: number) =>
             state > 0 ? Option.some([String(state), state - 1]) : Option.none(),
         });
 
-        const outputs = yield* Stream.runCollect(SequenceCoalgebra.behavior(countdown, start));
+        const outputs = yield* Stream.runCollect(SequenceCoalgebra.behavior(system, start));
 
         expect(outputs).toStrictEqual(
           Array.from({ length: start }, (_, index) => String(start - index)),

@@ -5,12 +5,12 @@ import * as Coalgebra from '#src/Coalgebra';
 
 describe('Coalgebra', () => {
   it('takes the coalgebra structure from the state space into the form of the endofunctor', () => {
-    const countdown = Coalgebra.make<Option.OptionTypeLambda, number>({
+    const system = Coalgebra.make<Option.OptionTypeLambda, number>({
       structure: (state) => (state > 0 ? Option.some(state - 1) : Option.none()),
     });
 
-    expectTypeOf(countdown.structure).parameter(0).toEqualTypeOf<number>();
-    expectTypeOf(countdown.structure).returns.toEqualTypeOf<Option.Option<number>>();
+    expectTypeOf(system.structure).parameter(0).toEqualTypeOf<number>();
+    expectTypeOf(system.structure).returns.toEqualTypeOf<Option.Option<number>>();
   });
 
   it('refuses a coalgebra structure that gives another form than the endofunctor', () => {

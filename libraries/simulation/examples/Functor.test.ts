@@ -42,14 +42,14 @@ describe('Functor', () => {
   );
 
   it('counts the births of every generation in a coalgebra of a new endofunctor', () => {
-    const life = Coalgebra.make<BirthsTypeLambda, Board>({
+    const system = Coalgebra.make<BirthsTypeLambda, Board>({
       structure: (board) => {
         const next = generation(board);
         return { births: HashSet.size(HashSet.difference(next, board)), next };
       },
     });
 
-    assertEquals(life.structure(HashSet.make('0,1', '1,1', '2,1')), {
+    assertEquals(system.structure(HashSet.make('0,1', '1,1', '2,1')), {
       births: 2,
       next: HashSet.make('1,0', '1,1', '1,2'),
     });
