@@ -8,13 +8,6 @@
 | P-STR-2 | Every heading is an uncountable noun that names the idea its section sets out.                                                              | Input; Transition; Determinism; Installation in a how-to guide                                                        | Inputs; A Transition; Deterministic Steps; Install the package                                                                                       |
 | P-STR-3 | Every procedure of a tutorial or a how-to guide is a numbered list of steps, each step an item of the list.                                 | 1. Install the package. 2. Run the tests.                                                                             | a heading for each step; steps written as one paragraph                                                                                              |
 
-## Prose
-
-| ID      | Rule                                                                                                                                   | Fits                                                                                                                    | Misses                                                           |
-| ------- | -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| P-PRO-1 | Every paragraph of a section opens with a word that opens no other paragraph of the section, the introduction of the section included. | Beneath every application… / Inside every machine… in one section; EgoNitida… in one section and EgoNitida… in the next | Beneath every application… / Beneath every state… in one section |
-| P-PRO-2 | Every paragraph of a page opens with a word other than an article.                                                                     | Nothing from the past survives among the relations…                                                                     | The state keeps nothing from the past unless…                    |
-
 ## Illustration
 
 | ID      | Rule                                                                                                                                         | Fits                                                                                                                                                            | Misses                                                                                                                 |
@@ -26,13 +19,13 @@
 
 ## Exemplification
 
-| ID      | Rule                                                                            | Fits                                                                     | Misses                                                         |
-| ------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------- |
-| P-EXA-1 | Every definition a page states has an example right after it.                   | the definition of a machine, then one transition of an elevator          | the definition of a machine with no example after it           |
-| P-EXA-2 | Every example comes from one world that every page of the documentation shares. | the board of floors in a lobby on one page, the elevator car on the next | a board of floors on one page and a billiard table on the next |
+| ID      | Rule                                                                            | Fits                                                                               | Misses                                                                    |
+| ------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| P-EXA-1 | Every definition a page states has an example right after it.                   | the definition of a machine, then one transition of an elevator                    | the definition of a machine with no example after it                      |
+| P-EXA-2 | Every example comes from one world that every page of the documentation shares. | a glider of the Game of Life on one page, the grid of the Game of Life on the next | a glider of the Game of Life on one page and a billiard table on the next |
 
 ## Linking
 
-| ID      | Rule                                                                                                            | Fits                                                          | Misses                                                                             |
-| ------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| P-LIN-1 | Every term a page takes in the meaning a field defines links to the definition of the term at every appearance. | successor state, linked to its definition at every appearance | successor state, linked at the first appearance alone; successor state, left plain |
+| ID      | Rule                                                                                                                                 | Fits                                                                               | Misses                                                                                                                                      |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| P-LIN-1 | Every term a page takes in the meaning a field defines links to the definition of the term at its first appearance in every section. | successor state, linked to its definition at its first appearance in every section | successor state, linked at every appearance; successor state, linked at the first appearance of the page alone; successor state, left plain |
