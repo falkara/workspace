@@ -19,17 +19,6 @@ The module defines the coalgebras of an endofunctor as Mathlib
 ## Main Definitions
 
 - `Coalgebra`: a coalgebra of an endofunctor.
-
-## Implementation Notes
-
-The functor takes the type parameter `Endofunctor` in TypeScript, the carrier the type parameter
-`State`, and the structure morphism the field `structure`, as Jacobs
-[jacobs2017introductionCoalgebra] defines a coalgebra of an endofunctor, calls its carrier the state
-space, and calls its structure morphism the coalgebra structure, which in an automaton holds a
-transition function beside an observation function, so that `transition` would name a part alone.
-The coalgebra and its coalgebra structure take documentation comments in TypeScript in the terms
-of Jacobs, which cite the definition of Jacobs beside Mathlib, as the names in TypeScript take the
-terms of Jacobs whereas the comments of the theory take those of Mathlib, which it cites.
 -/
 
 @[expose] public section
