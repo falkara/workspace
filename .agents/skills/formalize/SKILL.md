@@ -27,7 +27,7 @@ Read the reference with the reader in the directory `scripts` of this skill, whi
 
 ## Writing
 
-Whenever the request is not an audit, decide the scope by the first step of Auditing, write a declaration for every item in scope by every rule of `references/lean.md`, and cite the item of the reference that each declaration states by the attribute `cite`. Then check the module by the steps of Auditing, fix every finding, and repeat the check while it still finds something. Leave each uncertainty as it is, and name it in the reply.
+Whenever the request is not an audit, decide the scope by the first step of Auditing, write the module and a declaration for every item in scope by every rule of `references/lean.md`, and cite the item of the reference that each declaration states by the attribute `cite`. Then check the module by the steps of Auditing, fix every finding, and repeat the check while it still finds something. Leave each uncertainty as it is, and name it in the reply.
 
 Declare every work the theory cites in the module `References` after `assets/Work.lean`, leaving out every field the work has nothing for, such as the files of a work that is no data set.
 
