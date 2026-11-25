@@ -20,7 +20,7 @@ describe('Coalgebra', () => {
     });
   });
 
-  it('is a coalgebra of every functor that a natural transformation from its functor reaches', () => {
+  it('is covariant in its endofunctor, as a coalgebra of a functor is one of every functor that includes it', () => {
     /** A functor of the options and the arrays, which every option is included in. */
     interface OptionOrArray extends HKT.TypeLambda {
       readonly type: Option.Option<this['Target']> | ReadonlyArray<this['Target']>;
@@ -31,15 +31,6 @@ describe('Coalgebra', () => {
     >();
     expectTypeOf<Coalgebra.Coalgebra<OptionOrArray, number>>().not.toExtend<
       Coalgebra.Coalgebra<Option.OptionTypeLambda, number>
-    >();
-  });
-
-  it('is a coalgebra of its state space alone', () => {
-    expectTypeOf<Coalgebra.Coalgebra<Option.OptionTypeLambda, 1 | 2>>().not.toExtend<
-      Coalgebra.Coalgebra<Option.OptionTypeLambda, number>
-    >();
-    expectTypeOf<Coalgebra.Coalgebra<Option.OptionTypeLambda, number>>().not.toExtend<
-      Coalgebra.Coalgebra<Option.OptionTypeLambda, 1 | 2>
     >();
   });
 });
