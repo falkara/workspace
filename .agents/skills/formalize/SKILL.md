@@ -27,7 +27,7 @@ Read the reference with the reader in the directory `scripts` of this skill, whi
 
 ## Writing
 
-Whenever the request is not an audit, decide the scope by the first step of Auditing, write a declaration for every item in scope, and cite the item of the reference that each declaration states by the attribute `cite`. Write the comment of every module, a module of the tests included, after `assets/ModuleComment.lean`, leaving out every section the module has nothing for. Then check the module by the steps of Auditing, fix every finding, and repeat the check while it still finds something. Leave each uncertainty as it is, and name it in the reply.
+Whenever the request is not an audit, decide the scope by the first step of Auditing, write a declaration for every item in scope by every rule of `references/lean.md`, and cite the item of the reference that each declaration states by the attribute `cite`. Then check the module by the steps of Auditing, fix every finding, and repeat the check while it still finds something. Leave each uncertainty as it is, and name it in the reply.
 
 Declare every work the theory cites in the module `References` after `assets/Work.lean`, leaving out every field the work has nothing for, such as the files of a work that is no data set.
 
@@ -41,7 +41,7 @@ When the request is to audit, check, or compare a module, decide whether the mod
 
 1. Decide the scope from the cited sections. Keep every item in the scope however minor the item seems, as a narrowed scope hides what the module misses. Leave an item out only when a record of a decision or an instruction of the repository excludes the item, or when Mathlib or the standard library of Lean already states the item, as the theory builds on Mathlib in full and takes every such item from there, citing it by its full name as an item of `mathlibCommunity2020leanMathematicalLibrary` wherever a declaration of the module names or builds on it. Count every item outside the cited sections that an item in scope depends on as a scope gap.
 2. Map the items in scope to the declarations and the declarations to the items. An item without a declaration is missing, and a declaration without an item is extra unless a record of a decision or an instruction of the repository requires the declaration.
-3. Compare every item with its declaration: the statement at the same strength, the name as the term of the reference, the documentation comment in the notation of the reference, and the shape and the citation as the instructions of the repository require. Count a difference as a documented deviation only when a record of a decision or an instruction of the repository covers the whole difference, and as a finding otherwise.
+3. Compare every item with its declaration: the statement at the same strength, and the shape and the citation as `references/lean.md` and the instructions of the repository require. Count a difference as a documented deviation only when a record of a decision or an instruction of the repository covers the whole difference, and as a finding otherwise. Then check the module as a whole against every rule of `references/lean.md`, and count every break of a rule as a finding.
 4. Try to refute every finding against its page, as a wrong finding leads to a wrong change of the module. Drop every finding the page refutes, and keep as uncertain every finding the page leaves open.
 
 Reply with the report alone, in the form below. Order the findings by severity, and give every finding the smallest change that fixes the module. Cite every item by its number and its printed page, as the printed page holds in every copy of the edition. Leave out every table that has no rows.
@@ -66,6 +66,12 @@ Auditing <module> yielded <number> findings, <number> scope gaps, and <number> u
 | Item   | Page   | Declaration   | Reference              | Module                        | Proposal   |
 | ------ | ------ | ------------- | ---------------------- | ----------------------------- | ---------- |
 | <item> | <page> | <declaration> | <what the item states> | <what the declaration states> | <proposal> |
+
+## Rule findings
+
+| Place   | Rule | Current   | Proposal   |
+| ------- | ---- | --------- | ---------- |
+| <place> | <id> | <current> | <proposal> |
 
 ## Scope gaps
 
