@@ -30,7 +30,7 @@ structure Lamp where
 /-- A lantern, a lamp that shows a light. -/
 abbrev Lantern := Lamp
 
-attribute [export_typescript
+attribute [export_typescript "A lantern, a lamp that shows a light."
   (Light := "Shade")
   (light := "beam" "The beam that the lamp casts.")] Lantern
 

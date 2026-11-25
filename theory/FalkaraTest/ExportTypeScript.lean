@@ -8,10 +8,10 @@ import Falkara.ExportTypeScript
 
 The module defines the checks of the attribute `export_typescript`: the attribute marks the
 declaration that takes the attribute and leaves every other declaration unmarked, gives the
-declaration its comment, names the binder and the field that a clause names and gives the field
-its comment, leaves every other binder and field unnamed, gives the fields of a structure through
-the declaration that labels it, and refuses a name that is neither a binder nor a field of the
-declaration.
+declaration the comment that the attribute requires, names the binder and the field that a clause
+names and gives the field its comment, leaves every other binder and field unnamed, gives the
+fields of a structure through the declaration that labels it, and refuses a name that is neither a
+binder nor a field of the declaration.
 
 ## Main Definitions
 
@@ -29,7 +29,7 @@ open Falkara
 /-- The declaration that the checks mark. -/
 def markedDeclaration : Nat := 0
 
-attribute [export_typescript] markedDeclaration
+attribute [export_typescript "The declaration that the checks mark."] markedDeclaration
 
 /-- The declaration that the checks leave unmarked. -/
 def unmarkedDeclaration : Nat := 0
@@ -54,14 +54,18 @@ attribute [export_typescript "A shelf of books."
 /-- The declaration that labels the shelf and names its field of labels. -/
 abbrev Cabinet := Shelf
 
-attribute [export_typescript (Label := "Tag")] Cabinet
+attribute [export_typescript
+  "The declaration that labels the shelf and names its field of labels."
+  (Label := "Tag")] Cabinet
 
 /-- The structure whose binder of the type of its slots the checks name. -/
 structure Rack (S : Type) where
   /-- The slot that the rack holds. -/
   slot : S
 
-attribute [export_typescript (S := "Slot")] Rack
+attribute [export_typescript
+  "The structure whose binder of the type of its slots the checks name."
+  (S := "Slot")] Rack
 
 /--
 info: (some "A shelf of books.", some "Book", some "The type of the books on the shelf.", some "Tag", none, some "Slot")
@@ -79,4 +83,5 @@ info: (some "A shelf of books.", some "Book", some "The type of the books on the
 
 /-- error: `Item` is neither a binder nor a field of `unmarkedDeclaration`. -/
 #guard_msgs in
-attribute [export_typescript (Item := "Mark")] unmarkedDeclaration
+attribute [export_typescript "The declaration that the checks leave unmarked."
+  (Item := "Mark")] unmarkedDeclaration

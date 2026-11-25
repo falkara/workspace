@@ -258,9 +258,34 @@ theorem MealyMachine.behavior_parallel {FirstInput FirstOutput SecondInput Secon
 
 /-! ### Export -/
 
-attribute [export_typescript (m := "Monad")] MealyMachine
+attribute [export_typescript
+  "A Mealy machine, which gives from every state upon every input an output and the next state in a
+  monad."
+  (m := "Monad")] MealyMachine
 
-attribute [export_typescript] MealyMachine.behavior MealyMachine.steps MealyMachine.mapOutput
-  MealyMachine.mapInput MealyMachine.series MealyMachine.parallel
+attribute [export_typescript
+  "The behavior of a Mealy machine, which gives from every state upon a stream of inputs the stream
+  of the outputs that the machine gives upon the inputs one after another."] MealyMachine.behavior
+
+attribute [export_typescript
+  "The steps of a Mealy machine, which gives from every state upon a stream of inputs the stream of
+  the steps that the machine takes upon the inputs one after another, each an output with the next
+  state, the behavior of the machine whose output is the whole step."] MealyMachine.steps
+
+attribute [export_typescript
+  "The machine that maps every output of a Mealy machine by a function, upon the state space of
+  the machine."] MealyMachine.mapOutput
+
+attribute [export_typescript
+  "The machine that maps every input by a function before a Mealy machine takes it, upon the state
+  space of the machine."] MealyMachine.mapInput
+
+attribute [export_typescript
+  "The machine that feeds every output of a Mealy machine into another as its input, upon the pairs
+  of the states of the two machines."] MealyMachine.series
+
+attribute [export_typescript
+  "The machine that runs two Mealy machines side by side, each upon its part of every input, upon
+  the pairs of the states of the two machines."] MealyMachine.parallel
 
 end Falkara.Simulation

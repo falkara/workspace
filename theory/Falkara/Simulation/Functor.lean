@@ -82,6 +82,7 @@ attribute [cite "CategoryTheory.Functor.const" mathlibCommunity2020leanMathemati
 attribute [export_typescript
   "An endofunctor, with its action on objects as its type parameter and its action on morphisms."
   (obj := "Endofunctor")
+  (map := "map" "The action of a functor on morphisms.")
   (map_id := "map_id"
     "The predicate that tells whether the instance preserves identity morphisms.")
   (map_comp := "map_comp" "The predicate that tells whether the instance preserves composition.")]

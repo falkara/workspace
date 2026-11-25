@@ -50,7 +50,7 @@ without the mark `export_typescript` take none.
 - `unmarkedFunction`: the function that the checks leave unmarked.
 -/
 
-@[expose] public section
+public section
 
 namespace Geometry
 
@@ -61,43 +61,48 @@ structure Point where
   /-- The second coordinate of the point. -/
   y : Rat
 
-attribute [export_typescript] Point
+attribute [export_typescript "The structure that the checks write."
+  (x := "x" "The first coordinate of the point.")
+  (y := "y" "The second coordinate of the point.")] Point
 
 /-- The function that the checks write, a function of a structure. -/
 def Point.sum (point : Point) : Rat :=
   point.x + point.y
 
-attribute [export_typescript] Point.sum
+attribute [export_typescript
+  "The function that the checks write, a function of a structure."] Point.sum
 
 /-- The function that the checks write. -/
 def pointOf (coordinate : Rat) : Option Point :=
   some ⟨coordinate, coordinate⟩
 
-attribute [export_typescript] pointOf
+attribute [export_typescript "The function that the checks write."] pointOf
 
 /-- The rational value that the checks write. -/
 def origin : Rat :=
   0
 
-attribute [export_typescript] origin
+attribute [export_typescript "The rational value that the checks write."] origin
 
 /-- The value of a structure that the checks write. -/
 def corner : Point :=
   ⟨1 / 2, -3⟩
 
-attribute [export_typescript] corner
+attribute [export_typescript "The value of a structure that the checks write."] corner
 
 /-- The value that the checks refuse, as an option has no value in TypeScript. -/
 def missingCoordinate : Option Rat :=
   none
 
-attribute [export_typescript] missingCoordinate
+attribute [export_typescript
+  "The value that the checks refuse, as an option has no value in TypeScript."] missingCoordinate
 
 /-- The value that the checks refuse, as its structure lies in another module. -/
 def unitCoordinate : Coordinate :=
   ⟨1⟩
 
-attribute [export_typescript] unitCoordinate
+attribute [export_typescript
+  "The value that the checks refuse, as its structure lies in another module."] unitCoordinate
 
 /-- The function that the checks leave unmarked. -/
 def unmarkedFunction (coordinate : Rat) : Rat :=

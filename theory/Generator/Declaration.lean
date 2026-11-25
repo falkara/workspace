@@ -585,16 +585,23 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
             Lean.throwError m!"`{name}` has no type in TypeScript, as a field of `{structureName}` \
               takes no argument of the structure as its type."
           let fieldLines ← (fieldTypes.zip fieldNames).mapM fun ((field, fieldType), fieldName) ↦ do
-            let comment ← match (ExportTypeScript.clauseOf? environment declaration field).bind
-                (·.comment) with
-              | some comment => documentationOf comment.text comment.item.toList
-              | none => commentOf (structureName ++ field)
+            let some comment :=
+                (ExportTypeScript.clauseOf? environment declaration field).bind (·.comment)
+              | Lean.throwError m!"The field `{field}` of `{structureName}` has no documentation \
+                  comment in TypeScript, as no clause of the attribute `export_typescript` on \
+                  `{declaration}` gives it one."
+            let comment ← documentationOf comment.text
+              ((Citation.citationOf? environment (structureName ++ field)).toList ++
+                comment.item.toList)
             let parameter := (inner.getAppArgs.toList.zip parameterNames).findSome? fun
               (argument, parameterName) ↦ if argument == fieldType then parameterName else none
             return s!"{comment}readonly {fieldName}: {parameter.getD ""};\n"
-          let interfaceComment ← match clause.comment with
-            | some comment => documentationOf comment.text comment.item.toList
-            | none => commentOf structureName
+          let some interfaceComment := clause.comment
+            | Lean.throwError m!"`{structureName}` has no documentation comment in TypeScript, as \
+                its clause of the attribute `export_typescript` on `{declaration}` gives none."
+          let interfaceComment ← documentationOf interfaceComment.text
+            ((Citation.citationOf? environment structureName).toList ++
+              interfaceComment.item.toList)
           let arguments ← inner.getAppArgs.toList.mapM (typeOf moduleNamespace)
           return s!"{interfaceComment}export interface {clause.name}\
               <{", ".intercalate (parameterNames.filterMap (·.map (s!"out {·}")))}> \

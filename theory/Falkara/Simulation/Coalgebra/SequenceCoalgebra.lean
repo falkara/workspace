@@ -170,9 +170,22 @@ theorem SequenceCoalgebra.behavior_mapOutput {Output MappedOutput : Type u}
 
 /-! ### Export -/
 
-attribute [export_typescript (m := "Monad")] SequenceCoalgebra
+attribute [export_typescript
+  "A sequence coalgebra, which gives from every state either nothing or an output and the next
+  state in a monad."
+  (m := "Monad")] SequenceCoalgebra
 
-attribute [export_typescript] SequenceCoalgebra.behavior SequenceCoalgebra.steps
-  SequenceCoalgebra.mapOutput
+attribute [export_typescript
+  "The behavior of a sequence coalgebra, which gives from every state the sequence of the outputs
+  that the coalgebra gives from the state on until it gives nothing."] SequenceCoalgebra.behavior
+
+attribute [export_typescript
+  "The steps of a sequence coalgebra, which gives from every state the sequence of the steps that
+  the coalgebra takes from the state on until it gives nothing, each an output with the next state,
+  the behavior of the coalgebra whose output is the whole step."] SequenceCoalgebra.steps
+
+attribute [export_typescript
+  "The coalgebra that maps every output of a sequence coalgebra by a function, upon the state space
+  of the coalgebra."] SequenceCoalgebra.mapOutput
 
 end Falkara.Simulation

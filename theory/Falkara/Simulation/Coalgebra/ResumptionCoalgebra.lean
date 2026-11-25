@@ -110,9 +110,24 @@ theorem ResumptionCoalgebra.behavior_eq_map_steps {Output Done : Type u}
 
 /-! ### Export -/
 
-attribute [export_typescript (m := "Monad")] ResumptionCoalgebra
+attribute [export_typescript
+  "A resumption coalgebra, which gives from every state either a result or an output and the next
+  state in a monad."
+  (m := "Monad")] ResumptionCoalgebra
 
-attribute [export_typescript] ResumptionCoalgebra.toSequenceCoalgebra ResumptionCoalgebra.behavior
+attribute [export_typescript
+  "The sequence coalgebra that a resumption coalgebra runs as without its result, which gives
+  nothing where the resumption coalgebra gives a result, upon the state space of the coalgebra."]
+  ResumptionCoalgebra.toSequenceCoalgebra
+
+attribute [export_typescript
+  "The behavior of a resumption coalgebra, which gives from every state the sequence of the outputs
+  that the coalgebra gives from the state on until it gives a result."] ResumptionCoalgebra.behavior
+
+attribute [export_typescript
+  "The steps of a resumption coalgebra, which gives from every state the sequence of the steps that
+  the coalgebra takes from the state on until it gives a result, each an output with the next
+  state."]
   ResumptionCoalgebra.steps
 
 end Falkara.Simulation

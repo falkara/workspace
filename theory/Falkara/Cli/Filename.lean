@@ -224,7 +224,28 @@ end Filename
 
 /-! ### Export -/
 
-attribute [export_typescript]
-  isPortableFilename hasLeadingHyphenMinus hasTrailingPeriod isReservedName isFilename Filename
+attribute [export_typescript
+  "Tells whether a name is a portable filename, 1 to 255 characters of the portable filename
+  character set."] isPortableFilename
+
+attribute [export_typescript
+  "Tells whether a name starts with a hyphen-minus, which a program takes as an option when the
+  name is passed as an argument on the command line."] hasLeadingHyphenMinus
+
+attribute [export_typescript
+  "Tells whether a name ends with a period, which Windows drops from the name of a file or a
+  directory."] hasTrailingPeriod
+
+attribute [export_typescript
+  "Tells whether a name is one that Windows reserves for a device, alone or followed by an
+  extension, in either case."] isReservedName
+
+attribute [export_typescript
+  "Tells whether a name is a filename that names a file or a directory in the same way on every
+  system, a portable filename that starts with no hyphen-minus, ends with no period, and is no name
+  that Windows reserves."] isFilename
+
+attribute [export_typescript
+  "A filename that names a file or a directory in the same way on every system."] Filename
 
 end Falkara.Cli

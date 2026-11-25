@@ -193,9 +193,28 @@ theorem DeterministicAutomaton.behavior_toMealyMachine {Input Output : Type u}
 
 /-! ### Export -/
 
-attribute [export_typescript (m := "Monad")] DeterministicAutomaton
+attribute [export_typescript
+  "A deterministic automaton, which gives from every state an output and the next state upon every
+  input in a monad."
+  (m := "Monad")] DeterministicAutomaton
 
-attribute [export_typescript] DeterministicAutomaton.behavior DeterministicAutomaton.mapOutput
-  DeterministicAutomaton.mapInput DeterministicAutomaton.toMealyMachine
+attribute [export_typescript
+  "The behavior of a deterministic automaton, which gives from every state upon a stream of inputs
+  the stream of the outputs of the state and of every state that the inputs lead to one after
+  another."] DeterministicAutomaton.behavior
+
+attribute [export_typescript
+  "The automaton that maps every output of a deterministic automaton by a function, upon the state
+  space of the automaton."] DeterministicAutomaton.mapOutput
+
+attribute [export_typescript
+  "The automaton that maps every input by a function before a deterministic automaton takes it,
+  upon the state space of the automaton."] DeterministicAutomaton.mapInput
+
+attribute [export_typescript
+  "The Mealy machine that a deterministic automaton runs as, which gives upon every input the
+  output of the state and the state that the input leads to, upon the state space of the
+  automaton."]
+  DeterministicAutomaton.toMealyMachine
 
 end Falkara.Simulation

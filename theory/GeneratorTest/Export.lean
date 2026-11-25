@@ -28,7 +28,7 @@ implementation whose comment differs, one with no comment, and one that is missi
 - `origin`: the value that the checks re-export.
 -/
 
-@[expose] public section
+public section
 
 namespace Geometry
 
@@ -37,19 +37,20 @@ structure Point where
   /-- The first coordinate of the point. -/
   x : Rat
 
-attribute [export_typescript] Point
+attribute [export_typescript "The structure that the checks re-export."
+  (x := "x" "The first coordinate of the point.")] Point
 
 /-- The function that the checks implement. -/
 def pointOf (coordinate : Rat) : Point :=
   ⟨coordinate⟩
 
-attribute [export_typescript] pointOf
+attribute [export_typescript "The function that the checks implement."] pointOf
 
 /-- The value that the checks re-export. -/
 def origin : Point :=
   ⟨0⟩
 
-attribute [export_typescript] origin
+attribute [export_typescript "The value that the checks re-export."] origin
 
 end Geometry
 

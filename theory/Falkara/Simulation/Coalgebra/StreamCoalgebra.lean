@@ -157,9 +157,26 @@ theorem StreamCoalgebra.behavior_toMealyMachine {Output : Type u}
 
 /-! ### Export -/
 
-attribute [export_typescript (m := "Monad")] StreamCoalgebra
+attribute [export_typescript
+  "A stream coalgebra, which gives from every state an output and the next state in a monad."
+  (m := "Monad")] StreamCoalgebra
 
-attribute [export_typescript] StreamCoalgebra.behavior StreamCoalgebra.steps
-  StreamCoalgebra.mapOutput StreamCoalgebra.toMealyMachine
+attribute [export_typescript
+  "The behavior of a stream coalgebra, which gives from every state the stream of the outputs that
+  the coalgebra gives from the state on."] StreamCoalgebra.behavior
+
+attribute [export_typescript
+  "The steps of a stream coalgebra, which gives from every state the stream of the steps that the
+  coalgebra takes from the state on, each an output with the next state, the behavior of the
+  coalgebra whose output is the whole step."] StreamCoalgebra.steps
+
+attribute [export_typescript
+  "The coalgebra that maps every output of a stream coalgebra by a function, upon the state space
+  of the coalgebra."] StreamCoalgebra.mapOutput
+
+attribute [export_typescript
+  "The Mealy machine that a stream coalgebra runs as, which takes inputs that carry nothing and
+  gives upon every one of them the step of the coalgebra, upon the state space of the coalgebra."]
+  StreamCoalgebra.toMealyMachine
 
 end Falkara.Simulation

@@ -102,7 +102,22 @@ attribute [cite "17-23-053" cie2020internationalLightingVocabulary]
 
 /-! ### Export -/
 
-attribute [export_typescript]
-  Chromaticity Chromaticity.z Chromaticity.ofTristimulus Chromaticity.ofTristimulus_scale
+attribute [export_typescript
+  "A property of a color stimulus that its chromaticity coordinates $x$ and $y$ define."
+  (x := "x" "The quotient of the tristimulus value $X$ and the sum $X + Y + Z$.")
+  (y := "y" "The quotient of the tristimulus value $Y$ and the sum $X + Y + Z$.")] Chromaticity
+
+attribute [export_typescript
+  "Gives the chromaticity coordinate $z$ of the chromaticity, $z = 1 - x - y$."] Chromaticity.z
+
+attribute [export_typescript
+  "Gives `none` where $X + Y + Z = 0$ and otherwise the chromaticity of the tristimulus values,
+  $x = X / (X + Y + Z)$ and $y = Y / (X + Y + Z)$."] Chromaticity.ofTristimulus
+
+attribute [export_typescript
+  "The chromaticity of a factor $c \\neq 0$ of units of a color stimulus is the chromaticity of the
+  stimulus, as the chromaticity coordinates are quotients of the tristimulus values and their sum,
+  $c\\,X / (c\\,X + c\\,Y + c\\,Z) = X / (X + Y + Z)$ and likewise for $y$."]
+  Chromaticity.ofTristimulus_scale
 
 end Falkara.Presentation

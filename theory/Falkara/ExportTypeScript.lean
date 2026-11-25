@@ -17,9 +17,9 @@ import Lean.Structure
 
 The module defines the attribute `export_typescript`, which marks a declaration of the theory that
 the generator writes as TypeScript. A declaration takes the attribute as
-`attribute [export_typescript] <name>`, and every declaration without the attribute stays in the
-theory alone. The attribute may give as well the documentation comment that the declaration takes
-in TypeScript in place of its documentation comment in the theory, with the item of the work that
+`attribute [export_typescript "<comment>"] <name>`, and every declaration without the attribute
+stays in the theory alone. The attribute gives the documentation comment that the declaration takes
+in TypeScript, apart from its documentation comment in the theory, with the item of the work that
 its terms come from, and a clause for every binder or field of the declaration, or of the structure
 that the declaration labels, with the name and the documentation comment that it takes in
 TypeScript, such as
@@ -57,14 +57,12 @@ the carrier of a coalgebra, `Endofunctor` for its functor, or `structure` for it
 than the letter or the abbreviation that the mathematics gives it, such as `V`, `F`, or `str`, as
 the packages lie a layer above Effect, whose own modules name a type lambda `F`.
 
-A field of a structure of Mathlib takes in TypeScript a documentation comment that the theory
-gives, as the comments of the packages follow the rules of their copyediting, which the comments
-of Mathlib, such as `structure morphism of the coalgebra`, do not. A declaration takes one where
-TypeScript writes it as another kind of thing than the theory states it, such as a functor that
-TypeScript writes as a type, whose comment opens with an article that a type takes. A comment
-cites the work its terms come from where that work is another than the one the declaration cites,
-such as Jacobs for the state space of a coalgebra that Mathlib states, so that every term of the
-comment comes from a work that the comment cites.
+Every declaration and every field that TypeScript writes takes its comment from the attribute,
+which requires the comment of the declaration, and never from the documentation comment of the
+theory, as the theory speaks of mathematics and TypeScript to the developers who use Effect, even
+where the two comments say the same. A comment cites the work its terms come from where that work
+is another than the one the declaration cites, such as Jacobs for the state space of a coalgebra
+that Mathlib states, so that every term of the comment comes from a work that the comment cites.
 
 The clauses of a structure of Mathlib lie on the declaration of the theory that labels it, such as
 `Coalgebra` for `CategoryTheory.Endofunctor.Coalgebra`, as the label is what the theory writes as
@@ -142,9 +140,10 @@ it takes in TypeScript. -/
 syntax exportClause := "(" ident " := " str (ppSpace exportComment)? ")"
 
 /-- The syntax of the attribute that marks a declaration that the generator writes as TypeScript,
-with the documentation comment that it takes and the clauses of its binders and fields. -/
+with the documentation comment that it takes, which the syntax requires, and the clauses of its
+binders and fields. -/
 syntax (name := exportTypeScript)
-  "export_typescript" (ppSpace exportComment)? (ppSpace exportClause)* : attr
+  "export_typescript" ppSpace exportComment (ppSpace exportClause)* : attr
 
 /-- Gives the documentation comment that a syntax of a comment states, refusing a name that is no
 declaration of a work. -/
@@ -164,9 +163,9 @@ initialize Lean.registerBuiltinAttribute {
   name := `exportTypeScript
   descr := "mark a declaration that the generator writes as TypeScript"
   add := fun declaration attributeSyntax _ ↦ do
-    let `(attr| export_typescript $[$comment?]? $clauses*) := attributeSyntax
-      | Lean.throwError "The attribute takes the comment of the declaration, where it gives one, \
-          and a clause for every binder or field that it names."
+    let `(attr| export_typescript $comment:exportComment $clauses*) := attributeSyntax
+      | Lean.throwError "The attribute takes the comment of the declaration and a clause for every \
+          binder or field that it names."
     let binders ← (bindersOf declaration).run' {} {}
     let clauses : List Clause ← clauses.toList.mapM fun (clause : Lean.TSyntax ``exportClause) ↦ do
       let `(exportClause| ($binder:ident := $name:str $[$fieldComment?]?)) := clause
@@ -176,7 +175,7 @@ initialize Lean.registerBuiltinAttribute {
         Lean.throwError m!"`{binder.getId}` is neither a binder nor a field of `{declaration}`."
       let comment ← fieldComment?.mapM commentOfSyntax
       return { binder := binder.getId, name := name.getString, comment }
-    let comment ← comment?.mapM commentOfSyntax
+    let comment ← commentOfSyntax comment
     Lean.modifyEnv (exportExtension.addEntry · { declaration, comment, clauses })
 }
 

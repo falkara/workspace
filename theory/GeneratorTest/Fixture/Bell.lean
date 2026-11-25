@@ -38,6 +38,13 @@ def Bell.peal {B : Type} (bell : Bell B) (state : bell.V) : Stream' B :=
 def Bell.answer {B : Type} (bell : Bell B) (state : bell.V) (heard : Stream' B) : Stream' (B × B) :=
   Stream'.zip Prod.mk heard (bell.peal state)
 
-attribute [export_typescript] Bell Bell.peal Bell.answer
+attribute [export_typescript "A bell that rings a chime and moves to its next state."] Bell
+
+attribute [export_typescript
+  "The peal of a bell, the stream of the chimes that it rings from a state on."] Bell.peal
+
+attribute [export_typescript
+  "The answer of a bell to the chimes it hears, every chime it hears with the chime it rings."]
+  Bell.answer
 
 end Geometry

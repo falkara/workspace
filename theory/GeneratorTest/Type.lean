@@ -40,7 +40,8 @@ structure MarkedStructure where
   /-- The value of the structure. -/
   value : Rat
 
-attribute [export_typescript] MarkedStructure
+attribute [export_typescript "The structure that the checks mark `export_typescript`."
+  (value := "value" "The value of the structure.")] MarkedStructure
 
 /-- The structure that the checks leave unmarked. -/
 structure UnmarkedStructure where
@@ -153,7 +154,11 @@ structure Pair (First Second : Type) where
   /-- The function that gives the second value from the first. -/
   second : (first : First) → Second
 
-attribute [export_typescript] Pair
+attribute [export_typescript
+  "The structure with type parameters that the checks write, a first value and the function that
+  gives a second value from it."
+  (first := "first" "The first value of the pair.")
+  (second := "second" "The function that gives the second value from the first.")] Pair
 
 /-- info: "Pair<Rational.Rational, ReadonlyArray<Rational.Rational>>" -/
 #guard_msgs in

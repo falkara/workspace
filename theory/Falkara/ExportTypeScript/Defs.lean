@@ -28,7 +28,7 @@ generator reads when it runs.
 - `exportsOf`: gives every declaration that the generator writes as TypeScript.
 - `isExported`: tells whether the generator writes a declaration as TypeScript.
 - `commentOf?`: gives the documentation comment that a declaration takes in TypeScript, where the
-  theory gives one.
+  generator writes the declaration.
 - `clauseOf?`: gives the clause of a binder of a declaration, where the theory gives one.
 - `nameOf?`: gives the name that a binder of a declaration takes in TypeScript, where the theory
   names one.
@@ -70,13 +70,12 @@ structure Clause where
   comment : Option Comment
 
 /-- A declaration that the generator writes as TypeScript, with the documentation comment that it
-takes in TypeScript, where the theory gives one, and the clauses of its binders and fields. -/
+takes in TypeScript and the clauses of its binders and fields. -/
 structure Export where
   /-- The declaration that the generator writes. -/
   declaration : Lean.Name
-  /-- The documentation comment that the declaration takes in TypeScript, where the theory gives
-  one. -/
-  comment : Option Comment
+  /-- The documentation comment that the declaration takes in TypeScript. -/
+  comment : Comment
   /-- The clauses of the binders and the fields of the declaration. -/
   clauses : List Clause
 
@@ -107,11 +106,11 @@ def exportsOf (environment : Lean.Environment) : List Export :=
 def isExported (environment : Lean.Environment) (declaration : Lean.Name) : Bool :=
   (exportsOf environment).any (·.declaration == declaration)
 
-/-- Gives the documentation comment that a declaration takes in TypeScript, where the theory gives
-one. -/
+/-- Gives the documentation comment that a declaration takes in TypeScript, where the generator
+writes the declaration. -/
 def commentOf? (environment : Lean.Environment) (declaration : Lean.Name) : Option Comment :=
   (exportsOf environment).findSome? fun declared ↦
-    if declared.declaration == declaration then declared.comment else none
+    if declared.declaration == declaration then some declared.comment else none
 
 /-- Gives the clause of a binder of a declaration, where the theory gives one. -/
 def clauseOf? (environment : Lean.Environment) (declaration binder : Lean.Name) : Option Clause :=

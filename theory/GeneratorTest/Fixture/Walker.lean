@@ -33,33 +33,41 @@ structure Step (State Trace : Type) where
   /-- The trace the step leaves. -/
   trace : Trace
 
-attribute [export_typescript] Step
+attribute [export_typescript "A step of a walk, the state it reaches and the trace it leaves."
+  (state := "state" "The state the step reaches.")
+  (trace := "trace" "The trace the step leaves.")] Step
 
 /-- A function that gives the step from a state upon an input. -/
 abbrev Step.Move (State Input Trace : Type) : Type :=
   (currentState : State) → (input : Input) → Step State Trace
 
-attribute [export_typescript] Step.Move
+attribute [export_typescript "A function that gives the step from a state upon an input."]
+  Step.Move
 
 /-- A walker that takes a step upon every input. -/
 structure Walker (State Input Trace : Type) where
   /-- The function that gives the step of the walker from a state upon an input. -/
   move : Step.Move State Input Trace
 
-attribute [export_typescript] Walker
+attribute [export_typescript "A walker that takes a step upon every input."
+  (move := "move"
+    "The function that gives the step of the walker from a state upon an input.")] Walker
 
 /-- Gives the state a walker reaches from a state upon an input. -/
 def Walker.next {State Input Trace : Type} (walker : Walker State Input Trace) (state : State)
     (input : Input) : State :=
   (walker.move state input).state
 
-attribute [export_typescript] Walker.next
+attribute [export_typescript "Gives the state a walker reaches from a state upon an input."]
+  Walker.next
 
 /-- A course that turns every coordinate into another. -/
 structure Course where
   /-- The function that gives the coordinate the course turns a coordinate into. -/
   turn : (coordinate : Coordinate) → Coordinate
 
-attribute [export_typescript] Course
+attribute [export_typescript "A course that turns every coordinate into another."
+  (turn := "turn"
+    "The function that gives the coordinate the course turns a coordinate into.")] Course
 
 end Geometry
