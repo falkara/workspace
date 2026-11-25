@@ -5,7 +5,7 @@ description: Brings a module of a formalization in Lean into line with the refer
 
 ## Input
 
-Write or audit the file `<Module>.lean` of a module against the sections of the reference that the module cites. Read the reference in its PDF outside the repository, as the PDF may be under copyright. The reference decides every question of mathematics, and the module answers to the reference wherever no documented deviation covers a difference.
+Write or audit the file `<Module>.lean` of a module against the sections of the reference that the module cites. Read the reference in its PDF outside the repository, as the PDF may be under copyright. Mathlib decides every question of mathematics that it states, and the reference supplements Mathlib with the items Mathlib lacks, so the module answers to Mathlib wherever Mathlib states an item, and to the reference elsewhere wherever no documented deviation covers a difference.
 
 The module states the general definitions of the reference for one functor alone, so the scope holds the items of the cited sections that hold for that functor.
 
@@ -39,7 +39,7 @@ State every check of data or of a computation that nothing in the theory builds 
 
 When the request is to audit, check, or compare a module, decide whether the module states exactly the items in scope, and report on the module without changing a file.
 
-1. Decide the scope from the cited sections. Keep every item in the scope however minor the item seems, as a narrowed scope hides what the module misses. Leave an item out only when a record of a decision or an instruction of the repository excludes the item, or when the standard library of Lean already states the item. Count every item outside the cited sections that an item in scope depends on as a scope gap.
+1. Decide the scope from the cited sections. Keep every item in the scope however minor the item seems, as a narrowed scope hides what the module misses. Leave an item out only when a record of a decision or an instruction of the repository excludes the item, or when Mathlib or the standard library of Lean already states the item, as the theory builds on Mathlib in full and takes every such item from there, citing it by its full name as an item of `mathlibCommunity2020leanMathematicalLibrary` wherever a declaration of the module names or builds on it. Count every item outside the cited sections that an item in scope depends on as a scope gap.
 2. Map the items in scope to the declarations and the declarations to the items. An item without a declaration is missing, and a declaration without an item is extra unless a record of a decision or an instruction of the repository requires the declaration.
 3. Compare every item with its declaration: the statement at the same strength, the name as the term of the reference, the documentation comment in the notation of the reference, and the shape and the citation as the instructions of the repository require. Count a difference as a documented deviation only when a record of a decision or an instruction of the repository covers the whole difference, and as a finding otherwise.
 4. Try to refute every finding against its page, as a wrong finding leads to a wrong change of the module. Drop every finding the page refutes, and keep as uncertain every finding the page leaves open.
