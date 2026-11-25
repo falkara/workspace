@@ -60,3 +60,10 @@ jobs:
         run: |
           npx vp pack
           deno publish --set-version "$(node --print "require('./package.json').version")"
+      - name: Publish the simulation library to JSR
+        # Every run without changesets, as for the presentation library.
+        if: steps.changesets.outputs.has-changesets == 'false'
+        working-directory: libraries/simulation
+        run: |
+          npx vp pack
+          deno publish --set-version "$(node --print "require('./package.json').version")"
