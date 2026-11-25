@@ -15,7 +15,7 @@ describe('DeterministicAutomaton', () => {
   });
 
   it.effect.prop(
-    'gives in its behavior the output of every state that the inputs lead through',
+    'gives in its behavior the output of every state that the inputs lead through, one output more than the inputs where they end',
     [Schema.Array(Schema.Boolean)],
     ([flips]) =>
       Effect.gen(function* () {

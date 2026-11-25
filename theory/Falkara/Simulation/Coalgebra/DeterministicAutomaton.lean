@@ -45,6 +45,11 @@ of the section gives the output after a finite sequence of inputs alone. TypeScr
 streams as streams of Effect, and the module of the package takes a stream of inputs that may fail
 or need services and passes both on to the outputs, as the contract admits a function more general
 than the theory states.
+
+The theory states the behavior on infinite streams alone, whereas a stream of Effect may end. On a
+stream of inputs that ends, the module of the package gives the output of every state that the
+inputs lead through and then the output of the state that the last input leads to, one output more
+than the inputs, as the automaton gives an output from every state it reaches.
 -/
 
 @[expose] public section
