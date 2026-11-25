@@ -5,7 +5,7 @@ Authors: Filip Falcon
 -/
 module
 
-public import Falkara.Citation
+public import Falkara.Citation.Defs
 
 /-!
 # References
@@ -43,7 +43,7 @@ Every work is named after its author, the year of the work, and the words of its
 the work apart, as a citation key of a bibliography is, such as `cie2019colorMatchingFunctions`.
 -/
 
-@[expose] public section
+public section
 
 namespace Falkara.References
 

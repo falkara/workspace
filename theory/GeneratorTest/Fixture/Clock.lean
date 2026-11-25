@@ -1,9 +1,9 @@
 module
 
-meta import Falkara.ExportTypeScript
 public import Mathlib.CategoryTheory.Endofunctor.Algebra
 public import Mathlib.CategoryTheory.Limits.Types.Products
-public import Mathlib.CategoryTheory.Yoneda
+
+import Falkara.ExportTypeScript
 
 /-!
 # Clock

@@ -1,9 +1,10 @@
 module
 
-meta import Falkara.ExportTypeScript
-public import GeneratorTest.Fixture.Clock
 public import GeneratorTest.Fixture.Coordinate
+
 meta import Generator.Declaration
+import Falkara.ExportTypeScript
+
 import all GeneratorTest.Fixture.Clock
 import all GeneratorTest.Fixture.Lamp
 import all Mathlib.CategoryTheory.Endofunctor.Algebra

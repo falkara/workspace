@@ -5,8 +5,10 @@ Authors: Filip Falcon
 -/
 module
 
-public import Falkara.Citation
-import Falkara.ExportTypeScript
+public import Falkara.Citation.Defs
+public import Lean.Meta.Basic
+
+import Falkara.ExportTypeScript.Defs
 import Lean.DocString
 import Lean.Meta.Reduce
 
@@ -106,7 +108,7 @@ def commentOf (name : Lean.Name) (opening : Option String := none) : Lean.MetaM 
     | some opening => s!"{opening} {documentation.decapitalize}"
     | none => documentation
   documentationOf text
-    ((Citation.citeAttribute.getParam? environment name).toList ++ comment.item.toList)
+    ((Citation.citationOf? environment name).toList ++ comment.item.toList)
 
 /-- Gives the documentation comment of TypeScript of a field of a structure, the comment that the
 clause of the attribute `export_typescript` on the declaration that labels the structure gives,
@@ -136,7 +138,7 @@ declaration, such as its constructor, with a text that says what the function do
 `@see` for the item that the declaration cites and for the item that its comment cites. -/
 def derivedCommentOf (name : Lean.Name) (text : String) : Lean.MetaM String := do
   let environment ← Lean.getEnv
-  documentationOf text ((Citation.citeAttribute.getParam? environment name).toList ++
+  documentationOf text ((Citation.citationOf? environment name).toList ++
     ((ExportTypeScript.commentOf? environment name).bind (·.item)).toList)
 
 end Generator

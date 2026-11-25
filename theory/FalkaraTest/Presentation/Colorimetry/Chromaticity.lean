@@ -1,7 +1,9 @@
 module
 
-meta import Falkara.Citation
 public import Falkara.Presentation.Colorimetry.Chromaticity
+
+import Falkara.Citation
+import Falkara.References
 
 /-!
 # Chromaticity

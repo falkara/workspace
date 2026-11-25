@@ -9,9 +9,10 @@ public import Falkara.Simulation.Functor
 public import Falkara.Simulation.Functor.BinaryProductFunctor
 public import Mathlib.CategoryTheory.Endofunctor.Algebra
 public import Mathlib.Data.Seq.Defs
-import Mathlib.Data.Seq.Basic
+
 import Falkara.ExportTypeScript
-meta import Falkara.ExportTypeScript -- shake: keep
+import Falkara.References
+import Mathlib.Data.Seq.Basic
 
 /-!
 # Sequence Coalgebra

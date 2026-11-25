@@ -5,8 +5,9 @@ Authors: Filip Falcon
 -/
 module
 
-import Generator.Comment
 public import Generator.Import
+
+import Generator.Comment
 import Generator.Path
 import Generator.Type
 

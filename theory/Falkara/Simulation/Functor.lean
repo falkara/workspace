@@ -5,10 +5,10 @@ Authors: Filip Falcon
 -/
 module
 
-public import Falkara.References -- shake: keep
 public import Mathlib.CategoryTheory.Functor.Const
+
 import Falkara.ExportTypeScript
-meta import Falkara.ExportTypeScript -- shake: keep
+import Falkara.References
 
 /-!
 # Functor

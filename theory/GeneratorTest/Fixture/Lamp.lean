@@ -1,6 +1,6 @@
 module
 
-meta import Falkara.ExportTypeScript
+import Falkara.ExportTypeScript
 
 /-!
 # Lamp

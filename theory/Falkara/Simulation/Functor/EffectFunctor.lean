@@ -5,9 +5,8 @@ Authors: Filip Falcon
 -/
 module
 
-public import Falkara.References -- shake: keep
 import Falkara.ExportTypeScript
-meta import Falkara.ExportTypeScript -- shake: keep
+import Falkara.References
 
 /-!
 # Effect Functor

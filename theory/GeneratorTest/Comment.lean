@@ -1,9 +1,9 @@
 module
 
-public import Falkara.Citation
-meta import Falkara.Citation
-meta import Falkara.ExportTypeScript
+public import Falkara.Citation.Defs
+
 meta import Generator.Comment
+import Falkara.ExportTypeScript
 
 /-!
 # Comment

@@ -1,8 +1,10 @@
 module
 
-meta import Falkara.Citation
 public import Falkara.Presentation.Colorimetry.Observer
 public import Falkara.Presentation.Colorimetry.Wavelength
+
+import Falkara.Citation
+import Falkara.References
 
 /-!
 # Observer

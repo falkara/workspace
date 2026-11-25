@@ -5,8 +5,10 @@ Authors: Filip Falcon
 -/
 module
 
-meta import Falkara.Citation -- shake: keep
-public import Falkara.References -- shake: keep
+public import Mathlib.Data.Nat.Notation
+
+import Falkara.Citation
+import Falkara.References
 
 /-!
 # Wavelength

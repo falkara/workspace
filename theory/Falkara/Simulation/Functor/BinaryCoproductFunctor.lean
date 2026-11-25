@@ -5,11 +5,11 @@ Authors: Filip Falcon
 -/
 module
 
-public import Falkara.References -- shake: keep
 public import Mathlib.CategoryTheory.Types.Basic
 public import Mathlib.Control.Basic
+
 import Falkara.ExportTypeScript
-meta import Falkara.ExportTypeScript -- shake: keep
+import Falkara.References
 
 /-!
 # Binary Coproduct Functor

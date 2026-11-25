@@ -1,7 +1,8 @@
 module
 
-meta import Falkara.ExportTypeScript
 public import GeneratorTest.Fixture.Coordinate
+
+import Falkara.ExportTypeScript
 
 /-!
 # Point

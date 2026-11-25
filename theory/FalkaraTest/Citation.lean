@@ -1,15 +1,18 @@
 module
 
-public import Falkara.Citation
-meta import Falkara.Citation
+public import Falkara.Citation.Defs
+
+meta import Falkara.Citation.Defs
+import Falkara.Citation
 
 /-!
 # Citation
 
 The module defines the checks of the attribute `cite`: the attribute looks a work up in the
 namespace `Falkara.References`, records the label of the item as the citation writes it, and
-refuses a name that names no declaration and a declaration that is no work. The checks cite a work
-of their own, so they hold for the works of every theory.
+refuses a name that names no declaration, a declaration that is no work, a second citation of one
+declaration, and a declaration of another module. The checks cite a work of their own, so they hold
+for the works of every theory.
 
 ## Main Definitions
 
@@ -44,7 +47,15 @@ attribute [cite "Section 1" workOfTheChecks] citedDeclaration
 /-- info: some { label := "Section 1", work := `Falkara.References.workOfTheChecks } -/
 #guard_msgs in
 #eval show Lean.CoreM (Option Citation.Item) from do
-  return Citation.citeAttribute.getParam? (← Lean.getEnv) ``citedDeclaration
+  return Citation.citationOf? (← Lean.getEnv) ``citedDeclaration
+
+/-- error: `citedDeclaration` cites an item already. -/
+#guard_msgs in
+attribute [cite "Section 2" workOfTheChecks] citedDeclaration
+
+/-- error: `Nat.succ` lies in another module, which alone cites it. -/
+#guard_msgs in
+attribute [cite "Section 1" workOfTheChecks] Nat.succ
 
 /-- The declaration that the checks cite a work for that the theory never declares. -/
 def declarationCitingAnUnknownWork : ℕ := 0

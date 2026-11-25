@@ -5,9 +5,10 @@ Authors: Filip Falcon
 -/
 module
 
+public import Mathlib.Data.Nat.Notation
+
 import Falkara.ExportTypeScript
-meta import Falkara.ExportTypeScript -- shake: keep
-public import Falkara.References -- shake: keep
+import Falkara.References
 
 /-!
 # Filename
@@ -84,7 +85,7 @@ Two filenames that differ in case alone name one file on Windows, which a single
 tell, so the plan of the files holds that condition.
 -/
 
-@[expose] public section
+public section
 
 namespace Falkara.Cli
 

@@ -1,8 +1,9 @@
 module
 
+meta import Generator.Theorem
+
 import all GeneratorTest.Fixture.Coordinate
 import all GeneratorTest.Fixture.Point
-meta import Generator.Theorem
 
 /-!
 # Theorem

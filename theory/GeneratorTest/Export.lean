@@ -1,11 +1,11 @@
 module
 
-meta import Falkara.ExportTypeScript
-public import GeneratorTest.Fixture.Walker
+meta import Generator.Export
+import Falkara.ExportTypeScript
+
 import all GeneratorTest.Fixture.Clock
 import all GeneratorTest.Fixture.Coordinate
 import all GeneratorTest.Fixture.Walker
-meta import Generator.Export
 
 /-!
 # Export

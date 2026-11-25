@@ -1,8 +1,9 @@
 module
 
-meta import Falkara.ExportTypeScript
 public import GeneratorTest.Fixture.Clock
 public import Mathlib.Data.Stream.Defs
+
+import Falkara.ExportTypeScript
 
 /-!
 # Bell

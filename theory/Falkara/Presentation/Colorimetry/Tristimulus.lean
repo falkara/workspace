@@ -5,12 +5,13 @@ Authors: Filip Falcon
 -/
 module
 
-import Mathlib.Algebra.BigOperators.Ring.List
-import Mathlib.Algebra.Ring.Rat
 public import Falkara.Presentation.Colorimetry.Illuminant
 public import Falkara.Presentation.Colorimetry.Observer
+
 import Falkara.ExportTypeScript
-meta import Falkara.ExportTypeScript -- shake: keep
+import Falkara.References
+import Mathlib.Algebra.BigOperators.Ring.List
+import Mathlib.Algebra.Ring.Rat
 
 /-!
 # Tristimulus

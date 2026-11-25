@@ -6,9 +6,10 @@ Authors: Filip Falcon
 module
 
 public import Falkara.Simulation.Coalgebra.MealyMachine
-import Mathlib.Data.Stream.Init
+
 import Falkara.ExportTypeScript
-meta import Falkara.ExportTypeScript -- shake: keep
+import Falkara.References
+import Mathlib.Data.Stream.Init
 
 /-!
 # Stream Coalgebra

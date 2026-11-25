@@ -1,5 +1,7 @@
 module
 
+meta import Generator.Main
+
 import all GeneratorTest.Fixture.Bell
 import all GeneratorTest.Fixture.Carillon
 import all GeneratorTest.Fixture.Clock
@@ -8,7 +10,6 @@ import all GeneratorTest.Fixture.Point
 import all GeneratorTest.Fixture.Walker
 import all Mathlib.CategoryTheory.Endofunctor.Algebra
 import all Mathlib.CategoryTheory.Functor.Basic
-meta import Generator.Main
 
 /-!
 # Main

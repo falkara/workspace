@@ -5,10 +5,11 @@ Authors: Filip Falcon
 -/
 module
 
-public import Falkara.ExportTypeScript
+public import Falkara.ExportTypeScript.Defs
+public import Generator.Import
 public import Lean.Meta.AppBuilder
 public import Lean.Meta.WHNF
-public import Generator.Import
+
 import Generator.Name
 
 /-!

@@ -7,8 +7,9 @@ module
 
 public import Falkara.Simulation.Coalgebra.SequenceCoalgebra
 public import Falkara.Simulation.Functor.BinaryCoproductFunctor
+
 import Falkara.ExportTypeScript
-meta import Falkara.ExportTypeScript -- shake: keep
+import Falkara.References
 
 /-!
 # Resumption Coalgebra

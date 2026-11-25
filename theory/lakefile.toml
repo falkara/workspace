@@ -4,6 +4,7 @@ reservoir = false
 defaultTargets = ["Falkara"]
 testDriver = "FalkaraTest"
 lintDriver = "batteries/runLinter"
+requiresModuleSystem = true
 
 [leanOptions]
 autoImplicit = false

@@ -5,7 +5,11 @@ Authors: Filip Falcon
 -/
 module
 
+public meta import Falkara.ExportTypeScript.Defs
 public import Falkara.Citation
+public import Falkara.ExportTypeScript.Defs
+public import Lean.Meta.Basic
+
 import Lean.Structure
 
 /-!
@@ -33,14 +37,6 @@ attribute [export_typescript
 
 ## Main Definitions
 
-- `Comment`: a documentation comment that a declaration or a field of it takes in TypeScript, with
-  the item of the work that its terms come from, where it cites one.
-- `Clause`: a binder or a field of a declaration with the name and the documentation comment that
-  it takes in TypeScript.
-- `Export`: a declaration that the generator writes as TypeScript, with its comment and its
-  clauses.
-- `exportExtension`: the record of the declarations that the generator writes as TypeScript.
-- `labels`: tells whether a declaration labels a structure.
 - `objectFieldsOf`: gives the structure that a functor gives at every object and its fields, where
   it gives one.
 - `bindersOf`: gives the names that a declaration binds, the binders of its type, its fields and
@@ -49,15 +45,6 @@ attribute [export_typescript
 - `exportComment`, `exportClause`, `exportTypeScript`: the syntax of a comment, of a clause, and of
   the attribute `export_typescript`.
 - `commentOfSyntax`: gives the documentation comment that a syntax of a comment states.
-- `exportsOf`: gives every declaration that the generator writes as TypeScript.
-- `isExported`: tells whether the generator writes a declaration as TypeScript.
-- `commentOf?`: gives the documentation comment that a declaration takes in TypeScript, where the
-  theory gives one.
-- `clauseOf?`: gives the clause of a binder of a declaration, where the theory gives one.
-- `nameOf?`: gives the name that a binder of a declaration takes in TypeScript, where the theory
-  names one.
-- `fieldClauseOf?`: gives the clause of a field of a structure, given by the declaration that labels
-  the structure, where the theory gives one.
 
 ## Implementation Notes
 
@@ -88,64 +75,13 @@ A clause names its binder or field as `(V := "State")` and takes no keyword of i
 keyword of Lean is a token of every module that imports the attribute, so that a keyword such as
 `name` would end the use of `name` as an identifier there.
 
-A module that marks a declaration imports this module twice, as `meta import`, for the attribute
-that runs while the module compiles, and as `import`, for the record of the export that the module
-holds.
-
-The exports lie in an extension of the environment rather than in a parametric attribute, as a
-parametric attribute takes a single value of a fixed form. An export is looked up in the entries of
-every module rather than in a state of the extension, as the generator imports the theory without
-the states of the extensions, as `TagAttribute.hasTag` of Lean looks a tag up.
+The attribute runs while a module compiles, so it lies in a meta section, and it writes into the
+record of `Falkara.ExportTypeScript.Defs`, which it imports at both phases.
 -/
 
-public section
+public meta section
 
 namespace Falkara.ExportTypeScript
-
-/-- A documentation comment that a declaration or a field of it takes in TypeScript, with the item
-of the work that its terms come from, where it cites one. -/
-structure Comment where
-  /-- The text of the comment as TypeScript writes it. -/
-  text : String
-  /-- The item of the work that the terms of the comment come from, where the comment cites one. -/
-  item : Option Citation.Item
-
-/-- A binder or a field of a declaration with the name and the documentation comment that it takes
-in TypeScript. -/
-structure Clause where
-  /-- The binder or the field as the theory names it. -/
-  binder : Lean.Name
-  /-- The name that the binder or the field takes in TypeScript. -/
-  name : String
-  /-- The documentation comment that the field takes in TypeScript, where the theory gives one. -/
-  comment : Option Comment
-
-/-- A declaration that the generator writes as TypeScript, with the documentation comment that it
-takes in TypeScript, where the theory gives one, and the clauses of its binders and fields. -/
-structure Export where
-  /-- The declaration that the generator writes. -/
-  declaration : Lean.Name
-  /-- The documentation comment that the declaration takes in TypeScript, where the theory gives
-  one. -/
-  comment : Option Comment
-  /-- The clauses of the binders and the fields of the declaration. -/
-  clauses : List Clause
-
-/-- The record of the declarations that the generator writes as TypeScript. -/
-initialize exportExtension : Lean.SimplePersistentEnvExtension Export Unit ←
-  Lean.registerSimplePersistentEnvExtension {
-    addEntryFn := fun _ _ ↦ ()
-    addImportedFn := fun _ ↦ ()
-  }
-
-/-- Tells whether a declaration labels a structure: whether it is the structure or a declaration
-whose value is the structure, such as `abbrev Coalgebra := @CategoryTheory.Endofunctor.Coalgebra`.
--/
-def labels (environment : Lean.Environment) (declaration structureName : Lean.Name) : Bool :=
-  declaration == structureName ||
-    match (environment.find? declaration).bind (·.value?) with
-    | some (.const name _) => name == structureName
-    | _ => false
 
 /-- Gives the structure that a functor gives at every object and its fields, such as `Prod` with
 `fst` and `snd` for the product that the functor of binary products gives, where it gives one,
@@ -243,42 +179,5 @@ initialize Lean.registerBuiltinAttribute {
     let comment ← comment?.mapM commentOfSyntax
     Lean.modifyEnv (exportExtension.addEntry · { declaration, comment, clauses })
 }
-
-/-- Gives every declaration that the generator writes as TypeScript, those of the imported modules
-and those of the current one. -/
-def exportsOf (environment : Lean.Environment) : List Export :=
-  (List.range environment.header.moduleNames.size).flatMap (fun index ↦
-    (exportExtension.getModuleEntries environment index).toList) ++
-    exportExtension.getEntries environment
-
-/-- Tells whether the generator writes a declaration as TypeScript. -/
-def isExported (environment : Lean.Environment) (declaration : Lean.Name) : Bool :=
-  (exportsOf environment).any (·.declaration == declaration)
-
-/-- Gives the documentation comment that a declaration takes in TypeScript, where the theory gives
-one. -/
-def commentOf? (environment : Lean.Environment) (declaration : Lean.Name) : Option Comment :=
-  (exportsOf environment).findSome? fun declared ↦
-    if declared.declaration == declaration then declared.comment else none
-
-/-- Gives the clause of a binder of a declaration, where the theory gives one. -/
-def clauseOf? (environment : Lean.Environment) (declaration binder : Lean.Name) : Option Clause :=
-  (exportsOf environment).findSome? fun declared ↦
-    if declared.declaration == declaration then declared.clauses.find? (·.binder == binder)
-    else none
-
-/-- Gives the name that a binder of a declaration takes in TypeScript, where the theory names one.
--/
-def nameOf? (environment : Lean.Environment) (declaration binder : Lean.Name) : Option String :=
-  (clauseOf? environment declaration binder).map (·.name)
-
-/-- Gives the clause of a field of a structure, given by the declaration that labels the structure,
-where the theory gives one. -/
-def fieldClauseOf? (environment : Lean.Environment) (structureName field : Lean.Name) :
-    Option Clause :=
-  (exportsOf environment).findSome? fun declared ↦
-    if labels environment declared.declaration structureName then
-      declared.clauses.find? (·.binder == field)
-    else none
 
 end Falkara.ExportTypeScript

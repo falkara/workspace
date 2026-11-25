@@ -6,8 +6,9 @@ Authors: Filip Falcon
 module
 
 public import Falkara.Presentation.Colorimetry.Tristimulus
+
 import Falkara.ExportTypeScript
-meta import Falkara.ExportTypeScript -- shake: keep
+import Falkara.References
 
 /-!
 # Chromaticity

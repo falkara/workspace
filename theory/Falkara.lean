@@ -1,8 +1,10 @@
 module  -- shake: keep-all --deprecated_module: ignore
 
 public import Falkara.Citation
+public import Falkara.Citation.Defs
 public import Falkara.Cli.Filename
 public import Falkara.ExportTypeScript
+public import Falkara.ExportTypeScript.Defs
 public import Falkara.Presentation.Colorimetry.Chromaticity
 public import Falkara.Presentation.Colorimetry.Illuminant
 public import Falkara.Presentation.Colorimetry.Observer

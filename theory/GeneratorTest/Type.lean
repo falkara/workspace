@@ -1,8 +1,10 @@
 module
 
-meta import Falkara.ExportTypeScript
 meta import Generator.Type
 meta import Lean.Elab.Term
+import Batteries.Tactic.Lint.Basic
+import Batteries.Tactic.Lint.Misc
+import Falkara.ExportTypeScript
 
 /-!
 # Type

@@ -10,9 +10,10 @@ public import Falkara.Simulation.Functor.BinaryProductFunctor
 public import Falkara.Simulation.Functor.ExponentFunctor
 public import Mathlib.CategoryTheory.Endofunctor.Algebra
 public import Mathlib.Data.Stream.Defs
-import Mathlib.Data.Stream.Init
+
 import Falkara.ExportTypeScript
-meta import Falkara.ExportTypeScript -- shake: keep
+import Falkara.References
+import Mathlib.Data.Stream.Init
 
 /-!
 # Mealy Machine

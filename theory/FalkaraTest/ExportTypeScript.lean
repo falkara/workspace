@@ -1,6 +1,7 @@
 module
 
-meta import Falkara.ExportTypeScript
+meta import Falkara.ExportTypeScript.Defs
+import Falkara.ExportTypeScript
 
 /-!
 # Export TypeScript

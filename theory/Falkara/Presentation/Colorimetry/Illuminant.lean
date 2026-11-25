@@ -7,7 +7,9 @@ module
 
 public import Falkara.Presentation.Colorimetry.Wavelength
 public import Mathlib.Data.Rat.Init
-meta import Falkara.Citation -- shake: keep
+
+import Falkara.Citation
+import Falkara.References
 
 set_option linter.style.header false
 

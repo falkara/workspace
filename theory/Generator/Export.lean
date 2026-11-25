@@ -6,6 +6,7 @@ Authors: Filip Falcon
 module
 
 public import Lean.Meta.Basic
+
 import Generator.Comment
 import Generator.Declaration
 import Generator.Name
