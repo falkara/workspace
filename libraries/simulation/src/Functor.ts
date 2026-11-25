@@ -2,7 +2,15 @@ import { Function, type HKT } from 'effect';
 
 import * as Theory from '#src/Functor.theory';
 
-export { axioms, type Comp, type Const, type Functor, make } from '#src/Functor.theory';
+export { axioms, type Comp, type Const, type Functor, type Id, make } from '#src/Functor.theory';
+
+/**
+ * Gives the `Functor` instance of a `Functor.Id`.
+ *
+ * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor.id
+ */
+export const id = (): Theory.Functor<Theory.Id> =>
+  Theory.make<Theory.Id>({ map: Function.identity });
 
 /**
  * Gives the `Functor` instance of a `Functor.Comp`.

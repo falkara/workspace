@@ -1,6 +1,7 @@
 module
 
 import all GeneratorTest.Fixture.Bell
+import all GeneratorTest.Fixture.Carillon
 import all GeneratorTest.Fixture.Clock
 import all GeneratorTest.Fixture.Coordinate
 import all GeneratorTest.Fixture.Point
@@ -25,7 +26,16 @@ instance of its class of functors for every functor, a function of the type para
 functor and of an instance of every functor among them. A module whose bundled structure applies a
 functor of another module to a structure that the theory labels extends the label at the functor
 and imports both as types from their module, and its function of a bundled structure and a state
-takes a type parameter for the state space and a stream of Effect for a stream of Mathlib.
+takes a type parameter for the state space and a stream of Effect for a stream of Mathlib. A module
+whose bundled structure takes a type constructor as a parameter with a default value writes the
+parameter as a type lambda after the state space, with the type lambda of the identity functor for
+the identity monad as its default, and a constructor at the default, and writes a type constructor
+of an effect as the type lambda of an effect of Effect, whose instance the contract takes as that
+of a functor. Its function of two bundled structures
+names their state spaces after their parameters, gives its result the state space its definition
+gives, and takes as well the signature without its first parameter, whose function takes the type
+parameters that the first parameter alone names, and its stream of coproducts holds results of
+Effect.
 -/
 
 /--
@@ -287,3 +297,62 @@ type _Implemented<Implementation extends Contract = typeof Module> = Implementat
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
   IO.print (← Generator.fileOf `GeneratorTest `Geometry `GeneratorTest.Fixture.Bell)
+
+/--
+info: // Written by the generator of the theory from `GeneratorTest.Fixture.Carillon`, so every change by hand is lost when the generator runs.
+import type { Effect, HKT, Result, Stream } from 'effect';
+
+import type * as Module from '#src/Fixture/Carillon';
+import type * as Clock from '#src/Fixture/Clock.theory';
+
+/** The resting functor, which moves no state. */
+export interface RestingFunctor extends HKT.TypeLambda {
+readonly type: this['Target'];
+}
+
+/** A belfry, the monad of the peals that read a rope of type `R` and either fail with a crack of type `E` or ring. */
+export interface Belfry<out E, out R> extends HKT.TypeLambda {
+readonly type: Effect.Effect<this['Target'], E, R>;
+}
+
+/** A carillon that rings a chime and moves to its next state in a monad. */
+export interface Carillon<in out B, in out V, out m extends HKT.TypeLambda = RestingFunctor> extends Clock.Clockwork<Clock.GearTrain<Clock.ChimesFunctor<B>, m>, V> {
+/** structure morphism of the coalgebra */
+readonly str: (v: V) => HKT.Kind<m, never, never, never, readonly [B, V]>;
+}
+
+/** Creates a `Carillon` from its field `str`, taking its types from the annotations of the parameters of the field or else from the type arguments. */
+export const make = <B, V>(fields: Carillon<B, V>) => fields;
+
+/** The rounds of a carillon, every chime that it rings with the next state. */
+export type Rounds = <B, V>(carillon: Carillon<B, V>, state: V) => Stream.Stream<readonly [B, V]>;
+
+/** The carillon that rings two carillons side by side and keeps the chime of the first after a choice, upon the pairs of their states. */
+export interface Pair {
+<B, FirstV, SecondV>(first: Carillon<B, FirstV>, second: Carillon<B, SecondV>, choice: (chime: B) => B): Carillon<B, readonly [FirstV, SecondV]>;
+<B, SecondV>(second: Carillon<B, SecondV>, choice: (chime: B) => B): <FirstV>(first: Carillon<B, FirstV>) => Carillon<B, readonly [FirstV, SecondV]>;
+}
+
+/** The tolls of a carillon, a pause before every chime that it rings. */
+export type Tolls = <B, V>(carillon: Carillon<B, V>, state: V) => Stream.Stream<Result.Result<B, void>>;
+
+/** A contract of the functions of the theory that the module `Fixture/Carillon` of the package implements. */
+interface Contract {
+/** The rounds of a carillon, every chime that it rings with the next state. */
+readonly rounds: Rounds;
+/** The carillon that rings two carillons side by side and keeps the chime of the first after a choice, upon the pairs of their states. */
+readonly pair: Pair;
+/** The tolls of a carillon, a pause before every chime that it rings. */
+readonly tolls: Tolls;
+/** Gives the `Gear` instance of a `RestingFunctor`. */
+readonly restingFunctor: () => Clock.Gear<RestingFunctor>;
+/** Gives the `Gear` instance of a `Belfry`. */
+readonly belfry: <E, R>() => Clock.Gear<Belfry<E, R>>;
+}
+
+/** A check of the module `Fixture/Carillon` of the package, which fails to compile where the module leaves a function of the contract out or gives the function another type. */
+type _Implemented<Implementation extends Contract = typeof Module> = Implementation;
+-/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← Generator.fileOf `GeneratorTest `Geometry `GeneratorTest.Fixture.Carillon)

@@ -1,6 +1,7 @@
 import { describe, expect, it } from '@effect/vitest';
+import { assertEquals } from '@effect/vitest/utils';
 import { MealyMachine } from '@falkara/simulation';
-import { Effect, HashSet, Stream } from 'effect';
+import { Effect, HashSet, pipe, Stream } from 'effect';
 
 import { type Board, generation } from './GameOfLife';
 
@@ -37,6 +38,37 @@ describe('MealyMachine', () => {
       );
 
       expect(failure).toBe('Disconnected');
+    }),
+  );
+
+  it.effect('records the most living cells after every move of a player', () =>
+    Effect.gen(function* () {
+      const player = MealyMachine.make({
+        structure: (board: Board) => (cell: string) => {
+          const next = generation(HashSet.add(board, cell));
+          return { output: HashSet.size(next), next };
+        },
+      });
+      const peak = MealyMachine.make({
+        structure: (highest: number) => (count: number) => ({
+          output: Math.max(highest, count),
+          next: Math.max(highest, count),
+        }),
+      });
+      const record = pipe(
+        player,
+        MealyMachine.series(peak),
+        MealyMachine.mapOutput((highest) => `at most ${highest} cells`),
+      );
+
+      const steps = yield* Stream.runCollect(
+        Stream.make('1,1', '5,5').pipe(MealyMachine.steps(record, [HashSet.make('0,1', '2,1'), 0])),
+      );
+
+      assertEquals(steps, [
+        { output: 'at most 3 cells', next: [HashSet.make('1,0', '1,1', '1,2'), 3] },
+        { output: 'at most 3 cells', next: [HashSet.make('0,1', '1,1', '2,1'), 3] },
+      ]);
     }),
   );
 });

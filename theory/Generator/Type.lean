@@ -7,10 +7,9 @@ module
 
 public import Falkara.ExportTypeScript
 public import Lean.Meta.AppBuilder
-public import Lean.Structure
+public import Lean.Meta.WHNF
 public import Generator.Import
 import Generator.Name
-import Lean.Meta.WHNF
 
 /-!
 # Type
@@ -42,13 +41,23 @@ polarities at which the parameter occurs in the fields or the value of the decla
 
 - `isFunctorType`: tells whether a type of the theory is the type of a functor on types, such as
   `Type u ⥤ Type u`.
+- `isTypeConstructorType`: tells whether a type of the theory is the type of a type constructor, a
+  function from types to types, such as `Type u → Type u` of a monad.
+- `isParameterType`: tells whether a binder of the theory is a type parameter in TypeScript, a
+  binder over a type, over a functor on types, or over a type constructor.
 - `typeParameterCount`: gives the number of type parameters of a declaration, the leading binders
-  of its type over a type or over a functor on types.
+  of its type over a type, over a functor on types, or over a type constructor.
 - `parametersOf`: runs a computation on the type parameters of a declaration, with the rest of its
-  type and its value applied to the parameters, and with every category that is a parameter taken
-  as the category of types, the one category of TypeScript.
+  type and its value applied to the parameters, with every category that is a parameter taken as
+  the category of types, the one category of TypeScript, and with every instance of a class on a
+  parameter, such as `Monad m`, left out of the parameters.
+- `identityLabelOf?`: gives the declaration that labels the identity functor of Mathlib, the functor
+  of the identity monad `Id`, where the theory marks one.
+- `defaultOf?`: gives the default value of a type parameter, such as `Id` for
+  `(m : Type u → Type u := Id)`, where the parameter takes one.
 - `parameterObjectOf`: gives the functor and the object of an object `F.obj X` of a functor `F`
-  that is a parameter, which no reduction resolves, where the type is one.
+  that is a parameter, which no reduction resolves, or of an application `m X` of a type
+  constructor `m` that is a parameter, where the type is one.
 - `refinementOf`: gives the type and the condition of a refinement, a type of the theory whose
   value is a subtype `{ value : T // condition value = true }` of a type `T` by a function
   `condition` marked `export_typescript`, where the declaration is one.
@@ -70,6 +79,10 @@ polarities at which the parameter occurs in the fields or the value of the decla
   attribute `export_typescript` names it or else as the field, and the type of every other
   field, with every such type parameter in place of the projection of its field, as `normalizedOf`
   reads it, or fails with the reason where the type of a field depends on another field.
+- `unbundledOf`: runs a computation on a function type of the theory whose parameters include
+  bundled structures, with a type parameter in place of every field whose value is a type, named
+  after its parameter as well where several parameters bundle types, such as `FirstState`, and with
+  a result that is a bundled structure applied to the types that the definition gives its fields.
 - `moduleOf`: gives the module of the theory that declares a declaration.
 - `typeNameOf`, `valueNameOf`, `constructorNameOf`, `axiomsNameOf`: give the name that a declaration
   of the theory takes in TypeScript as a type, as a value, as the constructor of a structure, and as
@@ -83,6 +96,14 @@ polarities at which the parameter occurs in the fields or the value of the decla
 - `typeOf`: gives the type of TypeScript that a type of the theory takes, with every declaration
   named without the namespace of its package and the value of a morphism named after its type where
   its type is a type parameter, or fails with the reason where the type has none.
+- `argumentsOf`: gives the type arguments of TypeScript that an application of a declaration takes,
+  without the instances of classes, every argument without a default value first, then the
+  arguments past the binders of the declaration, and then the arguments with a default value up to
+  the last one that differs from its default.
+- `typeConstructorOf`: gives the type lambda of Effect that a type constructor of the theory takes,
+  a parameter by its name, the identity monad `Id` as the type lambda of the identity functor, the
+  options as `Option.OptionTypeLambda`, and a type constructor marked `export_typescript` by its
+  name.
 - `genericFunctionOf`: gives the generic function type of TypeScript that a function type of the
   theory takes whose leading parameters are implicit types, with the type parameters already
   written before the rest of the type.
@@ -97,8 +118,10 @@ polarities at which the parameter occurs in the fields or the value of the decla
   occurs negatively, `out` where it occurs positively, both where it occurs at both polarities, and
   neither where it does not occur.
 - `genericOf`: gives a type parameter as TypeScript declares it, constrained to a type lambda of
-  Effect, `HKT.TypeLambda`, where the parameter is a functor on types, so that `HKT.Kind` applies
-  it.
+  Effect, `HKT.TypeLambda`, where the parameter is a functor on types or a type constructor, so that
+  `HKT.Kind` applies it, and with its default value where it takes one.
+- `orderedOf`: gives the type parameters of a declaration in the order TypeScript takes them, every
+  parameter with a default value after every other one.
 - `lambdaObjectOf`: runs a computation on the object of a functor on types at the object of a type
   lambda of Effect, `this['Target']`, as `normalizedOf` reads the object, given the type of the
   functor.
@@ -214,11 +237,24 @@ def isFunctorType (type : Lean.Expr) : Bool :=
   -- The generator imports no Mathlib, so the names of Mathlib are written as names alone.
   type.isAppOfArity `CategoryTheory.Functor 4 && (type.getArg! 0).isSort && (type.getArg! 2).isSort
 
+/-- Tells whether a type of the theory is the type of a type constructor, a function from types to
+types, such as `Type u → Type u` of a monad. -/
+def isTypeConstructorType (type : Lean.Expr) : Bool :=
+  match type.cleanupAnnotations with
+  | .forallE _ (.sort _) (.sort _) _ => true
+  | _ => false
+
+/-- Tells whether a binder of the theory is a type parameter in TypeScript: a binder over a type,
+over a functor on types, or over a type constructor, with or without a default value. -/
+def isParameterType (type : Lean.Expr) : Bool :=
+  let type := type.cleanupAnnotations
+  type.isSort || isFunctorType type || isTypeConstructorType type
+
 /-- Gives the number of type parameters of a declaration, the leading binders of its type over a
-type or over a functor on types. -/
+type, over a functor on types, or over a type constructor. -/
 def typeParameterCount : Lean.Expr → Nat
   | .forallE _ domain body _ =>
-    if domain.isSort || isFunctorType domain then typeParameterCount body + 1 else 0
+    if isParameterType domain then typeParameterCount body + 1 else 0
   | _ => 0
 
 /-- Runs a computation on the type parameters of a declaration, the leading binders of its type over
@@ -263,22 +299,54 @@ where
           return (category, types) : Lean.MetaM (Lean.Expr × Lean.Expr))
         return ← loop declaration remaining (rest.instantiateRev #[category, types])
           (value.map (Lean.mkApp2 · category types)) parameters
-    if domain.isSort || isFunctorType domain then
+    -- An instance of a class on a type parameter, such as `Monad m`, constrains the parameter and
+    -- is no parameter of its own, as TypeScript takes the class by its instances.
+    if binderInfo == .instImplicit &&
+        parameters.any fun parameter ↦ domain.containsFVar parameter.fvarId! then
+      return ← Lean.Meta.withLocalDecl name binderInfo domain fun constraint ↦
+        loop declaration remaining (body.instantiate1 constraint)
+          (value.map (Lean.mkApp · constraint)) parameters
+    -- A type constructor that the value gives without binding its argument, such as
+    -- `ReaderT R (Except E)`, is the value itself, whose argument is no parameter.
+    if domain.isSort && isTypeConstructorType type &&
+        value.any fun value ↦ !value.headBeta.isLambda then
+      return ← finish
+    if isParameterType domain then
       let environment ← monadLift (Lean.getEnv : Lean.MetaM Lean.Environment)
       let parameterName := match ExportTypeScript.nameOf? environment declaration name with
         | some parameterName => .mkSimple parameterName
         | none => name
+      -- The parameter keeps the default value that its type annotates, which TypeScript gives the
+      -- parameter as well.
       Lean.Meta.withLocalDecl parameterName binderInfo domain fun parameter ↦
         loop declaration remaining (body.instantiate1 parameter)
           (value.map (Lean.mkApp · parameter)) (parameters.push parameter)
     else finish
 
+/-- Gives the declaration marked `export_typescript` that labels the identity functor of Mathlib,
+`CategoryTheory.Functor.id`, the functor of the identity monad `Id`, where the theory marks one. -/
+def identityLabelOf? (environment : Lean.Environment) : Option Lean.Name :=
+  (ExportTypeScript.exportsOf environment).findSome? fun declared ↦
+    if ExportTypeScript.labels environment declared.declaration `CategoryTheory.Functor.id then
+      some declared.declaration
+    else none
+
+/-- Gives the default value of a type parameter, which the type of its binder annotates, such as
+`Id` for `(m : Type u → Type u := Id)`, where the parameter takes one. -/
+def defaultOf? (parameter : Lean.Expr) : Lean.MetaM (Option Lean.Expr) := do
+  return (← parameter.fvarId!.getType).getOptParamDefault?
+
 /-- Gives the functor and the object of an object `F.obj X` of a functor `F` that is a parameter,
-which no reduction resolves, where the type is one. -/
-def parameterObjectOf (type : Lean.Expr) : Option (Lean.Expr × Lean.Expr) :=
+which no reduction resolves, or of an application `m X` of a type constructor `m` that is a
+parameter, where the type is one. -/
+def parameterObjectOf (type : Lean.Expr) : Lean.MetaM (Option (Lean.Expr × Lean.Expr)) := do
   if type.isAppOfArity `CategoryTheory.Functor.obj 6 && (type.getArg! 4).isFVar then
-    some (type.getArg! 4, type.getArg! 5)
-  else none
+    return some (type.getArg! 4, type.getArg! 5)
+  -- A parameter applied to a type is an object only where the parameter is a type constructor, as
+  -- a function that a binder holds applies to values.
+  if let .app (.fvar constructor) object := type then
+    if isTypeConstructorType (← constructor.getType) then return some (.fvar constructor, object)
+  return none
 
 /-- Gives the type and the condition of a refinement, a type of the theory whose value is a subtype
 `{ value : T // condition value = true }` of a type `T` by a function `condition` marked
@@ -342,8 +410,8 @@ partial def normalizedOf (type : Lean.Expr) : Lean.MetaM Lean.Expr := do
   | .forallE name domain body info =>
     return .forallE name (← normalizedOf domain) (← normalizedOf body) info
   | _ =>
-    if let some (_, object) := parameterObjectOf type then
-      return Lean.mkAppN type.getAppFn (type.getAppArgs.set! 5 (← normalizedOf object))
+    if let some (_, object) ← parameterObjectOf type then
+      return Lean.mkAppN type.getAppFn (type.getAppArgs.pop.push (← normalizedOf object))
     match type.getAppFn, type.getAppArgs with
     -- The generator imports no Mathlib, so the names of Mathlib are written as names alone.
     | .const `Quiver.Hom _, #[.sort _, _, source, target]
@@ -361,7 +429,7 @@ partial def normalizedOf (type : Lean.Expr) : Lean.MetaM Lean.Expr := do
       -- functor, such as the product of a composite.
       let environment ← Lean.getEnv
       let reduced ← Lean.Meta.whnfHeadPred type fun part ↦
-        return (parameterObjectOf part).isNone &&
+        return (← parameterObjectOf part).isNone &&
           (part == type || (functorDeclarationOf? environment part).isNone)
       if reduced == type then return type
       let normalized ← normalizedOf reduced
@@ -440,7 +508,7 @@ projection of such a field replaced by its type parameter, such as
 `(coalgebra : StreamCoalgebra Output) → (state : State) → Stream' Output` with the type parameter
 `State` for `(coalgebra : StreamCoalgebra Output) → (state : coalgebra.V) → Stream' Output`. -/
 def unbundledOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
-    [MonadLiftT Lean.MetaM m] {α : Type} (type : Lean.Expr)
+    [MonadLiftT Lean.MetaM m] {α : Type} (type : Lean.Expr) (value : Option Lean.Expr)
     (computation : List Lean.Expr → Lean.Expr → m α) : m α :=
   Lean.Meta.forallTelescope type fun binders body ↦ do
     let bundled ← monadLift (binders.toList.filterMapM fun binder ↦ do
@@ -453,32 +521,65 @@ def unbundledOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
             (← Lean.Meta.mkProjection binder field))).isSort
       return some (binder, structureName, fields) :
         Lean.MetaM (List (Lean.Expr × Lean.Name × List Lean.Name)))
-    withFields binders body (bundled.flatMap fun (binder, structureName, fields) ↦
-      fields.map fun field ↦ (binder, structureName, field)) []
+    withFields binders body (bundled.length > 1) (bundled.flatMap
+      fun (binder, structureName, fields) ↦ fields.map fun field ↦ (binder, structureName, field))
+      []
 where
-  /-- Takes the fields whose values are types one at a time, each with a type parameter, and then
-  rebuilds the function type with the type parameters in place of their projections. -/
-  withFields (binders : Array Lean.Expr) (body : Lean.Expr) :
+  /-- Takes the fields whose values are types one at a time, each with a type parameter, named
+  after its binder as well where several parameters bundle types, such as `FirstState` and
+  `SecondState`, and then rebuilds the function type with the type parameters in place of their
+  projections, and with the result applied to the types that its definition gives its fields whose
+  values are types, where the result is a bundled structure, such as `[FirstState, SecondState]` for
+  two machines in series. -/
+  withFields (binders : Array Lean.Expr) (body : Lean.Expr) (several : Bool) :
       List (Lean.Expr × Lean.Name × Lean.Name) → List (Lean.Expr × Lean.Name × Lean.Expr) → m α
     | [], parameters => do
+      let environment ← monadLift (Lean.getEnv : Lean.MetaM Lean.Environment)
+      -- A projection takes the form of an application of its function or, once reduced, of a
+      -- projection by index.
       let replaced := fun (expression : Lean.Expr) ↦ expression.replace fun part ↦
         parameters.findSome? fun (binder, projection, parameter) ↦
-          if part.isAppOf projection && part.getAppArgs.back? == some binder then some parameter
-          else none
-      let rebuilt ← monadLift (binders.foldrM (init := replaced body) fun binder rest ↦ do
-        let declaration ← binder.fvarId!.getDecl
-        let applied := (parameters.filter (·.1 == binder)).map (·.2.2)
-        return .forallE declaration.userName
-          (Lean.mkAppN (replaced declaration.type) applied.toArray) (rest.abstract #[binder])
-          declaration.binderInfo : Lean.MetaM Lean.Expr)
+          match part with
+          | .proj structureName index projected =>
+            if projected == binder &&
+                (Lean.getStructureFields environment structureName)[index]?.map
+                  (structureName ++ ·) == some projection then some parameter
+            else none
+          | _ =>
+            if part.isAppOf projection && part.getAppArgs.back? == some binder then some parameter
+            else none
+      -- A result that is a bundled structure takes the types that the definition gives its fields
+      -- whose values are types, such as the state space of a machine it maps.
+      -- The field is taken out of the structure that the definition builds and reduced no
+      -- further, so that a type the definition names, such as a board, keeps its name.
+      let carriers ← monadLift (do
+        let some value := value | return #[]
+        let some structureName ← bundledOf (← Lean.Meta.whnfR body) | return #[]
+        let result := Lean.mkAppN value binders
+        let fields := Lean.getStructureFields (← Lean.getEnv) structureName
+        (fields.zipIdx).filterMapM fun (field, index) ↦ do
+          let projection ← Lean.Meta.mkProjection result field
+          unless (← Lean.Meta.whnfR (← Lean.Meta.inferType projection)).isSort do return none
+          return some (← Lean.Meta.whnfCore (.proj structureName index result.headBeta)) :
+          Lean.MetaM (Array Lean.Expr))
+      let rebuilt ← monadLift (binders.foldrM
+        (init := Lean.mkAppN (replaced body) (carriers.map replaced)) fun binder rest ↦ do
+          let declaration ← binder.fvarId!.getDecl
+          let applied := (parameters.filter (·.1 == binder)).map (·.2.2)
+          return .forallE declaration.userName
+            (Lean.mkAppN (replaced declaration.type) applied.toArray) (rest.abstract #[binder])
+            declaration.binderInfo : Lean.MetaM Lean.Expr)
       computation (parameters.map (·.2.2)) rebuilt
     | (binder, structureName, field) :: rest, parameters => do
-      let name := Lean.Name.mkSimple (← monadLift (fieldNameOf structureName field :
-        Lean.MetaM String))
+      let fieldName ← monadLift (fieldNameOf structureName field : Lean.MetaM String)
+      let binderName := (← monadLift (binder.fvarId!.getUserName : Lean.MetaM Lean.Name)).toString
+      let name := Lean.Name.mkSimple
+        (if several then s!"{binderName.capitalize}{fieldName}" else fieldName)
       let fieldType ← monadLift (do
         Lean.Meta.inferType (← Lean.Meta.mkProjection binder field) : Lean.MetaM Lean.Expr)
       Lean.Meta.withLocalDeclD name fieldType fun parameter ↦
-        withFields binders body rest (parameters ++ [(binder, structureName ++ field, parameter)])
+        withFields binders body several rest
+          (parameters ++ [(binder, structureName ++ field, parameter)])
 
 /-- Gives the module of the theory that declares a declaration, or the module being written where
 the declaration lies in no imported module. -/
@@ -587,6 +688,9 @@ partial def typeOf (packageNamespace : Lean.Name) (type : Lean.Expr) : TypeScrip
     return s!"{← effectNameOf "Stream" "Stream" .type}<{← typeOf packageNamespace element}>"
   | .const ``String _ => return "string"
   | .const ``Bool _ => return "boolean"
+  -- The type of one value is the type of no value in TypeScript, as a function that takes it takes
+  -- nothing of interest.
+  | .const ``PUnit _ => return "void"
   | .app (.const ``Option _) element =>
     return s!"{← effectNameOf "Option" "Option" .type}<{← typeOf packageNamespace element}>"
   | .app (.const ``Array _) element =>
@@ -595,8 +699,19 @@ partial def typeOf (packageNamespace : Lean.Name) (type : Lean.Expr) : TypeScrip
     return s!"ReadonlyArray<{← typeOf packageNamespace element}>"
   | .app (.app (.const ``Prod _) first) second =>
     return s!"readonly [{← typeOf packageNamespace first}, {← typeOf packageNamespace second}]"
+  -- A binary coproduct is a result of Effect, which succeeds with a value of the second summand,
+  -- the one a computation goes on with, and fails with a value of the first.
+  | .app (.app (.const ``Sum _) first) second =>
+    return s!"{← effectNameOf "Result" "Result" .type}<{← typeOf packageNamespace second}, \
+      {← typeOf packageNamespace first}>"
+  -- A computation that reads requirements and either fails or succeeds is an effect of Effect,
+  -- which takes the value, the failure, and the requirements in that order.
+  | .app (.app (.app (.const ``ReaderT _) requirements) (.app (.const ``Except _) failure))
+      success =>
+    return s!"{← effectNameOf "Effect" "Effect" .type}<{← typeOf packageNamespace success}, \
+      {← typeOf packageNamespace failure}, {← typeOf packageNamespace requirements}>"
   | .const .. | .app .. =>
-    if let some (functor, object) := parameterObjectOf type then
+    if let some (functor, object) ← parameterObjectOf type then
       return s!"{← effectNameOf "HKT" "Kind" .type}<{← typeOf packageNamespace functor}, never, \
         never, never, {← typeOf packageNamespace object}>"
     let .const name _ := type.getAppFn | Lean.throwError m!"`{type}` has no type in TypeScript."
@@ -604,10 +719,73 @@ partial def typeOf (packageNamespace : Lean.Name) (type : Lean.Expr) : TypeScrip
       Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never marks it \
         `export_typescript`."
     let typeName ← referenceOf name (← typeNameOf packageNamespace name)
-    let arguments ← type.getAppArgs.toList.mapM (typeOf packageNamespace)
+    let arguments ← argumentsOf packageNamespace name type.getAppArgs.toList
     if arguments.isEmpty then return typeName
     return s!"{typeName}<{", ".intercalate arguments}>"
   | _ => Lean.throwError m!"`{type}` has no type in TypeScript."
+
+/-- Gives the type arguments of TypeScript that an application of a declaration of the theory takes,
+leaving out every instance of a class, such as `Monad m`: every argument without a default value,
+then every argument past the binders of the declaration, such as the state space of a kind of
+system, and then every argument with a default value up to the last one that differs from its
+default, as TypeScript takes a type parameter with a default value after every other one. -/
+partial def argumentsOf (packageNamespace name : Lean.Name) (arguments : List Lean.Expr) :
+    TypeScriptM (List String) := do
+  let information ← Lean.getConstInfo name
+  let levels ← information.levelParams.mapM fun _ ↦ Lean.Meta.mkFreshLevelMVar
+  let (required, defaulted, extra) ← loop (information.instantiateTypeLevelParams levels) arguments
+    [] []
+  -- A trailing argument equal to its default value is left to the default.
+  let kept := (defaulted.reverse.dropWhile (·.2)).reverse.map (·.1)
+  return required ++ extra ++ kept
+where
+  /-- Takes the binders of the type of the declaration and the arguments one at a time, giving the
+  written arguments without and with a default value, the latter marked where they equal it, and the
+  written arguments past the binders. -/
+  loop (type : Lean.Expr) :
+      List Lean.Expr → List String → List (String × Bool) →
+        TypeScriptM (List String × List (String × Bool) × List String)
+    | [], required, defaulted => return (required, defaulted, [])
+    | argument :: rest, required, defaulted => do
+      let .forallE _ domain body binderInfo := type
+        | return (required, defaulted,
+            ← (argument :: rest).mapM (typeOf packageNamespace))
+      let next := body.instantiate1 argument
+      if binderInfo == .instImplicit then return ← loop next rest required defaulted
+      let written ← if isTypeConstructorType domain then typeConstructorOf packageNamespace argument
+        else typeOf packageNamespace argument
+      match domain.getOptParamDefault? with
+      | some default =>
+        loop next rest required (defaulted ++ [(written, ← Lean.Meta.isDefEq argument default)])
+      | none => loop next rest (required ++ [written]) defaulted
+
+/-- Gives the type lambda of Effect that a type constructor of the theory takes in TypeScript: a
+type constructor that is a parameter by its name, the identity monad `Id` as the type lambda of the
+identity functor that the theory labels, the options as `Option.OptionTypeLambda` of Effect, and an
+application of a type constructor marked `export_typescript` by its name, such as
+`EffectFunctor<E, R>`, or fails with the reason where the type constructor has none. -/
+partial def typeConstructorOf (packageNamespace : Lean.Name) (constructor : Lean.Expr) :
+    TypeScriptM String := do
+  let environment ← Lean.getEnv
+  match constructor.getAppFn with
+  | .fvar _ => typeOf packageNamespace constructor
+  | .const ``Option _ => effectNameOf "Option" "OptionTypeLambda" .type
+  | .const ``Id _ =>
+    -- The functor of the identity monad is the identity functor, whose type lambda the declaration
+    -- that labels it gives.
+    let some label := identityLabelOf? environment
+      | Lean.throwError m!"`{constructor}` has no type lambda in TypeScript, as the theory labels \
+          no identity functor."
+    referenceOf label (← typeNameOf packageNamespace label)
+  | .const name _ =>
+    unless ExportTypeScript.isExported environment name do
+      Lean.throwError m!"`{constructor}` has no type lambda in TypeScript, as the theory never \
+        marks `{name}` `export_typescript`."
+    let typeName ← referenceOf name (← typeNameOf packageNamespace name)
+    let arguments ← argumentsOf packageNamespace name constructor.getAppArgs.toList
+    if arguments.isEmpty then return typeName
+    return s!"{typeName}<{", ".intercalate arguments}>"
+  | _ => Lean.throwError m!"`{constructor}` has no type lambda in TypeScript."
 
 /-- Gives the generic function type of TypeScript that a function type of the theory takes whose
 leading parameters are implicit types, such as `{X Y : Type u} → (X ⟶ Y) → …`, with the type
@@ -684,11 +862,27 @@ def annotationOf (parameter : String) (polarities : List Bool) : String :=
   | false, false => parameter
 
 /-- Gives a type parameter as TypeScript declares it, constrained to a type lambda of Effect,
-`HKT.TypeLambda`, where the parameter is a functor on types, so that `HKT.Kind` applies it. -/
-def genericOf (parameter : Lean.Expr) (declared : String) : TypeScriptM String := do
-  if isFunctorType (← parameter.fvarId!.getType) then
-    return s!"{declared} extends {← effectNameOf "HKT" "TypeLambda" .type}"
-  return declared
+`HKT.TypeLambda`, where the parameter is a functor on types or a type constructor, so that
+`HKT.Kind` applies it, and with its default value where it takes one, such as
+`Monad extends HKT.TypeLambda = Functor.Id`. -/
+def genericOf (packageNamespace : Lean.Name) (parameter : Lean.Expr) (declared : String) :
+    TypeScriptM String := do
+  let type ← parameter.fvarId!.getType
+  let constrained ← if isFunctorType type.cleanupAnnotations || isTypeConstructorType type then
+      pure s!"{declared} extends {← effectNameOf "HKT" "TypeLambda" .type}"
+    else pure declared
+  let some default ← defaultOf? parameter | return constrained
+  let written ← if isTypeConstructorType type then typeConstructorOf packageNamespace default
+    else typeOf packageNamespace default
+  return s!"{constrained} = {written}"
+
+/-- Gives the type parameters of a declaration in the order TypeScript takes them, every parameter
+without a default value first, then the parameters that follow them, such as the state space of a
+kind of system, and then every parameter with a default value, as TypeScript takes a type parameter
+with a default value after every other one. -/
+def orderedOf (parameters following : List Lean.Expr) : Lean.MetaM (List Lean.Expr) := do
+  let defaulted ← parameters.filterM fun parameter ↦ return (← defaultOf? parameter).isSome
+  return parameters.filter (!defaulted.contains ·) ++ following ++ defaulted
 
 /-- Runs a computation on the object of a functor on types at the object of a type lambda of
 Effect, `this['Target']`, as `normalizedOf` reads the object, given the type of the functor. -/
@@ -792,6 +986,9 @@ inductive DeclarationKind where
   /-- A class of functors, a type whose value is the type of the functors on types, such as
   `CategoryTheory.Functor (Type u) (Type u)`. -/
   | functorClass
+  /-- A type constructor, a declaration whose value is a function from types to types, such as the
+  monad `ReaderT R (Except E)`. -/
+  | typeConstructor
   /-- A function, a declaration that takes parameters beyond its type parameters. -/
   | function
   /-- A value, a declaration that takes no parameters beyond its type parameters. -/
@@ -809,7 +1006,8 @@ def kindOf (name : Lean.Name) : Lean.MetaM DeclarationKind := do
           if isFunctorType value then return .functorClass
           if (← bundledOf value).isSome then return .bundled
         return .type
-      | .forallE .. => return .function
+      | .forallE .. =>
+        return if isTypeConstructorType rest && value.isSome then .typeConstructor else .function
       | _ =>
         if isFunctorType rest then return .functor
         return if (curriedTargetOf? rest).isSome then .curriedFunctor else .value
@@ -833,7 +1031,7 @@ where
   loop (type : Lean.Expr) : List Lean.Expr → Lean.MetaM (List Lean.Expr)
     | [] => return []
     | argument :: rest => do
-      let .forallE _ domain body _ ← Lean.Meta.whnf type | return []
+      let .forallE _ domain body binderInfo ← Lean.Meta.whnf type | return []
       let next := body.instantiate1 argument
       -- A category is a binder over a type that the next binder, an instance of
       -- `CategoryTheory.Category`, takes.
@@ -842,7 +1040,8 @@ where
           categoryClass.isAppOfArity `CategoryTheory.Category 1 && categoryClass.appArg! == argument
         | _ => false
       let kept ← loop next rest
-      return if !isCategory && (domain.isSort || isFunctorType domain) then argument :: kept
+      return if !isCategory && binderInfo != .instImplicit && isParameterType domain then
+          argument :: kept
         else kept
 
 /-- Gives the type lambda of Effect that a functor on types of the theory takes in TypeScript: a
@@ -868,15 +1067,18 @@ partial def typeLambdaOf (packageNamespace : Lean.Name) (functor : Lean.Expr) :
     return s!"{← referenceOf name (← typeNameOf packageNamespace name)}\
       <{← typeOf packageNamespace object}>"
   | .const `CategoryTheory.ofTypeFunctor _, arguments =>
-    unless arguments[0]? matches some (Lean.Expr.const ``Option _) do
-      Lean.throwError m!"`{functor}` has no type lambda in TypeScript."
-    effectNameOf "Option" "OptionTypeLambda" .type
+    -- The functor of a type constructor takes the type lambda of the type constructor.
+    let some constructor := arguments[0]?
+      | Lean.throwError m!"`{functor}` has no type lambda in TypeScript."
+    typeConstructorOf packageNamespace constructor
   | .const name _, arguments =>
     unless ExportTypeScript.isExported environment name do
       Lean.throwError m!"`{functor}` has no type lambda in TypeScript, as the theory never marks \
         `{name}` `export_typescript`."
     let written ← (← typeArgumentsOf functor.getAppFn arguments.toList).mapM fun argument ↦ do
-      if isFunctorType (← Lean.Meta.inferType argument) then typeLambdaOf packageNamespace argument
+      let argumentType ← Lean.Meta.inferType argument
+      if isFunctorType argumentType then typeLambdaOf packageNamespace argument
+      else if isTypeConstructorType argumentType then typeConstructorOf packageNamespace argument
       else typeOf packageNamespace argument
     let typeArguments := if written.isEmpty then "" else s!"<{", ".intercalate written}>"
     return s!"{← referenceOf name (← typeNameOf packageNamespace name)}{typeArguments}"
@@ -922,11 +1124,19 @@ partial def polaritiesOf (parameter : Lean.Expr) (positive : Bool) (type : Lean.
     -- natural transformation, so the functor occurs at the polarity of the object, while
     -- TypeScript sees no variance of the type lambda, so every parameter in the object occurs at
     -- both polarities.
-    if let some (functor, object) := parameterObjectOf type then
+    if let some (functor, object) ← parameterObjectOf type then
       return (if functor == parameter then [positive] else []) ++
         (← polaritiesOf parameter positive object) ++ (← polaritiesOf parameter (!positive) object)
+    -- An effect of Effect varies with its value, its failure, and its requirements alike, as
+    -- TypeScript declares `Effect.Effect`, whereas the requirements of the theory are read.
+    if let .app (.app (.app (.const ``ReaderT _) requirements) (.app (.const ``Except _) failure))
+        success := type then
+      return (← polaritiesOf parameter positive success) ++
+        (← polaritiesOf parameter positive failure) ++
+        (← polaritiesOf parameter positive requirements)
     let .const name _ := type.getAppFn | return []
     let variances ← if [``Option, ``Array, ``List].contains name then pure [[true]]
+      else if name == ``Sum then pure [[true], [true]]
       else variancesOf name
     (type.getAppArgs.toList.zip variances).flatMapM fun (argument, polarities) ↦
       polarities.flatMapM fun polarity ↦ polaritiesOf parameter (positive == polarity) argument
@@ -944,6 +1154,10 @@ partial def variancesOf (name : Lean.Name) : Lean.MetaM (List (List Bool)) := do
     let some value := value | polaritiesIn []
     if isFunctorType rest then
       return ← lambdaObjectOf value rest fun object ↦ polaritiesIn [object]
+    if let .forallE _ domain _ _ := rest then
+      if isTypeConstructorType rest then
+        return ← Lean.Meta.withLocalDeclD `target domain fun target ↦
+          polaritiesIn [Lean.mkApp value target]
     -- The fields of a bundled structure name its type parameters, which exist only while the
     -- fields are read, so the polarities are taken there.
     if (← bundledOf value).isSome then

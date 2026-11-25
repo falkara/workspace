@@ -96,10 +96,17 @@ def genericFunction {X Y : Type} (morphism : X → Y) (value : X) : Y :=
 #eval show Lean.Elab.TermElabM String from do
   (Generator.typeOf .anonymous (← Lean.Elab.Term.elabType (← `(Rat × List Rat)))).run' []
 
-/-- error: `Sum` has no declaration in TypeScript, as the theory never marks it `export_typescript`. -/
+/-- error: `P x` has no type in TypeScript. -/
+#guard_msgs in
+#eval show Lean.MetaM String from do
+  Lean.Meta.withLocalDeclD `P
+      (Lean.mkForall `value .default (Lean.mkConst ``Rat) (Lean.mkSort Lean.Level.one)) fun family ↦ Lean.Meta.withLocalDeclD `x (Lean.mkConst ``Rat) fun value ↦
+      (Generator.typeOf .anonymous (Lean.mkApp family value)).run' []
+
+/-- info: "Result.Result<Rational.Rational, string>" -/
 #guard_msgs in
 #eval show Lean.Elab.TermElabM String from do
-  (Generator.typeOf .anonymous (← Lean.Elab.Term.elabType (← `(Rat ⊕ Rat)))).run' []
+  (Generator.typeOf .anonymous (← Lean.Elab.Term.elabType (← `(String ⊕ Rat)))).run' []
 
 /-- info: "(a: Rational.Rational) => Rational.Rational" -/
 #guard_msgs in

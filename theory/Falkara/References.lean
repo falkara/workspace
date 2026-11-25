@@ -33,6 +33,9 @@ The module defines every work that the theory cites, each as a declaration that 
   the theory builds on, with a page of documentation for every declaration.
 - `microsoft2024namingFiles`: the page of the documentation of Windows that gives the rules for the
   names of files, paths, and namespaces.
+- `pirog2014coinductiveResumptionMonad`: the paper of Piróg and Gibbons on the coinductive
+  resumption monad, whose resumptions are the final coalgebras of the functors that either end with
+  a result or go on in a functor.
 
 ## Implementation Notes
 
@@ -140,5 +143,14 @@ def microsoft2024namingFiles : Citation.Work where
   title := "Naming Files, Paths, and Namespaces"
   year := 2024
   itemAddress := some "https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#"
+
+/-- The paper of Piróg and Gibbons on the coinductive resumption monad, whose resumptions are the
+final coalgebras of the functors that either end with a result or go on in a functor. -/
+def pirog2014coinductiveResumptionMonad : Citation.Work where
+  author := "Maciej Piróg and Jeremy Gibbons"
+  title := "The Coinductive Resumption Monad"
+  year := 2014
+  publisher := some "Elsevier, Amsterdam, NL"
+  doi := some "10.1016/j.entcs.2014.10.015"
 
 end Falkara.References

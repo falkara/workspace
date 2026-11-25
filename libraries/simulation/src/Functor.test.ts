@@ -138,3 +138,24 @@ describe('Functor.Const', () => {
     ),
   );
 });
+
+describe('Functor.Id', () => {
+  /** The axioms of the identity functor, with two values equal where they are the same. */
+  const axioms = Functor.axioms(Functor.id(), (self, that) => Object.is(self, that));
+
+  it('gives the coalgebra structure of a coalgebra the next state alone', () => {
+    const system = Coalgebra.make<Functor.Id, number>({ structure: (state) => state + 1 });
+
+    expectTypeOf(system.structure).returns.toEqualTypeOf<number>();
+  });
+
+  it.prop('keeps the identity', [Schema.Finite], ([value]) => axioms.map_id(value));
+
+  it.prop('keeps the composition', [Schema.Finite], ([value]) =>
+    axioms.map_comp(
+      (number: number) => number + 1,
+      (number: number) => `${number}`,
+      value,
+    ),
+  );
+});

@@ -7,10 +7,13 @@
     "./Coalgebra": "./dist/Coalgebra.mjs",
     "./Coalgebra/DeterministicAutomaton": "./dist/Coalgebra/DeterministicAutomaton.mjs",
     "./Coalgebra/MealyMachine": "./dist/Coalgebra/MealyMachine.mjs",
+    "./Coalgebra/ResumptionCoalgebra": "./dist/Coalgebra/ResumptionCoalgebra.mjs",
     "./Coalgebra/SequenceCoalgebra": "./dist/Coalgebra/SequenceCoalgebra.mjs",
     "./Coalgebra/StreamCoalgebra": "./dist/Coalgebra/StreamCoalgebra.mjs",
     "./Functor": "./dist/Functor.mjs",
+    "./Functor/BinaryCoproductFunctor": "./dist/Functor/BinaryCoproductFunctor.mjs",
     "./Functor/BinaryProductFunctor": "./dist/Functor/BinaryProductFunctor.mjs",
+    "./Functor/EffectFunctor": "./dist/Functor/EffectFunctor.mjs",
     "./Functor/ExponentFunctor": "./dist/Functor/ExponentFunctor.mjs"
   },
   "publish": {

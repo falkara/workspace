@@ -1,10 +1,6 @@
-import { type HKT, Result } from 'effect';
+import { BinaryCoproductFunctor } from '@falkara/simulation';
 
-interface Failing<Failure> extends HKT.TypeLambda {
-  readonly type: Result.Result<this['Target'], Failure>;
-}
-
-const system = Coalgebra.make<Failing<'Overcrowded'>, Board>({
+const system = Coalgebra.make<BinaryCoproductFunctor.BinaryCoproductFunctor<'Overcrowded'>, Board>({
   structure: (board) =>
     HashSet.size(board) > 100 ? Result.fail('Overcrowded') : Result.succeed(generation(board)),
 });
@@ -14,7 +10,7 @@ system.structure(blinker);
 
 // The names that the page defines in the blocks before this one.
 import { Coalgebra } from '@falkara/simulation';
-import { HashSet } from 'effect';
+import { HashSet, Result } from 'effect';
 type Board = HashSet.HashSet<string>;
 declare const generation: (board: Board) => Board;
 declare const blinker: Board;

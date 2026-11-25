@@ -71,7 +71,7 @@ def reexportsOf (moduleNamespace name : Lean.Name) : Lean.MetaM (List String) :=
   let constructorName ← constructorNameOf moduleNamespace name
   match ← kindOf name with
   | .dataStructure | .structure | .bundled => return [typeName, constructorName]
-  | .refinement .. | .type | .functor => return [typeName]
+  | .refinement .. | .type | .functor | .typeConstructor => return [typeName]
   -- A curried functor whose object is a structure that the theory names re-exports as well the
   -- interface of the structure, such as `Product`.
   | .curriedFunctor =>
@@ -94,7 +94,7 @@ def implementationsOf (moduleNamespace name : Lean.Name) :
   let bindingOf := fun (exported : String) ↦
     if reservedWords.contains exported then s!"{exported}_" else exported
   match ← kindOf name with
-  | .functor | .curriedFunctor =>
+  | .functor | .curriedFunctor | .typeConstructor =>
     return [(bindingOf (← instanceNameOf moduleNamespace name),
       ← instanceCommentOf moduleNamespace name)]
   | .function => return [(bindingOf (← valueNameOf moduleNamespace name), ← commentOf name)]

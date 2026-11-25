@@ -108,10 +108,11 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
   let environment ← Lean.getEnv
   let declarations ← markedDeclarationsOf module false
   let kinds ← declarations.mapM fun name ↦ return (name, ← kindOf name)
-  -- A functor takes an instance of the class of functors, a function that the module of the package
-  -- implements, as the action of a functor on morphisms has no value that the generator can write.
+  -- A functor and a type constructor, whose functor maps its values, take an instance of the class
+  -- of functors, a function that the module of the package implements, as the action of a functor
+  -- on morphisms has no value that the generator can write.
   let instances := kinds.filterMap fun
-    | (name, .functor) | (name, .curriedFunctor) => some name
+    | (name, .functor) | (name, .curriedFunctor) | (name, .typeConstructor) => some name
     | _ => none
   let ((texts, instanceMembers), records) ← (do
       let texts ← declarations.mapM (declarationOf packageNamespace)
@@ -176,11 +177,15 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
     | .dataStructure | .structure => fieldConstants name
     | _ => ((environment.find? name).map fun information ↦
       information.type.getUsedConstants.toList ++
-        if kind matches .type | .functor | .curriedFunctor | .functorClass | .refinement .. then
+        if kind matches .type | .functor | .curriedFunctor | .functorClass | .typeConstructor |
+            .refinement .. then
           (information.value?.map (·.getUsedConstants.toList)).getD []
         else []).getD []
+  -- The identity monad `Id` takes the type lambda of the identity functor, which its label gives.
+  let identity := if named.contains ``Id then (identityLabelOf? environment).toList else []
   -- The contract names the class of functors in the type of every instance.
-  let others := (namedBySchemas ++ named ++ functorClass.toList).eraseDups.filter fun name ↦
+  let others := (namedBySchemas ++ named ++ identity ++ functorClass.toList).eraseDups.filter
+    fun name ↦
     ExportTypeScript.isExported environment name &&
       (environment.getModuleIdxFor? name).map (·.toNat) !=
         (environment.getModuleIdx? module).map (·.toNat)

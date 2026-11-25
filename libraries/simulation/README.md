@@ -144,7 +144,95 @@ await StreamCoalgebra.behavior(
   // [2, 3]: 2 before the move and 3 after it.
   ```
 
+- A **resumption coalgebra** gives from every state either a result or an output and the next state. It generalizes a sequence coalgebra (Jacobs, Section 2.2.1), which gives nothing where it ends. Jacobs gives it no name, so the library names it after the coinductive [resumptions](https://doi.org/10.1016/j.entcs.2014.10.015) of Piróg and Gibbons. Its behavior ends where it gives a result, and its `channel` is a `Channel` of Effect that emits the outputs and ends with the result. A game ends with the reason it ends for:
+
+  ```ts
+  import { ResumptionCoalgebra } from '@falkara/simulation';
+  import { Channel, Result } from 'effect';
+
+  const system = ResumptionCoalgebra.make({
+    structure: (board: Board) =>
+      HashSet.isEmpty(board)
+        ? Result.fail('Extinct' as const)
+        : HashSet.size(board) > 100
+          ? Result.fail('Overcrowded' as const)
+          : Result.succeed({ output: board, next: generation(board) }),
+  });
+
+  await ResumptionCoalgebra.channel(system, HashSet.make('0,0', '1,0')).pipe(
+    Channel.runDrain,
+    Effect.runPromise,
+  );
+  // 'Extinct': the board of two cells dies out after one generation.
+  ```
+
 A Mealy machine and a deterministic automaton read their inputs from any `Stream` of Effect and carry its errors and requirements on to their outputs, so inputs may come from a socket, a timer, or a user. The stream of inputs pipes into the behavior, as above, or comes as its last argument, as `MealyMachine.behavior(system, board, moves)`.
+
+## Effects
+
+Every kind of system also takes steps that are effects of Effect, which may fail, need services, or draw random numbers. Its `makeEffect` makes such a system, and its functions that run the steps have twins named with `Effect`, such as `behaviorEffect` beside `behavior`, which carry the failures and the requirements of the steps on to the stream. A board that a random cell joins before every generation grows the same way for the same seed:
+
+```ts
+import { Random } from 'effect';
+
+const system = StreamCoalgebra.makeEffect({
+  structure: (board: Board) =>
+    Effect.map(Random.nextIntBetween(0, 2), (column) => ({
+      output: HashSet.size(board),
+      next: generation(HashSet.add(board, `${column},0`)),
+    })),
+});
+
+await StreamCoalgebra.behaviorEffect(system, blinker).pipe(
+  Stream.take(3),
+  Stream.runCollect,
+  Random.withSeed('glider'),
+  Effect.runPromise,
+);
+// [3, 7, 6]: the sizes of the first three boards, the same on every run with the seed.
+```
+
+A system whose steps are effects is a system of the same kind in the monad `EffectFunctor`, as `StreamCoalgebra.StreamCoalgebra<number, Board, EffectFunctor.EffectFunctor<never, never>>`, and the systems without effects are those in the identity monad `Functor.Id`, which every kind takes unless told otherwise.
+
+## Steps and composition
+
+A system takes one step whenever its `structure` is called, and `steps` gives every step of a run with the state that it leads to, so a run goes on from any of them as a new run from that state. Mealy machines compose into Mealy machines: `series` feeds every output of a machine into another, `parallel` runs two side by side, and `mapInput` and `mapOutput` change what a machine reads and gives, while `toMealyMachine` brings a stream coalgebra or a deterministic automaton among them. Every one of them also takes its machine last, so a machine pipes into it:
+
+```ts
+import { pipe } from 'effect';
+
+const player = MealyMachine.make({
+  structure: (board: Board) => (cell: string) => {
+    const next = generation(HashSet.add(board, cell));
+    return { output: HashSet.size(next), next };
+  },
+});
+
+const peak = MealyMachine.make({
+  structure: (highest: number) => (count: number) => ({
+    output: Math.max(highest, count),
+    next: Math.max(highest, count),
+  }),
+});
+
+const record = pipe(
+  player,
+  MealyMachine.series(peak),
+  MealyMachine.mapOutput((highest) => `at most ${highest} cells`),
+);
+
+await Stream.make('1,1', '5,5').pipe(
+  MealyMachine.steps(record, [HashSet.make('0,1', '2,1'), 0]),
+  Stream.runCollect,
+  Effect.runPromise,
+);
+// [
+//   { output: 'at most 3 cells', next: [HashSet('1,0', '1,1', '1,2'), 3] },
+//   { output: 'at most 3 cells', next: [HashSet('0,1', '1,1', '2,1'), 3] },
+// ]
+```
+
+A composed machine keeps the states of its machines as a pair, and the machines whose steps are effects compose by the twins `seriesEffect` and `parallelEffect`, which run the effect of the first machine before the effect of the second.
 
 ## Coalgebra
 
@@ -161,16 +249,12 @@ system.structure(blinker);
 // Option.some(HashSet('1,0', '1,1', '1,2')), the column of three that follows the row.
 ```
 
-An endofunctor is a type lambda of Effect whose object is its `Target`, and the library fixes every other slot of the lambda at `never`, as an endofunctor maps a single type. A type lambda of Effect that keeps a further type in another slot, such as `Result.ResultTypeLambda`, which keeps the failure in `Out1`, therefore gives a coalgebra that never fails. An endofunctor with a failure takes the failure as a type parameter of its own type lambda instead, as `BinaryProductFunctor` takes its factor. A board that fails once it grows too crowded is a coalgebra of such an endofunctor:
+An endofunctor is a type lambda of Effect whose object is its `Target`, and the library fixes every other slot of the lambda at `never`, as an endofunctor maps a single type. A type lambda of Effect that keeps a further type in another slot, such as `Result.ResultTypeLambda`, which keeps the failure in `Out1`, therefore gives a coalgebra that never fails. An endofunctor with a failure takes the failure as a type parameter of its own type lambda instead, as `BinaryCoproductFunctor` takes its summand. A board that fails once it grows too crowded is a coalgebra of that endofunctor:
 
 ```ts
-import { type HKT, Result } from 'effect';
+import { BinaryCoproductFunctor } from '@falkara/simulation';
 
-interface Failing<Failure> extends HKT.TypeLambda {
-  readonly type: Result.Result<this['Target'], Failure>;
-}
-
-const system = Coalgebra.make<Failing<'Overcrowded'>, Board>({
+const system = Coalgebra.make<BinaryCoproductFunctor.BinaryCoproductFunctor<'Overcrowded'>, Board>({
   structure: (board) =>
     HashSet.size(board) > 100 ? Result.fail('Overcrowded') : Result.succeed(generation(board)),
 });
@@ -179,13 +263,13 @@ system.structure(blinker);
 // Result.succeed(HashSet('1,0', '1,1', '1,2')), as three cells are far from a crowd.
 ```
 
-Every kind above is a coalgebra of an endofunctor that the module `Functor` and its folder build: a product of an output and the next state (`BinaryProductFunctor`, whose values are `Product`s with the fields `output` and `next`), a function of an input (`ExponentFunctor`), a constant (`Functor.Const`), and two endofunctors one after the other (`Functor.Comp`). Each endofunctor comes with its [`Functor`](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor) instance, such as `BinaryProductFunctor.functor` and `Functor.comp`, and `Functor.axioms` gives the [axioms](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor) of every instance as predicates to test an instance of a new endofunctor, as [`Functor.test.ts`](examples/Functor.test.ts) does for steps that count the cells they bring to life. The `map` of an instance changes what a value of the endofunctor holds and keeps the form of the value, so a product stays a product.
+Every kind above is a coalgebra of an endofunctor that the module `Functor` and its folder build: a product of an output and the next state (`BinaryProductFunctor`, whose values are `Product`s with the fields `output` and `next`), a result or a value (`BinaryCoproductFunctor`), a function of an input (`ExponentFunctor`), an effect (`EffectFunctor`), a constant (`Functor.Const`), the identity (`Functor.Id`), and two endofunctors one after the other (`Functor.Comp`). Each endofunctor comes with its [`Functor`](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor) instance, such as `BinaryProductFunctor.functor` and `Functor.comp`, and `Functor.axioms` gives the [axioms](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor) of every instance as predicates to test an instance of a new endofunctor, as [`Functor.test.ts`](examples/Functor.test.ts) does for steps that count the cells they bring to life. The `map` of an instance changes what a value of the endofunctor holds and keeps the form of the value, so a product stays a product.
 
 ## Theory
 
 The library is written from a theory in Lean. Each type, each constructor, and each contract of a [behavior](https://doi.org/10.1017/CBO9781316823187) is generated from a definition of the theory, and the functions that the library writes by hand have to match their contracts or the library fails to compile.
 
-The definitions build on the Lean library [Mathlib](https://leanprover-community.github.io/mathlib4_docs/) and take the names that Jacobs gives them in [Introduction to Coalgebra](https://doi.org/10.1017/CBO9781316823187) (2017): coalgebra, stream coalgebra, sequence coalgebra, Mealy machine, deterministic automaton, and behavior. Each comment in the code cites the definition that its terms come from.
+The definitions build on the Lean library [Mathlib](https://leanprover-community.github.io/mathlib4_docs/) and take the names that Jacobs gives them in [Introduction to Coalgebra](https://doi.org/10.1017/CBO9781316823187) (2017): coalgebra, stream coalgebra, sequence coalgebra, Mealy machine, deterministic automaton, and behavior, and the resumption coalgebra takes its name from [The Coinductive Resumption Monad](https://doi.org/10.1016/j.entcs.2014.10.015) of Piróg and Gibbons (2014). The theory proves what every composition does to a behavior, such as that two machines in series behave as the second machine upon the behavior of the first. Each comment in the code cites the definition that its terms come from.
 
 ## License
 

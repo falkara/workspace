@@ -57,6 +57,15 @@ export const axioms = <Endofunctor extends HKT.TypeLambda>(
 });
 
 /**
+ * An identity functor, which maps every type to itself.
+ *
+ * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor.id
+ */
+export interface Id extends HKT.TypeLambda {
+  readonly type: this['Target'];
+}
+
+/**
  * A composite of two endofunctors, which applies the first endofunctor and then the second endofunctor.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor.comp
@@ -86,6 +95,12 @@ export interface Const<out Constant> extends HKT.TypeLambda {
 
 /** A contract of the functions of the theory that the module `Functor` of the package implements. */
 interface Contract {
+  /**
+   * Gives the `Functor` instance of a `Functor.Id`.
+   *
+   * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor.id
+   */
+  readonly id: () => Functor<Id>;
   /**
    * Gives the `Functor` instance of a `Functor.Comp`.
    *

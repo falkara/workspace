@@ -49,6 +49,10 @@
       "types": "./dist/Coalgebra/MealyMachine.d.mts",
       "default": "./dist/Coalgebra/MealyMachine.mjs"
     },
+    "./Coalgebra/ResumptionCoalgebra": {
+      "types": "./dist/Coalgebra/ResumptionCoalgebra.d.mts",
+      "default": "./dist/Coalgebra/ResumptionCoalgebra.mjs"
+    },
     "./Coalgebra/SequenceCoalgebra": {
       "types": "./dist/Coalgebra/SequenceCoalgebra.d.mts",
       "default": "./dist/Coalgebra/SequenceCoalgebra.mjs"
@@ -61,9 +65,17 @@
       "types": "./dist/Functor.d.mts",
       "default": "./dist/Functor.mjs"
     },
+    "./Functor/BinaryCoproductFunctor": {
+      "types": "./dist/Functor/BinaryCoproductFunctor.d.mts",
+      "default": "./dist/Functor/BinaryCoproductFunctor.mjs"
+    },
     "./Functor/BinaryProductFunctor": {
       "types": "./dist/Functor/BinaryProductFunctor.d.mts",
       "default": "./dist/Functor/BinaryProductFunctor.mjs"
+    },
+    "./Functor/EffectFunctor": {
+      "types": "./dist/Functor/EffectFunctor.d.mts",
+      "default": "./dist/Functor/EffectFunctor.mjs"
     },
     "./Functor/ExponentFunctor": {
       "types": "./dist/Functor/ExponentFunctor.d.mts",
