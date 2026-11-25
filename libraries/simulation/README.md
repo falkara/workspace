@@ -11,7 +11,7 @@ Types and behaviors follow a theory checked in [Lean](https://lean-lang.org/), s
 The [Game of Life](https://doi.org/10.1038/scientificamerican1070-120) runs as a [stream coalgebra](https://doi.org/10.1017/CBO9781316823187). A board of living cells goes in, and a stream of every following generation comes out one at a time for as long as the stream is read.
 
 ```ts
-import * as StreamCoalgebra from '@falkara/simulation/Coalgebra/StreamCoalgebra';
+import { StreamCoalgebra } from '@falkara/simulation';
 import { Array, Effect, HashMap, HashSet, Option, Stream } from 'effect';
 
 // A board holds its living cells, each written as `column,row`.
@@ -50,7 +50,9 @@ const generation = (board: Board): Board => {
 };
 
 // The stream coalgebra of the Game of Life, which gives from every board the board and its next generation.
-const system = StreamCoalgebra.make({ structure: (board: Board) => [board, generation(board)] });
+const system = StreamCoalgebra.make({
+  structure: (board: Board) => ({ output: board, next: generation(board) }),
+});
 
 const blinker = HashSet.make('0,1', '1,1', '2,1');
 
@@ -66,7 +68,7 @@ await StreamCoalgebra.behavior(system, blinker).pipe(
 // ]
 ```
 
-The stream never ends, so the code that reads the stream decides how far to go, here three generations.
+The stream never ends, so the code that reads the stream decides how far to go, here three generations. The structure gives the output and the next state by name, as `output` and `next`, and `make` takes the types of the system from the annotations of the parameters of its structure, such as `(board: Board)`, or else from its type arguments. The package gives every module at its root as a namespace, as `import { StreamCoalgebra } from '@falkara/simulation'`, and as a path of its own, as `@falkara/simulation/Coalgebra/StreamCoalgebra`.
 
 Every example on this page runs as a test in [`examples`](examples), one file for each module, beside more examples, such as a glider that moves across the board, and every block of code on the page type-checks as a module of its own in [`examples/README`](examples/README), which a test keeps the same as the page. The rule of the Game of Life lives there in [`GameOfLife.ts`](examples/GameOfLife.ts).
 
@@ -75,11 +77,10 @@ Every example on this page runs as a test in [`examples`](examples), one file fo
 Every kind of system says what its [structure](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Endofunctor.Coalgebra) gives, and each comes with its [behavior](https://doi.org/10.1017/CBO9781316823187) (Jacobs, Definition 2.3.1), which applies the structure from state to state and returns a `Stream` of Effect. A behavior also takes a system written in place and infers its states from the state it starts from, so the Game of Life above runs without `make` and without naming the board:
 
 ```ts
-await StreamCoalgebra.behavior({ structure: (board) => [board, generation(board)] }, blinker).pipe(
-  Stream.take(3),
-  Stream.runCollect,
-  Effect.runPromise,
-);
+await StreamCoalgebra.behavior(
+  { structure: (board) => ({ output: board, next: generation(board) }) },
+  blinker,
+).pipe(Stream.take(3), Stream.runCollect, Effect.runPromise);
 // The same three generations.
 ```
 
@@ -87,11 +88,13 @@ await StreamCoalgebra.behavior({ structure: (board) => [board, generation(board)
 - A **[sequence coalgebra](https://doi.org/10.1017/CBO9781316823187)** (Jacobs, Section 2.2.1) gives from every state either nothing or an output and the next state. Its behavior ends where the coalgebra gives nothing. A board that dies out ends its game:
 
   ```ts
-  import * as SequenceCoalgebra from '@falkara/simulation/Coalgebra/SequenceCoalgebra';
+  import { SequenceCoalgebra } from '@falkara/simulation';
 
   const system = SequenceCoalgebra.make({
     structure: (board: Board) =>
-      HashSet.isEmpty(board) ? Option.none() : Option.some([board, generation(board)]),
+      HashSet.isEmpty(board)
+        ? Option.none()
+        : Option.some({ output: board, next: generation(board) }),
   });
 
   await SequenceCoalgebra.behavior(system, HashSet.make('0,0', '1,0')).pipe(
@@ -104,12 +107,12 @@ await StreamCoalgebra.behavior({ structure: (board) => [board, generation(board)
 - A **[Mealy machine](https://doi.org/10.1017/CBO9781316823187)** (Jacobs, Exercise 2.3.2) waits in every state for an input and then gives an output and the next state, so its output depends on the input as well. A player who brings one cell to life before every generation sees how many cells live after the generation:
 
   ```ts
-  import * as MealyMachine from '@falkara/simulation/Coalgebra/MealyMachine';
+  import { MealyMachine } from '@falkara/simulation';
 
   const system = MealyMachine.make({
     structure: (board: Board) => (cell: string) => {
       const next = generation(HashSet.add(board, cell));
-      return [HashSet.size(next), next];
+      return { output: HashSet.size(next), next };
     },
   });
 
@@ -124,13 +127,13 @@ await StreamCoalgebra.behavior({ structure: (board) => [board, generation(board)
 - A **[deterministic automaton](https://doi.org/10.1017/CBO9781316823187)** (Jacobs, Section 2.2.3) gives from every state an output and the next state upon every input, so its output depends on the state alone. A deterministic automaton is also called a Moore machine. An automaton that counts the living cells of the board before every move first gives the count of the board as it was. Upon every move it brings the cell of the player to life and moves on to the next generation:
 
   ```ts
-  import * as DeterministicAutomaton from '@falkara/simulation/Coalgebra/DeterministicAutomaton';
+  import { DeterministicAutomaton } from '@falkara/simulation';
 
   const system = DeterministicAutomaton.make({
-    structure: (board: Board) => [
-      HashSet.size(board),
-      (cell: string) => generation(HashSet.add(board, cell)),
-    ],
+    structure: (board: Board) => ({
+      output: HashSet.size(board),
+      next: (cell: string) => generation(HashSet.add(board, cell)),
+    }),
   });
 
   await Stream.make('1,1').pipe(
@@ -145,10 +148,10 @@ A Mealy machine and a deterministic automaton read their inputs from any `Stream
 
 ## Coalgebra
 
-A kind of system that the library does not name is a coalgebra all the same. A [coalgebra](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Endofunctor.Coalgebra) is a state space together with a coalgebra structure `structure` that takes every state to a value of an [endofunctor](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor), such as an `Option` of the next state or a pair of an output and the next state. A system that takes a board to its next generation until the board dies out is a coalgebra of `Option` that gives no output:
+A kind of system that the library does not name is a coalgebra all the same. A [coalgebra](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Endofunctor.Coalgebra) is a state space together with a coalgebra structure `structure` that takes every state to a value of an [endofunctor](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor), such as an `Option` of the next state or a product of an output and the next state. A system that takes a board to its next generation until the board dies out is a coalgebra of `Option` that gives no output:
 
 ```ts
-import * as Coalgebra from '@falkara/simulation/Coalgebra';
+import { Coalgebra } from '@falkara/simulation';
 
 const system = Coalgebra.make<Option.OptionTypeLambda, Board>({
   structure: (board) => (HashSet.isEmpty(board) ? Option.none() : Option.some(generation(board))),
@@ -176,7 +179,7 @@ system.structure(blinker);
 // Result.succeed(HashSet('1,0', '1,1', '1,2')), as three cells are far from a crowd.
 ```
 
-Every kind above is a coalgebra of an endofunctor that the module `Functor` and its folder build: a pair with an output (`BinaryProductFunctor`), a function of an input (`Coyoneda`), a constant (`Functor.Const`), and two endofunctors one after the other (`Functor.Comp`). Each endofunctor comes with its [`Functor`](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor) instance, such as `BinaryProductFunctor.functor` and `Functor.comp`, and `Functor.axioms` gives the [axioms](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor) of every instance as predicates to test an instance of a new endofunctor, as [`Functor.test.ts`](examples/Functor.test.ts) does for steps that count the cells they bring to life. The `map` of an instance changes what a value of the endofunctor holds and keeps the form of the value, so a pair stays a pair.
+Every kind above is a coalgebra of an endofunctor that the module `Functor` and its folder build: a product of an output and the next state (`BinaryProductFunctor`, whose values are `Product`s with the fields `output` and `next`), a function of an input (`ExponentFunctor`), a constant (`Functor.Const`), and two endofunctors one after the other (`Functor.Comp`). Each endofunctor comes with its [`Functor`](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor) instance, such as `BinaryProductFunctor.functor` and `Functor.comp`, and `Functor.axioms` gives the [axioms](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor) of every instance as predicates to test an instance of a new endofunctor, as [`Functor.test.ts`](examples/Functor.test.ts) does for steps that count the cells they bring to life. The `map` of an instance changes what a value of the endofunctor holds and keeps the form of the value, so a product stays a product.
 
 ## Theory
 

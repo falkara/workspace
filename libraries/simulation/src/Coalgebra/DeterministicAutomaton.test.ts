@@ -6,7 +6,10 @@ import * as DeterministicAutomaton from '#src/Coalgebra/DeterministicAutomaton';
 describe('DeterministicAutomaton', () => {
   it('infers the inputs, the outputs, and the state space from the coalgebra structure', () => {
     const system = DeterministicAutomaton.make({
-      structure: (even: boolean) => [even, (bit: 0 | 1) => (bit === 1 ? !even : even)],
+      structure: (even: boolean) => ({
+        output: even,
+        next: (bit: 0 | 1) => (bit === 1 ? !even : even),
+      }),
     });
 
     expectTypeOf(system).toEqualTypeOf<
@@ -21,7 +24,10 @@ describe('DeterministicAutomaton', () => {
       Effect.gen(function* () {
         const bits = flips.map((flip) => (flip ? 1 : 0));
         const system = DeterministicAutomaton.make({
-          structure: (even: boolean) => [even, (bit: 0 | 1) => (bit === 1 ? !even : even)],
+          structure: (even: boolean) => ({
+            output: even,
+            next: (bit: 0 | 1) => (bit === 1 ? !even : even),
+          }),
         });
 
         const outputs = yield* Stream.runCollect(
@@ -41,7 +47,10 @@ describe('DeterministicAutomaton', () => {
       Effect.gen(function* () {
         const bits = Stream.fromIterable(flips.map((flip) => (flip ? 1 : 0)));
         const system = DeterministicAutomaton.make({
-          structure: (even: boolean) => [even, (bit: 0 | 1) => (bit === 1 ? !even : even)],
+          structure: (even: boolean) => ({
+            output: even,
+            next: (bit: 0 | 1) => (bit === 1 ? !even : even),
+          }),
         });
 
         const outputs = yield* Stream.runCollect(
@@ -56,7 +65,10 @@ describe('DeterministicAutomaton', () => {
 
   it('passes on the failure and the requirements of the stream of inputs', () => {
     const system = DeterministicAutomaton.make({
-      structure: (even: boolean) => [even, (bit: 0 | 1) => (bit === 1 ? !even : even)],
+      structure: (even: boolean) => ({
+        output: even,
+        next: (bit: 0 | 1) => (bit === 1 ? !even : even),
+      }),
     });
 
     const parities = (bits: Stream.Stream<0 | 1, 'Disconnected', 'Sensor'>) =>

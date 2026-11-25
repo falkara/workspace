@@ -4,7 +4,7 @@ import { Equal, type HKT, Option, Schema } from 'effect';
 import * as Coalgebra from '#src/Coalgebra';
 import * as Functor from '#src/Functor';
 import * as BinaryProductFunctor from '#src/Functor/BinaryProductFunctor';
-import * as Coyoneda from '#src/Functor/Coyoneda';
+import * as ExponentFunctor from '#src/Functor/ExponentFunctor';
 
 /** A type lambda of the choices of a state, the states that may follow it. */
 interface ChoicesTypeLambda extends HKT.TypeLambda {
@@ -27,15 +27,12 @@ const option = Functor.make<Option.OptionTypeLambda>({ map: Option.map });
 /** The axioms of the functor of the options, with the options equal where Effect tells them equal. */
 const optionAxioms = Functor.axioms(option, Equal.equals);
 
-/** The axioms of the functor of the Mealy machines, with two functions equal where they give equal pairs at an input. */
+/** The axioms of the functor of the Mealy machines, with two functions equal where they give equal products at an input. */
 const mealyAxiomsAt = (input: string) =>
   Functor.axioms(
-    Functor.comp(BinaryProductFunctor.functor<string>(), Coyoneda.functor<string>()),
-    (self, that) => {
-      const [selfOutput, selfState] = self(input);
-      const [thatOutput, thatState] = that(input);
-      return selfOutput === thatOutput && selfState === thatState;
-    },
+    Functor.comp(BinaryProductFunctor.functor<string>(), ExponentFunctor.functor<string>()),
+    (self, that) =>
+      self(input).output === that(input).output && self(input).next === that(input).next,
   );
 
 /** The axioms of the constant functor at the strings, with two strings equal where they are the same. */
@@ -94,27 +91,30 @@ describe('Functor.Comp', () => {
     /** A functor of the Mealy machines with inputs and outputs in the strings, a function from an input to an output and the next state. */
     type Mealy = Functor.Comp<
       BinaryProductFunctor.BinaryProductFunctor<string>,
-      Coyoneda.Coyoneda<string>
+      ExponentFunctor.ExponentFunctor<string>
     >;
 
     const system = Coalgebra.make<Mealy, number>({
-      structure: (state) => (input) => [`${state}`, state + input.length],
+      structure: (state) => (input) => ({ output: `${state}`, next: state + input.length }),
     });
 
     expectTypeOf(system.structure).returns.toEqualTypeOf<
-      (input: string) => readonly [string, number]
+      (input: string) => BinaryProductFunctor.Product<string, number>
     >();
   });
 
   it.prop('keeps the identity', [Schema.Finite, Schema.String], ([offset, input]) =>
-    mealyAxiomsAt(input).map_id((value: string) => [value, value.length + offset]),
+    mealyAxiomsAt(input).map_id((value: string) => ({
+      output: value,
+      next: value.length + offset,
+    })),
   );
 
   it.prop('keeps the composition', [Schema.Finite, Schema.String], ([offset, input]) =>
     mealyAxiomsAt(input).map_comp(
       (value: number) => value + 1,
       (value: number) => `${value}`,
-      (value: string) => [value, value.length + offset],
+      (value: string) => ({ output: value, next: value.length + offset }),
     ),
   );
 });

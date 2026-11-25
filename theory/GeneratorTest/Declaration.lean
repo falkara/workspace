@@ -177,7 +177,7 @@ export interface Clock<in out V> {
 readonly str: (v: V) => V;
 }
 
-/** Creates a `Clock` from its field `str`. */
+/** Creates a `Clock` from its field `str`, taking its types from the annotations of the parameters of the field or else from the type arguments. */
 export const make = <V>(fields: Clock<V>) => fields;
 -/
 #guard_msgs in
@@ -191,7 +191,7 @@ export interface ChimingClock<out B, in out V> {
 readonly str: (v: V) => readonly [B, V];
 }
 
-/** Creates a `ChimingClock` from its field `str`. */
+/** Creates a `ChimingClock` from its field `str`, taking its types from the annotations of the parameters of the field or else from the type arguments. */
 export const chimingClock = <B, V>(fields: ChimingClock<B, V>) => fields;
 -/
 #guard_msgs in
@@ -205,7 +205,7 @@ export interface Clockwork<out F extends HKT.TypeLambda, in out V> {
 readonly str: (v: V) => HKT.Kind<F, never, never, never, V>;
 }
 
-/** Creates a `Clockwork` from its field `str`. */
+/** Creates a `Clockwork` from its field `str`, taking its types from the annotations of the parameters of the field or else from the type arguments. */
 export const clockwork = <F extends HKT.TypeLambda, V>(fields: Clockwork<F, V>) => fields;
 -/
 #guard_msgs in

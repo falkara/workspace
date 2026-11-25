@@ -3,7 +3,10 @@
   "compilerOptions": {
     "lib": ["es2022"], // Built-in API checked against the default build target of Vite.
     "module": "preserve", // Imports resolved by Rolldown instead.
-    "paths": { "@falkara/simulation/*": ["./src/*.ts"] } // Public paths of the examples resolved to the source of the package.
+    "paths": {
+      "@falkara/simulation": ["./src/Entrypoint.ts"],
+      "@falkara/simulation/*": ["./src/*.ts"]
+    } // Public paths of the examples resolved to the source of the package.
   },
   "include": ["**/*.ts"]
 }

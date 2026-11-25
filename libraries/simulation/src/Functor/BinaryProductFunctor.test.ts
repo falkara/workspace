@@ -5,30 +5,32 @@ import * as Coalgebra from '#src/Coalgebra';
 import * as Functor from '#src/Functor';
 import * as BinaryProductFunctor from '#src/Functor/BinaryProductFunctor';
 
-/** The axioms of the functor of binary products with outputs in the strings, with two pairs equal where both of their parts are. */
+/** The axioms of the functor of binary products with outputs in the strings, with two products equal where both of their parts are. */
 const axioms = Functor.axioms(
   BinaryProductFunctor.functor<string>(),
-  (self, that) => self[0] === that[0] && self[1] === that[1],
+  (self, that) => self.output === that.output && self.next === that.next,
 );
 
 describe('BinaryProductFunctor', () => {
   it('gives the coalgebra structure of a coalgebra an output and the next state', () => {
     const system = Coalgebra.make<BinaryProductFunctor.BinaryProductFunctor<string>, number>({
-      structure: (state) => [`${state}`, state - 5],
+      structure: (state) => ({ output: `${state}`, next: state - 5 }),
     });
 
-    expectTypeOf(system.structure).returns.toEqualTypeOf<readonly [string, number]>();
+    expectTypeOf(system.structure).returns.toEqualTypeOf<
+      BinaryProductFunctor.Product<string, number>
+    >();
   });
 
-  it.prop('keeps the identity', [Schema.String, Schema.Finite], ([output, state]) =>
-    axioms.map_id([output, state]),
+  it.prop('keeps the identity', [Schema.String, Schema.Finite], ([output, next]) =>
+    axioms.map_id({ output, next }),
   );
 
-  it.prop('keeps the composition', [Schema.String, Schema.Finite], ([output, state]) =>
+  it.prop('keeps the composition', [Schema.String, Schema.Finite], ([output, next]) =>
     axioms.map_comp(
       (value: number) => value + 1,
       (value: number) => `${value}`,
-      [output, state],
+      { output, next },
     ),
   );
 });

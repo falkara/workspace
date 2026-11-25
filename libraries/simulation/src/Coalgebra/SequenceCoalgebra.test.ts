@@ -7,7 +7,7 @@ describe('SequenceCoalgebra', () => {
   it('infers the outputs and the state space from the coalgebra structure', () => {
     const system = SequenceCoalgebra.make({
       structure: (state: number) =>
-        state > 0 ? Option.some([String(state), state - 1]) : Option.none(),
+        state > 0 ? Option.some({ output: String(state), next: state - 1 }) : Option.none(),
     });
 
     expectTypeOf(system).toEqualTypeOf<SequenceCoalgebra.SequenceCoalgebra<string, number>>();
@@ -21,7 +21,7 @@ describe('SequenceCoalgebra', () => {
         const start = Math.abs(seed) % 10;
         const system = SequenceCoalgebra.make({
           structure: (state: number) =>
-            state > 0 ? Option.some([String(state), state - 1]) : Option.none(),
+            state > 0 ? Option.some({ output: String(state), next: state - 1 }) : Option.none(),
         });
 
         const outputs = yield* Stream.runCollect(SequenceCoalgebra.behavior(system, start));

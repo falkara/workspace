@@ -1,4 +1,4 @@
-import * as StreamCoalgebra from '@falkara/simulation/Coalgebra/StreamCoalgebra';
+import { StreamCoalgebra } from '@falkara/simulation';
 import { Array, Effect, HashMap, HashSet, Option, Stream } from 'effect';
 
 // A board holds its living cells, each written as `column,row`.
@@ -37,7 +37,9 @@ const generation = (board: Board): Board => {
 };
 
 // The stream coalgebra of the Game of Life, which gives from every board the board and its next generation.
-const system = StreamCoalgebra.make({ structure: (board: Board) => [board, generation(board)] });
+const system = StreamCoalgebra.make({
+  structure: (board: Board) => ({ output: board, next: generation(board) }),
+});
 
 const blinker = HashSet.make('0,1', '1,1', '2,1');
 

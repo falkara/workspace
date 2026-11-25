@@ -71,7 +71,16 @@ def reexportsOf (moduleNamespace name : Lean.Name) : Lean.MetaM (List String) :=
   let constructorName ← constructorNameOf moduleNamespace name
   match ← kindOf name with
   | .dataStructure | .structure | .bundled => return [typeName, constructorName]
-  | .refinement .. | .type | .functor | .curriedFunctor => return [typeName]
+  | .refinement .. | .type | .functor => return [typeName]
+  -- A curried functor whose object is a structure that the theory names re-exports as well the
+  -- interface of the structure, such as `Product`.
+  | .curriedFunctor =>
+    let environment ← Lean.getEnv
+    let structures : Option (List String) :=
+      ((Falkara.ExportTypeScript.exportsOf environment).find? (·.declaration == name)).map
+        fun declared ↦
+          (declared.clauses.filter (Lean.isStructure environment ·.binder)).map (·.name)
+    return typeName :: structures.getD []
   | .functorClass => return [typeName, constructorName, ← axiomsNameOf moduleNamespace name]
   | .value => return [← valueNameOf moduleNamespace name]
   | .function => return []

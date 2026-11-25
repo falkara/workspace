@@ -17,7 +17,7 @@ export interface Coalgebra<out Endofunctor extends HKT.TypeLambda, in out State>
 }
 
 /**
- * Creates a `Coalgebra` from its field `structure`.
+ * Creates a `Coalgebra` from its field `structure`, taking its types from the annotations of the parameters of the field or else from the type arguments.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Endofunctor.Coalgebra
  * @see https://doi.org/10.1017/CBO9781316823187 Definition 1.4.5

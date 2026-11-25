@@ -36,9 +36,11 @@ named as the attribute `export_typescript` names it. Its constructor takes every
 one call, such as `Coalgebra.make<Option.OptionTypeLambda, Board>({ structure })`, as TypeScript
 infers no type lambda from the fields, so a caller gives the type arguments either way. A
 bundled structure that applies a structure that the theory labels to functors that TypeScript names
-extends the label at their type lambdas instead of repeating its fields, such as
+extends the label at their type lambdas, as its value states it, and restates its fields unfolded,
+so that the names of its own type parameters name what the functors leave unnamed, such as
 `interface StreamCoalgebra<out Output, in out State> extends Coalgebra<BinaryProductFunctor<Output>,
-State> {}`, as its value states it. A functor on types takes
+State>` with `readonly structure: (state: State) => readonly [output: Output, state: State]`, which
+TypeScript checks against the field of the label. A functor on types takes
 an interface that extends the type lambda of Effect, with the object of the functor at the object
 of the lambda as its type, and a curried functor, a functor from types into the functors on types,
 takes the same interface with a type parameter for the type it maps, named as the attribute
@@ -71,7 +73,8 @@ declaration and every field takes the documentation comment that the module `Com
 schema of a structure opening with "A schema of", and every function that the generator derives
 from a declaration says what it does with the names of TypeScript, such as
 ``Brands a `Tristimulus` from its fields `X`, `Y`, and `Z` without a check.``,
-``Creates a `StreamCoalgebra` from its field `structure`.``,
+``Creates a `StreamCoalgebra` from its field `structure`, taking its types from the annotations of
+the parameters of the field or else from the type arguments.``,
 ``Gives the axioms of a `Functor` as predicates of an instance.``, and
 ``Gives the `Functor` instance of a `BinaryProductFunctor`.``. Every other declaration has no
 declaration of TypeScript, and the generator refuses it.
@@ -445,17 +448,25 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
         let fieldNames ← fields.mapM fun (field, _) ↦ fieldNameOf structureName field
         -- A bundled structure whose structure the theory labels extends the label at its functors,
         -- as its value states it, and keeps the variance of its fields, which TypeScript checks
-        -- against the label.
+        -- against the label. It restates its fields unfolded, so that the names of its own type
+        -- parameters name the parameters and the elements that the functors leave unnamed, and
+        -- TypeScript checks every restated field against the field of the label.
         let comment ← commentOf name
-        let interface := match ← extendedOf? moduleNamespace name value bundledParameters with
-          | some extended =>
-            s!"{comment}export interface {typeName}{allGenerics} extends {extended} \{}\n\n"
-          | none =>
-            s!"{comment}export interface {typeName}{allGenerics} \
-              \{\n{String.join fieldLines}}\n\n"
+        let extended := match ← extendedOf? moduleNamespace name value bundledParameters with
+          | some extended => s!" extends {extended}"
+          | none => ""
+        let interface := s!"{comment}export interface {typeName}{allGenerics}{extended} \
+          \{\n{String.join fieldLines}}\n\n"
+        -- A constructor whose fields are functions says where its types come from, as a function
+        -- whose parameters take no annotation and no type argument leaves its types unknown.
+        let source := if fields.any (·.2.consumeMData.isForall) then
+            s!", taking its types from the annotations of the parameters of the \
+              {if fieldNames.length == 1 then "field" else "fields"} or else from the type \
+              arguments"
+          else ""
         return interface ++
           s!"{← derivedCommentOf name s!"Creates {articledOf displayName} from its \
-              {fieldsOf fieldNames}."}export const {constructorName} = {declared}\
+              {fieldsOf fieldNames}{source}."}export const {constructorName} = {declared}\
             (fields: {typeName}{allArguments}) => fields;\n"
     | .functor =>
       let some value := value?
@@ -512,10 +523,46 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
         lambdaObjectOf functor targetType fun object ↦ do
           let parameterName := (← parameter.fvarId!.getUserName).toString
           let objectGeneric := annotationOf parameterName (← polaritiesOf parameter true object)
-          return s!"{← commentOf name}export interface {typeName}\
-            <{", ".intercalate (annotated ++ [objectGeneric])}> extends \
-            {← effectNameOf "HKT" "TypeLambda" .type} \{\n\
-            readonly type: {← typeOf moduleNamespace object};\n}\n"
+          let typeLambda := fun (objectType : String) ↦ do
+            return s!"{← commentOf name}export interface {typeName}\
+              <{", ".intercalate (annotated ++ [objectGeneric])}> extends \
+              {← effectNameOf "HKT" "TypeLambda" .type} \{\n\
+              readonly type: {objectType};\n}\n"
+          -- An object that is a structure whose fields the theory names takes an interface of its
+          -- own, named as the theory names the structure, with a type parameter for every field,
+          -- as TypeScript refuses `this['Target']` within a type literal.
+          let environment ← Lean.getEnv
+          let .mdata data inner := object | typeLambda (← typeOf moduleNamespace object)
+          let (some (.ofName declaration), .const structureName _) :=
+              (data.find `typescriptRecord, inner.getAppFn)
+            | typeLambda (← typeOf moduleNamespace object)
+          let some clause := ExportTypeScript.clauseOf? environment declaration structureName
+            | typeLambda (← typeOf moduleNamespace object)
+          let fieldTypes ← fieldTypesOf structureName inner.getAppArgs
+          let fieldNames := fieldTypes.map fun (field, _) ↦
+            (ExportTypeScript.nameOf? environment declaration field).getD field.toString
+          -- Every argument of the structure takes the name of the field whose type it is.
+          let parameterNames := inner.getAppArgs.toList.map fun argument ↦
+            ((fieldTypes.zip fieldNames).find? (·.1.2 == argument)).map (·.2.capitalize)
+          unless parameterNames.all Option.isSome do
+            Lean.throwError m!"`{name}` has no type in TypeScript, as a field of `{structureName}` \
+              takes no argument of the structure as its type."
+          let fieldLines ← (fieldTypes.zip fieldNames).mapM fun ((field, fieldType), fieldName) ↦ do
+            let comment ← match (ExportTypeScript.clauseOf? environment declaration field).bind
+                (·.comment) with
+              | some comment => documentationOf comment.text comment.item.toList
+              | none => commentOf (structureName ++ field)
+            let parameter := (inner.getAppArgs.toList.zip parameterNames).findSome? fun
+              (argument, parameterName) ↦ if argument == fieldType then parameterName else none
+            return s!"{comment}readonly {fieldName}: {parameter.getD ""};\n"
+          let interfaceComment ← match clause.comment with
+            | some comment => documentationOf comment.text comment.item.toList
+            | none => commentOf structureName
+          let arguments ← inner.getAppArgs.toList.mapM (typeOf moduleNamespace)
+          return s!"{interfaceComment}export interface {clause.name}\
+              <{", ".intercalate (parameterNames.filterMap (·.map (s!"out {·}")))}> \
+              \{\n{String.join fieldLines}}\n\n" ++
+            (← typeLambda s!"{clause.name}<{", ".intercalate arguments}>")
     | .type =>
       let some value := value?
         | Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory gives the \

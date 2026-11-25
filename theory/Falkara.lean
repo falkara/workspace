@@ -16,4 +16,4 @@ public import Falkara.Simulation.Coalgebra.SequenceCoalgebra
 public import Falkara.Simulation.Coalgebra.StreamCoalgebra
 public import Falkara.Simulation.Functor
 public import Falkara.Simulation.Functor.BinaryProductFunctor
-public import Falkara.Simulation.Functor.Coyoneda
+public import Falkara.Simulation.Functor.ExponentFunctor

@@ -6,7 +6,10 @@ import * as MealyMachine from '#src/Coalgebra/MealyMachine';
 describe('MealyMachine', () => {
   it('infers the inputs, the outputs, and the state space from the coalgebra structure', () => {
     const system = MealyMachine.make({
-      structure: (state: number) => (input: string) => [`${state}`, state + input.length],
+      structure: (state: number) => (input: string) => ({
+        output: `${state}`,
+        next: state + input.length,
+      }),
     });
 
     expectTypeOf(system).toEqualTypeOf<MealyMachine.MealyMachine<string, string, number>>();
@@ -18,7 +21,10 @@ describe('MealyMachine', () => {
     ([inputs]) =>
       Effect.gen(function* () {
         const system = MealyMachine.make({
-          structure: (sum: number) => (input: number) => [sum + input, sum + input],
+          structure: (sum: number) => (input: number) => ({
+            output: sum + input,
+            next: sum + input,
+          }),
         });
 
         const outputs = yield* Stream.runCollect(
@@ -36,7 +42,10 @@ describe('MealyMachine', () => {
       Effect.gen(function* () {
         const stream = Stream.fromIterable(inputs);
         const system = MealyMachine.make({
-          structure: (sum: number) => (input: number) => [sum + input, sum + input],
+          structure: (sum: number) => (input: number) => ({
+            output: sum + input,
+            next: sum + input,
+          }),
         });
 
         const outputs = yield* Stream.runCollect(stream.pipe(MealyMachine.behavior(system, 0)));
@@ -49,7 +58,7 @@ describe('MealyMachine', () => {
 
   it('passes on the failure and the requirements of the stream of inputs', () => {
     const system = MealyMachine.make({
-      structure: (sum: number) => (input: number) => [sum + input, sum + input],
+      structure: (sum: number) => (input: number) => ({ output: sum + input, next: sum + input }),
     });
 
     const totals = (inputs: Stream.Stream<number, 'Disconnected', 'Sensor'>) =>

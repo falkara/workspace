@@ -5,7 +5,7 @@ import type * as Coalgebra from '#src/Coalgebra.theory';
 import type * as Module from '#src/Coalgebra/DeterministicAutomaton';
 import type * as Functor from '#src/Functor.theory';
 import type * as BinaryProductFunctor from '#src/Functor/BinaryProductFunctor.theory';
-import type * as Coyoneda from '#src/Functor/Coyoneda.theory';
+import type * as ExponentFunctor from '#src/Functor/ExponentFunctor.theory';
 
 /**
  * A deterministic automaton, which gives from every state an output and the next state upon every input.
@@ -17,12 +17,25 @@ export interface DeterministicAutomaton<
   out Output,
   in out State,
 > extends Coalgebra.Coalgebra<
-  Functor.Comp<Coyoneda.Coyoneda<Input>, BinaryProductFunctor.BinaryProductFunctor<Output>>,
+  Functor.Comp<
+    ExponentFunctor.ExponentFunctor<Input>,
+    BinaryProductFunctor.BinaryProductFunctor<Output>
+  >,
   State
-> {}
+> {
+  /**
+   * The coalgebra structure on the state space.
+   *
+   * @see https://doi.org/10.1017/CBO9781316823187 Definition 1.4.5
+   */
+  readonly structure: (state: State) => {
+    readonly output: Output;
+    readonly next: (input: Input) => State;
+  };
+}
 
 /**
- * Creates a `DeterministicAutomaton` from its field `structure`.
+ * Creates a `DeterministicAutomaton` from its field `structure`, taking its types from the annotations of the parameters of the field or else from the type arguments.
  *
  * @see https://doi.org/10.1017/CBO9781316823187 Section 2.2.3
  */

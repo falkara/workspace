@@ -11,5 +11,9 @@ export { make, type SequenceCoalgebra } from '#src/Coalgebra/SequenceCoalgebra.t
  */
 export const behavior: Theory.Behavior = (coalgebra, state) =>
   Stream.unfold(state, (current) =>
-    Effect.succeed(Option.getOrUndefined(coalgebra.structure(current))),
+    Effect.succeed(
+      Option.getOrUndefined(
+        Option.map(coalgebra.structure(current), ({ output, next }) => [output, next] as const),
+      ),
+    ),
   );

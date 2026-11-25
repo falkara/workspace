@@ -1,12 +1,11 @@
-await StreamCoalgebra.behavior({ structure: (board) => [board, generation(board)] }, blinker).pipe(
-  Stream.take(3),
-  Stream.runCollect,
-  Effect.runPromise,
-);
+await StreamCoalgebra.behavior(
+  { structure: (board) => ({ output: board, next: generation(board) }) },
+  blinker,
+).pipe(Stream.take(3), Stream.runCollect, Effect.runPromise);
 // The same three generations.
 
 // The names that the page defines in the blocks before this one.
-import * as StreamCoalgebra from '@falkara/simulation/Coalgebra/StreamCoalgebra';
+import { StreamCoalgebra } from '@falkara/simulation';
 import { Effect, type HashSet, Stream } from 'effect';
 type Board = HashSet.HashSet<string>;
 declare const generation: (board: Board) => Board;

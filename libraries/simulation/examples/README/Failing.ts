@@ -13,7 +13,7 @@ system.structure(blinker);
 // Result.succeed(HashSet('1,0', '1,1', '1,2')), as three cells are far from a crowd.
 
 // The names that the page defines in the blocks before this one.
-import * as Coalgebra from '@falkara/simulation/Coalgebra';
+import { Coalgebra } from '@falkara/simulation';
 import { HashSet } from 'effect';
 type Board = HashSet.HashSet<string>;
 declare const generation: (board: Board) => Board;

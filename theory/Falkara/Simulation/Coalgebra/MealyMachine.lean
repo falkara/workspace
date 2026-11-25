@@ -7,7 +7,7 @@ module
 
 public import Falkara.Simulation.Functor
 public import Falkara.Simulation.Functor.BinaryProductFunctor
-public import Falkara.Simulation.Functor.Coyoneda
+public import Falkara.Simulation.Functor.ExponentFunctor
 public import Mathlib.CategoryTheory.Endofunctor.Algebra
 public import Mathlib.Data.Stream.Defs
 import Mathlib.Data.Stream.Init
@@ -55,7 +55,7 @@ universe u
 /-- A Mealy machine, which gives from every state upon every input an output and the next state. -/
 abbrev MealyMachine (Input Output : Type u) :=
   CategoryTheory.Endofunctor.Coalgebra
-    (Functor.comp (binaryProductFunctor.obj Output) (coyoneda.obj (Opposite.op Input)))
+    (Functor.comp (binaryProductFunctor.obj Output) (exponentFunctor.obj (Opposite.op Input)))
 
 attribute [cite "Exercise 2.3.2" jacobs2017introductionCoalgebra] MealyMachine
 

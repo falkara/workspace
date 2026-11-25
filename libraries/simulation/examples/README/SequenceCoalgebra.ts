@@ -1,8 +1,10 @@
-import * as SequenceCoalgebra from '@falkara/simulation/Coalgebra/SequenceCoalgebra';
+import { SequenceCoalgebra } from '@falkara/simulation';
 
 const system = SequenceCoalgebra.make({
   structure: (board: Board) =>
-    HashSet.isEmpty(board) ? Option.none() : Option.some([board, generation(board)]),
+    HashSet.isEmpty(board)
+      ? Option.none()
+      : Option.some({ output: board, next: generation(board) }),
 });
 
 await SequenceCoalgebra.behavior(system, HashSet.make('0,0', '1,0')).pipe(

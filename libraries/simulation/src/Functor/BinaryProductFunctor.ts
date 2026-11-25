@@ -1,7 +1,7 @@
 import * as Functor from '#src/Functor';
 import type * as Theory from '#src/Functor/BinaryProductFunctor.theory';
 
-export type { BinaryProductFunctor } from '#src/Functor/BinaryProductFunctor.theory';
+export type { BinaryProductFunctor, Product } from '#src/Functor/BinaryProductFunctor.theory';
 
 /**
  * Gives the `Functor` instance of a `BinaryProductFunctor`.
@@ -10,5 +10,5 @@ export type { BinaryProductFunctor } from '#src/Functor/BinaryProductFunctor.the
  */
 export const functor = <Factor>(): Functor.Functor<Theory.BinaryProductFunctor<Factor>> =>
   Functor.make<Theory.BinaryProductFunctor<Factor>>({
-    map: (a) => (value) => [value[0], a(value[1])],
+    map: (a) => (value) => ({ output: value.output, next: a(value.next) }),
   });

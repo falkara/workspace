@@ -1,10 +1,10 @@
-import * as DeterministicAutomaton from '@falkara/simulation/Coalgebra/DeterministicAutomaton';
+import { DeterministicAutomaton } from '@falkara/simulation';
 
 const system = DeterministicAutomaton.make({
-  structure: (board: Board) => [
-    HashSet.size(board),
-    (cell: string) => generation(HashSet.add(board, cell)),
-  ],
+  structure: (board: Board) => ({
+    output: HashSet.size(board),
+    next: (cell: string) => generation(HashSet.add(board, cell)),
+  }),
 });
 
 await Stream.make('1,1').pipe(

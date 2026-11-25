@@ -41,9 +41,11 @@ attribute [export_typescript
   clauses.
 - `exportExtension`: the record of the declarations that the generator writes as TypeScript.
 - `labels`: tells whether a declaration labels a structure.
+- `objectFieldsOf`: gives the structure that a functor gives at every object and its fields, where
+  it gives one.
 - `bindersOf`: gives the names that a declaration binds, the binders of its type, its fields and
-  those of the structure that it labels, and the object that its definition names where its type
-  is a functor.
+  those of the structure that it labels, the object that its definition names where its type is a
+  functor, and the structure that the functor gives at every object with its fields.
 - `exportComment`, `exportClause`, `exportTypeScript`: the syntax of a comment, of a clause, and of
   the attribute `export_typescript`.
 - `commentOfSyntax`: gives the documentation comment that a syntax of a comment states.
@@ -51,6 +53,7 @@ attribute [export_typescript
 - `isExported`: tells whether the generator writes a declaration as TypeScript.
 - `commentOf?`: gives the documentation comment that a declaration takes in TypeScript, where the
   theory gives one.
+- `clauseOf?`: gives the clause of a binder of a declaration, where the theory gives one.
 - `nameOf?`: gives the name that a binder of a declaration takes in TypeScript, where the theory
   names one.
 - `fieldClauseOf?`: gives the clause of a field of a structure, given by the declaration that labels
@@ -144,10 +147,31 @@ def labels (environment : Lean.Environment) (declaration structureName : Lean.Na
     | some (.const name _) => name == structureName
     | _ => false
 
+/-- Gives the structure that a functor gives at every object and its fields, such as `Prod` with
+`fst` and `snd` for the product that the functor of binary products gives, where it gives one,
+following the functors that a curried functor gives, with at most as many steps as the fuel. -/
+def objectFieldsOf : (fuel : Nat) → (functor type : Lean.Expr) → Lean.MetaM (List Lean.Name)
+  | 0, _, _ => return []
+  | fuel + 1, functor, type => do
+  let type ← Lean.Meta.whnfR type
+  let .const `CategoryTheory.Functor levels := type.getAppFn | return []
+  Lean.Meta.withLocalDeclD `object (type.getArg! 0) fun object ↦ do
+    let image := Lean.mkAppN (.const `CategoryTheory.Functor.obj levels)
+      (type.getAppArgs ++ #[functor, object])
+    let imageType ← Lean.Meta.inferType image
+    if (← Lean.Meta.whnfR imageType).isAppOf `CategoryTheory.Functor then
+      return ← objectFieldsOf fuel image imageType
+    let .const structureName _ := (← Lean.Meta.whnfD image).getAppFn | return []
+    let environment ← Lean.getEnv
+    return if Lean.isStructure environment structureName then
+      structureName :: (Lean.getStructureFields environment structureName).toList
+    else []
+
 /-- Gives the names that a declaration binds: the binders of its type, its fields and those of the
-structure that it labels, and the object that its definition names where its type is a functor,
-such as `X` of `CategoryTheory.Limits.Types.binaryProductFunctor`, which maps every type `X` to a
-functor. -/
+structure that it labels, the object that its definition names where its type is a functor, such as
+`X` of `CategoryTheory.Limits.Types.binaryProductFunctor`, which maps every type `X` to a functor,
+and the structure that the functor gives at every object with its fields, such as `Prod` with `fst`
+and `snd` for the product that the functor gives. -/
 def bindersOf (declaration : Lean.Name) : Lean.MetaM (List Lean.Name) := do
   let information ← Lean.getConstInfo declaration
   let environment ← Lean.getEnv
@@ -166,7 +190,12 @@ def bindersOf (declaration : Lean.Name) : Lean.MetaM (List Lean.Name) := do
     let .lam name .. ← Lean.Meta.whnfD (Lean.mkAppN (.const `CategoryTheory.Functor.obj levels)
         (body.getAppArgs.push functor)) | return []
     return [name]
-  return information.type.getForallBinderNames ++ fields ++ objects
+  -- A functor names the structure that it gives and its fields, such as the product of a functor of
+  -- binary products, through at most two functors, as a curried functor gives a functor in turn.
+  let objectFields ← Lean.Meta.forallTelescope information.type fun arguments body ↦
+    objectFieldsOf 2
+      (Lean.mkAppN (.const declaration (information.levelParams.map .param)) arguments) body
+  return information.type.getForallBinderNames ++ fields ++ objects ++ objectFields
 
 /-- The syntax of a documentation comment in TypeScript with the item of the work that its terms
 come from, where it cites one. -/
@@ -232,13 +261,16 @@ def commentOf? (environment : Lean.Environment) (declaration : Lean.Name) : Opti
   (exportsOf environment).findSome? fun declared ↦
     if declared.declaration == declaration then declared.comment else none
 
+/-- Gives the clause of a binder of a declaration, where the theory gives one. -/
+def clauseOf? (environment : Lean.Environment) (declaration binder : Lean.Name) : Option Clause :=
+  (exportsOf environment).findSome? fun declared ↦
+    if declared.declaration == declaration then declared.clauses.find? (·.binder == binder)
+    else none
+
 /-- Gives the name that a binder of a declaration takes in TypeScript, where the theory names one.
 -/
 def nameOf? (environment : Lean.Environment) (declaration binder : Lean.Name) : Option String :=
-  (exportsOf environment).findSome? fun declared ↦
-    if declared.declaration == declaration then
-      (declared.clauses.find? (·.binder == binder)).map (·.name)
-    else none
+  (clauseOf? environment declaration binder).map (·.name)
 
 /-- Gives the clause of a field of a structure, given by the declaration that labels the structure,
 where the theory gives one. -/

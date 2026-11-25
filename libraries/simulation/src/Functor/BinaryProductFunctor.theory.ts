@@ -4,13 +4,21 @@ import type { HKT } from 'effect';
 import type * as Functor from '#src/Functor.theory';
 import type * as Module from '#src/Functor/BinaryProductFunctor';
 
+/** A binary product of an output and the next state, which a coalgebra of the functor gives from every state. */
+export interface Product<out Output, out Next> {
+  /** The output that the coalgebra gives from the state. */
+  readonly output: Output;
+  /** The state that follows the state. */
+  readonly next: Next;
+}
+
 /**
  * A functor of binary products, which maps every type to its binary product with the factor.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Limits.Types.binaryProductFunctor
  */
 export interface BinaryProductFunctor<out Factor> extends HKT.TypeLambda {
-  readonly type: readonly [Factor, this['Target']];
+  readonly type: Product<Factor, this['Target']>;
 }
 
 /** A contract of the functions of the theory that the module `Functor/BinaryProductFunctor` of the package implements. */

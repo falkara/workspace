@@ -31,11 +31,11 @@ export function behavior<Input, Output, State, E, R>(
     Stream.mapAccum(
       () => state,
       (current, input) => {
-        const [output, next] = automaton.structure(current);
+        const { output, next } = automaton.structure(current);
         return [next(input), [output]] as const;
       },
       // The state that the last input leads to gives its output once the inputs end.
-      { onHalt: (current) => [automaton.structure(current)[0]] },
+      { onHalt: (current) => [automaton.structure(current).output] },
     ),
   );
 }

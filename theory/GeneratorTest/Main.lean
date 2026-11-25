@@ -168,7 +168,7 @@ export interface Clock<in out V> {
 readonly str: (v: V) => V;
 }
 
-/** Creates a `Clock` from its field `str`. */
+/** Creates a `Clock` from its field `str`, taking its types from the annotations of the parameters of the field or else from the type arguments. */
 export const make = <V>(fields: Clock<V>) => fields;
 
 /** A clock that chimes and ticks from every state to its next state. */
@@ -177,7 +177,7 @@ export interface ChimingClock<out B, in out V> {
 readonly str: (v: V) => readonly [B, V];
 }
 
-/** Creates a `ChimingClock` from its field `str`. */
+/** Creates a `ChimingClock` from its field `str`, taking its types from the annotations of the parameters of the field or else from the type arguments. */
 export const chimingClock = <B, V>(fields: ChimingClock<B, V>) => fields;
 
 /** A clockwork that moves every state by a functor. */
@@ -186,7 +186,7 @@ export interface Clockwork<out F extends HKT.TypeLambda, in out V> {
 readonly str: (v: V) => HKT.Kind<F, never, never, never, V>;
 }
 
-/** Creates a `Clockwork` from its field `str`. */
+/** Creates a `Clockwork` from its field `str`, taking its types from the annotations of the parameters of the field or else from the type arguments. */
 export const clockwork = <F extends HKT.TypeLambda, V>(fields: Clockwork<F, V>) => fields;
 
 /** The functor of the chimes, which gives a chime and the next state. */
@@ -256,9 +256,12 @@ import type * as Module from '#src/Fixture/Bell';
 import type * as Clock from '#src/Fixture/Clock.theory';
 
 /** A bell that rings a chime and moves to its next state. */
-export interface Bell<out B, in out V> extends Clock.Clockwork<Clock.ChimesFunctor<B>, V> {}
+export interface Bell<out B, in out V> extends Clock.Clockwork<Clock.ChimesFunctor<B>, V> {
+/** structure morphism of the coalgebra */
+readonly str: (v: V) => readonly [B, V];
+}
 
-/** Creates a `Bell` from its field `str`. */
+/** Creates a `Bell` from its field `str`, taking its types from the annotations of the parameters of the field or else from the type arguments. */
 export const make = <B, V>(fields: Bell<B, V>) => fields;
 
 /** The peal of a bell, the stream of the chimes that it rings from a state on. */

@@ -18,8 +18,11 @@ import Lean.Meta.WHNF
 The module defines the type of TypeScript that a type of the theory takes: `Rational.Rational`
 for a rational number, `string` for a string, `boolean` for a boolean, `Option.Option` for an
 option, `ReadonlyArray` for an array or a list, a read-only tuple `readonly [X, Y]` for a product
-`X × Y`, a function type for a function type of the theory, a generic function type for a function
-type whose leading parameters are implicit types, `HKT.Kind<F, never, never, never, X>`
+`X × Y`, a record for an object of a functor that is a structure whose fields the declaration of
+the functor names, such as `{ readonly output: Output; readonly next: State }` for the product that
+the functor of binary products gives, a function type for a function type of the theory, a
+generic function type for a function type whose leading parameters are implicit types,
+`HKT.Kind<F, never, never, never, X>`
 for an object `F.obj X` of a functor `F` that is a parameter, the name of a type parameter for the
 parameter, and the name of a declaration marked
 `export_typescript` for the type that the declaration defines, with its arguments where it takes
@@ -76,7 +79,7 @@ polarities at which the parameter occurs in the fields or the value of the decla
   `Functor.Comp` for `Functor.comp`.
 - `referenceOf`: gives the name under which a file of TypeScript refers to a declaration of the
   theory, after the namespace of its module where the declaration lies in another module, such as
-  `Functor.Functor` in the module `Coyoneda`.
+  `Functor.Functor` in the module `ExponentFunctor`.
 - `typeOf`: gives the type of TypeScript that a type of the theory takes, with every declaration
   named without the namespace of its package and the value of a morphism named after its type where
   its type is a type parameter, or fails with the reason where the type has none.
@@ -311,10 +314,29 @@ def fieldTypesOf (name : Lean.Name) (parameters : Array Lean.Expr) :
       return (field, fieldType)
     | _ => Lean.throwError m!"`{name ++ field}` is no field of a structure."
 
+/-- Gives the declaration marked `export_typescript` of the functor whose object a type is, through
+the functors that a curried functor gives, such as `binaryProductFunctor` for
+`(binaryProductFunctor.obj B).obj X`, or for the functor of Mathlib that the declaration labels,
+where the theory marks one. -/
+partial def functorDeclarationOf? (environment : Lean.Environment) (type : Lean.Expr) :
+    Option Lean.Name :=
+  match type.getAppFn with
+  | .const `Prefunctor.obj _ | .const `CategoryTheory.Functor.obj _
+  | .const `CategoryTheory.Functor.toPrefunctor _ =>
+    functorDeclarationOf? environment (type.getArg! 4)
+  | .const name _ => (ExportTypeScript.exportsOf environment).findSome? fun declared ↦
+    if ExportTypeScript.labels environment declared.declaration name then
+      some declared.declaration
+    else none
+  | _ => none
+
 /-- Gives a type of the theory as TypeScript reads it: a morphism `X ⟶ Y` of the category of types
 as the function type `(value : X) → Y`, an object `F.obj X` of a functor `F` and a type taken out of
-the opposite of the types as the type it reduces to, such as `X` for the identity functor, and an
-object of a functor that is a parameter as it stands, with its object as TypeScript reads it. -/
+the opposite of the types as the type it reduces to, such as `X` for the identity functor, an
+object of a functor that is a parameter as it stands, with its object as TypeScript reads it, and
+an object that is a structure whose fields the declaration of its functor names, such as the
+product that the functor of binary products gives, with the declaration in the metadata
+`typescriptRecord`. -/
 partial def normalizedOf (type : Lean.Expr) : Lean.MetaM Lean.Expr := do
   match type with
   | .forallE name domain body info =>
@@ -334,9 +356,25 @@ partial def normalizedOf (type : Lean.Expr) : Lean.MetaM Lean.Expr := do
     | .const `Opposite.unop _, _ =>
       -- The reduction stops at an object of a functor that is a parameter, such as `G.obj X` of a
       -- composite, which a further step would take apart into the fields of the functor.
-      let reduced ← Lean.Meta.whnfHeadPred type fun part ↦ return (parameterObjectOf part).isNone
+      -- The reduction stops as well at an object of another functor that the theory marks, which
+      -- the next step reduces on its own, so that every such object meets the declaration of its
+      -- functor, such as the product of a composite.
+      let environment ← Lean.getEnv
+      let reduced ← Lean.Meta.whnfHeadPred type fun part ↦
+        return (parameterObjectOf part).isNone &&
+          (part == type || (functorDeclarationOf? environment part).isNone)
       if reduced == type then return type
-      normalizedOf reduced
+      let normalized ← normalizedOf reduced
+      -- An object that is a structure whose fields the declaration of its functor names keeps the
+      -- declaration, which the reduction takes away.
+      if let (some declaration, .const structureName _) :=
+          (functorDeclarationOf? environment type, normalized.getAppFn) then
+        if Lean.isStructure environment structureName &&
+            (Lean.getStructureFields environment structureName).any fun field ↦
+              (ExportTypeScript.nameOf? environment declaration field).isSome then
+          return Lean.mkMData (Lean.KVMap.empty.insert `typescriptRecord (.ofName declaration))
+            normalized
+      return normalized
     | function, arguments =>
       if arguments.isEmpty then return type
       return Lean.mkAppN function (← arguments.mapM normalizedOf)
@@ -516,7 +554,17 @@ partial def typeOf (packageNamespace : Lean.Name) (type : Lean.Expr) : TypeScrip
   -- A parameter keeps its name as TypeScript writes it, such as `this['Target']` for the object of
   -- a type lambda, which a name of Lean would escape.
   | .fvar parameter => return (← parameter.getUserName).toString (escape := false)
-  | .mdata _ inner =>
+  | .mdata data inner =>
+    -- An object that is a structure whose fields the declaration of its functor names takes a
+    -- record with a field of every field of the structure, named as the declaration names it, such
+    -- as `{ readonly output: Output; readonly next: State }` for a product.
+    if let (some (.ofName declaration), .const structureName _) :=
+        (data.find `typescriptRecord, inner.getAppFn) then
+      let environment ← Lean.getEnv
+      let fields ← (← fieldTypesOf structureName inner.getAppArgs).mapM fun (field, fieldType) ↦ do
+        let name := (ExportTypeScript.nameOf? environment declaration field).getD field.toString
+        return s!"readonly {name}: {← typeOf packageNamespace fieldType}"
+      return s!"\{ {"; ".intercalate fields} }"
     -- A stream of a function that takes a stream carries the failure `E` and the requirements `R`
     -- of the streams the function takes, as `Stream.map` of Effect carries them.
     if let some (.app (.const name _) element) := Lean.annotation? `channels type then

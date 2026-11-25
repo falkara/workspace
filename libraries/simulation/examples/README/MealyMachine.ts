@@ -1,9 +1,9 @@
-import * as MealyMachine from '@falkara/simulation/Coalgebra/MealyMachine';
+import { MealyMachine } from '@falkara/simulation';
 
 const system = MealyMachine.make({
   structure: (board: Board) => (cell: string) => {
     const next = generation(HashSet.add(board, cell));
-    return [HashSet.size(next), next];
+    return { output: HashSet.size(next), next };
   },
 });
 

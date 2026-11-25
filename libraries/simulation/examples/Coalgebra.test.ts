@@ -1,6 +1,6 @@
 import { describe, it } from '@effect/vitest';
 import { assertEquals } from '@effect/vitest/utils';
-import * as Coalgebra from '@falkara/simulation/Coalgebra';
+import { Coalgebra } from '@falkara/simulation';
 import { Array, HashSet, type HKT, Option, Result } from 'effect';
 
 import { type Board, generation } from './GameOfLife';

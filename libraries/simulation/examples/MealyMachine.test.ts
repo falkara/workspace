@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@effect/vitest';
-import * as MealyMachine from '@falkara/simulation/Coalgebra/MealyMachine';
+import { MealyMachine } from '@falkara/simulation';
 import { Effect, HashSet, Stream } from 'effect';
 
 import { type Board, generation } from './GameOfLife';
@@ -10,7 +10,7 @@ describe('MealyMachine', () => {
       const system = MealyMachine.make({
         structure: (board: Board) => (cell: string) => {
           const next = generation(HashSet.add(board, cell));
-          return [HashSet.size(next), next];
+          return { output: HashSet.size(next), next };
         },
       });
 
@@ -27,7 +27,7 @@ describe('MealyMachine', () => {
       const system = MealyMachine.make({
         structure: (board: Board) => (cell: string) => {
           const next = generation(HashSet.add(board, cell));
-          return [HashSet.size(next), next];
+          return { output: HashSet.size(next), next };
         },
       });
       const moves = Stream.make('1,1').pipe(Stream.concat(Stream.fail('Disconnected' as const)));

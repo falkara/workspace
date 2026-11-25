@@ -31,7 +31,7 @@ export function behavior<Input, Output, State, E, R>(
     Stream.mapAccum(
       () => state,
       (current, input) => {
-        const [output, next] = machine.structure(current)(input);
+        const { output, next } = machine.structure(current)(input);
         return [next, [output]] as const;
       },
     ),

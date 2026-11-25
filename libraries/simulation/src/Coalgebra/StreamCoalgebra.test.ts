@@ -6,7 +6,7 @@ import * as StreamCoalgebra from '#src/Coalgebra/StreamCoalgebra';
 describe('StreamCoalgebra', () => {
   it('infers the outputs and the state space from the coalgebra structure', () => {
     const system = StreamCoalgebra.make({
-      structure: (state: number) => [`${state}`, state - 5],
+      structure: (state: number) => ({ output: `${state}`, next: state - 5 }),
     });
 
     expectTypeOf(system).toEqualTypeOf<StreamCoalgebra.StreamCoalgebra<string, number>>();
@@ -18,7 +18,7 @@ describe('StreamCoalgebra', () => {
     ([start]) =>
       Effect.gen(function* () {
         const system = StreamCoalgebra.make({
-          structure: (state: number) => [`${state}`, state + 1],
+          structure: (state: number) => ({ output: `${state}`, next: state + 1 }),
         });
 
         const outputs = yield* Stream.runCollect(

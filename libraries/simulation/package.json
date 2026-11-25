@@ -33,6 +33,10 @@
     "#src/*": "./src/*.ts"
   },
   "exports": {
+    ".": {
+      "types": "./dist/Entrypoint.d.mts",
+      "default": "./dist/Entrypoint.mjs"
+    },
     "./Coalgebra": {
       "types": "./dist/Coalgebra.d.mts",
       "default": "./dist/Coalgebra.mjs"
@@ -61,9 +65,9 @@
       "types": "./dist/Functor/BinaryProductFunctor.d.mts",
       "default": "./dist/Functor/BinaryProductFunctor.mjs"
     },
-    "./Functor/Coyoneda": {
-      "types": "./dist/Functor/Coyoneda.d.mts",
-      "default": "./dist/Functor/Coyoneda.mjs"
+    "./Functor/ExponentFunctor": {
+      "types": "./dist/Functor/ExponentFunctor.d.mts",
+      "default": "./dist/Functor/ExponentFunctor.mjs"
     }
   },
   "publishConfig": {

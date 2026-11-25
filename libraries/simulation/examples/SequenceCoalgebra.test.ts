@@ -1,6 +1,6 @@
 import { describe, it } from '@effect/vitest';
 import { assertEquals } from '@effect/vitest/utils';
-import * as SequenceCoalgebra from '@falkara/simulation/Coalgebra/SequenceCoalgebra';
+import { SequenceCoalgebra } from '@falkara/simulation';
 import { Effect, HashSet, Option, Stream } from 'effect';
 
 import { type Board, generation } from './GameOfLife';
@@ -10,7 +10,9 @@ describe('SequenceCoalgebra', () => {
     Effect.gen(function* () {
       const system = SequenceCoalgebra.make({
         structure: (board: Board) =>
-          HashSet.isEmpty(board) ? Option.none() : Option.some([board, generation(board)]),
+          HashSet.isEmpty(board)
+            ? Option.none()
+            : Option.some({ output: board, next: generation(board) }),
       });
 
       const outputs = yield* Stream.runCollect(

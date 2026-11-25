@@ -10,4 +10,7 @@ export { make, type StreamCoalgebra } from '#src/Coalgebra/StreamCoalgebra.theor
  * @see https://doi.org/10.1017/CBO9781316823187 Definition 2.3.1
  */
 export const behavior: Theory.Behavior = (coalgebra, state) =>
-  Stream.unfold(state, (current) => Effect.succeed(coalgebra.structure(current)));
+  Stream.unfold(state, (current) => {
+    const { output, next } = coalgebra.structure(current);
+    return Effect.succeed([output, next] as const);
+  });

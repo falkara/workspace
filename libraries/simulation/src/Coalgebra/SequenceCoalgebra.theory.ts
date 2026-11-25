@@ -14,10 +14,19 @@ import type * as BinaryProductFunctor from '#src/Functor/BinaryProductFunctor.th
 export interface SequenceCoalgebra<out Output, in out State> extends Coalgebra.Coalgebra<
   Functor.Comp<BinaryProductFunctor.BinaryProductFunctor<Output>, Option.OptionTypeLambda>,
   State
-> {}
+> {
+  /**
+   * The coalgebra structure on the state space.
+   *
+   * @see https://doi.org/10.1017/CBO9781316823187 Definition 1.4.5
+   */
+  readonly structure: (
+    state: State,
+  ) => Option.Option<{ readonly output: Output; readonly next: State }>;
+}
 
 /**
- * Creates a `SequenceCoalgebra` from its field `structure`.
+ * Creates a `SequenceCoalgebra` from its field `structure`, taking its types from the annotations of the parameters of the field or else from the type arguments.
  *
  * @see https://doi.org/10.1017/CBO9781316823187 Section 2.2.1
  */

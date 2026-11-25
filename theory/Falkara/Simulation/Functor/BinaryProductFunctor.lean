@@ -27,6 +27,10 @@ The type that the curried functor maps takes the type parameter `Factor` in Type
 factor the type is. The curried functor takes a documentation comment of the theory in TypeScript,
 which writes it as the type of the functor it gives at a factor, a type whose comment opens with an
 article and names the factor as the type parameter does.
+
+The product takes in TypeScript the record `Product` with the fields `output` and `next` in place
+of a tuple, as every coalgebra of the package gives through the product an output and the next
+state, so that TypeScript tells the two apart even where they are of one type.
 -/
 
 @[expose] public section
@@ -46,6 +50,11 @@ attribute [cite "CategoryTheory.Limits.Types.binaryProductFunctor"
 
 attribute [export_typescript
   "A functor of binary products, which maps every type to its binary product with the factor."
-  (X := "Factor")] binaryProductFunctor
+  (X := "Factor")
+  (Prod := "Product"
+    "A binary product of an output and the next state, which a coalgebra of the functor gives \
+      from every state.")
+  (fst := "output" "The output that the coalgebra gives from the state.")
+  (snd := "next" "The state that follows the state.")] binaryProductFunctor
 
 end Falkara.Simulation

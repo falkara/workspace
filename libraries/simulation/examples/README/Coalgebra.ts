@@ -1,4 +1,4 @@
-import * as Coalgebra from '@falkara/simulation/Coalgebra';
+import { Coalgebra } from '@falkara/simulation';
 
 const system = Coalgebra.make<Option.OptionTypeLambda, Board>({
   structure: (board) => (HashSet.isEmpty(board) ? Option.none() : Option.some(generation(board))),

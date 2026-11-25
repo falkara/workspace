@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@effect/vitest';
-import * as DeterministicAutomaton from '@falkara/simulation/Coalgebra/DeterministicAutomaton';
+import { DeterministicAutomaton } from '@falkara/simulation';
 import { Effect, HashSet, Stream } from 'effect';
 
 import { type Board, generation } from './GameOfLife';
@@ -8,10 +8,10 @@ describe('DeterministicAutomaton', () => {
   it.effect('counts the living cells of the board before every move and after the last', () =>
     Effect.gen(function* () {
       const system = DeterministicAutomaton.make({
-        structure: (board: Board) => [
-          HashSet.size(board),
-          (cell: string) => generation(HashSet.add(board, cell)),
-        ],
+        structure: (board: Board) => ({
+          output: HashSet.size(board),
+          next: (cell: string) => generation(HashSet.add(board, cell)),
+        }),
       });
 
       const outputs = yield* Stream.runCollect(

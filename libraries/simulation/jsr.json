@@ -3,6 +3,7 @@
   "name": "@falkara/simulation",
   "license": "MIT",
   "exports": {
+    ".": "./dist/Entrypoint.mjs",
     "./Coalgebra": "./dist/Coalgebra.mjs",
     "./Coalgebra/DeterministicAutomaton": "./dist/Coalgebra/DeterministicAutomaton.mjs",
     "./Coalgebra/MealyMachine": "./dist/Coalgebra/MealyMachine.mjs",
@@ -10,7 +11,7 @@
     "./Coalgebra/StreamCoalgebra": "./dist/Coalgebra/StreamCoalgebra.mjs",
     "./Functor": "./dist/Functor.mjs",
     "./Functor/BinaryProductFunctor": "./dist/Functor/BinaryProductFunctor.mjs",
-    "./Functor/Coyoneda": "./dist/Functor/Coyoneda.mjs"
+    "./Functor/ExponentFunctor": "./dist/Functor/ExponentFunctor.mjs"
   },
   "publish": {
     "include": ["dist", "README.md", "LICENSE"]
