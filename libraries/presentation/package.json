@@ -35,6 +35,10 @@
     "#src/*": "./src/*.ts"
   },
   "exports": {
+    ".": {
+      "types": "./dist/Entrypoint.d.mts",
+      "default": "./dist/Entrypoint.mjs"
+    },
     "./Color": {
       "types": "./dist/Color.d.mts",
       "default": "./dist/Color.mjs"

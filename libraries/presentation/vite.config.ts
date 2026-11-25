@@ -6,10 +6,13 @@ export default defineConfig({
     entry: ['src/**/*.ts', '!src/**/*.test.ts'],
     // Every module ships as a file of its own, so that the bundler of a consumer leaves out the modules the consumer never imports.
     unbundle: true,
-    // JSR generates no types for JavaScript and reads the types of every JavaScript module from the declarations that the module names beside it.
-    banner: ({ fileName }) => ({
-      js: `/* @ts-self-types="./${fileName.replace(/^.*\//, '').replace(/\.mjs$/, '.d.mts')}" */`,
-    }),
+    // JSR generates no types for JavaScript and reads the types of every JavaScript module from the declarations that the module names beside it. Every module of the library has declarations, whereas the runtime that Rolldown adds under `_virtual` for a namespace that a module exports, such as those of the entry point, has none.
+    banner: ({ fileName }) =>
+      fileName.startsWith('_virtual/')
+        ? {}
+        : {
+            js: `/* @ts-self-types="./${fileName.replace(/^.*\//, '').replace(/\.mjs$/, '.d.mts')}" */`,
+          },
   },
   test: {
     // Type tests checked by TypeScript beside the tests Vitest runs.

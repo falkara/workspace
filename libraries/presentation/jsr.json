@@ -3,6 +3,7 @@
   "name": "@falkara/presentation",
   "license": "MIT",
   "exports": {
+    ".": "./dist/Entrypoint.mjs",
     "./Color": "./dist/Color.mjs",
     "./Colorimetry": "./dist/Colorimetry.mjs",
     "./Colorimetry/Chromaticity": "./dist/Colorimetry/Chromaticity.mjs",
