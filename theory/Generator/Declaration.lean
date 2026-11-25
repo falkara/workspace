@@ -339,11 +339,11 @@ def instanceTypeOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
     -- composite, whose action on morphisms the instance applies, named as the functor in camel
     -- case, as TypeScript names a value.
     let written := fun (all : List Lean.Expr) ↦ do
-      let names ← all.mapM fun parameter ↦ return (← parameter.fvarId!.getUserName).toString
+      let names ← all.mapM fun parameter ↦ return ← binderNameOf parameter
       let generics ← (all.zip names).mapM fun (parameter, parameterName) ↦
         genericOf moduleNamespace parameter parameterName
       let instances ← (all.zip names).filterMapM fun (parameter, parameterName) ↦ do
-        if isFunctorType (← parameter.fvarId!.getType) then
+        if isFunctorType (← Lean.Meta.inferType parameter) then
           return some s!"{parameterName.decapitalize}: {className}<{parameterName}>"
         return none
       let arguments := if names.isEmpty then "" else s!"<{", ".intercalate names}>"
@@ -366,22 +366,20 @@ def extendedOf? (moduleNamespace name : Lean.Name) (value : Lean.Expr)
     (bundledParameters : List Lean.Expr) : TypeScriptM (Option String) := do
   let .const structureName _ := value.getAppFn | return none
   let some label ← labelOf? name structureName | return none
-  let saved ← get
-  try
+  let attempt : TypeScriptM String := do
     let written ← (← typeArgumentsOf value.getAppFn value.getAppArgs.toList).mapM fun argument ↦ do
       let argumentType ← Lean.Meta.inferType argument
       if isFunctorType argumentType then typeLambdaOf moduleNamespace argument
       else if isTypeConstructorType argumentType then typeConstructorOf moduleNamespace argument
       else typeOf moduleNamespace argument
-    let names ← bundledParameters.mapM fun parameter ↦
-      return (← parameter.fvarId!.getUserName).toString
-    return some s!"{← referenceOf label (← typeNameOf moduleNamespace label)}<\
+    let names ← bundledParameters.mapM fun parameter ↦ return ← binderNameOf parameter
+    return s!"{← referenceOf label (← typeNameOf moduleNamespace label)}<\
       {", ".intercalate (written ++ names)}>"
-  catch _ =>
-    -- A functor that TypeScript names nowhere, such as the identity functor, leaves the fields of
-    -- the structure unfolded, and the imports that the attempt recorded are dropped.
-    set saved
-    return none
+  -- A functor that TypeScript names nowhere, such as the identity functor, leaves the fields of the
+  -- structure unfolded, so the attempt records its imports apart, and only a success keeps them.
+  match ← Lean.observing? (m := Lean.MetaM) (attempt.run []) with
+  | some (extended, records) => modify (· ++ records); return some extended
+  | none => return none
 
 /-- Gives the declaration of TypeScript that a declaration of the theory marked `export_typescript`
 takes, named without the namespace of its module, or fails with the reason where the declaration
@@ -397,8 +395,7 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
   -- A comment names the declaration after its module where its name drops the module.
   let displayName ← displayNameOf moduleNamespace name
   parametersOf (← Lean.getConstInfo name) fun parameters rest value? ↦ do
-    let names ← parameters.toList.mapM fun parameter ↦
-      return (← parameter.fvarId!.getUserName).toString
+    let names ← parameters.toList.mapM fun parameter ↦ return ← binderNameOf parameter
     let arguments := if names.isEmpty then "" else s!"<{", ".intercalate names}>"
     let variances ← variancesOf name
     let annotated ← ((parameters.toList.zip names).zip variances).mapM
@@ -447,8 +444,7 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
         -- A parameter with a default value, such as the monad of a kind of system, follows the
         -- type parameters of the fields, as TypeScript requires.
         let allParameters ← orderedOf parameters.toList bundledParameters
-        let allNames ← allParameters.mapM fun parameter ↦
-          return (← parameter.fvarId!.getUserName).toString
+        let allNames ← allParameters.mapM fun parameter ↦ return ← binderNameOf parameter
         let annotations ← (allParameters.zip allNames).mapM fun (parameter, parameterName) ↦ do
           genericOf moduleNamespace parameter (annotationOf parameterName
             (← fields.flatMapM fun (_, fieldType) ↦ polaritiesOf parameter true fieldType))
@@ -518,7 +514,7 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
       let .const structureName _ := value.getAppFn
         | Lean.throwError m!"`{name}` applies no structure."
       functorFieldsOf value fun functor fields axioms ↦ do
-        let functorName := (← functor.fvarId!.getUserName).toString
+        let functorName ← binderNameOf functor
         let generic ← genericOf moduleNamespace functor (annotationOf functorName
           (← fields.flatMapM fun (_, fieldType) ↦ polaritiesOf functor true fieldType))
         let fieldLines ← fields.mapM fun (field, fieldType) ↦ do
@@ -558,7 +554,7 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
       -- The object of the curried functor takes a type parameter after those of the declaration.
       curriedObjectOf name value rest fun parameter functor ↦
         lambdaObjectOf functor targetType fun object ↦ do
-          let parameterName := (← parameter.fvarId!.getUserName).toString
+          let parameterName ← binderNameOf parameter
           let objectGeneric := annotationOf parameterName (← polaritiesOf parameter true object)
           let typeLambda := fun (objectType : String) ↦ do
             return s!"{← commentOf name}export interface {typeName}\
@@ -634,8 +630,7 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
             if isStream type then some (Lean.mkAnnotation `channels type) else none
           else unbundled)
         let channels := if streaming then ["E = never", "R = never"] else []
-        let bundledNames ← bundledParameters.mapM fun parameter ↦
-          return (← parameter.fvarId!.getUserName).toString
+        let bundledNames ← bundledParameters.mapM fun parameter ↦ return ← binderNameOf parameter
         let allNames := names ++ bundledNames
         let allArguments := if allNames.isEmpty then "" else s!"<{", ".intercalate allNames}>"
         let allGenerics := if allNames.isEmpty && channels.isEmpty then "" else
@@ -663,7 +658,7 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
           -- gives them.
           let named := (parameters.toList ++ bundledParameters).zip allNames
           let (outer, inner) := named.partition fun (parameter, _) ↦
-            parameterTypes.tail.any (·.containsFVar parameter.fvarId!)
+            parameterTypes.tail.any parameter.occurs
           let genericsOf := fun (all : List (Lean.Expr × String)) ↦
             if all.isEmpty then "" else s!"<{", ".intercalate (all.map (·.2))}>"
           return s!"{← commentOf name}export interface {typeName} \{\n\

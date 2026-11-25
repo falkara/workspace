@@ -112,7 +112,7 @@ def mismatchesOf (path specifier source : String) (reexports : List String)
     let opening := part.splitOn "{"
     let statement := ("{".intercalate opening.dropLast).trimAscii.copy
     if statement.endsWith "export" || statement.endsWith "export type" then
-      (opening.getLast!.splitOn ",").filterMap fun entry ↦
+      ((opening.getLastD "").splitOn ",").filterMap fun entry ↦
         let entry := entry.trimAscii.copy
         let name := if entry.startsWith "type " then
           (String.ofList (entry.toList.drop "type ".length)).trimAscii.copy
@@ -128,7 +128,7 @@ def mismatchesOf (path specifier source : String) (reexports : List String)
     -- name opens with a constant that the module exports by a statement of its own.
     let marks := [s!"export const {binding}", s!"export function {binding}", s!"const {binding}"]
     let found := (List.range lines.size).find? fun index ↦
-      let line := lines[index]!.trimAscii.copy
+      let line := (lines[index]?.getD "").trimAscii.copy
       marks.any fun mark ↦ line.startsWith mark &&
         !((line.toList.drop mark.length).head?.any fun character ↦
           character.isAlphanum || character == '_' || character == '$')
@@ -140,11 +140,12 @@ def mismatchesOf (path specifier source : String) (reexports : List String)
       -- The comment ends on the line above the implementation and opens on the nearest line above
       -- it that opens a comment.
       let opening := ((List.range index).reverse.find? fun line ↦
-        lines[line]!.trimAscii.copy.startsWith "/**").getD index
+        (lines[line]?.getD "").trimAscii.copy.startsWith "/**").getD index
       let above := String.join ((List.range (index - opening)).map fun offset ↦
-        s!"{lines[opening + offset]!}\n")
-      if index > 0 && lines[index - 1]!.trimAscii.copy.endsWith "*/" && above == comment then []
-      else [s!"{path}:{index + 1}: `{lines[index]!.trimAscii.copy}` takes the comment of the \
-        theory right above it:\n{comment}"]
+        s!"{lines[opening + offset]?.getD ""}\n")
+      if index > 0 && (lines[index - 1]?.getD "").trimAscii.copy.endsWith "*/" && above == comment
+      then []
+      else [s!"{path}:{index + 1}: `{(lines[index]?.getD "").trimAscii.copy}` takes the comment \
+        of the theory right above it:\n{comment}"]
 
 end Generator

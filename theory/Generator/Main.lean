@@ -226,7 +226,7 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
   -- next. The imports of the package take the order of their paths, as oxfmt sorts them, so that
   -- the header stays above the import it opens with.
   let packageLines := (checkLines ++ theoryLines ++ contractImport).mergeSort fun first second ↦
-    (first.splitOn " from ").getLast! ≤ (second.splitOn " from ").getLast!
+    (first.splitOn " from ").getLastD "" ≤ (second.splitOn " from ").getLastD ""
   let sections := [importLine, String.join packageLines, s!"{body}{contract}"].filter (!·.isEmpty)
   return s!"{header}{"\n".intercalate sections}"
 
@@ -247,7 +247,7 @@ def main (arguments : List String) : IO Unit := do
         some ((path.withExtension "").components.foldl Lean.Name.mkStr .anonymous)
       else none
   let environment ← Lean.importModules (modules.map ({ module := · })).toArray {}
-  for module in modules do
+  modules.forM fun module ↦ do
     let path := System.FilePath.mk directory / Generator.pathOf theory module
     let declarations ← Generator.runIn environment (Generator.markedDeclarationsOf module false)
     if !declarations.isEmpty then

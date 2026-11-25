@@ -169,7 +169,7 @@ def testOf (packageNamespace name : Lean.Name) : TypeScriptM (String × List Lea
         | _, _ =>
           Lean.throwError m!"`{type}` is no hypothesis that a test can skip the values of."
       else
-        let binderName := (← binder.fvarId!.getUserName).toString
+        let binderName ← binderNameOf binder
         if ["actual", "expected"].contains binderName then
           Lean.throwError m!"`{name}` names a variable `{binderName}`, which the test takes for a \
             side of the conclusion."

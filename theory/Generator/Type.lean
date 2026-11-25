@@ -54,6 +54,7 @@ polarities at which the parameter occurs in the fields or the value of the decla
   parameter, such as `Monad m`, left out of the parameters.
 - `identityLabelOf?`: gives the declaration that labels the identity functor of Mathlib, the functor
   of the identity monad `Id`, where the theory marks one.
+- `binderNameOf`: gives the name of a binder that a telescope opens as a free variable.
 - `defaultOf?`: gives the default value of a type parameter, such as `Id` for
   `(m : Type u → Type u := Id)`, where the parameter takes one.
 - `parameterObjectOf`: gives the functor and the object of an object `F.obj X` of a functor `F`
@@ -303,7 +304,7 @@ where
     -- An instance of a class on a type parameter, such as `Monad m`, constrains the parameter and
     -- is no parameter of its own, as TypeScript takes the class by its instances.
     if binderInfo == .instImplicit &&
-        parameters.any fun parameter ↦ domain.containsFVar parameter.fvarId! then
+        parameters.any fun parameter ↦ parameter.occurs domain then
       return ← Lean.Meta.withLocalDecl name binderInfo domain fun constraint ↦
         loop declaration remaining (body.instantiate1 constraint)
           (value.map (Lean.mkApp · constraint)) parameters
@@ -332,10 +333,16 @@ def identityLabelOf? (environment : Lean.Environment) : Option Lean.Name :=
       some declared.declaration
     else none
 
+/-- Gives the name of a binder that a telescope opens as a free variable, or fails where the
+expression is no free variable. -/
+def binderNameOf (binder : Lean.Expr) : Lean.MetaM String := do
+  let .fvar binderId := binder | Lean.throwError m!"`{binder}` is no binder."
+  return (← binderId.getUserName).toString
+
 /-- Gives the default value of a type parameter, which the type of its binder annotates, such as
 `Id` for `(m : Type u → Type u := Id)`, where the parameter takes one. -/
 def defaultOf? (parameter : Lean.Expr) : Lean.MetaM (Option Lean.Expr) := do
-  return (← parameter.fvarId!.getType).getOptParamDefault?
+  return (← Lean.Meta.inferType parameter).getOptParamDefault?
 
 /-- Gives the functor and the object of an object `F.obj X` of a functor `F` that is a parameter,
 which no reduction resolves, or of an application `m X` of a type constructor `m` that is a
@@ -494,7 +501,7 @@ where
       else
         let replaced := fieldType.replace fun part ↦
           (replacements.find? fun (projected, _) ↦ projected == part).map Prod.snd
-        if replaced.containsFVar self.fvarId! then
+        if self.occurs replaced then
           monadLift (Lean.throwError m!"`{structureName ++ field}` has no field in TypeScript, as \
             its type depends on a field whose value is no type." : Lean.MetaM α)
         else
@@ -514,7 +521,7 @@ def unbundledOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
   Lean.Meta.forallTelescope type fun binders body ↦ do
     let bundled ← monadLift (binders.toList.filterMapM fun binder ↦ do
       -- A kind of system names the structure through its abbreviation, which the check unfolds.
-      let some structureName ← bundledOf (← Lean.Meta.whnfR (← binder.fvarId!.getType))
+      let some structureName ← bundledOf (← Lean.Meta.whnfR (← Lean.Meta.inferType binder))
         | return none
       let fields ← (Lean.getStructureFields (← Lean.getEnv) structureName).toList.filterM
         fun field ↦ do
@@ -565,7 +572,8 @@ where
           Lean.MetaM (Array Lean.Expr))
       let rebuilt ← monadLift (binders.foldrM
         (init := Lean.mkAppN (replaced body) (carriers.map replaced)) fun binder rest ↦ do
-          let declaration ← binder.fvarId!.getDecl
+          let .fvar binderId := binder | Lean.throwError m!"`{binder}` is no binder."
+          let declaration ← binderId.getDecl
           let applied := (parameters.filter (·.1 == binder)).map (·.2.2)
           return .forallE declaration.userName
             (Lean.mkAppN (replaced declaration.type) applied.toArray) (rest.abstract #[binder])
@@ -573,7 +581,7 @@ where
       computation (parameters.map (·.2.2)) rebuilt
     | (binder, structureName, field) :: rest, parameters => do
       let fieldName ← monadLift (fieldNameOf structureName field : Lean.MetaM String)
-      let binderName := (← monadLift (binder.fvarId!.getUserName : Lean.MetaM Lean.Name)).toString
+      let binderName ← monadLift (binderNameOf binder)
       let name := Lean.Name.mkSimple
         (if several then s!"{binderName.capitalize}{fieldName}" else fieldName)
       let fieldType ← monadLift (do
@@ -868,7 +876,7 @@ def annotationOf (parameter : String) (polarities : List Bool) : String :=
 `Monad extends HKT.TypeLambda = Functor.Id`. -/
 def genericOf (packageNamespace : Lean.Name) (parameter : Lean.Expr) (declared : String) :
     TypeScriptM String := do
-  let type ← parameter.fvarId!.getType
+  let type ← Lean.Meta.inferType parameter
   let constrained ← if isFunctorType type.cleanupAnnotations || isTypeConstructorType type then
       pure s!"{declared} extends {← effectNameOf "HKT" "TypeLambda" .type}"
     else pure declared
