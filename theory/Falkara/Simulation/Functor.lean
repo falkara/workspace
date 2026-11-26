@@ -14,7 +14,7 @@ import Falkara.References
 # Functor
 
 The module defines the functors, the identity functor, the composition of functors, and the curried
-functor of constant functors as Mathlib [Mathlib.library] states them.
+functor of constant functors.
 
 ## Main Definitions
 
@@ -26,8 +26,8 @@ functor of constant functors as Mathlib [Mathlib.library] states them.
 ## Implementation Notes
 
 The action of a functor on objects takes the type parameter `Endofunctor` in TypeScript, as a
-functor on types is an endofunctor, which Jacobs [Jacobs.introductionToCoalgebra] writes as a
-mapping of sets to sets, and the type lambda stands for the functor as it does in a coalgebra.
+functor on types is an endofunctor, which Jacobs writes as a mapping of sets to sets, and the type
+lambda stands for the functor as it does in a coalgebra.
 
 The functor and its axioms take documentation comments of the theory in TypeScript. The functor is
 an endofunctor there, whose action on objects is its type parameter, whereas the comment of Mathlib
@@ -47,7 +47,7 @@ writes them as types, whose comments open with an article and name the endofunct
 constant as the type parameters do.
 -/
 
-@[expose] public section
+public section
 
 namespace Falkara.Simulation
 

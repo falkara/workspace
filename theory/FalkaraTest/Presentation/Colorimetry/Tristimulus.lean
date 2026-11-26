@@ -8,14 +8,13 @@ import Falkara.References
 /-!
 # Tristimulus
 
-The module defines the checks of the tristimulus values against the data table
-[CIE.colorMatchingFunctions] and of the white against the vocabulary
-[CIE.internationalLightingVocabulary] and CIE 015 [CIE.colorimetry]. The first check compares
-the tristimulus values of the color stimulus function that is 1 at every wavelength with the sums
-of the values of the color-matching functions $\bar{x}$, $\bar{y}$, and $\bar{z}$ among the
-validation values of the data table. The checks of the white compare its luminance factor with 1,
-and its tristimulus values rounded as Table 9.1 of CIE 015 rounds them with the values that the
-theory sets beside those of the table.
+The module defines the checks of the tristimulus values against the data table of the CIE 1931
+standard colorimetric observer and of the white against the vocabulary of the CIE and CIE 015. The
+first check compares the tristimulus values of the color stimulus function that is 1 at every
+wavelength with the sums of the values of the color-matching functions $\bar{x}$, $\bar{y}$, and
+$\bar{z}$ among the validation values of the data table. The checks of the white compare its
+luminance factor with 1, and its tristimulus values rounded as Table 9.1 of CIE 015 rounds them with
+the values that the theory sets beside those of the table.
 
 ## Main Statements
 

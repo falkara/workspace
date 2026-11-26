@@ -8,11 +8,11 @@ import Falkara.References
 /-!
 # Chromaticity
 
-The module defines the checks of the chromaticity against the vocabulary
-[CIE.internationalLightingVocabulary] and CIE 015 [CIE.colorimetry]. The first check compares
-the coordinate $z = 1 - x - y$ of the chromaticity with the quotient of the tristimulus value $Z$
-and the sum $X + Y + Z$. The second compares the chromaticity coordinates of the white, rounded as
-Table 9.1 of CIE 015 rounds them, with the values that the theory sets beside those of the table.
+The module defines the checks of the chromaticity against the vocabulary of the CIE and CIE 015. The
+first check compares the coordinate $z = 1 - x - y$ of the chromaticity with the quotient of the
+tristimulus value $Z$ and the sum $X + Y + Z$. The second compares the chromaticity coordinates of
+the white, rounded as Table 9.1 of CIE 015 rounds them, with the values that the theory sets beside
+those of the table.
 
 ## Main Statements
 

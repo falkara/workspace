@@ -9,13 +9,13 @@ import Falkara.References
 /-!
 # Observer
 
-The module defines the checks of the observer against the data table
-[CIE.colorMatchingFunctions]. The checks compare the sum of the wavelengths $\lambda$, the sum of
-the values of each color-matching function $\bar{x}$, $\bar{y}$, and $\bar{z}$, and the values at
-one sample wavelength with the validation values of the data table, and the wavelengths with the
-range and the step that the data table gives. A last check finds that pairing the wavelengths in
-order with the rows of the observer, as `Tristimulus.ofColorStimulusFunction` pairs them, pairs
-each wavelength with the row at that wavelength.
+The module defines the checks of the observer against the data table of the CIE 1931 standard
+colorimetric observer. The checks compare the sum of the wavelengths $\lambda$, the sum of the
+values of each color-matching function $\bar{x}$, $\bar{y}$, and $\bar{z}$, and the values at one
+sample wavelength with the validation values of the data table, and the wavelengths with the range
+and the step that the data table gives. A last check finds that pairing the wavelengths in order
+with the rows of the observer, as `Tristimulus.ofColorStimulusFunction` pairs them, pairs each
+wavelength with the row at that wavelength.
 
 ## Main Statements
 

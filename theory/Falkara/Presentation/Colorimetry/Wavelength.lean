@@ -14,8 +14,8 @@ import Falkara.References
 # Wavelength
 
 The module defines the wavelength at which the theory computes, a whole number of nanometers from
-360 nm to 830 nm, as the standard method of ISO/CIE 11664-3 sums at 1 nm from 360 nm to 830 nm
-[CIE.tristimulusValues], and every such wavelength in order.
+360 nm to 830 nm, as the standard method sums at 1 nm from 360 nm to 830 nm, and every such
+wavelength in order.
 
 ## Main Definitions
 

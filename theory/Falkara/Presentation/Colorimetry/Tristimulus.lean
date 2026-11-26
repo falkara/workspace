@@ -18,15 +18,14 @@ import Mathlib.Algebra.Ring.Rat
 
 The module defines the tristimulus values of a color stimulus as the amounts $X$, $Y$, and $Z$ that
 match the color of the stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE
-1931 standard colorimetric system [CIE.internationalLightingVocabulary]. The tristimulus values
-of a color stimulus function $\varphi_\lambda(\lambda)$ are the sums of the products of the function
-and the color-matching functions of the observer at wavelengths from 360 nm to 830 nm in steps of
-1 nm [CIE.tristimulusValues]. Tristimulus values add and scale by a factor as the coordinates of
-a vector do, as a color equation represents a color stimulus as a vector, so the tristimulus values
-of the additive mixture of two color stimulus functions are the sums of their tristimulus values,
-as Grassmann's laws state. The white is the color stimulus to which the tristimulus values of a
-color are normalized, those of CIE standard illuminant D65 scaled so that their luminance factor $Y$
-is 1, as that of an adapted white is [CIE.internationalLightingVocabulary].
+1931 standard colorimetric system. The tristimulus values of a color stimulus function
+$\varphi_\lambda(\lambda)$ are the sums of the products of the function and the color-matching
+functions of the observer at wavelengths from 360 nm to 830 nm in steps of 1 nm. Tristimulus values
+add and scale by a factor as the coordinates of a vector do, as a color equation represents a color
+stimulus as a vector, so the tristimulus values of the additive mixture of two color stimulus
+functions are the sums of their tristimulus values, as Grassmann's laws state. The white is the
+color stimulus to which the tristimulus values of a color are normalized, those of CIE standard
+illuminant D65 scaled so that their luminance factor $Y$ is 1, as that of an adapted white is.
 
 ## Main Definitions
 
@@ -88,11 +87,10 @@ Each tristimulus value is the sum of a list of products, one list for each color
 so the theorems of addition and of scaling follow from the theorems of Mathlib on the sum of a
 list, `List.sum_map_add` and `List.sum_map_mul_left`.
 
-The white follows the sums of ISO/CIE 11664-3 rather than Table 9.1 of CIE 015
-[CIE.colorimetry], which gives D65 as $X = 95.04$, $Y = 100.00$, and $Z = 108.88$ with the
-chromaticity coordinates $x = 0.312\,71$ and $y = 0.329\,03$, while the sums at 1 nm from 360 nm
-to 830 nm, rounded to the same places, give $X = 95.05$, $Z = 108.88$, $x = 0.312\,73$, and
-$y = 0.329\,02$.
+The white follows the sums of ISO/CIE 11664-3 rather than Table 9.1 of CIE 015, which gives D65 as
+$X = 95.04$, $Y = 100.00$, and $Z = 108.88$ with the chromaticity coordinates $x = 0.312\,71$ and
+$y = 0.329\,03$, while the sums at 1 nm from 360 nm to 830 nm, rounded to the same places, give
+$X = 95.05$, $Z = 108.88$, $x = 0.312\,73$, and $y = 0.329\,02$.
 -/
 
 @[expose] public section

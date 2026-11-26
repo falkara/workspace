@@ -28,12 +28,10 @@ in steps of 1 nm.
 
 ## Implementation Notes
 
-The observer holds every row of the data table [CIE.colorMatchingFunctions] as the
-color-matching coefficients at the wavelength of the row, as the vocabulary of the CIE
-[CIE.internationalLightingVocabulary] names the three values of the color-matching functions at a
-given wavelength. Each row holds the wavelength as the whole number of nanometers that the data
-table gives and each other value as the exact rational number that the decimal digits of the value
-denote.
+The observer holds every row of the data table as the color-matching coefficients at the wavelength
+of the row, as these are the three values of the color-matching functions at a given wavelength.
+Each row holds the wavelength as the whole number of nanometers that the data table gives and each
+other value as the exact rational number that the decimal digits of the value denote.
 
 The metadata of the data table names linear interpolation between two rows and extrapolation by
 zero beyond 360 nm to 830 nm, and neither enters the theory, as the theory takes the rows

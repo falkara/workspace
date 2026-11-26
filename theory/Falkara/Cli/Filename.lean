@@ -13,11 +13,10 @@ import Falkara.References
 /-!
 # Filename
 
-The module defines a filename [IEEE.portableOperatingSystemInterface] that names a file or a
-directory in the same way on every system as a portable filename of at most 255 bytes that starts
-with no hyphen-minus, ends with no period, and names no device that Windows reserves
-[Microsoft.namingFiles]. A relative path made of such filenames never leaves the directory it
-starts at, as such a filename is neither dot nor dot-dot.
+The module defines a filename that names a file or a directory in the same way on every system as a
+portable filename of at most 255 bytes that starts with no hyphen-minus, ends with no period, and
+names no device that Windows reserves. A relative path made of such filenames never leaves the
+directory it starts at, as such a filename is neither dot nor dot-dot.
 
 ## Main Definitions
 

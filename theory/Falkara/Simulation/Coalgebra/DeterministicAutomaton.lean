@@ -14,11 +14,10 @@ import Mathlib.Data.Stream.Init
 /-!
 # Deterministic Automaton
 
-The module defines the deterministic automata as Jacobs [Jacobs.introductionToCoalgebra] names
-them, the coalgebras of the binary products of a type of outputs with the functions from a type of
-inputs, their behavior, which maps a stream of inputs to the stream of the outputs of the states
-that the inputs lead through, the automata that an automaton maps into, and the Mealy machine that
-an automaton runs as.
+The module defines the deterministic automata, the coalgebras of the binary products of a type of
+outputs with the functions from a type of inputs, their behavior, which maps a stream of inputs to
+the stream of the outputs of the states that the inputs lead through, the automata that an automaton
+maps into, and the Mealy machine that an automaton runs as.
 
 ## Main Definitions
 

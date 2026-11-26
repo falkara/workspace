@@ -14,11 +14,10 @@ import Mathlib.Data.Stream.Init
 /-!
 # Stream Coalgebra
 
-The module defines the stream coalgebras as Jacobs [Jacobs.introductionToCoalgebra] names them,
-the coalgebras of the functor of binary products with a type of outputs, their behavior, the map
-into the streams of outputs, the final coalgebra of the functor, their steps, which keep the next
-state beside every output, the coalgebra that maps every output, and the Mealy machine that a
-coalgebra runs as, which takes inputs that carry nothing.
+The module defines the stream coalgebras, the coalgebras of the functor of binary products with a
+type of outputs, their behavior, the map into the streams of outputs, the final coalgebra of the
+functor, their steps, which keep the next state beside every output, the coalgebra that maps every
+output, and the Mealy machine that a coalgebra runs as, which takes inputs that carry nothing.
 
 ## Main Definitions
 

@@ -8,14 +8,13 @@ import Falkara.References
 /-!
 # Illuminant
 
-The module defines the checks of the illuminant against the data table
-[CIE.standardIlluminantD65]. The checks compare the sum of the wavelengths $\lambda$, the sum of
-the values of the relative spectral distribution $S$, and the value at one sample wavelength with
-the validation values of the data table, and the wavelengths with the range and the step that the
-data table gives. A further check compares the value of the distribution at 560 nm with 100, as the
-data table gives it, and a last theorem proves that the distribution as a function of the
-wavelength gives at every wavelength from 360 nm to 830 nm the row of the data table at that
-wavelength.
+The module defines the checks of the illuminant against the data table of CIE standard illuminant
+D65. The checks compare the sum of the wavelengths $\lambda$, the sum of the values of the relative
+spectral distribution $S$, and the value at one sample wavelength with the validation values of the
+data table, and the wavelengths with the range and the step that the data table gives. A further
+check compares the value of the distribution at 560 nm with 100, as the data table gives it, and a
+last theorem proves that the distribution as a function of the wavelength gives at every wavelength
+from 360 nm to 830 nm the row of the data table at that wavelength.
 
 ## Main Statements
 

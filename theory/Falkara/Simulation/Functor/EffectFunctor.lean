@@ -13,8 +13,7 @@ import Falkara.References
 
 The module defines the effect functor, the monad of the computations that read requirements of a
 type `R` and either fail with a failure of a type `E` or give a value, as the monad transformer
-`ReaderT` of Lean over the monad of exceptions `Except` states it, which Mathlib
-[Mathlib.library] documents.
+`ReaderT` of Lean over the monad of exceptions `Except` states it.
 
 ## Main Definitions
 
@@ -33,7 +32,7 @@ them. They vary in TypeScript with the effect, as `Effect.Effect` declares them,
 reads its requirements.
 -/
 
-@[expose] public section
+public section
 
 namespace Falkara.Simulation
 

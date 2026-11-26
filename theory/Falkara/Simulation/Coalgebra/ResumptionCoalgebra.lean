@@ -34,13 +34,13 @@ leaves its result out, and their behavior and their steps, which the sequence co
 
 ## Implementation Notes
 
-Jacobs [Jacobs.introductionToCoalgebra] gives the functor no name. The coalgebra cites the section
-of the sequence coalgebras, whose functor $1 + (A \times X)$ is the case of the type with one value
-as the type of results, as Section 2.2.2 replaces that type by another type $B$ only for trees,
-whose behavior trees end in values of $B$. The module names the coalgebras after the
-coinductive resumptions of Piróg and Gibbons [Pirog.coinductiveResumptionMonad], the final
-coalgebras of the functors $X \mapsto B + F X$, of which the functor of the binary products with the
-outputs gives the finite and the infinite sequences of outputs that end in a result where they end.
+Jacobs gives the functor no name. The coalgebra cites the section of the sequence coalgebras, whose
+functor $1 + (A \times X)$ is the case of the type with one value as the type of results, as
+Section 2.2.2 replaces that type by another type $B$ only for trees, whose behavior trees end in
+values of $B$. The module names the coalgebras after the coinductive resumptions of Piróg and
+Gibbons, the final coalgebras of the functors $X \mapsto B + F X$, of which the functor of the
+binary products with the outputs gives the finite and the infinite sequences of outputs that end in
+a result where they end.
 
 The result of a resumption coalgebra takes the type parameter `Done` in TypeScript, as Effect names
 the value that a channel ends with, and the step takes `Result.Result` of Effect, which succeeds

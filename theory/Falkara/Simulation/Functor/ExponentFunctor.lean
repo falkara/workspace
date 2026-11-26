@@ -14,8 +14,7 @@ import Falkara.References
 # Exponent Functor
 
 The module defines the exponent functor, which maps every type $k$ to the functor
-$Y \mapsto (k \to Y)$, the exponent $Y^k$ of Jacobs [Jacobs.introductionToCoalgebra], as the
-coyoneda embedding of Mathlib [Mathlib.library] states it.
+$Y \mapsto (k \to Y)$, the exponent $Y^k$.
 
 ## Main Definitions
 
@@ -29,7 +28,7 @@ TypeScript, which writes it as the type of the functor it gives at an exponent, 
 opens with an article and names the exponent as the type parameter does.
 -/
 
-@[expose] public section
+public section
 
 namespace Falkara.Simulation
 

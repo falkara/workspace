@@ -17,10 +17,10 @@ import Mathlib.Data.Seq.Basic
 /-!
 # Sequence Coalgebra
 
-The module defines the sequence coalgebras as Jacobs [Jacobs.introductionToCoalgebra] names them,
-the coalgebras of the options of the binary products with a type of outputs, their behavior, the
-map into the sequences of outputs, the final coalgebra of the functor, their steps, which keep the
-next state beside every output, and the coalgebra that maps every output.
+The module defines the sequence coalgebras, the coalgebras of the options of the binary products
+with a type of outputs, their behavior, the map into the sequences of outputs, the final coalgebra
+of the functor, their steps, which keep the next state beside every output, and the coalgebra that
+maps every output.
 
 ## Main Definitions
 

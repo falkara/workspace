@@ -13,7 +13,7 @@ import Falkara.References
 /-!
 # Binary Product Functor
 
-The module defines the curried functor of binary products as Mathlib [Mathlib.library] states it.
+The module defines the curried functor of binary products.
 
 ## Main Definitions
 
@@ -22,17 +22,17 @@ The module defines the curried functor of binary products as Mathlib [Mathlib.li
 ## Implementation Notes
 
 The type that the curried functor maps takes the type parameter `Factor` in TypeScript, as Jacobs
-[Jacobs.introductionToCoalgebra] builds a polynomial functor as a product of functors, whose
-factor the type is. The curried functor takes a documentation comment of the theory in TypeScript,
-which writes it as the type of the functor it gives at a factor, a type whose comment opens with an
-article and names the factor as the type parameter does.
+builds a polynomial functor as a product of functors, whose factor the type is. The curried functor
+takes a documentation comment of the theory in TypeScript, which writes it as the type of the
+functor it gives at a factor, a type whose comment opens with an article and names the factor as the
+type parameter does.
 
 The product takes in TypeScript the record `Product` with the fields `output` and `next` in place
 of a tuple, as every coalgebra of the package gives through the product an output and the next
 state, so that TypeScript tells the two apart even where they are of one type.
 -/
 
-@[expose] public section
+public section
 
 namespace Falkara.Simulation
 

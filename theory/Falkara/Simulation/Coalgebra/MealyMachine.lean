@@ -18,11 +18,10 @@ import Mathlib.Data.Stream.Init
 /-!
 # Mealy Machine
 
-The module defines the Mealy machines as Jacobs [Jacobs.introductionToCoalgebra] names them, the
-coalgebras of the functions from a type of inputs into the binary products with a type of outputs,
-their behavior, which maps a stream of inputs to the stream of the outputs, their steps, which
-keep the next state beside every output, and the machines that a machine maps into or that two
-machines compose into.
+The module defines the Mealy machines, the coalgebras of the functions from a type of inputs into
+the binary products with a type of outputs, their behavior, which maps a stream of inputs to the
+stream of the outputs, their steps, which keep the next state beside every output, and the machines
+that a machine maps into or that two machines compose into.
 
 ## Main Definitions
 

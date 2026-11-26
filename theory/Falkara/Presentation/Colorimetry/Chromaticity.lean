@@ -14,9 +14,8 @@ import Falkara.References
 # Chromaticity
 
 The module defines the chromaticity of a color stimulus by the chromaticity coordinates $x$, $y$,
-and $z$, the quotients of the tristimulus values $X$, $Y$, and $Z$ and their sum $X + Y + Z$
-[CIE.internationalLightingVocabulary]. The three coordinates sum to 1, so the coordinates $x$
-and $y$ define the chromaticity.
+and $z$, the quotients of the tristimulus values $X$, $Y$, and $Z$ and their sum $X + Y + Z$. The
+three coordinates sum to 1, so the coordinates $x$ and $y$ define the chromaticity.
 
 ## Main Definitions
 

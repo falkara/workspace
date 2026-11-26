@@ -37,9 +37,9 @@ table gives the column of the distribution.
 
 ## Implementation Notes
 
-The illuminant holds every row of the data table [CIE.standardIlluminantD65] as a monochromatic
-component, with its wavelength as the whole number of nanometers that the data table gives and its
-distribution as the exact rational number that the decimal digits of the value denote.
+The illuminant holds every row of the data table as a monochromatic component, with its wavelength
+as the whole number of nanometers that the data table gives and its distribution as the exact
+rational number that the decimal digits of the value denote.
 
 The illuminant holds its rows as a list rather than an array, as the kernel of Lean folds a list
 row by row, while it reduces a fold of an array through the loop of the fold and the bounds of
