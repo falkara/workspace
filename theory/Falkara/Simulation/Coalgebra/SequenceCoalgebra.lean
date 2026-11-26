@@ -61,6 +61,9 @@ universe u
 
 /-- A sequence coalgebra, which gives from every state either nothing or an output and the next
 state in a monad. -/
+@[export_typescript /-- A sequence coalgebra, which gives from every state either nothing or an
+    output and the next state in a monad. -/
+  (m := "Monad")]
 abbrev SequenceCoalgebra (Output : Type u) (m : Type u → Type u := Id) [Monad m]
     [LawfulMonad m] :=
   CategoryTheory.Endofunctor.Coalgebra
@@ -71,6 +74,8 @@ attribute [cite "Section 2.2.1" jacobs2017introductionCoalgebra] SequenceCoalgeb
 
 /-- The behavior of a sequence coalgebra, which gives from every state the sequence of the outputs
 that the coalgebra gives from the state on until it gives nothing. -/
+@[export_typescript /-- The behavior of a sequence coalgebra, which gives from every state the
+    sequence of the outputs that the coalgebra gives from the state on until it gives nothing. -/]
 def SequenceCoalgebra.behavior {Output : Type u} (coalgebra : SequenceCoalgebra Output)
     (state : coalgebra.V) : Stream'.Seq Output :=
   Stream'.Seq.corec coalgebra.str state
@@ -80,6 +85,9 @@ attribute [cite "Definition 2.3.1" jacobs2017introductionCoalgebra] SequenceCoal
 /-- The steps of a sequence coalgebra, which gives from every state the sequence of the steps that
 the coalgebra takes from the state on until it gives nothing, each an output with the next state,
 the behavior of the coalgebra whose output is the whole step. -/
+@[export_typescript /-- The steps of a sequence coalgebra, which gives from every state the
+    sequence of the steps that the coalgebra takes from the state on until it gives nothing, each
+    an output with the next state, the behavior of the coalgebra whose output is the whole step. -/]
 def SequenceCoalgebra.steps {Output : Type u} (coalgebra : SequenceCoalgebra Output)
     (state : coalgebra.V) : Stream'.Seq ((binaryProductFunctor.obj Output).obj coalgebra.V) :=
   Stream'.Seq.corec (fun current ↦
@@ -90,6 +98,8 @@ attribute [cite "Definition 2.3.1" jacobs2017introductionCoalgebra] SequenceCoal
 
 /-- The coalgebra that maps every output of a sequence coalgebra by a function, upon the state space
 of the coalgebra. -/
+@[export_typescript /-- The coalgebra that maps every output of a sequence coalgebra by a function,
+    upon the state space of the coalgebra. -/]
 def SequenceCoalgebra.mapOutput {Output MappedOutput : Type u}
     (coalgebra : SequenceCoalgebra Output) (f : (output : Output) → MappedOutput) :
     SequenceCoalgebra MappedOutput where
@@ -167,25 +177,5 @@ theorem SequenceCoalgebra.behavior_mapOutput {Output MappedOutput : Type u}
     (state : coalgebra.V) :
     (coalgebra.mapOutput f).behavior state = (coalgebra.behavior state).map f :=
   (map_corec (fun current ↦ (coalgebra.str current : Option (Output × coalgebra.V))) f state).symm
-
-/-! ### Export -/
-
-attribute [export_typescript
-  "A sequence coalgebra, which gives from every state either nothing or an output and the next
-  state in a monad."
-  (m := "Monad")] SequenceCoalgebra
-
-attribute [export_typescript
-  "The behavior of a sequence coalgebra, which gives from every state the sequence of the outputs
-  that the coalgebra gives from the state on until it gives nothing."] SequenceCoalgebra.behavior
-
-attribute [export_typescript
-  "The steps of a sequence coalgebra, which gives from every state the sequence of the steps that
-  the coalgebra takes from the state on until it gives nothing, each an output with the next state,
-  the behavior of the coalgebra whose output is the whole step."] SequenceCoalgebra.steps
-
-attribute [export_typescript
-  "The coalgebra that maps every output of a sequence coalgebra by a function, upon the state space
-  of the coalgebra."] SequenceCoalgebra.mapOutput
 
 end Falkara.Simulation

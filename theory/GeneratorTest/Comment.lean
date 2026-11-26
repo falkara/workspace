@@ -56,7 +56,7 @@ def entryDeclaration : Nat := 0
 
 attribute [cite "17-23-053" vocabularyOfTheChecks] entryDeclaration
 
-attribute [export_typescript "The declaration that cites an entry of the vocabulary."]
+attribute [export_typescript /-- The declaration that cites an entry of the vocabulary. -/]
   entryDeclaration
 
 /-- The declaration that cites a data table. -/
@@ -64,12 +64,12 @@ def tableDeclaration : Nat := 0
 
 attribute [cite "sumOfColumns" tableOfTheChecks] tableDeclaration
 
-attribute [export_typescript "The declaration that cites a data table."] tableDeclaration
+attribute [export_typescript /-- The declaration that cites a data table. -/] tableDeclaration
 
 /-- The declaration that cites no work. -/
 def uncitedDeclaration : Nat := 0
 
-attribute [export_typescript "The declaration that cites no work."] uncitedDeclaration
+attribute [export_typescript /-- The declaration that cites no work. -/] uncitedDeclaration
 
 /-- The declaration that the attribute never marks. -/
 def unmarkedDeclaration : Nat := 0
@@ -112,7 +112,7 @@ def commentedDeclaration : Nat := 0
 attribute [cite "17-23-053" vocabularyOfTheChecks] commentedDeclaration
 
 attribute [export_typescript
-  "A declaration in the terms of the table." cite "sumOfColumns" tableOfTheChecks]
+  /-- A declaration in the terms of the table. -/ cite "sumOfColumns" tableOfTheChecks]
   commentedDeclaration
 
 /--
@@ -132,8 +132,9 @@ structure Shelf where
   /-- The book on the shelf. -/
   book : Nat
 
-attribute [export_typescript "The structure whose field takes a comment that cites the table."
-  (book := "book" "The book that the shelf holds." cite "sumOfColumns" tableOfTheChecks)] Shelf
+attribute [export_typescript /-- The structure whose field takes a comment that cites the table. -/
+  (book := "book" /-- The book that the shelf holds. -/ cite "sumOfColumns" tableOfTheChecks)]
+  Shelf
 
 /--
 info: /**

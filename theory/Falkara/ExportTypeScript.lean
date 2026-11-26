@@ -17,22 +17,21 @@ import Lean.Structure
 
 The module defines the attribute `export_typescript`, which marks a declaration of the theory that
 the generator writes as TypeScript. A declaration takes the attribute as
-`attribute [export_typescript "<comment>"] <name>`, and every declaration without the attribute
-stays in the theory alone. The attribute gives the documentation comment that the declaration takes
-in TypeScript, apart from its documentation comment in the theory, with the item of the work that
-its terms come from, and a clause for every binder or field of the declaration, or of the structure
-that the declaration labels, with the name and the documentation comment that it takes in
-TypeScript, such as
+`@[export_typescript /-- <comment> -/]`, and every declaration without the attribute stays in the
+theory alone. The attribute gives the documentation comment that the declaration takes in
+TypeScript, apart from its documentation comment in the theory, as a documentation comment of Lean,
+with the item of the work that its terms come from, and a clause for every binder or field of the
+declaration, or of the structure that the declaration labels, with the name and the documentation
+comment that it takes in TypeScript, such as
 
 ```
-attribute [export_typescript
-  "A coalgebra, a state space together with a coalgebra structure on it."
+@[export_typescript /-- A coalgebra, a state space together with a coalgebra structure on it. -/
     cite "Definition 1.4.5" jacobs2017introductionCoalgebra
   (F := "Endofunctor")
   (V := "State")
-  (str := "structure"
-    "The coalgebra structure on the state space."
-      cite "Definition 1.4.5" jacobs2017introductionCoalgebra)] Coalgebra
+  (str := "structure" /-- The coalgebra structure on the state space. -/
+    cite "Definition 1.4.5" jacobs2017introductionCoalgebra)]
+abbrev Coalgebra := @CategoryTheory.Endofunctor.Coalgebra
 ```
 
 ## Main Definitions
@@ -131,9 +130,9 @@ def bindersOf (declaration : Lean.Name) : Lean.MetaM (List Lean.Name) := do
       (Lean.mkAppN (.const declaration (information.levelParams.map .param)) arguments) body
   return information.type.getForallBinderNames ++ fields ++ objects ++ objectFields
 
-/-- The syntax of a documentation comment in TypeScript with the item of the work that its terms
-come from, where it cites one. -/
-syntax exportComment := str (" cite " str ident)?
+/-- The syntax of a documentation comment in TypeScript, written as a documentation comment of Lean,
+with the item of the work that its terms come from, where it cites one. -/
+syntax exportComment := docComment (" cite " str ppSpace ident)?
 
 /-- The syntax of a clause of a binder or a field, with the name and the documentation comment that
 it takes in TypeScript. -/
@@ -148,13 +147,13 @@ syntax (name := exportTypeScript)
 /-- Gives the documentation comment that a syntax of a comment states, refusing a name that is no
 declaration of a work. -/
 def commentOfSyntax : Lean.TSyntax ``exportComment → Lean.AttrM Comment
-  | `(exportComment| $text:str $[cite $label? $work?]?) => do
+  | `(exportComment| $text:docComment $[cite $label? $work?]?) => do
     let item ← match label?, work? with
       | some label, some work => some <$> Citation.itemOf label work
       | _, _ => pure none
-    return { text := text.getString, item }
-  | _ => Lean.throwError "A comment takes its text as a string and the item of the work that its \
-      terms come from, where it cites one."
+    return { text := ← Lean.getDocStringText text, item }
+  | _ => Lean.throwError "A comment takes its text as a documentation comment and the item of the \
+      work that its terms come from, where it cites one."
 
 /-- The attribute that marks a declaration that the generator writes as TypeScript, with the
 documentation comment that it takes and the clauses of its binders and fields, refusing a name that

@@ -82,6 +82,9 @@ universe u
 
 /-- A Mealy machine, which gives from every state upon every input an output and the next state in a
 monad. -/
+@[export_typescript /-- A Mealy machine, which gives from every state upon every input an output
+    and the next state in a monad. -/
+  (m := "Monad")]
 abbrev MealyMachine (Input Output : Type u) (m : Type u → Type u := Id) [Monad m]
     [LawfulMonad m] :=
   CategoryTheory.Endofunctor.Coalgebra
@@ -92,6 +95,9 @@ attribute [cite "Exercise 2.3.2" jacobs2017introductionCoalgebra] MealyMachine
 
 /-- The behavior of a Mealy machine, which gives from every state upon a stream of inputs the stream
 of the outputs that the machine gives upon the inputs one after another. -/
+@[export_typescript /-- The behavior of a Mealy machine, which gives from every state upon a
+    stream of inputs the stream of the outputs that the machine gives upon the inputs one after
+    another. -/]
 def MealyMachine.behavior {Input Output : Type u} (machine : MealyMachine Input Output)
     (state : machine.V) (inputs : Stream' Input) : Stream' Output :=
   Stream'.corec'
@@ -105,6 +111,10 @@ attribute [cite "Definition 2.3.1" jacobs2017introductionCoalgebra] MealyMachine
 /-- The steps of a Mealy machine, which gives from every state upon a stream of inputs the stream of
 the steps that the machine takes upon the inputs one after another, each an output with the next
 state, the behavior of the machine whose output is the whole step. -/
+@[export_typescript /-- The steps of a Mealy machine, which gives from every state upon a stream
+    of inputs the stream of the steps that the machine takes upon the inputs one after another,
+    each an output with the next state, the behavior of the machine whose output is the whole
+    step. -/]
 def MealyMachine.steps {Input Output : Type u} (machine : MealyMachine Input Output)
     (state : machine.V) (inputs : Stream' Input) :
     Stream' ((binaryProductFunctor.obj Output).obj machine.V) :=
@@ -118,6 +128,8 @@ attribute [cite "Definition 2.3.1" jacobs2017introductionCoalgebra] MealyMachine
 
 /-- The machine that maps every output of a Mealy machine by a function, upon the state space of
 the machine. -/
+@[export_typescript /-- The machine that maps every output of a Mealy machine by a function, upon
+    the state space of the machine. -/]
 def MealyMachine.mapOutput {Input Output MappedOutput : Type u}
     (machine : MealyMachine Input Output) (f : (output : Output) → MappedOutput) :
     MealyMachine Input MappedOutput where
@@ -129,6 +141,8 @@ def MealyMachine.mapOutput {Input Output MappedOutput : Type u}
 
 /-- The machine that maps every input by a function before a Mealy machine takes it, upon the state
 space of the machine. -/
+@[export_typescript /-- The machine that maps every input by a function before a Mealy machine
+    takes it, upon the state space of the machine. -/]
 def MealyMachine.mapInput {Input MappedInput Output : Type u}
     (machine : MealyMachine Input Output) (f : (input : MappedInput) → Input) :
     MealyMachine MappedInput Output where
@@ -139,6 +153,8 @@ def MealyMachine.mapInput {Input MappedInput Output : Type u}
 
 /-- The machine that feeds every output of a Mealy machine into another as its input, upon the pairs
 of the states of the two machines. -/
+@[export_typescript /-- The machine that feeds every output of a Mealy machine into another as its
+    input, upon the pairs of the states of the two machines. -/]
 def MealyMachine.series {Input Middle Output : Type u}
     (first : MealyMachine Input Middle) (second : MealyMachine Middle Output) :
     MealyMachine Input Output where
@@ -153,6 +169,8 @@ def MealyMachine.series {Input Middle Output : Type u}
 
 /-- The machine that runs two Mealy machines side by side, each upon its part of every input, upon
 the pairs of the states of the two machines. -/
+@[export_typescript /-- The machine that runs two Mealy machines side by side, each upon its part
+    of every input, upon the pairs of the states of the two machines. -/]
 def MealyMachine.parallel {FirstInput FirstOutput SecondInput SecondOutput : Type u}
     (first : MealyMachine FirstInput FirstOutput) (second : MealyMachine SecondInput SecondOutput) :
     MealyMachine (FirstInput × SecondInput) (FirstOutput × SecondOutput) where
@@ -255,37 +273,5 @@ theorem MealyMachine.behavior_parallel {FirstInput FirstOutput SecondInput Secon
   erw [MealyMachine.behavior_eq first firstCurrent _,
     MealyMachine.behavior_eq second secondCurrent _, Stream'.tail_zip]
   rfl
-
-/-! ### Export -/
-
-attribute [export_typescript
-  "A Mealy machine, which gives from every state upon every input an output and the next state in a
-  monad."
-  (m := "Monad")] MealyMachine
-
-attribute [export_typescript
-  "The behavior of a Mealy machine, which gives from every state upon a stream of inputs the stream
-  of the outputs that the machine gives upon the inputs one after another."] MealyMachine.behavior
-
-attribute [export_typescript
-  "The steps of a Mealy machine, which gives from every state upon a stream of inputs the stream of
-  the steps that the machine takes upon the inputs one after another, each an output with the next
-  state, the behavior of the machine whose output is the whole step."] MealyMachine.steps
-
-attribute [export_typescript
-  "The machine that maps every output of a Mealy machine by a function, upon the state space of
-  the machine."] MealyMachine.mapOutput
-
-attribute [export_typescript
-  "The machine that maps every input by a function before a Mealy machine takes it, upon the state
-  space of the machine."] MealyMachine.mapInput
-
-attribute [export_typescript
-  "The machine that feeds every output of a Mealy machine into another as its input, upon the pairs
-  of the states of the two machines."] MealyMachine.series
-
-attribute [export_typescript
-  "The machine that runs two Mealy machines side by side, each upon its part of every input, upon
-  the pairs of the states of the two machines."] MealyMachine.parallel
 
 end Falkara.Simulation

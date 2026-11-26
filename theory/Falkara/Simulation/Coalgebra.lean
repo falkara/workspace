@@ -29,20 +29,15 @@ namespace Falkara.Simulation
 
 /-- A coalgebra of an endofunctor, a carrier with a structure morphism into the object to which the
 endofunctor maps the carrier. -/
+@[export_typescript /-- A coalgebra, a state space together with a coalgebra structure on it. -/
+    cite "Definition 1.4.5" jacobs2017introductionCoalgebra
+  (F := "Endofunctor")
+  (V := "State")
+  (str := "structure" /-- The coalgebra structure on the state space. -/
+    cite "Definition 1.4.5" jacobs2017introductionCoalgebra)]
 abbrev Coalgebra := @CategoryTheory.Endofunctor.Coalgebra
 
 attribute [cite "CategoryTheory.Endofunctor.Coalgebra" mathlibCommunity2020leanMathematicalLibrary]
   Coalgebra
-
-/-! ### Export -/
-
-attribute [export_typescript
-  "A coalgebra, a state space together with a coalgebra structure on it."
-    cite "Definition 1.4.5" jacobs2017introductionCoalgebra
-  (F := "Endofunctor")
-  (V := "State")
-  (str := "structure"
-    "The coalgebra structure on the state space."
-      cite "Definition 1.4.5" jacobs2017introductionCoalgebra)] Coalgebra
 
 end Falkara.Simulation

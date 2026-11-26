@@ -37,20 +37,20 @@ structure Point where
   /-- The first coordinate of the point. -/
   x : Rat
 
-attribute [export_typescript "The structure that the checks re-export."
-  (x := "x" "The first coordinate of the point.")] Point
+attribute [export_typescript /-- The structure that the checks re-export. -/
+  (x := "x" /-- The first coordinate of the point. -/)] Point
 
 /-- The function that the checks implement. -/
 def pointOf (coordinate : Rat) : Point :=
   ⟨coordinate⟩
 
-attribute [export_typescript "The function that the checks implement."] pointOf
+attribute [export_typescript /-- The function that the checks implement. -/] pointOf
 
 /-- The value that the checks re-export. -/
 def origin : Point :=
   ⟨0⟩
 
-attribute [export_typescript "The value that the checks re-export."] origin
+attribute [export_typescript /-- The value that the checks re-export. -/] origin
 
 end Geometry
 

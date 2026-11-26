@@ -78,6 +78,9 @@ universe u
 
 /-- A deterministic automaton, which gives from every state an output and the next state upon every
 input in a monad. -/
+@[export_typescript /-- A deterministic automaton, which gives from every state an output and the
+    next state upon every input in a monad. -/
+  (m := "Monad")]
 abbrev DeterministicAutomaton (Input Output : Type u) (m : Type u → Type u := Id) [Monad m]
     [LawfulMonad m] :=
   CategoryTheory.Endofunctor.Coalgebra
@@ -89,6 +92,9 @@ attribute [cite "Section 2.2.3" jacobs2017introductionCoalgebra] DeterministicAu
 /-- The behavior of a deterministic automaton, which gives from every state upon a stream of inputs
 the stream of the outputs of the state and of every state that the inputs lead to one after
 another. -/
+@[export_typescript /-- The behavior of a deterministic automaton, which gives from every state
+    upon a stream of inputs the stream of the outputs of the state and of every state that the
+    inputs lead to one after another. -/]
 def DeterministicAutomaton.behavior {Input Output : Type u}
     (automaton : DeterministicAutomaton Input Output) (state : automaton.V)
     (inputs : Stream' Input) : Stream' Output :=
@@ -103,6 +109,8 @@ attribute [cite "Definition 2.3.1" jacobs2017introductionCoalgebra]
 
 /-- The automaton that maps every output of a deterministic automaton by a function, upon the state
 space of the automaton. -/
+@[export_typescript /-- The automaton that maps every output of a deterministic automaton by a
+    function, upon the state space of the automaton. -/]
 def DeterministicAutomaton.mapOutput {Input Output MappedOutput : Type u}
     (automaton : DeterministicAutomaton Input Output) (f : (output : Output) → MappedOutput) :
     DeterministicAutomaton Input MappedOutput where
@@ -113,6 +121,8 @@ def DeterministicAutomaton.mapOutput {Input Output MappedOutput : Type u}
 
 /-- The automaton that maps every input by a function before a deterministic automaton takes it,
 upon the state space of the automaton. -/
+@[export_typescript /-- The automaton that maps every input by a function before a deterministic
+    automaton takes it, upon the state space of the automaton. -/]
 def DeterministicAutomaton.mapInput {Input MappedInput Output : Type u}
     (automaton : DeterministicAutomaton Input Output) (f : (input : MappedInput) → Input) :
     DeterministicAutomaton MappedInput Output where
@@ -124,6 +134,9 @@ def DeterministicAutomaton.mapInput {Input MappedInput Output : Type u}
 /-- The Mealy machine that a deterministic automaton runs as, which gives upon every input the
 output of the state and the state that the input leads to, upon the state space of the automaton.
 -/
+@[export_typescript /-- The Mealy machine that a deterministic automaton runs as, which gives upon
+    every input the output of the state and the state that the input leads to, upon the state
+    space of the automaton. -/]
 def DeterministicAutomaton.toMealyMachine {Input Output : Type u}
     (automaton : DeterministicAutomaton Input Output) : MealyMachine Input Output where
   V := automaton.V
@@ -190,31 +203,5 @@ theorem DeterministicAutomaton.behavior_toMealyMachine {Input Output : Type u}
   -- The state of the machine is one of the automaton, which a rewrite finds by unfolding.
   erw [DeterministicAutomaton.behavior_eq automaton current rest]
   rfl
-
-/-! ### Export -/
-
-attribute [export_typescript
-  "A deterministic automaton, which gives from every state an output and the next state upon every
-  input in a monad."
-  (m := "Monad")] DeterministicAutomaton
-
-attribute [export_typescript
-  "The behavior of a deterministic automaton, which gives from every state upon a stream of inputs
-  the stream of the outputs of the state and of every state that the inputs lead to one after
-  another."] DeterministicAutomaton.behavior
-
-attribute [export_typescript
-  "The automaton that maps every output of a deterministic automaton by a function, upon the state
-  space of the automaton."] DeterministicAutomaton.mapOutput
-
-attribute [export_typescript
-  "The automaton that maps every input by a function before a deterministic automaton takes it,
-  upon the state space of the automaton."] DeterministicAutomaton.mapInput
-
-attribute [export_typescript
-  "The Mealy machine that a deterministic automaton runs as, which gives upon every input the
-  output of the state and the state that the input leads to, upon the state space of the
-  automaton."]
-  DeterministicAutomaton.toMealyMachine
 
 end Falkara.Simulation

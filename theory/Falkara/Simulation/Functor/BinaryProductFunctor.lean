@@ -41,20 +41,16 @@ namespace Falkara.Simulation
 
 /-- The curried functor of binary products, which maps every type $X$ to the functor
 $Y \mapsto X \times Y$. -/
+@[export_typescript /-- A functor of binary products, which maps every type to its binary product
+    with the factor. -/
+  (X := "Factor")
+  (Prod := "Product" /-- A binary product of an output and the next state, which a coalgebra of the
+    functor gives from every state. -/)
+  (fst := "output" /-- The output that the coalgebra gives from the state. -/)
+  (snd := "next" /-- The state that follows the state. -/)]
 abbrev binaryProductFunctor := @CategoryTheory.Limits.Types.binaryProductFunctor
 
 attribute [cite "CategoryTheory.Limits.Types.binaryProductFunctor"
   mathlibCommunity2020leanMathematicalLibrary] binaryProductFunctor
-
-/-! ### Export -/
-
-attribute [export_typescript
-  "A functor of binary products, which maps every type to its binary product with the factor."
-  (X := "Factor")
-  (Prod := "Product"
-    "A binary product of an output and the next state, which a coalgebra of the functor gives \
-      from every state.")
-  (fst := "output" "The output that the coalgebra gives from the state.")
-  (snd := "next" "The state that follows the state.")] binaryProductFunctor
 
 end Falkara.Simulation

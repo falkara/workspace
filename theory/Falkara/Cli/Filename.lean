@@ -116,6 +116,8 @@ attribute [cite "3.265" ieee2024portableOperatingSystemInterface] isPortableFile
 
 /-- Tells whether a name is a portable filename, 1 to 255 characters of the portable filename
 character set. -/
+@[export_typescript /-- Tells whether a name is a portable filename, 1 to 255 characters of the
+    portable filename character set. -/]
 def isPortableFilename (name : String) : Bool :=
   let characters := name.toList
   1 ≤ characters.length && characters.length ≤ maximumFilenameLength &&
@@ -125,6 +127,8 @@ attribute [cite "3.264" ieee2024portableOperatingSystemInterface] isPortableFile
 
 /-- Tells whether a name starts with a hyphen-minus, which a program takes as an option when the
 name is passed as an argument on the command line. -/
+@[export_typescript /-- Tells whether a name starts with a hyphen-minus, which a program takes as
+    an option when the name is passed as an argument on the command line. -/]
 def hasLeadingHyphenMinus (name : String) : Bool :=
   name.toList.head? == some '-'
 
@@ -132,6 +136,8 @@ attribute [cite "3.264" ieee2024portableOperatingSystemInterface] hasLeadingHyph
 
 /-- Tells whether a name ends with a period, which Windows drops from the name of a file or a
 directory. -/
+@[export_typescript /-- Tells whether a name ends with a period, which Windows drops from the name
+    of a file or a directory. -/]
 def hasTrailingPeriod (name : String) : Bool :=
   name.toList.getLast? == some '.'
 
@@ -139,6 +145,8 @@ attribute [cite "naming-conventions" microsoft2024namingFiles] hasTrailingPeriod
 
 /-- Tells whether a name is one that Windows reserves for a device, alone or followed by an
 extension, in either case. -/
+@[export_typescript /-- Tells whether a name is one that Windows reserves for a device, alone or
+    followed by an extension, in either case. -/]
 def isReservedName (name : String) : Bool :=
   reservedNames.contains (String.ofList ((name.toList.takeWhile (· != '.')).map Char.toUpper))
 
@@ -147,6 +155,9 @@ attribute [cite "naming-conventions" microsoft2024namingFiles] isReservedName
 /-- Tells whether a name is a filename that names a file or a directory in the same way on every
 system, a portable filename that starts with no hyphen-minus, ends with no period, and is no name
 that Windows reserves. -/
+@[export_typescript /-- Tells whether a name is a filename that names a file or a directory in the
+    same way on every system, a portable filename that starts with no hyphen-minus, ends with no
+    period, and is no name that Windows reserves. -/]
 def isFilename (name : String) : Bool :=
   isPortableFilename name && !hasLeadingHyphenMinus name && !hasTrailingPeriod name &&
     !isReservedName name
@@ -156,6 +167,8 @@ attribute [cite "3.146" ieee2024portableOperatingSystemInterface] isFilename
 /-! ### Type -/
 
 /-- A filename that names a file or a directory in the same way on every system. -/
+@[export_typescript
+  /-- A filename that names a file or a directory in the same way on every system. -/]
 abbrev Filename := { name : String // isFilename name = true }
 
 attribute [cite "3.146" ieee2024portableOperatingSystemInterface] Filename
@@ -221,31 +234,5 @@ theorem val_ne_dotDot (filename : Filename) : filename.val ≠ ".." := by
 attribute [cite "3.111" ieee2024portableOperatingSystemInterface] val_ne_dotDot
 
 end Filename
-
-/-! ### Export -/
-
-attribute [export_typescript
-  "Tells whether a name is a portable filename, 1 to 255 characters of the portable filename
-  character set."] isPortableFilename
-
-attribute [export_typescript
-  "Tells whether a name starts with a hyphen-minus, which a program takes as an option when the
-  name is passed as an argument on the command line."] hasLeadingHyphenMinus
-
-attribute [export_typescript
-  "Tells whether a name ends with a period, which Windows drops from the name of a file or a
-  directory."] hasTrailingPeriod
-
-attribute [export_typescript
-  "Tells whether a name is one that Windows reserves for a device, alone or followed by an
-  extension, in either case."] isReservedName
-
-attribute [export_typescript
-  "Tells whether a name is a filename that names a file or a directory in the same way on every
-  system, a portable filename that starts with no hyphen-minus, ends with no period, and is no name
-  that Windows reserves."] isFilename
-
-attribute [export_typescript
-  "A filename that names a file or a directory in the same way on every system."] Filename
 
 end Falkara.Cli

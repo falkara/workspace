@@ -54,17 +54,30 @@ namespace Falkara.Simulation
 /-! ### Definitions -/
 
 /-- A functor between categories, with its action on objects and its action on morphisms. -/
+@[export_typescript /-- An endofunctor, with its action on objects as its type parameter and its
+    action on morphisms. -/
+  (obj := "Endofunctor")
+  (map := "map" /-- The action of a functor on morphisms. -/)
+  (map_id := "map_id"
+    /-- The predicate that tells whether the instance preserves identity morphisms. -/)
+  (map_comp := "map_comp"
+    /-- The predicate that tells whether the instance preserves composition. -/)]
 abbrev Functor := @CategoryTheory.Functor
 
 attribute [cite "CategoryTheory.Functor" mathlibCommunity2020leanMathematicalLibrary] Functor
 
 /-- The identity functor of a category, which maps every object and every morphism to itself. -/
+@[export_typescript /-- An identity functor, which maps every type to itself. -/]
 abbrev Functor.id := @CategoryTheory.Functor.id
 
 attribute [cite "CategoryTheory.Functor.id" mathlibCommunity2020leanMathematicalLibrary]
   Functor.id
 
 /-- The composite of two functors, which applies the functor $F$ and then the functor $G$. -/
+@[export_typescript /-- A composite of two endofunctors, which applies the first endofunctor and
+    then the second endofunctor. -/
+  (F := "FirstEndofunctor")
+  (G := "SecondEndofunctor")]
 abbrev Functor.comp := @CategoryTheory.Functor.comp
 
 attribute [cite "CategoryTheory.Functor.comp" mathlibCommunity2020leanMathematicalLibrary]
@@ -72,32 +85,11 @@ attribute [cite "CategoryTheory.Functor.comp" mathlibCommunity2020leanMathematic
 
 /-- The curried functor of constant functors, which maps every type $X$ to the functor
 $Y \mapsto X$. -/
+@[export_typescript /-- A constant functor, which maps every type to the constant. -/
+  (X := "Constant")]
 abbrev Functor.const := @CategoryTheory.Functor.const
 
 attribute [cite "CategoryTheory.Functor.const" mathlibCommunity2020leanMathematicalLibrary]
   Functor.const
-
-/-! ### Export -/
-
-attribute [export_typescript
-  "An endofunctor, with its action on objects as its type parameter and its action on morphisms."
-  (obj := "Endofunctor")
-  (map := "map" "The action of a functor on morphisms.")
-  (map_id := "map_id"
-    "The predicate that tells whether the instance preserves identity morphisms.")
-  (map_comp := "map_comp" "The predicate that tells whether the instance preserves composition.")]
-  Functor
-
-attribute [export_typescript "An identity functor, which maps every type to itself."] Functor.id
-
-attribute [export_typescript
-  "A composite of two endofunctors, which applies the first endofunctor and then the second \
-    endofunctor."
-  (F := "FirstEndofunctor")
-  (G := "SecondEndofunctor")] Functor.comp
-
-attribute [export_typescript
-  "A constant functor, which maps every type to the constant."
-  (X := "Constant")] Functor.const
 
 end Falkara.Simulation

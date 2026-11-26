@@ -103,6 +103,12 @@ namespace Falkara.Presentation
 
 /-- A triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus by the
 reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system. -/
+@[export_typescript /-- A triple of the amounts $X$, $Y$, and $Z$ that match the color of a color
+    stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard
+    colorimetric system. -/
+  (X := "X" /-- The amount of the reference color stimulus $[X]$. -/)
+  (Y := "Y" /-- The amount of the reference color stimulus $[Y]$. -/)
+  (Z := "Z" /-- The amount of the reference color stimulus $[Z]$. -/)]
 structure Tristimulus where
   /-- The amount of the reference color stimulus $[X]$. -/
   X : ℚ
@@ -121,6 +127,8 @@ attribute [cite "17-23-038" cie2020internationalLightingVocabulary] Tristimulus.
 
 /-- Gives the tristimulus values of the additive mixture of two color stimuli as the sums of their
 amounts, $X_1 + X_2$, $Y_1 + Y_2$, and $Z_1 + Z_2$. -/
+@[export_typescript /-- Gives the tristimulus values of the additive mixture of two color stimuli
+    as the sums of their amounts, $X_1 + X_2$, $Y_1 + Y_2$, and $Z_1 + Z_2$. -/]
 def Tristimulus.add (first second : Tristimulus) : Tristimulus :=
   ⟨first.X + second.X, first.Y + second.Y, first.Z + second.Z⟩
 
@@ -128,6 +136,8 @@ attribute [cite "17-23-040" cie2020internationalLightingVocabulary] Tristimulus.
 
 /-- Gives the tristimulus values of a factor $c$ of units of a color stimulus as the products of the
 factor and its amounts, $cX$, $cY$, and $cZ$. -/
+@[export_typescript /-- Gives the tristimulus values of a factor $c$ of units of a color stimulus
+    as the products of the factor and its amounts, $cX$, $cY$, and $cZ$. -/]
 def Tristimulus.scale (tristimulus : Tristimulus) (factor : ℚ) : Tristimulus :=
   ⟨factor * tristimulus.X, factor * tristimulus.Y, factor * tristimulus.Z⟩
 
@@ -155,6 +165,12 @@ luminance factor $Y$ is 1,
 $X = \sum_{\lambda} S(\lambda)\,\bar{x}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$,
 $Y = 1$, and
 $Z = \sum_{\lambda} S(\lambda)\,\bar{z}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$. -/
+@[export_typescript /-- The tristimulus values of the white, those of CIE standard illuminant D65
+    scaled so that their luminance factor $Y$ is 1,
+    $X = \sum_{\lambda} S(\lambda)\,\bar{x}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$,
+    $Y = 1$, and
+    $Z = \sum_{\lambda} S(\lambda)\,\bar{z}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$.
+    -/]
 def Tristimulus.white : Tristimulus :=
   (Tristimulus.ofColorStimulusFunction relativeSpectralPowerAt).scale
     (Tristimulus.ofColorStimulusFunction relativeSpectralPowerAt).Y⁻¹
@@ -167,6 +183,8 @@ namespace Tristimulus
 
 /-- The additive mixture of two color stimuli is the same in either order,
 $X_1 + X_2 = X_2 + X_1$ and likewise for $Y$ and $Z$. -/
+@[export_typescript /-- The additive mixture of two color stimuli is the same in either order,
+    $X_1 + X_2 = X_2 + X_1$ and likewise for $Y$ and $Z$. -/]
 theorem add_comm (first second : Tristimulus) : first.add second = second.add first := by
   simp only [Tristimulus.add, Tristimulus.mk.injEq]
   refine ⟨?_, ?_, ?_⟩ <;> grind
@@ -175,6 +193,8 @@ attribute [cite "17-23-040" cie2020internationalLightingVocabulary] add_comm
 
 /-- The additive mixture of three color stimuli is the same in either grouping,
 $(X_1 + X_2) + X_3 = X_1 + (X_2 + X_3)$ and likewise for $Y$ and $Z$. -/
+@[export_typescript /-- The additive mixture of three color stimuli is the same in either grouping,
+    $(X_1 + X_2) + X_3 = X_1 + (X_2 + X_3)$ and likewise for $Y$ and $Z$. -/]
 theorem add_assoc (first second third : Tristimulus) :
     (first.add second).add third = first.add (second.add third) := by
   simp only [Tristimulus.add, Tristimulus.mk.injEq]
@@ -184,6 +204,9 @@ attribute [cite "17-23-040" cie2020internationalLightingVocabulary] add_assoc
 
 /-- A factor of units of the additive mixture of two color stimuli is the mixture of that factor of
 units of each, $c\,(X_1 + X_2) = c\,X_1 + c\,X_2$ and likewise for $Y$ and $Z$. -/
+@[export_typescript /-- A factor of units of the additive mixture of two color stimuli is the
+    mixture of that factor of units of each, $c\,(X_1 + X_2) = c\,X_1 + c\,X_2$ and likewise for
+    $Y$ and $Z$. -/]
 theorem scale_add (first second : Tristimulus) (factor : ℚ) :
     (first.add second).scale factor = (first.scale factor).add (second.scale factor) := by
   simp only [Tristimulus.add, Tristimulus.scale, Tristimulus.mk.injEq]
@@ -217,45 +240,5 @@ theorem Tristimulus.ofColorStimulusFunction_scale
     List.sum_map_mul_left]
 
 attribute [cite "Abstract" cie2019tristimulusValues] Tristimulus.ofColorStimulusFunction_scale
-
-/-! ### Export -/
-
-attribute [export_typescript
-  "A triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus by the
-  reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system."
-  (X := "X" "The amount of the reference color stimulus $[X]$.")
-  (Y := "Y" "The amount of the reference color stimulus $[Y]$.")
-  (Z := "Z" "The amount of the reference color stimulus $[Z]$.")] Tristimulus
-
-attribute [export_typescript
-  "Gives the tristimulus values of the additive mixture of two color stimuli as the sums of their
-  amounts, $X_1 + X_2$, $Y_1 + Y_2$, and $Z_1 + Z_2$."] Tristimulus.add
-
-attribute [export_typescript
-  "Gives the tristimulus values of a factor $c$ of units of a color stimulus as the products of the
-  factor and its amounts, $cX$, $cY$, and $cZ$."] Tristimulus.scale
-
-attribute [export_typescript
-  "The tristimulus values of the white, those of CIE standard illuminant D65 scaled so that their
-  luminance factor $Y$ is 1,
-  $X = \\sum_{\\lambda} S(\\lambda)\\,\\bar{x}(\\lambda) / \
-    \\sum_{\\lambda} S(\\lambda)\\,\\bar{y}(\\lambda)$,
-  $Y = 1$, and
-  $Z = \\sum_{\\lambda} S(\\lambda)\\,\\bar{z}(\\lambda) / \
-    \\sum_{\\lambda} S(\\lambda)\\,\\bar{y}(\\lambda)$."]
-  Tristimulus.white
-
-attribute [export_typescript
-  "The additive mixture of two color stimuli is the same in either order,
-  $X_1 + X_2 = X_2 + X_1$ and likewise for $Y$ and $Z$."] Tristimulus.add_comm
-
-attribute [export_typescript
-  "The additive mixture of three color stimuli is the same in either grouping,
-  $(X_1 + X_2) + X_3 = X_1 + (X_2 + X_3)$ and likewise for $Y$ and $Z$."] Tristimulus.add_assoc
-
-attribute [export_typescript
-  "A factor of units of the additive mixture of two color stimuli is the mixture of that factor of
-  units of each, $c\\,(X_1 + X_2) = c\\,X_1 + c\\,X_2$ and likewise for $Y$ and $Z$."]
-  Tristimulus.scale_add
 
 end Falkara.Presentation

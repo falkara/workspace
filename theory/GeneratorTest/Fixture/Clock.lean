@@ -76,34 +76,34 @@ abbrev Gear := @CategoryTheory.Functor
 /-- A gear train, which moves every state by one gear and then by another. -/
 abbrev GearTrain := @Functor.comp
 
-attribute [export_typescript "A clock that ticks from every state to its next state."] Clock
-
-attribute [export_typescript "A clock that chimes and ticks from every state to its next state."]
-  ChimingClock
-
-attribute [export_typescript "A clockwork that moves every state by a functor."
-  (str := "str" "structure morphism of the coalgebra")] Clockwork
-
-attribute [export_typescript "The functor of the chimes, which gives a chime and the next state."]
-  ChimeFunctor
+attribute [export_typescript /-- A clock that ticks from every state to its next state. -/] Clock
 
 attribute [export_typescript
-  "The curried functor of the chimes, which maps every type of chimes to the functor of the
-  chimes."] chimesFunctor
+  /-- A clock that chimes and ticks from every state to its next state. -/] ChimingClock
+
+attribute [export_typescript /-- A clockwork that moves every state by a functor. -/
+  (str := "str" /-- structure morphism of the coalgebra -/)] Clockwork
 
 attribute [export_typescript
-  "The curried functor of the dials, which maps every type of settings to the functor that turns a
-  setting into the next state."
+  /-- The functor of the chimes, which gives a chime and the next state. -/] ChimeFunctor
+
+attribute [export_typescript
+  /-- The curried functor of the chimes, which maps every type of chimes to the functor of the
+  chimes. -/] chimesFunctor
+
+attribute [export_typescript
+  /-- The curried functor of the dials, which maps every type of settings to the functor that turns
+  a setting into the next state. -/
   (k := "Setting")] dialsFunctor
 
-attribute [export_typescript "A gear, a functor that a clockwork moves its states by."
+attribute [export_typescript /-- A gear, a functor that a clockwork moves its states by. -/
   (obj := "Motion")
-  (map := "map" "The action of a functor on morphisms.")
-  (map_id := "map_id" "A functor preserves identity morphisms.")
-  (map_comp := "map_comp" "A functor preserves composition.")] Gear
+  (map := "map" /-- The action of a functor on morphisms. -/)
+  (map_id := "map_id" /-- A functor preserves identity morphisms. -/)
+  (map_comp := "map_comp" /-- A functor preserves composition. -/)] Gear
 
 attribute [export_typescript
-  "A gear train, which moves every state by one gear and then by another."
+  /-- A gear train, which moves every state by one gear and then by another. -/
   (F := "Driver") (G := "Follower")] GearTrain
 
 end Geometry

@@ -29,7 +29,7 @@ open Falkara
 /-- The declaration that the checks mark. -/
 def markedDeclaration : Nat := 0
 
-attribute [export_typescript "The declaration that the checks mark."] markedDeclaration
+attribute [export_typescript /-- The declaration that the checks mark. -/] markedDeclaration
 
 /-- The declaration that the checks leave unmarked. -/
 def unmarkedDeclaration : Nat := 0
@@ -48,14 +48,14 @@ structure Shelf where
   /-- The type of the labels of the shelf. -/
   Label : Type
 
-attribute [export_typescript "A shelf of books."
-  (Item := "Book" "The type of the books on the shelf.")] Shelf
+attribute [export_typescript /-- A shelf of books. -/
+  (Item := "Book" /-- The type of the books on the shelf. -/)] Shelf
 
 /-- The declaration that labels the shelf and names its field of labels. -/
 abbrev Cabinet := Shelf
 
 attribute [export_typescript
-  "The declaration that labels the shelf and names its field of labels."
+  /-- The declaration that labels the shelf and names its field of labels. -/
   (Label := "Tag")] Cabinet
 
 /-- The structure whose binder of the type of its slots the checks name. -/
@@ -64,7 +64,7 @@ structure Rack (S : Type) where
   slot : S
 
 attribute [export_typescript
-  "The structure whose binder of the type of its slots the checks name."
+  /-- The structure whose binder of the type of its slots the checks name. -/
   (S := "Slot")] Rack
 
 /--
@@ -83,5 +83,5 @@ info: (some "A shelf of books.", some "Book", some "The type of the books on the
 
 /-- error: `Item` is neither a binder nor a field of `unmarkedDeclaration`. -/
 #guard_msgs in
-attribute [export_typescript "The declaration that the checks leave unmarked."
+attribute [export_typescript /-- The declaration that the checks leave unmarked. -/
   (Item := "Mark")] unmarkedDeclaration

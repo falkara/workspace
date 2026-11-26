@@ -36,15 +36,12 @@ namespace Falkara.Simulation
 /-! ### Definitions -/
 
 /-- The exponent functor, which maps every type $k$ to the functor $Y \mapsto (k \to Y)$. -/
+@[export_typescript /-- An exponent functor, which maps every type to the functions from the
+    exponent into the type. -/
+  (k := "Exponent")]
 abbrev exponentFunctor := @CategoryTheory.coyoneda
 
 attribute [cite "CategoryTheory.coyoneda" mathlibCommunity2020leanMathematicalLibrary]
   exponentFunctor
-
-/-! ### Export -/
-
-attribute [export_typescript
-  "An exponent functor, which maps every type to the functions from the exponent into the type."
-  (k := "Exponent")] exponentFunctor
 
 end Falkara.Simulation

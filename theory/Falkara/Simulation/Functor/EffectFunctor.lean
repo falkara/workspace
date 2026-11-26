@@ -43,15 +43,11 @@ universe u
 
 /-- The effect functor, the monad of the computations that read requirements of type `R` and either
 fail with a failure of type `E` or give a value. -/
+@[export_typescript /-- An effect functor, which maps every type to the effects that need the
+    requirements and either fail with the failure or succeed with a value of the type. -/]
 abbrev EffectFunctor (E R : Type u) : Type u → Type u :=
   ReaderT R (Except E)
 
 attribute [cite "ReaderT" mathlibCommunity2020leanMathematicalLibrary] EffectFunctor
-
-/-! ### Export -/
-
-attribute [export_typescript
-  "An effect functor, which maps every type to the effects that need the requirements and either \
-    fail with the failure or succeed with a value of the type."] EffectFunctor
 
 end Falkara.Simulation

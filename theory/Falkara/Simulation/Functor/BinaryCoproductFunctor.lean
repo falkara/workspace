@@ -44,16 +44,12 @@ universe u
 
 /-- The functor of binary coproducts with a summand $B$, which maps every type $Y$ to the binary
 coproduct $B + Y$. -/
+@[export_typescript /-- A functor of binary coproducts, which maps every type to its binary
+    coproduct with the summand. -/]
 abbrev binaryCoproductFunctor (Summand : Type u) : CategoryTheory.Functor (Type u) (Type u) :=
   CategoryTheory.ofTypeFunctor (Sum Summand)
 
 attribute [cite "CategoryTheory.ofTypeFunctor" mathlibCommunity2020leanMathematicalLibrary]
-  binaryCoproductFunctor
-
-/-! ### Export -/
-
-attribute [export_typescript
-  "A functor of binary coproducts, which maps every type to its binary coproduct with the summand."]
   binaryCoproductFunctor
 
 end Falkara.Simulation
