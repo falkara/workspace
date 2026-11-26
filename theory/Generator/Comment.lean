@@ -6,9 +6,9 @@ Authors: Filip Falcon
 module
 
 public import Falkara.Citation
+public import Falkara.ExportTypeScript
 public import Lean.Meta.Basic
 
-import Falkara.ExportTypeScript
 import Lean.Meta.Reduce
 
 /-!
@@ -23,11 +23,12 @@ the work followed by the label of the item otherwise, such as
 
 ## Implementation Notes
 
-A function that the generator derives from a declaration, such as a constructor, a brand, the
-predicates of axioms, or an instance of the class of functors, takes a comment that says what the
-function does with the names of TypeScript, such as ``Creates a `StreamCoalgebra` from its field
-`structure`.``, rather than the comment of the declaration, which the type of the function already
-names.
+A function that the generator derives from a declaration, a schema, a constructor, the predicates
+of axioms, or an instance of the class of functors, takes the comment that the attribute gives
+under its role, such as `constructor`, rather than the comment of the declaration, which the type of
+the function already names, or a sentence that the generator composes from the names of the
+declaration, which says no more than the type. The generator fails where the attribute gives no
+comment under the role, so no function goes without one.
 
 A comment keeps its formulas in LaTeX between `$`, as the documentation sets them as MathML Core
 from LaTeX.
@@ -72,17 +73,13 @@ def documentationOf (text : String) (items : List Citation.Item) : Lean.MetaM St
   return s!"/**\n * {text}\n *\n{String.join (addresses.map (s!" * @see {·}\n"))} */\n"
 
 /-- Gives the documentation comment of TypeScript of a declaration, the comment that the attribute
-`counterpart` gives, with a text that opens the comment in place of its first word, where one is
-given, and a tag `@see` for the item that the declaration cites. -/
-def commentOf (name : Lean.Name) (opening : Option String := none) : Lean.MetaM String := do
+`counterpart` gives, with a tag `@see` for the item that the declaration cites. -/
+def commentOf (name : Lean.Name) : Lean.MetaM String := do
   let environment ← Lean.getEnv
   let some comment := ExportTypeScript.commentOf? environment name
     | Lean.throwError m!"`{name}` has no documentation comment in TypeScript, as the theory never \
         gives it a counterpart in TypeScript."
-  let text := match opening with
-    | some opening => s!"{opening} {comment.decapitalize}"
-    | none => comment
-  documentationOf text (Citation.citationOf? environment name).toList
+  documentationOf comment (Citation.citationOf? environment name).toList
 
 /-- Gives the documentation comment of TypeScript of a field of a structure, the comment that the
 clause of the attribute `counterpart` on the declaration that labels the structure gives, with a
@@ -95,25 +92,16 @@ def fieldCommentOf (structureName field : Lean.Name) : Lean.MetaM String := do
         TypeScript, as no clause of the attribute `counterpart` gives it one."
   documentationOf comment (Citation.citationOf? environment (structureName ++ field)).toList
 
-/-- Gives a name of TypeScript in backticks after the indefinite article it takes, such as
-``an `Option` `` or ``a `Coalgebra` ``. -/
-def articledOf (name : String) : String :=
-  let article := if name.front.toLower ∈ ['a', 'e', 'i', 'o', 'u'] then "an" else "a"
-  s!"{article} `{name}`"
-
-/-- Gives the fields of a structure as a comment of TypeScript lists them, such as ``field
-`structure` `` or ``fields `X`, `Y`, and `Z` ``. -/
-def fieldsOf (fields : List String) : String :=
-  let quoted := fields.map (s!"`{·}`")
-  match quoted with
-  | [field] => s!"field {field}"
-  | [first, second] => s!"fields {first} and {second}"
-  | _ => s!"fields {", ".intercalate quoted.dropLast}, and {quoted.getLastD ""}"
-
-/-- Gives the documentation comment of TypeScript of a function that the generator derives from a
-declaration, such as its constructor, with a text that says what the function does and a tag
-`@see` for the item that the declaration cites. -/
-def derivedCommentOf (name : Lean.Name) (text : String) : Lean.MetaM String := do
-  documentationOf text (Citation.citationOf? (← Lean.getEnv) name).toList
+/-- Gives the documentation comment of TypeScript of the function of a role that the generator
+derives from a declaration, such as its constructor, the comment that the attribute `counterpart`
+gives under the role, with a tag `@see` for the item that the declaration cites, or fails with the
+reason where the attribute gives none. -/
+def derivedCommentOf (name : Lean.Name) (role : ExportTypeScript.Derived) :
+    Lean.MetaM String := do
+  let environment ← Lean.getEnv
+  let some comment := ExportTypeScript.derivedCommentOf? environment name role
+    | Lean.throwError m!"`{name}` has no comment of its {role.word} in TypeScript, as its \
+        attribute `counterpart` gives none under `{role.word}`."
+  documentationOf comment (Citation.citationOf? environment name).toList
 
 end Generator

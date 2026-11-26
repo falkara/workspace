@@ -26,7 +26,11 @@ attribute [counterpart
   typescript
     r"A point by its first coordinate."
     (first
-      r"The first coordinate of the point.")] Point
+      r"The first coordinate of the point.")
+    schema
+      r"A schema of a point, which decodes its first coordinate."
+    constructor
+      r"Brands a point from its first coordinate without a check."] Point
 
 /-- Gives the point at a coordinate. -/
 def pointAt (coordinate : Coordinate) : Option Point :=

@@ -24,7 +24,7 @@ export interface BinaryProductFunctor<out Factor> extends HKT.TypeLambda {
 /** A contract of the functions of the theory that the module `Functor/BinaryProductFunctor` of the package implements. */
 interface Contract {
   /**
-   * Gives the `Functor` instance of a `BinaryProductFunctor`.
+   * Gives the instance of a functor of binary products, which maps the next state of a product.
    *
    * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Limits.Types.binaryProductFunctor
    */

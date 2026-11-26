@@ -37,7 +37,10 @@ condition that the theory gives a counterpart in TypeScript and that gives a boo
 `{ name : String // isSegment name = true }`. Every other type has no type of TypeScript, a
 function type and a type parameter have no schema, and the generator refuses both. The module
 defines as well the variance of every type parameter of a declaration, the polarities at which the
-parameter occurs in the fields or the value of the declaration.
+parameter occurs in the fields or the value of the declaration, and the roles of the functions that
+the generator derives from a declaration of every kind, such as the schema and the constructor of a
+structure of data, with a reason against every comment that the attribute `counterpart` gives a
+declaration under another role.
 
 ## Implementation Notes
 
@@ -517,17 +520,6 @@ def axiomsNameOf (packageNamespace className : Lean.Name) : Lean.MetaM String :=
     | [] => "axioms"
     | words => s!"{camelCaseOf words}Axioms"
 
-/-- Gives the name of a declaration of the theory as a comment names it, after the name of its
-module where the name drops it, such as `Functor.Comp` for `Functor.comp`. -/
-def displayNameOf (packageNamespace name : Lean.Name) : Lean.MetaM String := do
-  let module ← moduleOf name
-  match localWordsOf packageNamespace module name, module with
-  | [], _ => return pascalCaseOf (wordsOf packageNamespace name)
-  | words, .str _ last =>
-    return if words == wordsOf packageNamespace name then pascalCaseOf words
-      else s!"{last}.{pascalCaseOf words}"
-  | words, _ => return pascalCaseOf words
-
 /-- Gives the name under which a file of TypeScript refers to a name of a declaration of the
 theory: the name alone where the declaration lies in the module being written, and the name after
 the namespace of its module otherwise, as a file imports every other module as a namespace, such as
@@ -908,6 +900,32 @@ def kindOf (name : Lean.Name) : Lean.MetaM DeclarationKind := do
       | _ =>
         if isFunctorType rest then return .functor
         return if (curriedTargetOf? rest).isSome then .curriedFunctor else .value
+
+/-- Gives the roles of the functions that the generator derives from a declaration of a kind, in
+the order of `ExportTypeScript.Derived.order`: the schema and the constructor of a structure of
+data, the constructor of any other structure and of a bundled structure, the schema of a
+refinement, the constructor and the axioms of a class of functors, and the instance of a functor, a
+curried functor, and a type constructor. -/
+def derivedOf : DeclarationKind → List ExportTypeScript.Derived
+  | .dataStructure => [.schema, .constructor]
+  | .structure | .bundled => [.constructor]
+  | .refinement .. => [.schema]
+  | .functorClass => [.constructor, .axioms]
+  | .functor | .curriedFunctor | .typeConstructor => [.instance]
+  | .type | .function | .value => []
+
+/-- Gives a reason for every comment that the attribute `counterpart` gives a declaration of the
+theory under a role whose function the generator never derives from the declaration, such as a
+constructor of a function. -/
+def surplusOf (name : Lean.Name) : Lean.MetaM (List String) := do
+  let environment ← Lean.getEnv
+  -- A theorem takes a test and no declaration, so the generator derives no function from it.
+  let derived ← if environment.find? name matches some (.thmInfo _) then pure [] else
+    derivedOf <$> kindOf name
+  return (ExportTypeScript.Derived.order.filter fun role ↦ !derived.contains role &&
+    (ExportTypeScript.derivedCommentOf? environment name role).isSome).map fun role ↦
+      s!"`{name}` takes no comment under `{role.word}` in its attribute `counterpart`, as the \
+        generator derives no {role.word} from the declaration."
 
 /-- Gives the declaration that labels a structure, other than a given declaration, where the theory
 gives one a counterpart in TypeScript, such as `Coalgebra` for

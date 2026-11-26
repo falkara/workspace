@@ -16,7 +16,7 @@ export interface EffectFunctor<out E, out R> extends HKT.TypeLambda {
 /** A contract of the functions of the theory that the module `Functor/EffectFunctor` of the package implements. */
 interface Contract {
   /**
-   * Gives the `Functor` instance of an `EffectFunctor`.
+   * Gives the instance of an effect functor, which maps the value that an effect succeeds with.
    *
    * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/ReaderT
    */

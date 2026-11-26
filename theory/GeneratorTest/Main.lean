@@ -46,7 +46,7 @@ import { Brand, type Option, Schema } from 'effect';
 import * as Coordinate from '#src/Fixture/Coordinate.theory';
 import type * as Module from '#src/Fixture/Point';
 
-/** A schema of a point by its first coordinate. */
+/** A schema of a point, which decodes its first coordinate. */
 export const Point = Schema.Struct({
 /** The first coordinate of the point. */
 first: Coordinate.Coordinate,
@@ -55,7 +55,7 @@ first: Coordinate.Coordinate,
 /** A point by its first coordinate. */
 export type Point = typeof Point.Type;
 
-/** Brands a `Point` from its field `first` without a check. */
+/** Brands a point from its first coordinate without a check. */
 export const make = Brand.nominal<Point>();
 
 /** Gives the point at a coordinate. */
@@ -80,7 +80,7 @@ import { Brand, Rational, Schema } from 'effect';
 
 import type * as Module from '#src/Fixture/Coordinate';
 
-/** A schema of a coordinate of a point. */
+/** A schema of a coordinate of a point, which decodes its value. */
 export const Coordinate = Schema.Struct({
 /** The value of the coordinate. */
 value: Schema.Rational,
@@ -89,7 +89,7 @@ value: Schema.Rational,
 /** A coordinate of a point. */
 export type Coordinate = typeof Coordinate.Type;
 
-/** Brands a `Coordinate` from its field `value` without a check. */
+/** Brands a coordinate from its value without a check. */
 export const make = Brand.nominal<Coordinate>();
 
 /** The coordinate whose value is 1. */
@@ -127,7 +127,7 @@ readonly state: State;
 readonly trace: Trace;
 }
 
-/** Creates a `Step` from its fields `state` and `trace`. */
+/** Creates a step from the state it reaches and the trace it leaves. */
 export const step = <State, Trace>(fields: Step<State, Trace>) => fields;
 
 /** A function that gives the step from a state upon an input. */
@@ -139,7 +139,7 @@ export interface Walker<in out State, in Input, out Trace> {
 readonly move: StepMove<State, Input, Trace>;
 }
 
-/** Creates a `Walker` from its field `move`. */
+/** Creates a walker from the function that gives its step. */
 export const make = <State, Input, Trace>(fields: Walker<State, Input, Trace>) => fields;
 
 /** Gives the state a walker reaches from a state upon an input. */
@@ -151,7 +151,7 @@ export interface Course {
 readonly turn: (coordinate: Coordinate.Coordinate) => Coordinate.Coordinate;
 }
 
-/** Creates a `Course` from its field `turn`. */
+/** Creates a course from the function that turns a coordinate. */
 export const course = (fields: Course) => fields;
 
 /** A contract of the functions of the theory that the module `Fixture/Walker` of the package implements. */
@@ -179,7 +179,7 @@ export interface Clock<in out V> {
 readonly str: (v: V) => V;
 }
 
-/** Creates a `Clock` from its field `str`, taking its types from the annotations of the parameters of the field or else from the type arguments. */
+/** Creates a clock from the function that gives its next state. */
 export const make = <V>(fields: Clock<V>) => fields;
 
 /** A clock that chimes and ticks from every state to its next state. */
@@ -188,7 +188,7 @@ export interface ChimingClock<out B, in out V> {
 readonly str: (v: V) => readonly [B, V];
 }
 
-/** Creates a `ChimingClock` from its field `str`, taking its types from the annotations of the parameters of the field or else from the type arguments. */
+/** Creates a chiming clock from the function that gives its chime and its next state. */
 export const chimingClock = <B, V>(fields: ChimingClock<B, V>) => fields;
 
 /** A clockwork that moves every state by a functor. */
@@ -197,8 +197,8 @@ export interface Clockwork<out F extends HKT.TypeLambda, in out V> {
 readonly str: (v: V) => HKT.Kind<F, never, never, never, V>;
 }
 
-/** Creates a `Clockwork` from its field `str`, taking its types from the annotations of the parameters of the field or else from the type arguments. */
-export const clockwork = <F extends HKT.TypeLambda, V>(fields: Clockwork<F, V>) => fields;
+/** Creates a clockwork from the function that moves a state by its functor. */
+export const clockwork = <F extends HKT.TypeLambda>(_f: Gear<F>) => <V>(fields: Clockwork<F, V>) => fields;
 
 /** The functor of the chimes, which gives a chime and the next state. */
 export interface ChimeFunctor<out B> extends HKT.TypeLambda {
@@ -221,10 +221,10 @@ export interface Gear<in out Motion extends HKT.TypeLambda> extends HKT.TypeClas
 readonly map: <X, Y>(f: (x: X) => Y) => (value: HKT.Kind<Motion, never, never, never, X>) => HKT.Kind<Motion, never, never, never, Y>;
 }
 
-/** Creates a `Gear` from its field `map`. */
+/** Creates a gear from its action on morphisms. */
 export const gear = <Motion extends HKT.TypeLambda>(fields: Gear<Motion>) => fields;
 
-/** Gives the axioms of a `Gear` as predicates of an instance. */
+/** Gives the axioms of a gear as predicates that tell whether a gear keeps them. */
 export const gearAxioms = <Motion extends HKT.TypeLambda>(
 instance: Gear<Motion>,
 equivalence: <X>(self: HKT.Kind<Motion, never, never, never, X>, that: HKT.Kind<Motion, never, never, never, X>) => boolean,
@@ -242,13 +242,13 @@ readonly type: HKT.Kind<Follower, never, never, never, HKT.Kind<Driver, never, n
 
 /** A contract of the functions of the theory that the module `Fixture/Clock` of the package implements. */
 interface Contract {
-/** Gives the `Gear` instance of a `ChimeFunctor`. */
+/** Gives the gear of the functor of the chimes, which maps the next state and keeps the chime. */
 readonly chimeFunctor: <B>() => Gear<ChimeFunctor<B>>;
-/** Gives the `Gear` instance of a `ChimesFunctor`. */
+/** Gives the gear of the functor of the chimes at a type of chimes. */
 readonly chimesFunctor: <X>() => Gear<ChimesFunctor<X>>;
-/** Gives the `Gear` instance of a `DialsFunctor`. */
+/** Gives the gear of the functor of the dials at a type of settings. */
 readonly dialsFunctor: <Setting>() => Gear<DialsFunctor<Setting>>;
-/** Gives the `Gear` instance of a `GearTrain`. */
+/** Gives the gear of a gear train from the gears of its driver and its follower. */
 readonly gearTrain: <Driver extends HKT.TypeLambda, Follower extends HKT.TypeLambda>(driver: Gear<Driver>, follower: Gear<Follower>) => Gear<GearTrain<Driver, Follower>>;
 }
 
@@ -272,7 +272,7 @@ export interface Bell<out B, in out V> extends Clock.Clockwork<Clock.ChimesFunct
 readonly str: (v: V) => readonly [B, V];
 }
 
-/** Creates a `Bell` from its field `str`, taking its types from the annotations of the parameters of the field or else from the type arguments. */
+/** Creates a bell from the function that gives its chime and its next state. */
 export const make = <B, V>(fields: Bell<B, V>) => fields;
 
 /** The peal of a bell, the stream of the chimes that it rings from a state on. */
@@ -322,7 +322,7 @@ export interface Carillon<in out B, in out V, out m extends HKT.TypeLambda = Res
 readonly str: (v: V) => HKT.Kind<m, never, never, never, readonly [B, V]>;
 }
 
-/** Creates a `Carillon` from its field `str`, taking its types from the annotations of the parameters of the field or else from the type arguments. */
+/** Creates a carillon that rings at once from the function that gives its chime and its next state. */
 export const make = <B, V>(fields: Carillon<B, V>) => fields;
 
 /** The rounds of a carillon, every chime that it rings with the next state. */
@@ -345,9 +345,9 @@ readonly rounds: Rounds;
 readonly pair: Pair;
 /** The tolls of a carillon, a pause before every chime that it rings. */
 readonly tolls: Tolls;
-/** Gives the `Gear` instance of a `RestingFunctor`. */
+/** Gives the gear of the resting functor, which maps every state as it is. */
 readonly restingFunctor: () => Clock.Gear<RestingFunctor>;
-/** Gives the `Gear` instance of a `Belfry`. */
+/** Gives the gear of a belfry, which maps the chime that a peal rings. */
 readonly belfry: <E, R>() => Clock.Gear<Belfry<E, R>>;
 }
 

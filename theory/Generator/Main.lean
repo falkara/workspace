@@ -42,7 +42,11 @@ functors that every functor takes, such as `functor`, and a type that fails to c
 where that module leaves a function out or gives it another type, as a signature of a module in ML
 requires of the module. The program writes the theorems of a module that the theory gives a
 counterpart in TypeScript into the file of tests of the same name, such as
-`Colorimetry/Tristimulus.theory.test.ts`, by the module `Theorem`. The program then checks the
+`Colorimetry/Tristimulus.theory.test.ts`, by the module `Theorem`. Before it writes a file, the
+program fails with a reason for every comment that the attribute `counterpart` gives a declaration
+under a role whose function the generator never derives from it, such as `constructor` on a
+function, and it fails at a declaration that lacks the comment of a function the generator derives
+from it. The program then checks the
 module of the package beside every file, such as `Colorimetry/Tristimulus.ts`, by the module
 `Export`, and fails with a reason for every declaration that the module leaves out of its
 re-exports and every implementation whose comment differs from the theory.
@@ -109,11 +113,21 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
   let ((texts, instanceMembers), records) ← (do
       let texts ← declarations.mapM (declarationOf packageNamespace)
       let members ← instances.mapM fun name ↦ do
-        return s!"{← instanceCommentOf packageNamespace name}readonly \
+        return s!"{← derivedCommentOf name .instance}readonly \
           {← instanceNameOf packageNamespace name}: \
           {← instanceTypeOf packageNamespace name};\n"
       return (texts, members) : TypeScriptM (List String × List String)).run []
-  let functorClass ← if instances.isEmpty then pure none else functorClassOf
+  -- A bundled structure whose constructor takes an instance of a functor among its parameters
+  -- names the class of functors in the type of its constructor, as a contract does.
+  let constructorInstances ← kinds.anyM fun
+    | (name, .bundled) => do
+      parametersOf (← Lean.getConstInfo name) fun parameters _ _ ↦
+        parameters.toList.anyM fun parameter ↦ do
+          return isFunctorType (← Lean.Meta.inferType parameter) &&
+            (← defaultOf? parameter).isNone
+    | _ => return false
+  let functorClass ← if instances.isEmpty && !constructorInstances then pure none
+    else functorClassOf
   let body := "\n".intercalate texts
   let header := s!"// Written by the generator of the theory from `{module}`, so every change by \
     hand is lost when the generator runs.\n"
@@ -175,7 +189,8 @@ def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := d
         else []).getD []
   -- The identity monad `Id` takes the type lambda of the identity functor, which its label gives.
   let identity := if named.contains ``Id then (identityLabelOf? environment).toList else []
-  -- The contract names the class of functors in the type of every instance.
+  -- The contract names the class of functors in the type of every instance, and a constructor in
+  -- the type of every instance that it takes.
   let others := (namedBySchemas ++ named ++ identity ++ functorClass.toList).eraseDups.filter
     fun name ↦
     ExportTypeScript.isExported environment name &&
@@ -238,6 +253,14 @@ def main (arguments : List String) : IO Unit := do
         some ((path.withExtension "").components.foldl Lean.Name.mkStr .anonymous)
       else none
   let environment ← Lean.importModules (modules.map ({ module := · })).toArray {}
+  -- A comment under a role whose function the generator never derives fails the program before it
+  -- writes a file, as no file takes the comment.
+  let surplus ← Generator.runIn environment (modules.flatMapM fun module ↦ do
+    let declarations := (← Generator.markedDeclarationsOf module false) ++
+      (← Generator.markedDeclarationsOf module true)
+    declarations.flatMapM Generator.surplusOf)
+  unless surplus.isEmpty do
+    throw (IO.userError ("\n\n".intercalate surplus))
   modules.forM fun module ↦ do
     let path := System.FilePath.mk directory / Generator.pathOf theory module
     let declarations ← Generator.runIn environment (Generator.markedDeclarationsOf module false)

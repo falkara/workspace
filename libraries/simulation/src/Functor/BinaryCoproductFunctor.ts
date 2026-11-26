@@ -6,7 +6,7 @@ import type * as Theory from '#src/Functor/BinaryCoproductFunctor.theory';
 export type { BinaryCoproductFunctor } from '#src/Functor/BinaryCoproductFunctor.theory';
 
 /**
- * Gives the `Functor` instance of a `BinaryCoproductFunctor`.
+ * Gives the instance of a functor of binary coproducts, which maps the value of a success.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.ofTypeFunctor
  */

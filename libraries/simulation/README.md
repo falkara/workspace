@@ -236,13 +236,16 @@ A composed machine keeps the states of its machines as a pair, and the machines 
 
 ## Coalgebra
 
-A kind of system that the library does not name is a coalgebra all the same. A [coalgebra](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Endofunctor.Coalgebra) is a state space together with a coalgebra structure `structure` that takes every state to a value of an [endofunctor](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor), such as an `Option` of the next state or a product of an output and the next state. A system that takes a board to its next generation until the board dies out is a coalgebra of `Option` that gives no output:
+A kind of system that the library does not name is a coalgebra all the same. A [coalgebra](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Endofunctor.Coalgebra) is a state space together with a coalgebra structure `structure` that takes every state to a value of an [endofunctor](https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor), such as an `Option` of the next state or a product of an output and the next state. `Coalgebra.make` takes the `Functor` instance of the endofunctor, from which TypeScript infers the endofunctor, and then the coalgebra structure, whose parameter gives the state. A system that takes a board to its next generation until the board dies out is a coalgebra of `Option` that gives no output:
 
 ```ts
-import { Coalgebra } from '@falkara/simulation';
+import { Coalgebra, Functor } from '@falkara/simulation';
 
-const system = Coalgebra.make<Option.OptionTypeLambda, Board>({
-  structure: (board) => (HashSet.isEmpty(board) ? Option.none() : Option.some(generation(board))),
+const option = Functor.make<Option.OptionTypeLambda>({ map: Option.map });
+
+const system = Coalgebra.make(option)({
+  structure: (board: Board) =>
+    HashSet.isEmpty(board) ? Option.none() : Option.some(generation(board)),
 });
 
 system.structure(blinker);
@@ -254,8 +257,8 @@ An endofunctor is a type lambda of Effect whose object is its `Target`, and the 
 ```ts
 import { BinaryCoproductFunctor } from '@falkara/simulation';
 
-const system = Coalgebra.make<BinaryCoproductFunctor.BinaryCoproductFunctor<'Overcrowded'>, Board>({
-  structure: (board) =>
+const system = Coalgebra.make(BinaryCoproductFunctor.functor<'Overcrowded'>())({
+  structure: (board: Board) =>
     HashSet.size(board) > 100 ? Result.fail('Overcrowded') : Result.succeed(generation(board)),
 });
 

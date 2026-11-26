@@ -62,16 +62,23 @@ def Carillon.tolls {B : Type u} (carillon : Carillon B) (state : carillon.V) :
 
 attribute [counterpart
   typescript
-    r"The resting functor, which moves no state."] restingFunctor
+    r"The resting functor, which moves no state."
+    instance
+      r"Gives the gear of the resting functor, which maps every state as it is."] restingFunctor
 
 attribute [counterpart
   typescript
     r"A belfry, the monad of the peals that read a rope of type `R` and either fail with a crack of
-    type `E` or ring."] Belfry
+    type `E` or ring."
+    instance
+      r"Gives the gear of a belfry, which maps the chime that a peal rings."] Belfry
 
 attribute [counterpart
   typescript
-    r"A carillon that rings a chime and moves to its next state in a monad."] Carillon
+    r"A carillon that rings a chime and moves to its next state in a monad."
+    constructor
+      r"Creates a carillon that rings at once from the function that gives its chime and its next
+      state."] Carillon
 
 attribute [counterpart
   typescript

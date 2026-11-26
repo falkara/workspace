@@ -41,8 +41,8 @@ describe('Functor', () => {
   );
 
   it('counts the births of every generation in a coalgebra of a new endofunctor', () => {
-    const system = Coalgebra.make<BirthsTypeLambda, Board>({
-      structure: (board) => {
+    const system = Coalgebra.make(births)({
+      structure: (board: Board) => {
         const next = generation(board);
         return { births: HashSet.size(HashSet.difference(next, board)), next };
       },

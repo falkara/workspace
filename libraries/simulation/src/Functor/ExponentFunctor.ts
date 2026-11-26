@@ -6,7 +6,7 @@ import type * as Theory from '#src/Functor/ExponentFunctor.theory';
 export type { ExponentFunctor } from '#src/Functor/ExponentFunctor.theory';
 
 /**
- * Gives the `Functor` instance of an `ExponentFunctor`.
+ * Gives the instance of an exponent functor, which maps the result of a function.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.coyoneda
  */

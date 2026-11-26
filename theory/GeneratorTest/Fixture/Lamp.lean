@@ -30,6 +30,8 @@ attribute [counterpart
     r"A lantern, a lamp that shows a light."
     (Light → "Shade")
     (light → "beam"
-      r"The beam that the lamp casts.")] Lantern
+      r"The beam that the lamp casts.")
+    constructor
+      r"Creates a lantern from the beam that it casts."] Lantern
 
 end Geometry

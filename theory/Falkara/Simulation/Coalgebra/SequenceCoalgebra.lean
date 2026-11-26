@@ -46,7 +46,10 @@ state in a monad. -/
   typescript
     r"A sequence coalgebra, which gives from every state either nothing or an output and the next
     state in a monad."
-    (m → "Monad")]
+    (m → "Monad")
+    constructor
+      r"Creates a sequence coalgebra from the function that gives from every state either nothing
+      or an output and the next state."]
 abbrev SequenceCoalgebra (Output : Type u) (m : Type u → Type u := Id) [Monad m]
     [LawfulMonad m] :=
   CategoryTheory.Endofunctor.Coalgebra

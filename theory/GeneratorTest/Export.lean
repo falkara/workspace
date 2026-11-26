@@ -35,7 +35,11 @@ attribute [counterpart
   typescript
     r"The structure that the checks re-export."
     (x
-      r"The first coordinate of the point.")] Point
+      r"The first coordinate of the point.")
+    schema
+      r"A schema of the structure that the checks re-export."
+    constructor
+      r"Brands the structure that the checks re-export without a check."] Point
 
 /-- The function that the checks implement. -/
 def pointOf (coordinate : Rat) : Point :=
@@ -145,10 +149,11 @@ info: ["Clockwork", "clockwork", "ChimeFunctor", "ChimesFunctor", "DialsFunctor"
     (← Generator.reexportsOf `Geometry ``Geometry.GearTrain)
 
 /--
-info: [("chimeFunctor", "/** Gives the `Gear` instance of a `ChimeFunctor`. */\n"),
-  ("chimesFunctor", "/** Gives the `Gear` instance of a `ChimesFunctor`. */\n"),
-  ("dialsFunctor", "/** Gives the `Gear` instance of a `DialsFunctor`. */\n"),
-  ("gearTrain", "/** Gives the `Gear` instance of a `GearTrain`. */\n")]
+info: [("chimeFunctor",
+    "/** Gives the gear of the functor of the chimes, which maps the next state and keeps the chime. */\n"),
+  ("chimesFunctor", "/** Gives the gear of the functor of the chimes at a type of chimes. */\n"),
+  ("dialsFunctor", "/** Gives the gear of the functor of the dials at a type of settings. */\n"),
+  ("gearTrain", "/** Gives the gear of a gear train from the gears of its driver and its follower. */\n")]
 -/
 #guard_msgs in
 #eval show Lean.MetaM (List (String × String)) from do

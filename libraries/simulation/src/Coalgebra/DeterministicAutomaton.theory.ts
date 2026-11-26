@@ -33,7 +33,7 @@ export interface DeterministicAutomaton<
 }
 
 /**
- * Creates a `DeterministicAutomaton` from its field `structure`, taking its types from the annotations of the parameters of the field or else from the type arguments.
+ * Creates a deterministic automaton from the function that gives from every state an output and the next state upon every input.
  *
  * @see https://doi.org/10.1017/CBO9781316823187 Section 2.2.3
  */

@@ -121,7 +121,10 @@ def isFilename (name : String) : Bool :=
 /-- A filename that names a file or a directory in the same way on every system. -/
 @[counterpart IEEE.portableOperatingSystemInterface "3.146"
   typescript
-    r"A filename that names a file or a directory in the same way on every system."]
+    r"A filename that names a file or a directory in the same way on every system."
+    schema
+      r"A schema that decodes a filename from a string, failing where the string would name a file
+      or a directory differently on some system."]
 abbrev Filename := { name : String // isFilename name = true }
 
 /-- A name $n$ is a filename exactly when it is a portable filename that starts with no

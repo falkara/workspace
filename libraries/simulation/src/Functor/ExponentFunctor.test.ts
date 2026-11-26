@@ -11,8 +11,8 @@ const axiomsAt = (input: string) =>
 
 describe('ExponentFunctor', () => {
   it('gives the coalgebra structure of a coalgebra the next state upon every input', () => {
-    const system = Coalgebra.make<ExponentFunctor.ExponentFunctor<string>, number>({
-      structure: (state) => (input) => state + input.length,
+    const system = Coalgebra.make(ExponentFunctor.functor<string>())({
+      structure: (state: number) => (input) => state + input.length,
     });
 
     expectTypeOf(system.structure).returns.toEqualTypeOf<(input: string) => number>();

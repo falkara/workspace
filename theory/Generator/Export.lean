@@ -24,7 +24,9 @@ such as `export { type Coalgebra, make } from '#src/Coalgebra.theory';`, which c
 documentation comment of the theory. It implements the instance of the class of functors that every
 functor and every curried functor takes, such as `export const functor`, and every
 function under the name its contract gives it, such as `export const behavior`, each with the
-documentation comment that the generator writes for the declaration, right above it, as a constant
+documentation comment that the generator writes for it, the comment that the attribute
+`counterpart` gives under `instance` for an instance and the comment of the declaration for a
+function, right above it, as a constant
 or as an overloaded function whose first signature takes the comment, such as
 `export function behavior`. A name that JavaScript reserves, such as `const`, binds the
 implementation under the name followed by `_`, which the module exports under the name itself, as
@@ -87,7 +89,7 @@ def implementationsOf (moduleNamespace name : Lean.Name) :
   match ← kindOf name with
   | .functor | .curriedFunctor | .typeConstructor =>
     return [(bindingOf (← instanceNameOf moduleNamespace name),
-      ← instanceCommentOf moduleNamespace name)]
+      ← derivedCommentOf name .instance)]
   | .function => return [(bindingOf (← valueNameOf moduleNamespace name), ← commentOf name)]
   | _ => return []
 

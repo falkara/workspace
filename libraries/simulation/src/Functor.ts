@@ -5,7 +5,7 @@ import * as Theory from '#src/Functor.theory';
 export { axioms, type Comp, type Const, type Functor, type Id, make } from '#src/Functor.theory';
 
 /**
- * Gives the `Functor` instance of a `Functor.Id`.
+ * Gives the instance of the identity functor.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor.id
  */
@@ -13,7 +13,7 @@ export const id = (): Theory.Functor<Theory.Id> =>
   Theory.make<Theory.Id>({ map: Function.identity });
 
 /**
- * Gives the `Functor` instance of a `Functor.Comp`.
+ * Gives the instance of a composite from the instances of its two endofunctors.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor.comp
  */
@@ -29,7 +29,7 @@ export const comp = <
   });
 
 /**
- * Gives the `Functor` instance of a `Functor.Const`.
+ * Gives the instance of a constant functor.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor.const
  */

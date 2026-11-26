@@ -23,7 +23,11 @@ attribute [counterpart
   typescript
     r"A coordinate of a point."
     (value
-      r"The value of the coordinate.")] Coordinate
+      r"The value of the coordinate.")
+    schema
+      r"A schema of a coordinate of a point, which decodes its value."
+    constructor
+      r"Brands a coordinate from its value without a check."] Coordinate
 
 /-- The coordinate whose value is 1. -/
 def unit : Coordinate :=

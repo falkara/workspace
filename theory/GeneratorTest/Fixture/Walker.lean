@@ -31,7 +31,9 @@ attribute [counterpart
     (state
       r"The state the step reaches.")
     (trace
-      r"The trace the step leaves.")] Step
+      r"The trace the step leaves.")
+    constructor
+      r"Creates a step from the state it reaches and the trace it leaves."] Step
 
 /-- A function that gives the step from a state upon an input. -/
 abbrev Step.Move (State Input Trace : Type) : Type :=
@@ -50,7 +52,9 @@ attribute [counterpart
   typescript
     r"A walker that takes a step upon every input."
     (move
-      r"The function that gives the step of the walker from a state upon an input.")] Walker
+      r"The function that gives the step of the walker from a state upon an input.")
+    constructor
+      r"Creates a walker from the function that gives its step."] Walker
 
 /-- Gives the state a walker reaches from a state upon an input. -/
 def Walker.next {State Input Trace : Type} (walker : Walker State Input Trace) (state : State)
@@ -70,6 +74,8 @@ attribute [counterpart
   typescript
     r"A course that turns every coordinate into another."
     (turn
-      r"The function that gives the coordinate the course turns a coordinate into.")] Course
+      r"The function that gives the coordinate the course turns a coordinate into.")
+    constructor
+      r"Creates a course from the function that turns a coordinate."] Course
 
 end Geometry

@@ -6,7 +6,7 @@ import type * as Theory from '#src/Functor/EffectFunctor.theory';
 export type { EffectFunctor } from '#src/Functor/EffectFunctor.theory';
 
 /**
- * Gives the `Functor` instance of an `EffectFunctor`.
+ * Gives the instance of an effect functor, which maps the value that an effect succeeds with.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/ReaderT
  */

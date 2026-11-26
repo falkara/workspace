@@ -10,8 +10,8 @@ const axioms = Functor.axioms(BinaryCoproductFunctor.functor<string>(), Equal.eq
 
 describe('BinaryCoproductFunctor', () => {
   it('gives the coalgebra structure of a coalgebra either the next state or a value of the summand', () => {
-    const system = Coalgebra.make<BinaryCoproductFunctor.BinaryCoproductFunctor<string>, number>({
-      structure: (state) => (state > 0 ? Result.succeed(state - 1) : Result.fail('Done')),
+    const system = Coalgebra.make(BinaryCoproductFunctor.functor<string>())({
+      structure: (state: number) => (state > 0 ? Result.succeed(state - 1) : Result.fail('Done')),
     });
 
     expectTypeOf(system.structure).returns.toEqualTypeOf<Result.Result<number, string>>();

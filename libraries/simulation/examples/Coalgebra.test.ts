@@ -1,14 +1,15 @@
 import { describe, it } from '@effect/vitest';
 import { assertEquals } from '@effect/vitest/utils';
-import { Coalgebra } from '@falkara/simulation';
-import { Array, HashSet, type HKT, Option, Result } from 'effect';
+import { BinaryCoproductFunctor, Coalgebra, Functor } from '@falkara/simulation';
+import { Array, HashSet, Option, Result } from 'effect';
 
 import { type Board, generation } from './GameOfLife';
 
 describe('Coalgebra', () => {
   it('takes a board to its next generation until the board dies out', () => {
-    const system = Coalgebra.make<Option.OptionTypeLambda, Board>({
-      structure: (board) =>
+    const option = Functor.make<Option.OptionTypeLambda>({ map: Option.map });
+    const system = Coalgebra.make(option)({
+      structure: (board: Board) =>
         HashSet.isEmpty(board) ? Option.none() : Option.some(generation(board)),
     });
 
@@ -17,12 +18,8 @@ describe('Coalgebra', () => {
   });
 
   it('fails on a board that grows too crowded', () => {
-    /** The type lambda of the results that fail with a failure of their own. */
-    interface Failing<Failure> extends HKT.TypeLambda {
-      readonly type: Result.Result<this['Target'], Failure>;
-    }
-    const system = Coalgebra.make<Failing<'Overcrowded'>, Board>({
-      structure: (board) =>
+    const system = Coalgebra.make(BinaryCoproductFunctor.functor<'Overcrowded'>())({
+      structure: (board: Board) =>
         HashSet.size(board) > 100 ? Result.fail('Overcrowded') : Result.succeed(generation(board)),
     });
 

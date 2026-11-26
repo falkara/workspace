@@ -74,7 +74,11 @@ reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorim
     (Y
       r"The amount of the reference color stimulus $[Y]$.")
     (Z
-      r"The amount of the reference color stimulus $[Z]$.")]
+      r"The amount of the reference color stimulus $[Z]$.")
+    schema
+      r"A schema that decodes tristimulus values from their amounts $X$, $Y$, and $Z$."
+    constructor
+      r"Creates tristimulus values from their amounts $X$, $Y$, and $Z$ without checking them."]
 structure Tristimulus where
   /-- The amount of the reference color stimulus $[X]$. -/
   X : ℚ

@@ -4,7 +4,7 @@ import type * as Theory from '#src/Functor/BinaryProductFunctor.theory';
 export type { BinaryProductFunctor, Product } from '#src/Functor/BinaryProductFunctor.theory';
 
 /**
- * Gives the `Functor` instance of a `BinaryProductFunctor`.
+ * Gives the instance of a functor of binary products, which maps the next state of a product.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Limits.Types.binaryProductFunctor
  */

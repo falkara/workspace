@@ -44,7 +44,10 @@ $Y \mapsto X \times Y$. -/
     (fst → "output"
       r"The output that the coalgebra gives from the state.")
     (snd → "next"
-      r"The state that follows the state.")]
+      r"The state that follows the state.")
+    instance
+      r"Gives the instance of a functor of binary products, which maps the next state of a
+      product."]
 abbrev binaryProductFunctor := @CategoryTheory.Limits.Types.binaryProductFunctor
 
 end Falkara.Simulation

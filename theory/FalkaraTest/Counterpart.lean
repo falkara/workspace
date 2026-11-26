@@ -22,8 +22,11 @@ requires, names the binder and the field that a clause names and gives the field
 the name of a field whose clause names none, gives the fields of a structure through the
 declaration that labels it, and refuses a name that is neither a binder nor a field of the
 declaration, a clause in TypeScript with neither a name nor a comment, two clauses of one field,
-and a second counterpart in TypeScript. The checks cite works of their own, so they hold for the
-works of every theory.
+and a second counterpart in TypeScript. The attribute records the comment that a function the
+generator derives from the declaration takes under each of the roles `schema`, `constructor`,
+`axioms`, and `instance`, and none where the attribute gives none, still takes a clause for a field
+named as a role, and refuses a second comment of one role and a comment out of the order of the
+roles. The checks cite works of their own, so they hold for the works of every theory.
 -/
 
 public section
@@ -273,3 +276,58 @@ info: (some { label := "Section 4", work := `Falkara.References.Checks.work },
     Citation.citationOf? environment ``Point.coordinate,
     ExportTypeScript.commentOf? environment ``Point,
     (ExportTypeScript.fieldClauseOf? environment ``Point `coordinate).bind (·.comment))
+
+/-- The structure whose field takes the name of a role and whose derived functions the checks
+comment under every role. -/
+@[counterpart
+  typescript
+    r"A form by its schema."
+    (schema
+      r"The schema that the form follows.")
+    schema
+      r"A schema of a form, which decodes the schema that the form follows."
+    constructor
+      r"Creates a form from its schema $\bar{s}$, which keeps every backslash as written."
+    axioms
+      r"Gives the axioms of a form as predicates."
+    instance
+      r"Gives the instance of a form."]
+structure Form where
+  /-- The schema of the form. -/
+  schema : ℕ
+
+/--
+info: (some "The schema that the form follows.", some "A schema of a form, which decodes the schema that the form follows.",
+  some "Creates a form from its schema $\\bar{s}$, which keeps every backslash as written.",
+  some "Gives the axioms of a form as predicates.", some "Gives the instance of a form.", none)
+-/
+#guard_msgs in
+#eval show Lean.CoreM (Option String × Option String × Option String × Option String ×
+    Option String × Option String) from do
+  let environment ← Lean.getEnv
+  return ((ExportTypeScript.fieldClauseOf? environment ``Form `schema).bind (·.comment),
+    ExportTypeScript.derivedCommentOf? environment ``Form .schema,
+    ExportTypeScript.derivedCommentOf? environment ``Form .constructor,
+    ExportTypeScript.derivedCommentOf? environment ``Form .axioms,
+    ExportTypeScript.derivedCommentOf? environment ``Form .instance,
+    ExportTypeScript.derivedCommentOf? environment ``Point .constructor)
+
+/-- error: `constructor` takes one comment alone. -/
+#guard_msgs in
+attribute [counterpart
+  typescript
+    r"The declaration that the checks leave unmarked."
+    constructor
+      r"Creates the declaration."
+    constructor
+      r"Creates the declaration once more."] unmarkedDeclaration
+
+/-- error: `schema` stands before `constructor`, as the comments take the order `schema`, `constructor`, `axioms`, and `instance`. -/
+#guard_msgs in
+attribute [counterpart
+  typescript
+    r"The declaration that the checks leave unmarked."
+    constructor
+      r"Creates the declaration."
+    schema
+      r"A schema of the declaration."] unmarkedDeclaration

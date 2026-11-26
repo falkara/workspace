@@ -55,7 +55,12 @@ attribute [counterpart
     (x
       r"The first coordinate of the point.")
     (y
-      r"The second coordinate of the point.")] Point
+      r"The second coordinate of the point.")
+    schema
+      r"A schema of the structure that the checks write, which decodes its two coordinates."
+    constructor
+      r"Brands the structure that the checks write from its two coordinates without a check."]
+  Point
 
 /-- The function that the checks write, a function of a structure. -/
 def Point.sum (point : Point) : Rat :=
@@ -114,7 +119,7 @@ def unmarkedFunction (coordinate : Rat) : Rat :=
 end Geometry
 
 /--
-info: /** A schema of the structure that the checks write. */
+info: /** A schema of the structure that the checks write, which decodes its two coordinates. */
 export const Point = Schema.Struct({
 /** The first coordinate of the point. */
 x: Schema.Rational,
@@ -125,7 +130,7 @@ y: Schema.Rational,
 /** The structure that the checks write. */
 export type Point = typeof Point.Type;
 
-/** Brands a `Point` from its fields `x` and `y` without a check. */
+/** Brands the structure that the checks write from its two coordinates without a check. */
 export const point = Brand.nominal<Point>();
 -/
 #guard_msgs in
@@ -186,7 +191,7 @@ export interface Clock<in out V> {
 readonly str: (v: V) => V;
 }
 
-/** Creates a `Clock` from its field `str`, taking its types from the annotations of the parameters of the field or else from the type arguments. */
+/** Creates a clock from the function that gives its next state. */
 export const make = <V>(fields: Clock<V>) => fields;
 -/
 #guard_msgs in
@@ -200,7 +205,7 @@ export interface ChimingClock<out B, in out V> {
 readonly str: (v: V) => readonly [B, V];
 }
 
-/** Creates a `ChimingClock` from its field `str`, taking its types from the annotations of the parameters of the field or else from the type arguments. */
+/** Creates a chiming clock from the function that gives its chime and its next state. */
 export const chimingClock = <B, V>(fields: ChimingClock<B, V>) => fields;
 -/
 #guard_msgs in
@@ -214,8 +219,8 @@ export interface Clockwork<out F extends HKT.TypeLambda, in out V> {
 readonly str: (v: V) => HKT.Kind<F, never, never, never, V>;
 }
 
-/** Creates a `Clockwork` from its field `str`, taking its types from the annotations of the parameters of the field or else from the type arguments. */
-export const clockwork = <F extends HKT.TypeLambda, V>(fields: Clockwork<F, V>) => fields;
+/** Creates a clockwork from the function that moves a state by its functor. */
+export const clockwork = <F extends HKT.TypeLambda>(_f: Clock.Gear<F>) => <V>(fields: Clockwork<F, V>) => fields;
 -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
@@ -258,10 +263,10 @@ export interface Gear<in out Motion extends HKT.TypeLambda> extends HKT.TypeClas
 readonly map: <X, Y>(f: (x: X) => Y) => (value: HKT.Kind<Motion, never, never, never, X>) => HKT.Kind<Motion, never, never, never, Y>;
 }
 
-/** Creates a `Gear` from its field `map`. */
+/** Creates a gear from its action on morphisms. */
 export const gear = <Motion extends HKT.TypeLambda>(fields: Gear<Motion>) => fields;
 
-/** Gives the axioms of a `Gear` as predicates of an instance. */
+/** Gives the axioms of a gear as predicates that tell whether a gear keeps them. */
 export const gearAxioms = <Motion extends HKT.TypeLambda>(
 instance: Gear<Motion>,
 equivalence: <X>(self: HKT.Kind<Motion, never, never, never, X>, that: HKT.Kind<Motion, never, never, never, X>) => boolean,
@@ -293,7 +298,7 @@ export interface Lantern<out Shade> {
 readonly beam: Shade;
 }
 
-/** Creates a `Lantern` from its field `beam`. */
+/** Creates a lantern from the beam that it casts. */
 export const lantern = <Shade>(fields: Lantern<Shade>) => fields;
 -/
 #guard_msgs in

@@ -48,7 +48,10 @@ universe u
 @[counterpart Jacobs.introductionToCoalgebra "Corollary 2.3.6.1"
   typescript
     r"A stream coalgebra, which gives from every state an output and the next state in a monad."
-    (m → "Monad")]
+    (m → "Monad")
+    constructor
+      r"Creates a stream coalgebra from the function that gives from every state an output and the
+      next state."]
 abbrev StreamCoalgebra (Output : Type u) (m : Type u → Type u := Id) [Monad m] [LawfulMonad m] :=
   CategoryTheory.Endofunctor.Coalgebra
     (Functor.comp (binaryProductFunctor.obj Output) (CategoryTheory.ofTypeFunctor m))

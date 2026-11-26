@@ -5,7 +5,7 @@ import type * as Module from '#src/Colorimetry/Chromaticity';
 import type * as Tristimulus from '#src/Colorimetry/Tristimulus.theory';
 
 /**
- * A schema of a property of a color stimulus that its chromaticity coordinates $x$ and $y$ define.
+ * A schema that decodes a chromaticity from its coordinates $x$ and $y$.
  *
  * @see https://cie.co.at/eilvterm/17-23-052
  */
@@ -32,7 +32,7 @@ export const Chromaticity = Schema.Struct({
 export type Chromaticity = typeof Chromaticity.Type;
 
 /**
- * Brands a `Chromaticity` from its fields `x` and `y` without a check.
+ * Creates a chromaticity from its coordinates $x$ and $y$ without checking them.
  *
  * @see https://cie.co.at/eilvterm/17-23-052
  */

@@ -2,11 +2,15 @@ import { describe, expectTypeOf, it } from '@effect/vitest';
 import { type HKT, Option } from 'effect';
 
 import * as Coalgebra from '#src/Coalgebra';
+import * as Functor from '#src/Functor';
+
+/** The functor of the options of Effect, which takes the action on morphisms that Effect gives. */
+const option = Functor.make<Option.OptionTypeLambda>({ map: Option.map });
 
 describe('Coalgebra', () => {
   it('takes the coalgebra structure from the state space into the form of the endofunctor', () => {
-    const system = Coalgebra.make<Option.OptionTypeLambda, number>({
-      structure: (state) => (state > 0 ? Option.some(state - 1) : Option.none()),
+    const system = Coalgebra.make(option)({
+      structure: (state: number) => (state > 0 ? Option.some(state - 1) : Option.none()),
     });
 
     expectTypeOf(system.structure).parameter(0).toEqualTypeOf<number>();
@@ -14,9 +18,9 @@ describe('Coalgebra', () => {
   });
 
   it('refuses a coalgebra structure that gives another form than the endofunctor', () => {
-    Coalgebra.make<Option.OptionTypeLambda, number>({
+    Coalgebra.make(option)({
       // @ts-expect-error The coalgebra structure gives an option of the state.
-      structure: (state) => state,
+      structure: (state: number) => state,
     });
   });
 

@@ -1,7 +1,7 @@
 import { BinaryCoproductFunctor } from '@falkara/simulation';
 
-const system = Coalgebra.make<BinaryCoproductFunctor.BinaryCoproductFunctor<'Overcrowded'>, Board>({
-  structure: (board) =>
+const system = Coalgebra.make(BinaryCoproductFunctor.functor<'Overcrowded'>())({
+  structure: (board: Board) =>
     HashSet.size(board) > 100 ? Result.fail('Overcrowded') : Result.succeed(generation(board)),
 });
 

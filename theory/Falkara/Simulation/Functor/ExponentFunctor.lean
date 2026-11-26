@@ -32,7 +32,9 @@ namespace Falkara.Simulation
 @[counterpart Mathlib.library CategoryTheory.coyoneda
   typescript
     r"An exponent functor, which maps every type to the functions from the exponent into the type."
-    (k → "Exponent")]
+    (k → "Exponent")
+    instance
+      r"Gives the instance of an exponent functor, which maps the result of a function."]
 abbrev exponentFunctor := @CategoryTheory.coyoneda
 
 end Falkara.Simulation

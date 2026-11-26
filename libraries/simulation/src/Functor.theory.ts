@@ -20,14 +20,14 @@ export interface Functor<
 }
 
 /**
- * Creates a `Functor` from its field `map`.
+ * Creates an instance of an endofunctor from its action on morphisms.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor
  */
 export const make = <Endofunctor extends HKT.TypeLambda>(fields: Functor<Endofunctor>) => fields;
 
 /**
- * Gives the axioms of a `Functor` as predicates of an instance.
+ * Gives the predicates that tell whether an instance preserves identity morphisms and composition, comparing the values of its endofunctor by the given equivalence.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor
  */
@@ -96,13 +96,13 @@ export interface Const<out Constant> extends HKT.TypeLambda {
 /** A contract of the functions of the theory that the module `Functor` of the package implements. */
 interface Contract {
   /**
-   * Gives the `Functor` instance of a `Functor.Id`.
+   * Gives the instance of the identity functor.
    *
    * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor.id
    */
   readonly id: () => Functor<Id>;
   /**
-   * Gives the `Functor` instance of a `Functor.Comp`.
+   * Gives the instance of a composite from the instances of its two endofunctors.
    *
    * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor.comp
    */
@@ -114,7 +114,7 @@ interface Contract {
     secondEndofunctor: Functor<SecondEndofunctor>,
   ) => Functor<Comp<FirstEndofunctor, SecondEndofunctor>>;
   /**
-   * Gives the `Functor` instance of a `Functor.Const`.
+   * Gives the instance of a constant functor.
    *
    * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Functor.const
    */

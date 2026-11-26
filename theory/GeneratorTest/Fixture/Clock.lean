@@ -65,32 +65,46 @@ abbrev GearTrain := @Functor.comp
 
 attribute [counterpart
   typescript
-    r"A clock that ticks from every state to its next state."] Clock
+    r"A clock that ticks from every state to its next state."
+    constructor
+      r"Creates a clock from the function that gives its next state."] Clock
 
 attribute [counterpart
   typescript
-    r"A clock that chimes and ticks from every state to its next state."] ChimingClock
+    r"A clock that chimes and ticks from every state to its next state."
+    constructor
+      r"Creates a chiming clock from the function that gives its chime and its next state."]
+  ChimingClock
 
 attribute [counterpart
   typescript
     r"A clockwork that moves every state by a functor."
     (str
-      r"structure morphism of the coalgebra")] Clockwork
+      r"structure morphism of the coalgebra")
+    constructor
+      r"Creates a clockwork from the function that moves a state by its functor."] Clockwork
 
 attribute [counterpart
   typescript
-    r"The functor of the chimes, which gives a chime and the next state."] ChimeFunctor
+    r"The functor of the chimes, which gives a chime and the next state."
+    instance
+      r"Gives the gear of the functor of the chimes, which maps the next state and keeps the
+      chime."] ChimeFunctor
 
 attribute [counterpart
   typescript
     r"The curried functor of the chimes, which maps every type of chimes to the functor of the
-    chimes."] chimesFunctor
+    chimes."
+    instance
+      r"Gives the gear of the functor of the chimes at a type of chimes."] chimesFunctor
 
 attribute [counterpart
   typescript
     r"The curried functor of the dials, which maps every type of settings to the functor that turns
     a setting into the next state."
-    (k → "Setting")] dialsFunctor
+    (k → "Setting")
+    instance
+      r"Gives the gear of the functor of the dials at a type of settings."] dialsFunctor
 
 attribute [counterpart
   typescript
@@ -101,12 +115,18 @@ attribute [counterpart
     (map_id
       r"A functor preserves identity morphisms.")
     (map_comp
-      r"A functor preserves composition.")] Gear
+      r"A functor preserves composition.")
+    constructor
+      r"Creates a gear from its action on morphisms."
+    axioms
+      r"Gives the axioms of a gear as predicates that tell whether a gear keeps them."] Gear
 
 attribute [counterpart
   typescript
     r"A gear train, which moves every state by one gear and then by another."
     (F → "Driver")
-    (G → "Follower")] GearTrain
+    (G → "Follower")
+    instance
+      r"Gives the gear of a gear train from the gears of its driver and its follower."] GearTrain
 
 end Geometry

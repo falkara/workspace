@@ -29,7 +29,11 @@ the generator writes as TypeScript. A declaration takes the attribute above it, 
     (x
       r"The quotient of the tristimulus value $X$ and the sum $X + Y + Z$.")
     (y
-      r"The quotient of the tristimulus value $Y$ and the sum $X + Y + Z$.")]
+      r"The quotient of the tristimulus value $Y$ and the sum $X + Y + Z$.")
+    schema
+      r"A schema of a chromaticity, which decodes its coordinates $x$ and $y$."
+    constructor
+      r"Brands a chromaticity from its coordinates $x$ and $y$ without a check."]
 structure Chromaticity where
 ```
 
@@ -41,8 +45,11 @@ item that it states, of the work of the declaration unless the clause names anot
 label, then, where the generator writes the declaration, `typescript` with the documentation
 comment that the declaration takes in TypeScript as a raw string literal and a clause for every
 binder or field with the name that it takes there, as `(V → "State")`, where it is another than
-its own, and its documentation comment. A declaration that the theory alone needs
-takes the item alone, as `@[counterpart Jacobs.introductionToCoalgebra "(2.22)"]`.
+its own, and its documentation comment, then, for every function that the generator derives from
+the declaration, the word of its role, `schema`, `constructor`, `axioms`, or `instance`, in that
+order, and the documentation comment that the function takes in TypeScript. A declaration that the
+theory alone needs takes the item alone, as
+`@[counterpart Jacobs.introductionToCoalgebra "(2.22)"]`.
 
 ## Implementation Notes
 
@@ -74,6 +81,17 @@ a formula unescaped; the syntax refuses an ordinary string literal there, which 
 A comment in TypeScript cites no work of its own, as it speaks
 in the terms of a developer rather than of a work, and the item that the declaration states gives
 the developer the source of the declaration.
+
+A function that the generator derives from a declaration, such as the constructor of a structure,
+takes its comment from the attribute as the declaration does, under the word of its role, as a
+person tells a developer what the function does and a sentence that the generator composes from the
+names of the declaration tells only what its type already names. A role takes one comment alone,
+and the comments take the order that the generator writes their functions in, so every declaration
+lists them alike. The attribute records a comment under any role, and the generator, which alone
+knows the functions it derives from a declaration, refuses a declaration that lacks the comment of
+one of them or gives a comment that no function takes. The words `schema`, `constructor`, and
+`axioms` are no keywords, so a binder or a field of such a name still takes a clause, and a comment
+of a role stands after the last clause without parentheses.
 
 The clauses of a structure of Mathlib lie on the declaration of the theory that labels it, such as
 `Coalgebra` for `CategoryTheory.Endofunctor.Coalgebra`, as the label is what the theory writes as
@@ -218,9 +236,19 @@ syntax typeScriptComment := rawStringAhead str
 where it is another than its own, and its documentation comment. -/
 syntax typeScriptClause := "(" ident (" → " str)? (ppSpace typeScriptComment)? ")"
 
+/-- The syntax of the word that names the role of a function that the generator derives from a
+declaration, such as its constructor. -/
+syntax derivedRole := &"schema" <|> &"constructor" <|> &"axioms" <|> "instance"
+
+/-- The syntax of the documentation comment in TypeScript of a function that the generator derives
+from a declaration, after the word of its role. -/
+syntax derivedComment := derivedRole ppSpace typeScriptComment
+
 /-- The syntax of the counterpart of a declaration in TypeScript, with the documentation comment
-that the declaration takes there and the clauses of its binders and fields. -/
+that the declaration takes there, the clauses of its binders and fields, and the comments of the
+functions that the generator derives from it. -/
 syntax typeScriptBlock := " typescript " typeScriptComment (ppSpace typeScriptClause)*
+  (ppSpace derivedComment)*
 
 /-- Gives the text of a documentation comment in TypeScript, the contents of its raw string
 literal. -/
@@ -236,7 +264,8 @@ syntax (name := counterpart) "counterpart" (ppSpace ident ppSpace counterpartLab
 /-- The attribute that gives a declaration its counterparts outside Lean, refusing a declaration of
 another module that it cites, a declaration or a field that cites an item already, a declaration
 whose counterpart in TypeScript the theory gives already, a name that the declaration does not
-bind, a field that the declaration does not have, and a name that is no declaration of a work. -/
+bind, a field that the declaration does not have, a name that is no declaration of a work, a second
+comment of one role, and a comment out of the order of the roles. -/
 initialize Lean.registerBuiltinAttribute {
   name := `counterpart
   descr := "give a declaration the item of a work that it states and its counterpart in TypeScript"
@@ -283,9 +312,11 @@ initialize Lean.registerBuiltinAttribute {
               as the declaration cites none."
         return (projection, ← itemOf fieldLabel fieldWork)
     let typeScript? ← block?.mapM fun block ↦ do
-      let `(typeScriptBlock| typescript $comment:typeScriptComment $clauses*) := block
+      let `(typeScriptBlock| typescript $comment:typeScriptComment $clauses*
+          $derivedComments:derivedComment*) := block
         | Lean.throwErrorAt block "A counterpart in TypeScript takes the comment of the \
-            declaration and a clause for every binder or field that it names or comments."
+            declaration, a clause for every binder or field that it names or comments, and a \
+            comment for every function that the generator derives from it."
       if ExportTypeScript.isExported environment declaration then
         Lean.throwErrorAt block m!"`{declaration}` has a counterpart in TypeScript already."
       let clauses ← clauses.toList.mapM fun (clause : Lean.TSyntax ``typeScriptClause) ↦ do
@@ -302,8 +333,32 @@ initialize Lean.registerBuiltinAttribute {
           binder := binder.getId
           name := (name?.map (·.getString)).getD binder.getId.toString
           comment := fieldComment?.map textOf } : ExportTypeScript.Clause)
-      return ({ declaration, comment := textOf comment, clauses }
-        : ExportTypeScript.Export)
+      let derived ← derivedComments.toList.mapM
+        fun (derivedComment : Lean.TSyntax ``derivedComment) ↦ do
+          let `(derivedComment| $word:derivedRole $text:typeScriptComment) := derivedComment
+            | Lean.throwErrorAt derivedComment "A comment of a function that the generator \
+                derives takes the word of its role and its text."
+          -- The syntax of a role holds its word in a node of the word alone.
+          let some role :=
+              ExportTypeScript.Derived.order.find? (·.word == word.raw[0][0].getAtomVal)
+            | Lean.throwErrorAt word "A role is one of `schema`, `constructor`, `axioms`, and \
+                `instance`."
+          return (word, role, textOf text)
+      -- The comments take the order that the generator writes their functions in, so every
+      -- declaration lists them alike.
+      derived.zipIdx.forM fun ((word, role, _), index) ↦ do
+        let earlier := (derived.take index).map (·.2.1)
+        if earlier.contains role then
+          Lean.throwErrorAt word m!"`{role.word}` takes one comment alone."
+        let position := ExportTypeScript.Derived.order.idxOf
+        if let some later := earlier.find? (position · > position role) then
+          Lean.throwErrorAt word m!"`{role.word}` stands before `{later.word}`, as the comments \
+            take the order `schema`, `constructor`, `axioms`, and `instance`."
+      return ({
+        declaration
+        comment := textOf comment
+        clauses
+        derived := derived.map fun (_, role, text) ↦ (role, text) } : ExportTypeScript.Export)
     let cited := fieldCitations.map (·.1)
     let named := (typeScript?.map (·.clauses.map (·.binder))).getD []
     if cited.eraseDups.length != cited.length || named.eraseDups.length != named.length then

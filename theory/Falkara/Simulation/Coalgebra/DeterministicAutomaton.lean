@@ -60,7 +60,10 @@ input in a monad. -/
   typescript
     r"A deterministic automaton, which gives from every state an output and the next state upon
     every input in a monad."
-    (m → "Monad")]
+    (m → "Monad")
+    constructor
+      r"Creates a deterministic automaton from the function that gives from every state an output
+      and the next state upon every input."]
 abbrev DeterministicAutomaton (Input Output : Type u) (m : Type u → Type u := Id) [Monad m]
     [LawfulMonad m] :=
   CategoryTheory.Endofunctor.Coalgebra

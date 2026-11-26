@@ -28,7 +28,10 @@ endofunctor maps the carrier. -/
     (F → "Endofunctor")
     (V → "State")
     (str → "structure"
-      r"The function that gives the next step of the system from a state.")]
+      r"The function that gives the next step of the system from a state.")
+    constructor
+      r"Creates a system from the instance of its endofunctor and the function that gives its next
+      step."]
 abbrev Coalgebra := @CategoryTheory.Endofunctor.Coalgebra
 
 end Falkara.Simulation

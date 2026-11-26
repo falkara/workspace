@@ -11,7 +11,8 @@ public import Lean.EnvExtension
 # Export TypeScript
 
 The module defines a declaration that the generator writes as TypeScript, the documentation
-comment and the clauses that it takes there, and the record of every such declaration, which the
+comment and the clauses that it takes there, the documentation comments of the functions that the
+generator derives from it, each by its role, and the record of every such declaration, which the
 attribute `counterpart` of `Falkara.Counterpart` fills while a module compiles and the generator
 reads when it runs.
 
@@ -41,8 +42,34 @@ structure Clause where
   /-- The documentation comment that the field takes in TypeScript, where the theory gives one. -/
   comment : Option String
 
+/-- The role of a function that the generator derives from a declaration, such as the constructor of
+a structure, which takes a documentation comment of its own in TypeScript. -/
+inductive Derived where
+  /-- The schema of a structure of data or of a refinement. -/
+  | schema
+  /-- The constructor of a structure or of a class of functors. -/
+  | constructor
+  /-- The predicates of the axioms of a class of functors. -/
+  | axioms
+  /-- The instance of the class of functors that a functor or a type constructor takes. -/
+  | «instance»
+  deriving BEq
+
+/-- The roles in the order that the generator writes their functions in, which their comments
+take. -/
+def Derived.order : List Derived :=
+  [.schema, .constructor, .axioms, .instance]
+
+/-- Gives the word that names a role in the attribute `counterpart`. -/
+def Derived.word : Derived → String
+  | .schema => "schema"
+  | .constructor => "constructor"
+  | .axioms => "axioms"
+  | .instance => "instance"
+
 /-- A declaration that the generator writes as TypeScript, with the documentation comment that it
-takes in TypeScript and the clauses of its binders and fields. -/
+takes in TypeScript, the clauses of its binders and fields, and the documentation comments of the
+functions that the generator derives from it. -/
 structure Export where
   /-- The declaration that the generator writes. -/
   declaration : Lean.Name
@@ -50,6 +77,9 @@ structure Export where
   comment : String
   /-- The clauses of the binders and the fields of the declaration. -/
   clauses : List Clause
+  /-- The documentation comment that every function the generator derives from the declaration
+  takes in TypeScript, by the role of the function. -/
+  derived : List (Derived × String)
 
 /-- The record of the declarations that the generator writes as TypeScript. -/
 initialize exportExtension : Lean.SimplePersistentEnvExtension Export Unit ←
@@ -83,6 +113,15 @@ writes the declaration. -/
 def commentOf? (environment : Lean.Environment) (declaration : Lean.Name) : Option String :=
   (exportsOf environment).findSome? fun declared ↦
     if declared.declaration == declaration then some declared.comment else none
+
+/-- Gives the documentation comment in TypeScript of the function of a role that the generator
+derives from a declaration, where the theory gives one. -/
+def derivedCommentOf? (environment : Lean.Environment) (declaration : Lean.Name) (role : Derived) :
+    Option String :=
+  (exportsOf environment).findSome? fun declared ↦
+    if declared.declaration == declaration then
+      (declared.derived.find? (·.1 == role)).map (·.2)
+    else none
 
 /-- Gives the clause of a binder of a declaration, where the theory gives one. -/
 def clauseOf? (environment : Lean.Environment) (declaration binder : Lean.Name) : Option Clause :=

@@ -12,8 +12,10 @@ The module defines the checks of the documentation comments of TypeScript that t
 the theory take: a declaration that cites an item of a work with a page for every item takes the
 page of the item, a declaration that cites any other work takes the DOI of the work, a declaration
 that cites no work takes the comment of its attribute alone, a declaration that the theory never
-gives a counterpart in TypeScript takes none, and a text given to open the comment takes the place
-of the first word. A field that cites an item of a work takes the DOI of the work in its comment.
+gives a counterpart in TypeScript takes none, and a function that the generator derives from a
+declaration takes the comment that the attribute gives under its role, with the DOI of the work
+that the declaration cites, and none under a role that the attribute leaves out. A field that cites
+an item of a work takes the DOI of the work in its comment.
 The checks cite works of their own, so they hold for the works of every
 theory, and take the DOI prefix 10.5555, which Crossref reserves for examples.
 -/
@@ -50,7 +52,9 @@ def tableDeclaration : Nat := 0
 
 attribute [counterpart Checks.table "sumOfColumns"
   typescript
-    r"The declaration that cites a data table."] tableDeclaration
+    r"The declaration that cites a data table."
+    constructor
+      r"Creates the declaration from the sum of its columns."] tableDeclaration
 
 /-- The declaration that cites no work. -/
 def uncitedDeclaration : Nat := 0
@@ -84,10 +88,26 @@ info: /**
 #eval show Lean.MetaM Unit from do
   IO.print (← Generator.commentOf ``tableDeclaration)
 
-/-- info: /** A schema of the declaration that cites no work. */ -/
+/-- info: /** The declaration that cites no work. */ -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
-  IO.print (← Generator.commentOf ``uncitedDeclaration (some "A schema of"))
+  IO.print (← Generator.commentOf ``uncitedDeclaration)
+
+/--
+info: /**
+ * Creates the declaration from the sum of its columns.
+ *
+ * @see https://doi.org/10.5555/checks sumOfColumns
+ */
+-/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← Generator.derivedCommentOf ``tableDeclaration .constructor)
+
+/-- error: `tableDeclaration` has no comment of its schema in TypeScript, as its attribute `counterpart` gives none under `schema`. -/
+#guard_msgs in
+#eval show Lean.MetaM Unit from do
+  IO.print (← Generator.derivedCommentOf ``tableDeclaration .schema)
 
 /-- error: `unmarkedDeclaration` has no documentation comment in TypeScript, as the theory never gives it a counterpart in TypeScript. -/
 #guard_msgs in

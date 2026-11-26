@@ -54,13 +54,20 @@ namespace Falkara.Simulation
     (map_id
       r"The predicate that tells whether the instance preserves identity morphisms.")
     (map_comp
-      r"The predicate that tells whether the instance preserves composition.")]
+      r"The predicate that tells whether the instance preserves composition.")
+    constructor
+      r"Creates an instance of an endofunctor from its action on morphisms."
+    axioms
+      r"Gives the predicates that tell whether an instance preserves identity morphisms and
+      composition, comparing the values of its endofunctor by the given equivalence."]
 abbrev Functor := @CategoryTheory.Functor
 
 /-- The identity functor of a category, which maps every object and every morphism to itself. -/
 @[counterpart Mathlib.library CategoryTheory.Functor.id
   typescript
-    r"An identity functor, which maps every type to itself."]
+    r"An identity functor, which maps every type to itself."
+    instance
+      r"Gives the instance of the identity functor."]
 abbrev Functor.id := @CategoryTheory.Functor.id
 
 /-- The composite of two functors, which applies the functor $F$ and then the functor $G$. -/
@@ -69,7 +76,9 @@ abbrev Functor.id := @CategoryTheory.Functor.id
     r"A composite of two endofunctors, which applies the first endofunctor and then the second
     endofunctor."
     (F → "FirstEndofunctor")
-    (G → "SecondEndofunctor")]
+    (G → "SecondEndofunctor")
+    instance
+      r"Gives the instance of a composite from the instances of its two endofunctors."]
 abbrev Functor.comp := @CategoryTheory.Functor.comp
 
 /-- The curried functor of constant functors, which maps every type $X$ to the functor
@@ -77,7 +86,9 @@ $Y \mapsto X$. -/
 @[counterpart Mathlib.library CategoryTheory.Functor.const
   typescript
     r"A constant functor, which maps every type to the constant."
-    (X → "Constant")]
+    (X → "Constant")
+    instance
+      r"Gives the instance of a constant functor."]
 abbrev Functor.const := @CategoryTheory.Functor.const
 
 end Falkara.Simulation

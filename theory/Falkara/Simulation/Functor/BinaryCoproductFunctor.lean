@@ -40,7 +40,9 @@ coproduct $B + Y$. -/
 @[counterpart Mathlib.library CategoryTheory.ofTypeFunctor
   typescript
     r"A functor of binary coproducts, which maps every type to its binary coproduct with the
-    summand."]
+    summand."
+    instance
+      r"Gives the instance of a functor of binary coproducts, which maps the value of a success."]
 abbrev binaryCoproductFunctor (Summand : Type u) : CategoryTheory.Functor (Type u) (Type u) :=
   CategoryTheory.ofTypeFunctor (Sum Summand)
 

@@ -4,7 +4,7 @@ import { Brand, Rational, Schema } from 'effect';
 import type * as Module from '#src/Colorimetry/Tristimulus';
 
 /**
- * A schema of a triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system.
+ * A schema that decodes tristimulus values from their amounts $X$, $Y$, and $Z$.
  *
  * @see https://cie.co.at/eilvterm/17-23-045
  */
@@ -37,7 +37,7 @@ export const Tristimulus = Schema.Struct({
 export type Tristimulus = typeof Tristimulus.Type;
 
 /**
- * Brands a `Tristimulus` from its fields `X`, `Y`, and `Z` without a check.
+ * Creates tristimulus values from their amounts $X$, $Y$, and $Z$ without checking them.
  *
  * @see https://cie.co.at/eilvterm/17-23-045
  */

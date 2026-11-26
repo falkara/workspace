@@ -88,14 +88,14 @@ describe('Functor', () => {
 
 describe('Functor.Comp', () => {
   it('gives the coalgebra structure of a coalgebra an output and the next state upon every input', () => {
-    /** A functor of the Mealy machines with inputs and outputs in the strings, a function from an input to an output and the next state. */
-    type Mealy = Functor.Comp<
-      BinaryProductFunctor.BinaryProductFunctor<string>,
-      ExponentFunctor.ExponentFunctor<string>
-    >;
+    /** The functor of the Mealy machines with inputs and outputs in the strings, a function from an input to an output and the next state. */
+    const mealy = Functor.comp(
+      BinaryProductFunctor.functor<string>(),
+      ExponentFunctor.functor<string>(),
+    );
 
-    const system = Coalgebra.make<Mealy, number>({
-      structure: (state) => (input) => ({ output: `${state}`, next: state + input.length }),
+    const system = Coalgebra.make(mealy)({
+      structure: (state: number) => (input) => ({ output: `${state}`, next: state + input.length }),
     });
 
     expectTypeOf(system.structure).returns.toEqualTypeOf<
@@ -121,8 +121,8 @@ describe('Functor.Comp', () => {
 
 describe('Functor.Const', () => {
   it('gives the coalgebra structure of a coalgebra an output and no next state', () => {
-    const system = Coalgebra.make<Functor.Const<string>, number>({
-      structure: (state) => `${state}`,
+    const system = Coalgebra.make(Functor.const<string>())({
+      structure: (state: number) => `${state}`,
     });
 
     expectTypeOf(system.structure).returns.toEqualTypeOf<string>();
@@ -144,7 +144,7 @@ describe('Functor.Id', () => {
   const axioms = Functor.axioms(Functor.id(), (self, that) => Object.is(self, that));
 
   it('gives the coalgebra structure of a coalgebra the next state alone', () => {
-    const system = Coalgebra.make<Functor.Id, number>({ structure: (state) => state + 1 });
+    const system = Coalgebra.make(Functor.id())({ structure: (state: number) => state + 1 });
 
     expectTypeOf(system.structure).returns.toEqualTypeOf<number>();
   });

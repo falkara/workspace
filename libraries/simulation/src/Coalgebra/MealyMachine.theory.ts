@@ -33,7 +33,7 @@ export interface MealyMachine<
 }
 
 /**
- * Creates a `MealyMachine` from its field `structure`, taking its types from the annotations of the parameters of the field or else from the type arguments.
+ * Creates a Mealy machine from the function that gives from every state upon every input an output and the next state.
  *
  * @see https://doi.org/10.1017/CBO9781316823187 Exercise 2.3.2
  */

@@ -12,8 +12,9 @@ const axioms = Functor.axioms(EffectFunctor.functor<string, never>(), (self, tha
 
 describe('EffectFunctor', () => {
   it('gives the coalgebra structure of a coalgebra an effect of the next state', () => {
-    const system = Coalgebra.make<EffectFunctor.EffectFunctor<string, never>, number>({
-      structure: (state) => (state > 0 ? Effect.succeed(state - 1) : Effect.fail('Exhausted')),
+    const system = Coalgebra.make(EffectFunctor.functor<string, never>())({
+      structure: (state: number) =>
+        state > 0 ? Effect.succeed(state - 1) : Effect.fail('Exhausted'),
     });
 
     expectTypeOf(system.structure).returns.toEqualTypeOf<Effect.Effect<number, string>>();

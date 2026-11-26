@@ -1,7 +1,10 @@
-import { Coalgebra } from '@falkara/simulation';
+import { Coalgebra, Functor } from '@falkara/simulation';
 
-const system = Coalgebra.make<Option.OptionTypeLambda, Board>({
-  structure: (board) => (HashSet.isEmpty(board) ? Option.none() : Option.some(generation(board))),
+const option = Functor.make<Option.OptionTypeLambda>({ map: Option.map });
+
+const system = Coalgebra.make(option)({
+  structure: (board: Board) =>
+    HashSet.isEmpty(board) ? Option.none() : Option.some(generation(board)),
 });
 
 system.structure(blinker);

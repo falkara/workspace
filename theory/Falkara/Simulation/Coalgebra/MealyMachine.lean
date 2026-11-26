@@ -60,7 +60,10 @@ monad. -/
   typescript
     r"A Mealy machine, which gives from every state upon every input an output and the next state in
     a monad."
-    (m → "Monad")]
+    (m → "Monad")
+    constructor
+      r"Creates a Mealy machine from the function that gives from every state upon every input an
+      output and the next state."]
 abbrev MealyMachine (Input Output : Type u) (m : Type u → Type u := Id) [Monad m]
     [LawfulMonad m] :=
   CategoryTheory.Endofunctor.Coalgebra

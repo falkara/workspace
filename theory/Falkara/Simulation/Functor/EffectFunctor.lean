@@ -39,7 +39,10 @@ fail with a failure of type `E` or give a value. -/
 @[counterpart Mathlib.library ReaderT
   typescript
     r"An effect functor, which maps every type to the effects that need the requirements and either
-    fail with the failure or succeed with a value of the type."]
+    fail with the failure or succeed with a value of the type."
+    instance
+      r"Gives the instance of an effect functor, which maps the value that an effect succeeds
+      with."]
 abbrev EffectFunctor (E R : Type u) : Type u → Type u :=
   ReaderT R (Except E)
 

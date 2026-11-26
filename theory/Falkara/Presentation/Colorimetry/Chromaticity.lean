@@ -39,7 +39,11 @@ namespace Falkara.Presentation
     (x
       r"The quotient of the tristimulus value $X$ and the sum $X + Y + Z$.")
     (y
-      r"The quotient of the tristimulus value $Y$ and the sum $X + Y + Z$.")]
+      r"The quotient of the tristimulus value $Y$ and the sum $X + Y + Z$.")
+    schema
+      r"A schema that decodes a chromaticity from its coordinates $x$ and $y$."
+    constructor
+      r"Creates a chromaticity from its coordinates $x$ and $y$ without checking them."]
 structure Chromaticity where
   /-- The quotient of the tristimulus value $X$ and the sum $X + Y + Z$. -/
   x : ℚ

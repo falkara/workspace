@@ -21,7 +21,10 @@ structure that the theory gives a counterpart in TypeScript take their schemas, 
 type, a structure with type parameters, and a type of any other form take none. The checks compare
 as well the variance of the type parameters of a structure, a parameter that a field gives and a
 function takes occurring at both polarities and one that a function gives at the positive polarity
-alone.
+alone. The checks compare as well the roles of the functions that the generator derives from a
+structure of data, a structure with type parameters, and a function, and the reason against a
+comment under a role whose function the generator never derives, such as the schema of a structure
+with type parameters, while a declaration without such a comment takes no reason.
 -/
 
 public section
@@ -155,7 +158,11 @@ attribute [counterpart
     (first
       r"The first value of the pair.")
     (second
-      r"The function that gives the second value from the first.")] Pair
+      r"The function that gives the second value from the first.")
+    schema
+      r"A schema of a pair, which the checks refuse."
+    constructor
+      r"Creates a pair from its first value and the function that gives its second value."] Pair
 
 /-- info: "Pair<Rational.Rational, ReadonlyArray<Rational.Rational>>" -/
 #guard_msgs in
@@ -169,3 +176,18 @@ attribute [counterpart
 /-- info: [[true, false], [true]] -/
 #guard_msgs in
 #eval Generator.variancesOf ``Pair
+
+/-- info: [["schema", "constructor"], ["constructor"], []] -/
+#guard_msgs in
+#eval show Lean.MetaM (List (List String)) from do
+  return [(Generator.derivedOf (← Generator.kindOf ``MarkedStructure)).map (·.word),
+    (Generator.derivedOf (← Generator.kindOf ``Pair)).map (·.word),
+    (Generator.derivedOf (← Generator.kindOf ``namedFunction)).map (·.word)]
+
+/-- info: [] -/
+#guard_msgs in
+#eval Generator.surplusOf ``MarkedStructure
+
+/-- info: ["`Pair` takes no comment under `schema` in its attribute `counterpart`, as the generator derives no schema from the declaration."] -/
+#guard_msgs in
+#eval Generator.surplusOf ``Pair

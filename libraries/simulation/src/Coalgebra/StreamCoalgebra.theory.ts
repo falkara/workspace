@@ -27,7 +27,7 @@ export interface StreamCoalgebra<
 }
 
 /**
- * Creates a `StreamCoalgebra` from its field `structure`, taking its types from the annotations of the parameters of the field or else from the type arguments.
+ * Creates a stream coalgebra from the function that gives from every state an output and the next state.
  *
  * @see https://doi.org/10.1017/CBO9781316823187 Corollary 2.3.6.1
  */

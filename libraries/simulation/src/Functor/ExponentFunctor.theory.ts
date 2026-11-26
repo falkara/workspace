@@ -16,7 +16,7 @@ export interface ExponentFunctor<in Exponent> extends HKT.TypeLambda {
 /** A contract of the functions of the theory that the module `Functor/ExponentFunctor` of the package implements. */
 interface Contract {
   /**
-   * Gives the `Functor` instance of an `ExponentFunctor`.
+   * Gives the instance of an exponent functor, which maps the result of a function.
    *
    * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.coyoneda
    */

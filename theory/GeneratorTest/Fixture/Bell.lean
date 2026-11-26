@@ -33,7 +33,9 @@ def Bell.answer {B : Type} (bell : Bell B) (state : bell.V) (heard : Stream' B) 
 
 attribute [counterpart
   typescript
-    r"A bell that rings a chime and moves to its next state."] Bell
+    r"A bell that rings a chime and moves to its next state."
+    constructor
+      r"Creates a bell from the function that gives its chime and its next state."] Bell
 
 attribute [counterpart
   typescript
