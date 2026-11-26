@@ -1,5 +1,11 @@
 # falkara
 
+## 0.0.4
+
+### Patch Changes
+
+- [`c90b5b9`](https://github.com/falkara/workspace/commit/c90b5b9df5af59488aaa2c2796cbc9a06f868882) Thanks [@filipfalcon](https://github.com/filipfalcon)! - Built on Effect 4.1.5 and `@effect/platform-node` 4.1.5, the latest patch releases of the Effect 4.1 line.
+
 ## 0.0.3
 
 ### Patch Changes
