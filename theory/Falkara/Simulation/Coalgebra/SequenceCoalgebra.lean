@@ -57,7 +57,7 @@ namespace Falkara.Simulation
 
 universe u
 
-/-! ### Definitions -/
+/-! ### Type -/
 
 /-- A sequence coalgebra, which gives from every state either nothing or an output and the next
 state in a monad. -/
@@ -71,6 +71,8 @@ abbrev SequenceCoalgebra (Output : Type u) (m : Type u → Type u := Id) [Monad 
       (CategoryTheory.ofTypeFunctor Option)) (CategoryTheory.ofTypeFunctor m))
 
 attribute [cite "Section 2.2.1" jacobs2017introductionCoalgebra] SequenceCoalgebra
+
+/-! ### Functions -/
 
 /-- The behavior of a sequence coalgebra, which gives from every state the sequence of the outputs
 that the coalgebra gives from the state on until it gives nothing. -/

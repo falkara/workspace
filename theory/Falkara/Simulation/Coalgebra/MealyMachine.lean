@@ -78,7 +78,7 @@ namespace Falkara.Simulation
 
 universe u
 
-/-! ### Definitions -/
+/-! ### Type -/
 
 /-- A Mealy machine, which gives from every state upon every input an output and the next state in a
 monad. -/
@@ -92,6 +92,8 @@ abbrev MealyMachine (Input Output : Type u) (m : Type u → Type u := Id) [Monad
       (CategoryTheory.ofTypeFunctor m)) (exponentFunctor.obj (Opposite.op Input)))
 
 attribute [cite "Exercise 2.3.2" jacobs2017introductionCoalgebra] MealyMachine
+
+/-! ### Functions -/
 
 /-- The behavior of a Mealy machine, which gives from every state upon a stream of inputs the stream
 of the outputs that the machine gives upon the inputs one after another. -/

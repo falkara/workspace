@@ -74,7 +74,7 @@ namespace Falkara.Simulation
 
 universe u
 
-/-! ### Definitions -/
+/-! ### Type -/
 
 /-- A deterministic automaton, which gives from every state an output and the next state upon every
 input in a monad. -/
@@ -88,6 +88,8 @@ abbrev DeterministicAutomaton (Input Output : Type u) (m : Type u → Type u := 
       (exponentFunctor.obj (Opposite.op Input))) (binaryProductFunctor.obj Output))
 
 attribute [cite "Section 2.2.3" jacobs2017introductionCoalgebra] DeterministicAutomaton
+
+/-! ### Functions -/
 
 /-- The behavior of a deterministic automaton, which gives from every state upon a stream of inputs
 the stream of the outputs of the state and of every state that the inputs lead to one after

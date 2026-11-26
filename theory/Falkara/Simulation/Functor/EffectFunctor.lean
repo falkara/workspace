@@ -39,7 +39,7 @@ namespace Falkara.Simulation
 
 universe u
 
-/-! ### Definitions -/
+/-! ### Type -/
 
 /-- The effect functor, the monad of the computations that read requirements of type `R` and either
 fail with a failure of type `E` or give a value. -/
