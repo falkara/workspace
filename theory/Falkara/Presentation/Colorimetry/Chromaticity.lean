@@ -89,13 +89,15 @@ attribute [cite "17-23-053" cie2020internationalLightingVocabulary] Chromaticity
 
 /-! ### Theorems -/
 
+namespace Chromaticity
+
 /-- The chromaticity of a factor $c \neq 0$ of units of a color stimulus is the chromaticity of the
 stimulus, as the chromaticity coordinates are quotients of the tristimulus values and their sum,
 $c\,X / (c\,X + c\,Y + c\,Z) = X / (X + Y + Z)$ and likewise for $y$. -/
 @[export_typescript /-- The chromaticity of a factor $c \neq 0$ of units of a color stimulus is the
     chromaticity of the stimulus, as the chromaticity coordinates are quotients of the tristimulus
     values and their sum, $c\,X / (c\,X + c\,Y + c\,Z) = X / (X + Y + Z)$ and likewise for $y$. -/]
-theorem Chromaticity.ofTristimulus_scale (tristimulus : Tristimulus) (factor : ℚ)
+theorem ofTristimulus_scale (tristimulus : Tristimulus) (factor : ℚ)
     (nonzero : factor ≠ 0) :
     Chromaticity.ofTristimulus (tristimulus.scale factor) =
       Chromaticity.ofTristimulus tristimulus := by
@@ -108,7 +110,8 @@ theorem Chromaticity.ofTristimulus_scale (tristimulus : Tristimulus) (factor : �
   · simp only [Option.some.injEq, Chromaticity.mk.injEq]
     constructor <;> grind
 
-attribute [cite "17-23-053" cie2020internationalLightingVocabulary]
-  Chromaticity.ofTristimulus_scale
+attribute [cite "17-23-053" cie2020internationalLightingVocabulary] ofTristimulus_scale
+
+end Chromaticity
 
 end Falkara.Presentation

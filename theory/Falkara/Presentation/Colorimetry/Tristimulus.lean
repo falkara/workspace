@@ -214,24 +214,21 @@ theorem scale_add (first second : Tristimulus) (factor : ℚ) :
 
 attribute [cite "17-23-040" cie2020internationalLightingVocabulary] scale_add
 
-end Tristimulus
-
 /-- The tristimulus values of the additive mixture of two color stimulus functions are the sums of
 their tristimulus values, $X(\varphi_1 + \varphi_2) = X(\varphi_1) + X(\varphi_2)$ and likewise for
 $Y$ and $Z$. -/
-theorem Tristimulus.ofColorStimulusFunction_add (first second : (wavelength : Wavelength) → ℚ) :
+theorem ofColorStimulusFunction_add (first second : (wavelength : Wavelength) → ℚ) :
     Tristimulus.ofColorStimulusFunction (fun wavelength ↦ first wavelength + second wavelength) =
       (Tristimulus.ofColorStimulusFunction first).add
         (Tristimulus.ofColorStimulusFunction second) := by
   simp only [Tristimulus.ofColorStimulusFunction, Tristimulus.add, add_mul, List.sum_map_add]
 
-attribute [cite "17-23-033" cie2020internationalLightingVocabulary]
-  Tristimulus.ofColorStimulusFunction_add
+attribute [cite "17-23-033" cie2020internationalLightingVocabulary] ofColorStimulusFunction_add
 
 /-- The tristimulus values of a color stimulus function multiplied by a factor $c$ are the products
 of the factor and its tristimulus values, $X(c\,\varphi) = c\,X(\varphi)$ and likewise for $Y$ and
 $Z$. -/
-theorem Tristimulus.ofColorStimulusFunction_scale
+theorem ofColorStimulusFunction_scale
     (colorStimulusFunction : (wavelength : Wavelength) → ℚ) (factor : ℚ) :
     Tristimulus.ofColorStimulusFunction
         (fun wavelength ↦ factor * colorStimulusFunction wavelength) =
@@ -239,6 +236,8 @@ theorem Tristimulus.ofColorStimulusFunction_scale
   simp only [Tristimulus.ofColorStimulusFunction, Tristimulus.scale, mul_assoc,
     List.sum_map_mul_left]
 
-attribute [cite "Abstract" cie2019tristimulusValues] Tristimulus.ofColorStimulusFunction_scale
+attribute [cite "Abstract" cie2019tristimulusValues] ofColorStimulusFunction_scale
+
+end Tristimulus
 
 end Falkara.Presentation

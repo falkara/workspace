@@ -110,41 +110,6 @@ def SequenceCoalgebra.mapOutput {Output MappedOutput : Type u}
 
 /-! ### Theorems -/
 
-/-- The behavior of a sequence coalgebra at a state ends where the coalgebra gives nothing from the
-state, and otherwise opens with the output that the coalgebra gives and goes on with the behavior at
-the next state. -/
-theorem SequenceCoalgebra.behavior_destruct {Output : Type u}
-    (coalgebra : SequenceCoalgebra Output) (state : coalgebra.V) :
-    (coalgebra.behavior state).destruct =
-      Stream'.Seq.omap coalgebra.behavior (coalgebra.str state) :=
-  Stream'.Seq.corec_eq _ _
-
-/-- The behavior of a sequence coalgebra at a state is the sequence of the outputs of its steps. -/
-theorem SequenceCoalgebra.behavior_eq_map_steps {Output : Type u}
-    (coalgebra : SequenceCoalgebra Output) (state : coalgebra.V) :
-    coalgebra.behavior state = (coalgebra.steps state).map Prod.fst := by
-  refine Stream'.Seq.eq_of_bisim
-    (fun first second ↦ ∃ current, first = coalgebra.behavior current ∧
-      second = (coalgebra.steps current).map Prod.fst) ?_ ⟨state, rfl, rfl⟩
-  rintro _ _ ⟨current, rfl, rfl⟩
-  have behavior := Stream'.Seq.corec_eq coalgebra.str current
-  have steps := Stream'.Seq.corec_eq
-    (fun current ↦ (coalgebra.str current : Option (Output × coalgebra.V)).map
-      fun step ↦ (step, step.2)) current
-  rcases h : (coalgebra.str current : Option (Output × coalgebra.V)) with _ | ⟨output, next⟩
-  · simp only [h, Option.map_none, Stream'.Seq.omap] at behavior steps
-    rw [SequenceCoalgebra.behavior, SequenceCoalgebra.steps, Stream'.Seq.destruct_eq_none behavior,
-      Stream'.Seq.destruct_eq_none steps]
-    -- The steps take their elements as objects of the functor, which `map_nil` reaches only by
-    -- unfolding them into products.
-    erw [Stream'.Seq.map_nil]
-    exact trivial
-  · simp only [h, Stream'.Seq.omap] at behavior steps
-    simp only [SequenceCoalgebra.behavior, SequenceCoalgebra.steps,
-      Stream'.Seq.destruct_eq_cons behavior, Stream'.Seq.destruct_eq_cons steps,
-      Stream'.Seq.destruct_cons, Stream'.Seq.BisimO]
-    exact ⟨rfl, next, rfl, rfl⟩
-
 /-- The sequence that a step gives, with every output mapped by a function, is the sequence that the
 step gives with the function applied to every output it gives. -/
 private theorem map_corec {Output MappedOutput State : Type u}
@@ -170,12 +135,51 @@ private theorem map_corec {Output MappedOutput State : Type u}
     simp only [Stream'.Seq.destruct_cons, Stream'.Seq.BisimO]
     exact ⟨trivial, next, rfl, rfl⟩
 
+namespace SequenceCoalgebra
+
+/-- The behavior of a sequence coalgebra at a state ends where the coalgebra gives nothing from the
+state, and otherwise opens with the output that the coalgebra gives and goes on with the behavior at
+the next state. -/
+theorem behavior_destruct {Output : Type u}
+    (coalgebra : SequenceCoalgebra Output) (state : coalgebra.V) :
+    (coalgebra.behavior state).destruct =
+      Stream'.Seq.omap coalgebra.behavior (coalgebra.str state) :=
+  Stream'.Seq.corec_eq _ _
+
+/-- The behavior of a sequence coalgebra at a state is the sequence of the outputs of its steps. -/
+theorem behavior_eq_map_steps {Output : Type u}
+    (coalgebra : SequenceCoalgebra Output) (state : coalgebra.V) :
+    coalgebra.behavior state = (coalgebra.steps state).map Prod.fst := by
+  refine Stream'.Seq.eq_of_bisim
+    (fun first second ↦ ∃ current, first = coalgebra.behavior current ∧
+      second = (coalgebra.steps current).map Prod.fst) ?_ ⟨state, rfl, rfl⟩
+  rintro _ _ ⟨current, rfl, rfl⟩
+  have behavior := Stream'.Seq.corec_eq coalgebra.str current
+  have steps := Stream'.Seq.corec_eq
+    (fun current ↦ (coalgebra.str current : Option (Output × coalgebra.V)).map
+      fun step ↦ (step, step.2)) current
+  rcases h : (coalgebra.str current : Option (Output × coalgebra.V)) with _ | ⟨output, next⟩
+  · simp only [h, Option.map_none, Stream'.Seq.omap] at behavior steps
+    rw [SequenceCoalgebra.behavior, SequenceCoalgebra.steps, Stream'.Seq.destruct_eq_none behavior,
+      Stream'.Seq.destruct_eq_none steps]
+    -- The steps take their elements as objects of the functor, which `map_nil` reaches only by
+    -- unfolding them into products.
+    erw [Stream'.Seq.map_nil]
+    exact trivial
+  · simp only [h, Stream'.Seq.omap] at behavior steps
+    simp only [SequenceCoalgebra.behavior, SequenceCoalgebra.steps,
+      Stream'.Seq.destruct_eq_cons behavior, Stream'.Seq.destruct_eq_cons steps,
+      Stream'.Seq.destruct_cons, Stream'.Seq.BisimO]
+    exact ⟨rfl, next, rfl, rfl⟩
+
 /-- The behavior of the coalgebra that maps every output of a sequence coalgebra maps every output
 of the behavior of the coalgebra. -/
-theorem SequenceCoalgebra.behavior_mapOutput {Output MappedOutput : Type u}
+theorem behavior_mapOutput {Output MappedOutput : Type u}
     (coalgebra : SequenceCoalgebra Output) (f : (output : Output) → MappedOutput)
     (state : coalgebra.V) :
     (coalgebra.mapOutput f).behavior state = (coalgebra.behavior state).map f :=
   (map_corec (fun current ↦ (coalgebra.str current : Option (Output × coalgebra.V))) f state).symm
+
+end SequenceCoalgebra
 
 end Falkara.Simulation

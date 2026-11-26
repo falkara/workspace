@@ -185,10 +185,12 @@ def MealyMachine.parallel {FirstInput FirstOutput SecondInput SecondOutput : Typ
 
 /-! ### Theorems -/
 
+namespace MealyMachine
+
 /-- The behavior of a Mealy machine at a state upon a stream of inputs opens with the output that
 the machine gives upon the first input and goes on with the behavior at the next state upon the rest
 of the inputs. -/
-theorem MealyMachine.behavior_eq {Input Output : Type u} (machine : MealyMachine Input Output)
+theorem behavior_eq {Input Output : Type u} (machine : MealyMachine Input Output)
     (state : machine.V) (inputs : Stream' Input) :
     let step : Input ⟶ Output × machine.V := machine.str state
     machine.behavior state inputs =
@@ -197,7 +199,7 @@ theorem MealyMachine.behavior_eq {Input Output : Type u} (machine : MealyMachine
 
 /-- The behavior of a Mealy machine at a state upon a stream of inputs is the stream of the outputs
 of its steps. -/
-theorem MealyMachine.behavior_eq_map_steps {Input Output : Type u}
+theorem behavior_eq_map_steps {Input Output : Type u}
     (machine : MealyMachine Input Output) (state : machine.V) (inputs : Stream' Input) :
     machine.behavior state inputs = (machine.steps state inputs).map Prod.fst := by
   simp only [MealyMachine.behavior, MealyMachine.steps, Stream'.corec', Stream'.corec_def]
@@ -205,7 +207,7 @@ theorem MealyMachine.behavior_eq_map_steps {Input Output : Type u}
 
 /-- The behavior of the machine that maps every output of a Mealy machine maps every output of the
 behavior of the machine. -/
-theorem MealyMachine.behavior_mapOutput {Input Output MappedOutput : Type u}
+theorem behavior_mapOutput {Input Output MappedOutput : Type u}
     (machine : MealyMachine Input Output) (f : (output : Output) → MappedOutput)
     (state : machine.V) (inputs : Stream' Input) :
     (machine.mapOutput f).behavior state inputs = (machine.behavior state inputs).map f := by
@@ -220,7 +222,7 @@ theorem MealyMachine.behavior_mapOutput {Input Output MappedOutput : Type u}
 
 /-- The behavior of the machine that maps every input before a Mealy machine takes it is the
 behavior of the machine upon the mapped inputs. -/
-theorem MealyMachine.behavior_mapInput {Input MappedInput Output : Type u}
+theorem behavior_mapInput {Input MappedInput Output : Type u}
     (machine : MealyMachine Input Output) (f : (input : MappedInput) → Input)
     (state : machine.V) (inputs : Stream' MappedInput) :
     (machine.mapInput f).behavior state inputs = machine.behavior state (inputs.map f) := by
@@ -235,7 +237,7 @@ theorem MealyMachine.behavior_mapInput {Input MappedInput Output : Type u}
 
 /-- The behavior of two Mealy machines in series is the behavior of the second upon the behavior of
 the first. -/
-theorem MealyMachine.behavior_series {Input Middle Output : Type u}
+theorem behavior_series {Input Middle Output : Type u}
     (first : MealyMachine Input Middle) (second : MealyMachine Middle Output)
     (firstState : first.V) (secondState : second.V) (inputs : Stream' Input) :
     (first.series second).behavior (firstState, secondState) inputs =
@@ -254,7 +256,7 @@ theorem MealyMachine.behavior_series {Input Middle Output : Type u}
 
 /-- The behavior of two Mealy machines side by side pairs the behavior of the first upon the first
 parts of the inputs with the behavior of the second upon the second parts. -/
-theorem MealyMachine.behavior_parallel {FirstInput FirstOutput SecondInput SecondOutput : Type u}
+theorem behavior_parallel {FirstInput FirstOutput SecondInput SecondOutput : Type u}
     (first : MealyMachine FirstInput FirstOutput) (second : MealyMachine SecondInput SecondOutput)
     (firstState : first.V) (secondState : second.V)
     (inputs : Stream' (FirstInput × SecondInput)) :
@@ -273,5 +275,7 @@ theorem MealyMachine.behavior_parallel {FirstInput FirstOutput SecondInput Secon
   erw [MealyMachine.behavior_eq first firstCurrent _,
     MealyMachine.behavior_eq second secondCurrent _, Stream'.tail_zip]
   rfl
+
+end MealyMachine
 
 end Falkara.Simulation

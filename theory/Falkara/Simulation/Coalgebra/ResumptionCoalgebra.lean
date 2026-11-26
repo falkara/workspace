@@ -112,11 +112,15 @@ attribute [cite "Definition 2.3.1" jacobs2017introductionCoalgebra] ResumptionCo
 
 /-! ### Theorems -/
 
+namespace ResumptionCoalgebra
+
 /-- The behavior of a resumption coalgebra at a state is the sequence of the outputs of its steps.
 -/
-theorem ResumptionCoalgebra.behavior_eq_map_steps {Output Done : Type u}
+theorem behavior_eq_map_steps {Output Done : Type u}
     (coalgebra : ResumptionCoalgebra Output Done) (state : coalgebra.V) :
     coalgebra.behavior state = (coalgebra.steps state).map Prod.fst :=
   coalgebra.toSequenceCoalgebra.behavior_eq_map_steps state
+
+end ResumptionCoalgebra
 
 end Falkara.Simulation

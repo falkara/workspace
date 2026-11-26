@@ -125,16 +125,18 @@ def StreamCoalgebra.toMealyMachine {Output : Type u} (coalgebra : StreamCoalgebr
 
 /-! ### Theorems -/
 
+namespace StreamCoalgebra
+
 /-- The behavior of a stream coalgebra at a state opens with the output that the coalgebra gives
 from the state and goes on with the behavior at the next state. -/
-theorem StreamCoalgebra.behavior_eq {Output : Type u} (coalgebra : StreamCoalgebra Output)
+theorem behavior_eq {Output : Type u} (coalgebra : StreamCoalgebra Output)
     (state : coalgebra.V) :
     coalgebra.behavior state =
       Stream'.cons (coalgebra.str state).1 (coalgebra.behavior (coalgebra.str state).2) :=
   Stream'.corec'_eq _ _
 
 /-- The behavior of a stream coalgebra at a state is the stream of the outputs of its steps. -/
-theorem StreamCoalgebra.behavior_eq_map_steps {Output : Type u}
+theorem behavior_eq_map_steps {Output : Type u}
     (coalgebra : StreamCoalgebra Output) (state : coalgebra.V) :
     coalgebra.behavior state = (coalgebra.steps state).map Prod.fst := by
   simp only [StreamCoalgebra.behavior, StreamCoalgebra.steps, Stream'.corec', Stream'.corec_def]
@@ -142,7 +144,7 @@ theorem StreamCoalgebra.behavior_eq_map_steps {Output : Type u}
 
 /-- The behavior of the coalgebra that maps every output of a stream coalgebra maps every output of
 the behavior of the coalgebra. -/
-theorem StreamCoalgebra.behavior_mapOutput {Output MappedOutput : Type u}
+theorem behavior_mapOutput {Output MappedOutput : Type u}
     (coalgebra : StreamCoalgebra Output) (f : (output : Output) → MappedOutput)
     (state : coalgebra.V) :
     (coalgebra.mapOutput f).behavior state = (coalgebra.behavior state).map f := by
@@ -156,7 +158,7 @@ theorem StreamCoalgebra.behavior_mapOutput {Output MappedOutput : Type u}
   rfl
 
 /-- The Mealy machine of a stream coalgebra behaves upon any inputs as the coalgebra. -/
-theorem StreamCoalgebra.behavior_toMealyMachine {Output : Type u}
+theorem behavior_toMealyMachine {Output : Type u}
     (coalgebra : StreamCoalgebra Output) (state : coalgebra.V) (inputs : Stream' PUnit) :
     coalgebra.toMealyMachine.behavior state inputs = coalgebra.behavior state := by
   refine Stream'.eq_of_bisim (fun first second ↦ ∃ current rest,
@@ -167,5 +169,7 @@ theorem StreamCoalgebra.behavior_toMealyMachine {Output : Type u}
   -- The state of the machine is one of the coalgebra, which a rewrite finds by unfolding.
   erw [StreamCoalgebra.behavior_eq coalgebra current]
   rfl
+
+end StreamCoalgebra
 
 end Falkara.Simulation

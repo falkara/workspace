@@ -146,10 +146,12 @@ def DeterministicAutomaton.toMealyMachine {Input Output : Type u}
 
 /-! ### Theorems -/
 
+namespace DeterministicAutomaton
+
 /-- The behavior of a deterministic automaton at a state upon a stream of inputs opens with the
 output of the state and goes on with the behavior at the state that the first input leads to upon
 the rest of the inputs. -/
-theorem DeterministicAutomaton.behavior_eq {Input Output : Type u}
+theorem behavior_eq {Input Output : Type u}
     (automaton : DeterministicAutomaton Input Output) (state : automaton.V)
     (inputs : Stream' Input) :
     let step : Output × (Input ⟶ automaton.V) := automaton.str state
@@ -159,7 +161,7 @@ theorem DeterministicAutomaton.behavior_eq {Input Output : Type u}
 
 /-- The behavior of the automaton that maps every output of a deterministic automaton maps every
 output of the behavior of the automaton. -/
-theorem DeterministicAutomaton.behavior_mapOutput {Input Output MappedOutput : Type u}
+theorem behavior_mapOutput {Input Output MappedOutput : Type u}
     (automaton : DeterministicAutomaton Input Output) (f : (output : Output) → MappedOutput)
     (state : automaton.V) (inputs : Stream' Input) :
     (automaton.mapOutput f).behavior state inputs = (automaton.behavior state inputs).map f := by
@@ -175,7 +177,7 @@ theorem DeterministicAutomaton.behavior_mapOutput {Input Output MappedOutput : T
 
 /-- The behavior of the automaton that maps every input before a deterministic automaton takes it
 is the behavior of the automaton upon the mapped inputs. -/
-theorem DeterministicAutomaton.behavior_mapInput {Input MappedInput Output : Type u}
+theorem behavior_mapInput {Input MappedInput Output : Type u}
     (automaton : DeterministicAutomaton Input Output) (f : (input : MappedInput) → Input)
     (state : automaton.V) (inputs : Stream' MappedInput) :
     (automaton.mapInput f).behavior state inputs = automaton.behavior state (inputs.map f) := by
@@ -191,7 +193,7 @@ theorem DeterministicAutomaton.behavior_mapInput {Input MappedInput Output : Typ
 
 /-- The Mealy machine of a deterministic automaton behaves upon every stream of inputs as the
 automaton. -/
-theorem DeterministicAutomaton.behavior_toMealyMachine {Input Output : Type u}
+theorem behavior_toMealyMachine {Input Output : Type u}
     (automaton : DeterministicAutomaton Input Output) (state : automaton.V)
     (inputs : Stream' Input) :
     automaton.toMealyMachine.behavior state inputs = automaton.behavior state inputs := by
@@ -203,5 +205,7 @@ theorem DeterministicAutomaton.behavior_toMealyMachine {Input Output : Type u}
   -- The state of the machine is one of the automaton, which a rewrite finds by unfolding.
   erw [DeterministicAutomaton.behavior_eq automaton current rest]
   rfl
+
+end DeterministicAutomaton
 
 end Falkara.Simulation
