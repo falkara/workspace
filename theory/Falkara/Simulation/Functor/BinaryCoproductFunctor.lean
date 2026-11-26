@@ -40,8 +40,6 @@ namespace Falkara.Simulation
 
 universe u
 
-/-! ### Functions -/
-
 /-- The functor of binary coproducts with a summand $B$, which maps every type $Y$ to the binary
 coproduct $B + Y$. -/
 @[export_typescript /-- A functor of binary coproducts, which maps every type to its binary

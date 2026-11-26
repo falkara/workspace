@@ -48,8 +48,6 @@ every index, which takes gigabytes of memory over the rows of a data table.
 
 namespace Falkara.Presentation
 
-/-! ### Type -/
-
 /-- A triple of the values of the CIE color-matching functions $\bar{x}$, $\bar{y}$, and $\bar{z}$
 at a given wavelength, with the wavelength. -/
 structure ColorMatchingCoefficients where
@@ -68,8 +66,6 @@ attribute [cite "lambda" cie2019colorMatchingFunctions] ColorMatchingCoefficient
 attribute [cite "x_bar(lambda)" cie2019colorMatchingFunctions] ColorMatchingCoefficients.xBar
 attribute [cite "y_bar(lambda)" cie2019colorMatchingFunctions] ColorMatchingCoefficients.yBar
 attribute [cite "z_bar(lambda)" cie2019colorMatchingFunctions] ColorMatchingCoefficients.zBar
-
-/-! ### Data -/
 
 /-- The color-matching coefficients that define the CIE 1931 standard colorimetric observer, at
 wavelengths from 360 nm to 830 nm in steps of 1 nm. -/

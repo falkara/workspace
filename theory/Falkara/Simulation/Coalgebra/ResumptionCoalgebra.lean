@@ -61,8 +61,6 @@ namespace Falkara.Simulation
 
 universe u
 
-/-! ### Type -/
-
 /-- A resumption coalgebra, which gives from every state either a result or an output and the next
 state in a monad. -/
 @[export_typescript /-- A resumption coalgebra, which gives from every state either a result or an
@@ -75,8 +73,6 @@ abbrev ResumptionCoalgebra (Output Done : Type u) (m : Type u → Type u := Id) 
       (CategoryTheory.ofTypeFunctor m))
 
 attribute [cite "Section 2.2.1" jacobs2017introductionCoalgebra] ResumptionCoalgebra
-
-/-! ### Functions -/
 
 /-- The sequence coalgebra that a resumption coalgebra runs as without its result, which gives
 nothing where the resumption coalgebra gives a result, upon the state space of the coalgebra. -/
@@ -111,8 +107,6 @@ def ResumptionCoalgebra.steps {Output Done : Type u}
   coalgebra.toSequenceCoalgebra.steps state
 
 attribute [cite "Definition 2.3.1" jacobs2017introductionCoalgebra] ResumptionCoalgebra.steps
-
-/-! ### Theorems -/
 
 namespace ResumptionCoalgebra
 

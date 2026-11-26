@@ -99,8 +99,6 @@ $y = 0.329\,02$.
 
 namespace Falkara.Presentation
 
-/-! ### Type -/
-
 /-- A triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus by the
 reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system. -/
 @[export_typescript /-- A triple of the amounts $X$, $Y$, and $Z$ that match the color of a color
@@ -122,8 +120,6 @@ attribute [cite "17-23-045" cie2020internationalLightingVocabulary] Tristimulus
 attribute [cite "17-23-038" cie2020internationalLightingVocabulary] Tristimulus.X
 attribute [cite "17-23-038" cie2020internationalLightingVocabulary] Tristimulus.Y
 attribute [cite "17-23-038" cie2020internationalLightingVocabulary] Tristimulus.Z
-
-/-! ### Functions -/
 
 /-- Gives the tristimulus values of the additive mixture of two color stimuli as the sums of their
 amounts, $X_1 + X_2$, $Y_1 + Y_2$, and $Z_1 + Z_2$. -/
@@ -158,8 +154,6 @@ def Tristimulus.ofColorStimulusFunction (colorStimulusFunction : (wavelength : W
 
 attribute [cite "Abstract" cie2019tristimulusValues] Tristimulus.ofColorStimulusFunction
 
-/-! ### Data -/
-
 /-- The tristimulus values of the white, those of CIE standard illuminant D65 scaled so that their
 luminance factor $Y$ is 1,
 $X = \sum_{\lambda} S(\lambda)\,\bar{x}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$,
@@ -176,8 +170,6 @@ def Tristimulus.white : Tristimulus :=
     (Tristimulus.ofColorStimulusFunction relativeSpectralPowerAt).Y⁻¹
 
 attribute [cite "17-23-081" cie2020internationalLightingVocabulary] Tristimulus.white
-
-/-! ### Theorems -/
 
 namespace Tristimulus
 

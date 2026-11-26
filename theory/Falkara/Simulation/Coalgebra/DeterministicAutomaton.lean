@@ -74,8 +74,6 @@ namespace Falkara.Simulation
 
 universe u
 
-/-! ### Type -/
-
 /-- A deterministic automaton, which gives from every state an output and the next state upon every
 input in a monad. -/
 @[export_typescript /-- A deterministic automaton, which gives from every state an output and the
@@ -88,8 +86,6 @@ abbrev DeterministicAutomaton (Input Output : Type u) (m : Type u → Type u := 
       (exponentFunctor.obj (Opposite.op Input))) (binaryProductFunctor.obj Output))
 
 attribute [cite "Section 2.2.3" jacobs2017introductionCoalgebra] DeterministicAutomaton
-
-/-! ### Functions -/
 
 /-- The behavior of a deterministic automaton, which gives from every state upon a stream of inputs
 the stream of the outputs of the state and of every state that the inputs lead to one after
@@ -145,8 +141,6 @@ def DeterministicAutomaton.toMealyMachine {Input Output : Type u}
   str := TypeCat.ofHom fun state ↦
     let step : Output × (Input ⟶ automaton.V) := automaton.str state
     (TypeCat.ofHom fun input ↦ (step.1, step.2 input) : Input ⟶ Output × automaton.V)
-
-/-! ### Theorems -/
 
 namespace DeterministicAutomaton
 

@@ -89,8 +89,6 @@ public section
 
 namespace Falkara.Cli
 
-/-! ### Data -/
-
 /-- The greatest number of bytes in a filename that every system conforming to the X/Open System
 Interfaces accepts. -/
 def maximumFilenameLength : ℕ := 255
@@ -104,8 +102,6 @@ def reservedNames : List String :=
     "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"]
 
 attribute [cite "naming-conventions" microsoft2024namingFiles] reservedNames
-
-/-! ### Conditions -/
 
 /-- Tells whether a character is in the portable filename character set, a letter from `A` to `Z`
 or from `a` to `z`, a digit from `0` to `9`, `.`, `_`, or `-`. -/
@@ -164,16 +160,12 @@ def isFilename (name : String) : Bool :=
 
 attribute [cite "3.146" ieee2024portableOperatingSystemInterface] isFilename
 
-/-! ### Type -/
-
 /-- A filename that names a file or a directory in the same way on every system. -/
 @[export_typescript
   /-- A filename that names a file or a directory in the same way on every system. -/]
 abbrev Filename := { name : String // isFilename name = true }
 
 attribute [cite "3.146" ieee2024portableOperatingSystemInterface] Filename
-
-/-! ### Theorems -/
 
 /-- A name $n$ is a filename exactly when it is a portable filename that starts with no
 hyphen-minus, ends with no period, and is no name that Windows reserves,

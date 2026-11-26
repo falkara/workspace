@@ -37,8 +37,6 @@ state, so that TypeScript tells the two apart even where they are of one type.
 
 namespace Falkara.Simulation
 
-/-! ### Data -/
-
 /-- The curried functor of binary products, which maps every type $X$ to the functor
 $Y \mapsto X \times Y$. -/
 @[export_typescript /-- A functor of binary products, which maps every type to its binary product

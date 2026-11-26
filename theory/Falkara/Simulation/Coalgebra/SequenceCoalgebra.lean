@@ -57,8 +57,6 @@ namespace Falkara.Simulation
 
 universe u
 
-/-! ### Type -/
-
 /-- A sequence coalgebra, which gives from every state either nothing or an output and the next
 state in a monad. -/
 @[export_typescript /-- A sequence coalgebra, which gives from every state either nothing or an
@@ -71,8 +69,6 @@ abbrev SequenceCoalgebra (Output : Type u) (m : Type u → Type u := Id) [Monad 
       (CategoryTheory.ofTypeFunctor Option)) (CategoryTheory.ofTypeFunctor m))
 
 attribute [cite "Section 2.2.1" jacobs2017introductionCoalgebra] SequenceCoalgebra
-
-/-! ### Functions -/
 
 /-- The behavior of a sequence coalgebra, which gives from every state the sequence of the outputs
 that the coalgebra gives from the state on until it gives nothing. -/
@@ -109,8 +105,6 @@ def SequenceCoalgebra.mapOutput {Output MappedOutput : Type u}
   str := TypeCat.ofHom fun state ↦
     let step : Option (Output × coalgebra.V) := coalgebra.str state
     step.map fun step ↦ (f step.1, step.2)
-
-/-! ### Theorems -/
 
 /-- The sequence that a step gives, with every output mapped by a function, is the sequence that the
 step gives with the function applied to every output it gives. -/

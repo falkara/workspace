@@ -37,15 +37,11 @@ give.
 
 namespace Falkara.Presentation
 
-/-! ### Type -/
-
 /-- A wavelength at which the theory computes, a whole number of nanometers from 360 nm to
 830 nm. -/
 abbrev Wavelength := { nanometers : ℕ // 360 ≤ nanometers ∧ nanometers ≤ 830 }
 
 attribute [cite "Abstract" cie2019tristimulusValues] Wavelength
-
-/-! ### Data -/
 
 /-- The wavelengths at which the theory computes, from 360 nm to 830 nm in steps of 1 nm. -/
 def wavelengths : List Wavelength :=

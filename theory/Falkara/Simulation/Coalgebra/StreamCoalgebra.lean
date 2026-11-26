@@ -64,8 +64,6 @@ namespace Falkara.Simulation
 
 universe u
 
-/-! ### Type -/
-
 /-- A stream coalgebra, which gives from every state an output and the next state in a monad. -/
 @[export_typescript /-- A stream coalgebra, which gives from every state an output and the next
     state in a monad. -/
@@ -75,8 +73,6 @@ abbrev StreamCoalgebra (Output : Type u) (m : Type u → Type u := Id) [Monad m]
     (Functor.comp (binaryProductFunctor.obj Output) (CategoryTheory.ofTypeFunctor m))
 
 attribute [cite "Corollary 2.3.6.1" jacobs2017introductionCoalgebra] StreamCoalgebra
-
-/-! ### Functions -/
 
 /-- The behavior of a stream coalgebra, which gives from every state the stream of the outputs that
 the coalgebra gives from the state on. -/
@@ -124,8 +120,6 @@ def StreamCoalgebra.toMealyMachine {Output : Type u} (coalgebra : StreamCoalgebr
   str := TypeCat.ofHom fun state ↦
     (TypeCat.ofHom fun _ ↦ (coalgebra.str state : Output × coalgebra.V) :
       PUnit ⟶ Output × coalgebra.V)
-
-/-! ### Theorems -/
 
 namespace StreamCoalgebra
 

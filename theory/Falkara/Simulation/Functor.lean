@@ -51,8 +51,6 @@ constant as the type parameters do.
 
 namespace Falkara.Simulation
 
-/-! ### Type -/
-
 /-- A functor between categories, with its action on objects and its action on morphisms. -/
 @[export_typescript /-- An endofunctor, with its action on objects as its type parameter and its
     action on morphisms. -/
@@ -65,8 +63,6 @@ namespace Falkara.Simulation
 abbrev Functor := @CategoryTheory.Functor
 
 attribute [cite "CategoryTheory.Functor" mathlibCommunity2020leanMathematicalLibrary] Functor
-
-/-! ### Functions -/
 
 /-- The identity functor of a category, which maps every object and every morphism to itself. -/
 @[export_typescript /-- An identity functor, which maps every type to itself. -/]

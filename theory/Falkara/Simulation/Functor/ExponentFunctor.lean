@@ -33,8 +33,6 @@ opens with an article and names the exponent as the type parameter does.
 
 namespace Falkara.Simulation
 
-/-! ### Data -/
-
 /-- The exponent functor, which maps every type $k$ to the functor $Y \mapsto (k \to Y)$. -/
 @[export_typescript /-- An exponent functor, which maps every type to the functions from the
     exponent into the type. -/

@@ -46,8 +46,6 @@ The chromaticity of tristimulus values that sum to 0 is `none`, as a quotient by
 
 namespace Falkara.Presentation
 
-/-! ### Type -/
-
 /-- A property of a color stimulus that its chromaticity coordinates $x$ and $y$ define. -/
 @[export_typescript
   /-- A property of a color stimulus that its chromaticity coordinates $x$ and $y$ define. -/
@@ -63,8 +61,6 @@ structure Chromaticity where
 attribute [cite "17-23-052" cie2020internationalLightingVocabulary] Chromaticity
 attribute [cite "17-23-053" cie2020internationalLightingVocabulary] Chromaticity.x
 attribute [cite "17-23-053" cie2020internationalLightingVocabulary] Chromaticity.y
-
-/-! ### Functions -/
 
 /-- Gives the chromaticity coordinate $z$ of the chromaticity, $z = 1 - x - y$. -/
 @[export_typescript
@@ -86,8 +82,6 @@ def Chromaticity.ofTristimulus (tristimulus : Tristimulus) : Option Chromaticity
       tristimulus.Y / (tristimulus.X + tristimulus.Y + tristimulus.Z)⟩
 
 attribute [cite "17-23-053" cie2020internationalLightingVocabulary] Chromaticity.ofTristimulus
-
-/-! ### Theorems -/
 
 namespace Chromaticity
 

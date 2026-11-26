@@ -61,8 +61,6 @@ reaches the row without comparing the wavelength with every row before it.
 
 namespace Falkara.Presentation
 
-/-! ### Type -/
-
 /-- A monochromatic component with the value of the relative spectral distribution at its
 wavelength. -/
 structure MonochromaticComponent where
@@ -77,8 +75,6 @@ attribute [cite "columnHeaders" cie2019standardIlluminantD65] MonochromaticCompo
 attribute [cite "lambda" cie2019standardIlluminantD65] MonochromaticComponent.wavelength
 attribute [cite "S_D65(lambda)" cie2019standardIlluminantD65]
   MonochromaticComponent.relativeSpectralPower
-
-/-! ### Data -/
 
 /-- The monochromatic components that define the illuminant, at wavelengths from 300 nm to 830 nm
 in steps of 1 nm. -/
@@ -617,16 +613,12 @@ def illuminant : List MonochromaticComponent := [
 
 attribute [cite "CIE_std_illum_D65.csv" cie2019standardIlluminantD65] illuminant
 
-/-! ### Theorems -/
-
 /-- The illuminant holds a row for each wavelength from 300 nm to 830 nm in steps of 1 nm,
 $(830 - 300) / 1 + 1 = 531$. -/
 theorem length_illuminant : illuminant.length = 531 := by
   decide +kernel
 
 attribute [cite "CIE_std_illum_D65.csv" cie2019standardIlluminantD65] length_illuminant
-
-/-! ### Functions -/
 
 /-- Gives the relative spectral distribution of the illuminant at a wavelength $\lambda$,
 $S(\lambda)$. -/

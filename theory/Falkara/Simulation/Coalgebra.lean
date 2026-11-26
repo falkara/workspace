@@ -25,8 +25,6 @@ The module defines the coalgebras of an endofunctor as Mathlib
 
 namespace Falkara.Simulation
 
-/-! ### Type -/
-
 /-- A coalgebra of an endofunctor, a carrier with a structure morphism into the object to which the
 endofunctor maps the carrier. -/
 @[export_typescript /-- A coalgebra, a state space together with a coalgebra structure on it. -/
