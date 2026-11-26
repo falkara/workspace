@@ -3,7 +3,7 @@ module
 public import GeneratorTest.Fixture.Clock
 public import Mathlib.Data.Stream.Defs
 
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 
 /-!
 # Carillon
@@ -69,23 +69,30 @@ def Carillon.tolls {B : Type u} (carillon : Carillon B) (state : carillon.V) :
     Stream' (PUnit ⊕ B) :=
   (carillon.rounds state).map fun round ↦ .inr round.1
 
-attribute [export_typescript /-- The resting functor, which moves no state. -/] restingFunctor
+attribute [counterpart
+  typescript
+    r"The resting functor, which moves no state."] restingFunctor
 
-attribute [export_typescript
-  /-- A belfry, the monad of the peals that read a rope of type `R` and either fail with a crack of
-  type `E` or ring. -/] Belfry
+attribute [counterpart
+  typescript
+    r"A belfry, the monad of the peals that read a rope of type `R` and either fail with a crack of
+    type `E` or ring."] Belfry
 
-attribute [export_typescript
-  /-- A carillon that rings a chime and moves to its next state in a monad. -/] Carillon
+attribute [counterpart
+  typescript
+    r"A carillon that rings a chime and moves to its next state in a monad."] Carillon
 
-attribute [export_typescript
-  /-- The rounds of a carillon, every chime that it rings with the next state. -/] Carillon.rounds
+attribute [counterpart
+  typescript
+    r"The rounds of a carillon, every chime that it rings with the next state."] Carillon.rounds
 
-attribute [export_typescript
-  /-- The carillon that rings two carillons side by side and keeps the chime of the first after a
-  choice, upon the pairs of their states. -/] Carillon.pair
+attribute [counterpart
+  typescript
+    r"The carillon that rings two carillons side by side and keeps the chime of the first after a
+    choice, upon the pairs of their states."] Carillon.pair
 
-attribute [export_typescript
-  /-- The tolls of a carillon, a pause before every chime that it rings. -/] Carillon.tolls
+attribute [counterpart
+  typescript
+    r"The tolls of a carillon, a pause before every chime that it rings."] Carillon.tolls
 
 end Geometry

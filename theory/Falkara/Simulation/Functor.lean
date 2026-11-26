@@ -7,14 +7,14 @@ module
 
 public import Mathlib.CategoryTheory.Functor.Const
 
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 import Falkara.References
 
 /-!
 # Functor
 
 The module defines the functors, the identity functor, the composition of functors, and the curried
-functor of constant functors as Mathlib [mathlibCommunity2020leanMathematicalLibrary] states them.
+functor of constant functors as Mathlib [Mathlib.library] states them.
 
 ## Main Definitions
 
@@ -26,7 +26,7 @@ functor of constant functors as Mathlib [mathlibCommunity2020leanMathematicalLib
 ## Implementation Notes
 
 The action of a functor on objects takes the type parameter `Endofunctor` in TypeScript, as a
-functor on types is an endofunctor, which Jacobs [jacobs2017introductionCoalgebra] writes as a
+functor on types is an endofunctor, which Jacobs [Jacobs.introductionToCoalgebra] writes as a
 mapping of sets to sets, and the type lambda stands for the functor as it does in a coalgebra.
 
 The functor and its axioms take documentation comments of the theory in TypeScript. The functor is
@@ -52,42 +52,39 @@ constant as the type parameters do.
 namespace Falkara.Simulation
 
 /-- A functor between categories, with its action on objects and its action on morphisms. -/
-@[export_typescript /-- An endofunctor, with its action on objects as its type parameter and its
-    action on morphisms. -/
-  (obj := "Endofunctor")
-  (map := "map" /-- The action of a functor on morphisms. -/)
-  (map_id := "map_id"
-    /-- The predicate that tells whether the instance preserves identity morphisms. -/)
-  (map_comp := "map_comp"
-    /-- The predicate that tells whether the instance preserves composition. -/)]
+@[counterpart Mathlib.library CategoryTheory.Functor
+  typescript
+    r"An endofunctor, with its action on objects as its type parameter and its action on morphisms."
+    (obj → "Endofunctor")
+    (map
+      r"The action of a functor on morphisms.")
+    (map_id
+      r"The predicate that tells whether the instance preserves identity morphisms.")
+    (map_comp
+      r"The predicate that tells whether the instance preserves composition.")]
 abbrev Functor := @CategoryTheory.Functor
 
-attribute [cite "CategoryTheory.Functor" mathlibCommunity2020leanMathematicalLibrary] Functor
-
 /-- The identity functor of a category, which maps every object and every morphism to itself. -/
-@[export_typescript /-- An identity functor, which maps every type to itself. -/]
+@[counterpart Mathlib.library CategoryTheory.Functor.id
+  typescript
+    r"An identity functor, which maps every type to itself."]
 abbrev Functor.id := @CategoryTheory.Functor.id
 
-attribute [cite "CategoryTheory.Functor.id" mathlibCommunity2020leanMathematicalLibrary]
-  Functor.id
-
 /-- The composite of two functors, which applies the functor $F$ and then the functor $G$. -/
-@[export_typescript /-- A composite of two endofunctors, which applies the first endofunctor and
-    then the second endofunctor. -/
-  (F := "FirstEndofunctor")
-  (G := "SecondEndofunctor")]
+@[counterpart Mathlib.library CategoryTheory.Functor.comp
+  typescript
+    r"A composite of two endofunctors, which applies the first endofunctor and then the second
+    endofunctor."
+    (F → "FirstEndofunctor")
+    (G → "SecondEndofunctor")]
 abbrev Functor.comp := @CategoryTheory.Functor.comp
-
-attribute [cite "CategoryTheory.Functor.comp" mathlibCommunity2020leanMathematicalLibrary]
-  Functor.comp
 
 /-- The curried functor of constant functors, which maps every type $X$ to the functor
 $Y \mapsto X$. -/
-@[export_typescript /-- A constant functor, which maps every type to the constant. -/
-  (X := "Constant")]
+@[counterpart Mathlib.library CategoryTheory.Functor.const
+  typescript
+    r"A constant functor, which maps every type to the constant."
+    (X → "Constant")]
 abbrev Functor.const := @CategoryTheory.Functor.const
-
-attribute [cite "CategoryTheory.Functor.const" mathlibCommunity2020leanMathematicalLibrary]
-  Functor.const
 
 end Falkara.Simulation

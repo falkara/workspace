@@ -5,42 +5,46 @@ Authors: Filip Falcon
 -/
 module
 
-public import Falkara.Citation.Defs
+public import Falkara.Citation
 
 /-!
 # References
 
 The module defines every work that the theory cites, each as a declaration that the attribute
-`cite` and the comments of the modules name.
+`counterpart` and the comments of the modules name.
 
 ## Main Definitions
 
-- `cie2018colorimetry`: the technical report of the CIE that gives its recommendations on
+- `CIE.colorimetry`: the technical report of the CIE that gives its recommendations on
   colorimetry, with the colorimetric data of the CIE illuminants.
-- `cie2019colorMatchingFunctions`: the data table of the color-matching functions of the CIE 1931
+- `CIE.colorMatchingFunctions`: the data table of the color-matching functions of the CIE 1931
   standard colorimetric observer.
-- `cie2019standardIlluminantD65`: the data table of the relative spectral distribution of CIE
+- `CIE.standardIlluminantD65`: the data table of the relative spectral distribution of CIE
   standard illuminant D65.
-- `cie2019tristimulusValues`: the standard of the CIE and ISO that defines the calculation of
+- `CIE.tristimulusValues`: the standard of the CIE and ISO that defines the calculation of
   tristimulus values from a spectral distribution.
-- `cie2020internationalLightingVocabulary`: the vocabulary of the CIE, which defines the terms of
+- `CIE.internationalLightingVocabulary`: the vocabulary of the CIE, which defines the terms of
   colorimetry, each under a number of its own.
-- `ieee2024portableOperatingSystemInterface`: the standard of the IEEE and The Open Group that
+- `IEEE.portableOperatingSystemInterface`: the standard of the IEEE and The Open Group that
   defines the interface of a portable operating system, with its filenames and pathnames.
-- `jacobs2017introductionCoalgebra`: the textbook of Jacobs on coalgebras, which names the kinds of
+- `Jacobs.introductionToCoalgebra`: the textbook of Jacobs on coalgebras, which names the kinds of
   state-based systems by the functors whose coalgebras they are.
-- `mathlibCommunity2020leanMathematicalLibrary`: the library of mathematics of Lean, Mathlib, which
-  the theory builds on, with a page of documentation for every declaration.
-- `microsoft2024namingFiles`: the page of the documentation of Windows that gives the rules for the
+- `Mathlib.library`: the library of mathematics of Lean, Mathlib, which the theory builds on, with a
+  page of documentation for every declaration.
+- `Microsoft.namingFiles`: the page of the documentation of Windows that gives the rules for the
   names of files, paths, and namespaces.
-- `pirog2014coinductiveResumptionMonad`: the paper of Piróg and Gibbons on the coinductive
-  resumption monad, whose resumptions are the final coalgebras of the functors that either end with
-  a result or go on in a functor.
+- `Pirog.coinductiveResumptionMonad`: the paper of Piróg and Gibbons on the coinductive resumption
+  monad, whose resumptions are the final coalgebras of the functors that either end with a result
+  or go on in a functor.
 
 ## Implementation Notes
 
-Every work is named after its author, the year of the work, and the words of its title that tell
-the work apart, as a citation key of a bibliography is, such as `cie2019colorMatchingFunctions`.
+Every work lies in the namespace of its author, in upper camel case with an acronym as a group,
+such as `CIE` or `Jacobs`, the first author where the work has several, and is named after the
+words of its title that tell the work apart, in lower camel case, as a value of Lean is, such as
+`CIE.colorMatchingFunctions`. The name is a name of Lean that the attribute `counterpart` resolves
+rather than a citation key of a bibliography, so it follows the naming of Mathlib, and leaves the
+year to the record of the work.
 -/
 
 public section
@@ -49,7 +53,7 @@ namespace Falkara.References
 
 /-- The technical report of the CIE that gives its recommendations on colorimetry, with the
 colorimetric data of the CIE illuminants. -/
-def cie2018colorimetry : Citation.Work where
+def CIE.colorimetry : Citation.Work where
   author := "CIE"
   title := "CIE 015:2018 Colorimetry, 4th Edition"
   year := 2018
@@ -58,7 +62,7 @@ def cie2018colorimetry : Citation.Work where
 
 /-- The data table of the color-matching functions of the CIE 1931 standard colorimetric
 observer. -/
-def cie2019colorMatchingFunctions : Citation.Work where
+def CIE.colorMatchingFunctions : Citation.Work where
   author := "CIE"
   title := "Colour-matching functions of CIE 1931 standard colorimetric observer"
   year := 2019
@@ -74,7 +78,7 @@ def cie2019colorMatchingFunctions : Citation.Work where
       sha256 := "03abcaecf4e63d77045ef57c4514b52c8bb1a46dd18e1f93a50044a0f4f481c8" }]
 
 /-- The data table of the relative spectral distribution of CIE standard illuminant D65. -/
-def cie2019standardIlluminantD65 : Citation.Work where
+def CIE.standardIlluminantD65 : Citation.Work where
   author := "CIE"
   title := "CIE standard illuminant D65"
   year := 2019
@@ -91,7 +95,7 @@ def cie2019standardIlluminantD65 : Citation.Work where
 
 /-- The standard of the CIE and ISO that defines the calculation of tristimulus values from a
 spectral distribution. -/
-def cie2019tristimulusValues : Citation.Work where
+def CIE.tristimulusValues : Citation.Work where
   author := "CIE"
   title := "ISO/CIE 11664-3:2019(E) Colorimetry — Part 3: CIE tristimulus values"
   year := 2019
@@ -100,7 +104,7 @@ def cie2019tristimulusValues : Citation.Work where
 
 /-- The vocabulary of the CIE, which defines the terms of colorimetry, each under a number of its
 own. -/
-def cie2020internationalLightingVocabulary : Citation.Work where
+def CIE.internationalLightingVocabulary : Citation.Work where
   author := "CIE"
   title := "CIE S 017/E:2020 ILV: International Lighting Vocabulary, 2nd Edition"
   year := 2020
@@ -110,7 +114,7 @@ def cie2020internationalLightingVocabulary : Citation.Work where
 
 /-- The standard of the IEEE and The Open Group that defines the interface of a portable operating
 system, with its filenames and pathnames. -/
-def ieee2024portableOperatingSystemInterface : Citation.Work where
+def IEEE.portableOperatingSystemInterface : Citation.Work where
   author := "IEEE and The Open Group"
   title := "IEEE/Open Group Standard for Information Technology--Portable Operating System \
     Interface (POSIX™) Base Specifications, Issue 8"
@@ -119,7 +123,7 @@ def ieee2024portableOperatingSystemInterface : Citation.Work where
 
 /-- The textbook of Jacobs on coalgebras, which names the kinds of state-based systems by the
 functors whose coalgebras they are. -/
-def jacobs2017introductionCoalgebra : Citation.Work where
+def Jacobs.introductionToCoalgebra : Citation.Work where
   author := "Bart Jacobs"
   title := "Introduction to Coalgebra: Towards Mathematics of States and Observation"
   year := 2017
@@ -128,7 +132,7 @@ def jacobs2017introductionCoalgebra : Citation.Work where
 
 /-- The library of mathematics of Lean, Mathlib, which the theory builds on, with a page of
 documentation for every declaration, which the full name of the declaration finds. -/
-def mathlibCommunity2020leanMathematicalLibrary : Citation.Work where
+def Mathlib.library : Citation.Work where
   author := "The mathlib Community"
   title := "The Lean Mathematical Library"
   year := 2020
@@ -138,7 +142,7 @@ def mathlibCommunity2020leanMathematicalLibrary : Citation.Work where
 
 /-- The page of the documentation of Windows that gives the rules for the names of files, paths,
 and namespaces. -/
-def microsoft2024namingFiles : Citation.Work where
+def Microsoft.namingFiles : Citation.Work where
   author := "Microsoft"
   title := "Naming Files, Paths, and Namespaces"
   year := 2024
@@ -146,7 +150,7 @@ def microsoft2024namingFiles : Citation.Work where
 
 /-- The paper of Piróg and Gibbons on the coinductive resumption monad, whose resumptions are the
 final coalgebras of the functors that either end with a result or go on in a functor. -/
-def pirog2014coinductiveResumptionMonad : Citation.Work where
+def Pirog.coinductiveResumptionMonad : Citation.Work where
   author := "Maciej Piróg and Jeremy Gibbons"
   title := "The Coinductive Resumption Monad"
   year := 2014

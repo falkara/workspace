@@ -14,9 +14,9 @@ import Generator.Type
 /-!
 # Declaration
 
-The module defines the declaration of TypeScript that a declaration of the theory marked
-`export_typescript` takes. A structure takes a schema of Effect branded by its name, with a field
-for every field of the structure, as
+The module defines the declaration of TypeScript that a declaration of the theory takes, where the
+theory gives it a counterpart in TypeScript. A structure takes a schema of Effect branded by its
+name, with a field for every field of the structure, as
 `Schema.Struct({ X: Schema.Rational, … }).pipe(Schema.brand('Tristimulus'))`, and a type of the
 same name for what the schema decodes, and a constructor, which brands a value as a caller writes
 it, named `make` where the structure takes the name of its module, as Effect names a constructor,
@@ -29,11 +29,11 @@ with its variance, such as `interface Machine<in out State, in Input, out Output
 constructor that gives a value as a caller writes it. A bundled structure, a type that applies a
 structure of Mathlib with a field whose value is a type, such as
 `Endofunctor.Coalgebra F`, takes the same interface and constructor, with a type parameter in
-place of every field whose value is a type, named as the attribute `export_typescript` names it,
+place of every field whose value is a type, named as the attribute `counterpart` names it,
 and a functor that is a parameter constrained to a type lambda of Effect, such as
 `interface Coalgebra<out Endofunctor extends HKT.TypeLambda, in out State>` with
 `readonly structure: (state: State) => HKT.Kind<Endofunctor, never, never, never, State>`, each
-named as the attribute `export_typescript` names it. Its constructor takes every type parameter in
+named as the attribute `counterpart` names it. Its constructor takes every type parameter in
 one call, such as `Coalgebra.make<Option.OptionTypeLambda, Board>({ structure })`, as TypeScript
 infers no type lambda from the fields, so a caller gives the type arguments either way. A
 bundled structure that applies a structure that the theory labels to functors that TypeScript names
@@ -53,7 +53,7 @@ an instance of the class of functors, as a functor does. A functor on types take
 an interface that extends the type lambda of Effect, with the object of the functor at the object
 of the lambda as its type, and a curried functor, a functor from types into the functors on types,
 takes the same interface with a type parameter for the type it maps, named as the attribute
-`export_typescript` names it or else as its definition names it, such as
+`counterpart` names it or else as its definition names it, such as
 `interface BinaryProductFunctor<out Factor> extends HKT.TypeLambda` with
 `readonly type: readonly [Factor, this['Target']]`. The type of the functors on types takes an
 interface that extends the type class of Effect with a type parameter for the action of the functor
@@ -112,8 +112,8 @@ declaration of TypeScript, and the generator refuses it.
 - `axiomOf`: gives the predicate of TypeScript that an axiom of a functor takes, an equality of two
   morphisms, as a function of the variables of the axiom and of a value of the source of the
   morphisms that tells by `equivalence` whether the two morphisms give one value.
-- `functorClassOf`: gives the class of functors that the theory marks `export_typescript`, where the
-  theory marks one.
+- `functorClassOf`: gives the class of functors, where the theory gives one a counterpart in
+  TypeScript.
 - `instanceCommentOf`: gives the documentation comment of TypeScript of the instance of the class of
   functors that a functor or a curried functor of the theory takes.
 - `instanceNameOf`: gives the name of the instance of the class of functors that a functor or a
@@ -122,9 +122,9 @@ declaration of TypeScript, and the generator refuses it.
 - `instanceTypeOf`: gives the type of TypeScript of the instance of the class of functors that a
   functor or a curried functor of the theory takes, a function of the type parameters of the
   functor and of an instance of every functor among them that gives the instance.
-- `declarationOf`: gives the declaration of TypeScript that a declaration of the theory marked
-  `export_typescript` takes, named without the namespace of its module, or fails with the reason
-  where the declaration has none.
+- `declarationOf`: gives the declaration of TypeScript that a declaration of the theory takes,
+  where the theory gives it a counterpart in TypeScript, named without the namespace of its module,
+  or fails with the reason where the declaration has none.
 
 ## Implementation Notes
 
@@ -192,7 +192,8 @@ def integerOf (expression : Lean.Expr) : Lean.MetaM Int := do
 inductive Value where
   /-- A rational number by its numerator and its positive denominator. -/
   | rational (numerator : Int) (denominator : Nat)
-  /-- A structure marked `export_typescript` by its name and the value of every field. -/
+  /-- A structure that the theory gives a counterpart in TypeScript, by its name and the value of
+  every field. -/
   | structure (name : Lean.Name) (fields : List (Lean.Name × Value))
 
 /-- Gives the value of an expression of a type of the theory, as the kernel of Lean reduces it, for
@@ -207,7 +208,7 @@ partial def valueOf (name : Lean.Name) (type expression : Lean.Expr) : Lean.Meta
     unless ExportTypeScript.isExported environment structureName &&
         Lean.isStructure environment structureName do
       Lean.throwError m!"`{name}` has no value in TypeScript, as `{structureName}` is no \
-        structure marked `export_typescript`."
+        structure that the theory gives a counterpart in TypeScript."
     let fields ← (Lean.getStructureFields environment structureName).toList.mapM fun field ↦ do
       let .forallE _ _ fieldType _ := (← Lean.getConstInfo (structureName ++ field)).type
         | Lean.throwError
@@ -292,8 +293,8 @@ where
         equivalence{equivalenceArgument}(({← morphismOf moduleNamespace functor left})(value), \
         ({← morphismOf moduleNamespace functor right})(value))"
 
-/-- Gives the class of functors that the theory marks `export_typescript`, the declaration whose
-value is the type of the functors on types, where the theory marks one. -/
+/-- Gives the class of functors, the declaration whose value is the type of the functors on types,
+where the theory gives one a counterpart in TypeScript. -/
 def functorClassOf : Lean.MetaM (Option Lean.Name) := do
   let declarations := (ExportTypeScript.exportsOf (← Lean.getEnv)).map (·.declaration)
   declarations.findM? fun name ↦ return (← kindOf name) matches .functorClass
@@ -301,23 +302,23 @@ def functorClassOf : Lean.MetaM (Option Lean.Name) := do
 /-- Gives the documentation comment of TypeScript of the instance of the class of functors that a
 functor or a curried functor of the theory takes, such as
 ``Gives the `Functor` instance of a `BinaryProductFunctor`.``, or fails with the reason where the
-theory marks no class of functors. -/
+theory gives no class of functors a counterpart in TypeScript. -/
 def instanceCommentOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
   let some functorClass ← functorClassOf
-    | Lean.throwError m!"`{name}` has no instance in TypeScript, as the theory marks no class of \
-        functors `export_typescript`."
+    | Lean.throwError m!"`{name}` has no instance in TypeScript, as the theory gives no class of \
+        functors a counterpart in TypeScript."
   derivedCommentOf name s!"Gives the `{← displayNameOf moduleNamespace functorClass}` \
     instance of {articledOf (← displayNameOf moduleNamespace name)}."
 
 /-- Gives the name of the instance of the class of functors that a functor or a curried functor of
 the theory takes in TypeScript: the name of the class in camel case where the functor takes the
 name of its module, such as `BinaryProductFunctor.functor`, and the name of the functor in camel
-case otherwise, such as `Functor.comp`, or fails with the reason where the theory marks no class of
-functors. -/
+case otherwise, such as `Functor.comp`, or fails with the reason where the theory gives no class of
+functors a counterpart in TypeScript. -/
 def instanceNameOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
   let some functorClass ← functorClassOf
-    | Lean.throwError m!"`{name}` has no instance in TypeScript, as the theory marks no class of \
-        functors `export_typescript`."
+    | Lean.throwError m!"`{name}` has no instance in TypeScript, as the theory gives no class of \
+        functors a counterpart in TypeScript."
   match localWordsOf moduleNamespace (← moduleOf name) name with
   | [] => return (← typeNameOf moduleNamespace functorClass).decapitalize
   | words => return camelCaseOf words
@@ -325,11 +326,11 @@ def instanceNameOf (moduleNamespace name : Lean.Name) : Lean.MetaM String := do
 /-- Gives the type of TypeScript of the instance of the class of functors that a functor or a
 curried functor of the theory takes, a function of the type parameters of the functor and of an
 instance for every functor among them that gives the instance, or fails with the reason where the
-theory marks no class of functors. -/
+theory gives no class of functors a counterpart in TypeScript. -/
 def instanceTypeOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
   let some functorClass ← functorClassOf
-    | Lean.throwError m!"`{name}` has no instance in TypeScript, as the theory marks no class of \
-        functors `export_typescript`."
+    | Lean.throwError m!"`{name}` has no instance in TypeScript, as the theory gives no class of \
+        functors a counterpart in TypeScript."
   let className ← referenceOf functorClass (← typeNameOf moduleNamespace functorClass)
   let typeName ← typeNameOf moduleNamespace name
   let kind ← kindOf name
@@ -357,9 +358,9 @@ def instanceTypeOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
         written (parameters.toList ++ [parameter])
     else written parameters.toList
 
-/-- Gives the interface of TypeScript that a bundled structure extends, the declaration marked
-`export_typescript` that labels its structure at the type lambdas of the functors that its value
-applies the structure to and at the type parameters of its fields, such as
+/-- Gives the interface of TypeScript that a bundled structure extends, the declaration that labels
+its structure, where the theory gives one a counterpart in TypeScript, at the type lambdas of the
+functors that its value applies the structure to and at the type parameters of its fields, such as
 `Coalgebra<BinaryProductFunctor<Output>, State>` for a stream coalgebra, where the theory labels the
 structure and TypeScript names every functor, and none otherwise. -/
 def extendedOf? (moduleNamespace name : Lean.Name) (value : Lean.Expr)
@@ -381,14 +382,14 @@ def extendedOf? (moduleNamespace name : Lean.Name) (value : Lean.Expr)
   | some (extended, records) => modify (· ++ records); return some extended
   | none => return none
 
-/-- Gives the declaration of TypeScript that a declaration of the theory marked `export_typescript`
-takes, named without the namespace of its module, or fails with the reason where the declaration
-has none. -/
+/-- Gives the declaration of TypeScript that a declaration of the theory takes, where the theory
+gives it a counterpart in TypeScript, named without the namespace of its module, or fails with the
+reason where the declaration has none. -/
 def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
   let environment ← Lean.getEnv
   unless ExportTypeScript.isExported environment name do
-    Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never marks it \
-      `export_typescript`."
+    Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never gives it a \
+      counterpart in TypeScript."
   let typeName ← typeNameOf moduleNamespace name
   let valueName ← valueNameOf moduleNamespace name
   let constructorName ← constructorNameOf moduleNamespace name
@@ -584,20 +585,18 @@ def declarationOf (moduleNamespace name : Lean.Name) : TypeScriptM String := do
             let some comment :=
                 (ExportTypeScript.clauseOf? environment declaration field).bind (·.comment)
               | Lean.throwError m!"The field `{field}` of `{structureName}` has no documentation \
-                  comment in TypeScript, as no clause of the attribute `export_typescript` on \
+                  comment in TypeScript, as no clause of the attribute `counterpart` on \
                   `{declaration}` gives it one."
-            let comment ← documentationOf comment.text
-              ((Citation.citationOf? environment (structureName ++ field)).toList ++
-                comment.item.toList)
+            let comment ← documentationOf comment
+              (Citation.citationOf? environment (structureName ++ field)).toList
             let parameter := (inner.getAppArgs.toList.zip parameterNames).findSome? fun
               (argument, parameterName) ↦ if argument == fieldType then parameterName else none
             return s!"{comment}readonly {fieldName}: {parameter.getD ""};\n"
           let some interfaceComment := clause.comment
             | Lean.throwError m!"`{structureName}` has no documentation comment in TypeScript, as \
-                its clause of the attribute `export_typescript` on `{declaration}` gives none."
-          let interfaceComment ← documentationOf interfaceComment.text
-            ((Citation.citationOf? environment structureName).toList ++
-              interfaceComment.item.toList)
+                its clause of the attribute `counterpart` on `{declaration}` gives none."
+          let interfaceComment ← documentationOf interfaceComment
+            (Citation.citationOf? environment structureName).toList
           let arguments ← inner.getAppArgs.toList.mapM (typeOf moduleNamespace)
           return s!"{interfaceComment}export interface {clause.name}\
               <{", ".intercalate (parameterNames.filterMap (·.map (s!"out {·}")))}> \

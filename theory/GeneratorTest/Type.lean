@@ -4,7 +4,7 @@ meta import Generator.Type
 meta import Lean.Elab.Term
 import Batteries.Tactic.Lint.Basic
 import Batteries.Tactic.Lint.Misc
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 
 /-!
 # Type
@@ -13,18 +13,19 @@ The module defines the checks of the types of TypeScript that the types of the t
 rational number, an option, an array, a list, an infinite stream and a sequence of Mathlib, both
 as a stream of Effect, a product, a function type, with the name Lean gives
 a parameter that the source leaves unnamed, a function type with implicit type parameters, a
-declaration marked `export_typescript`, and a structure with type parameters applied to its
-arguments take their types, while a declaration without the mark and a type of any other form,
-such as a sum, take none. The checks compare as well the schemas of Effect
-that the types of data take: a rational number, an option, an array, a list, and a structure marked
-`export_typescript` take their schemas, while a function type, a structure with type parameters,
-and a type of any other form take none. The checks compare as well the variance of the type
-parameters of a structure, a parameter that a field gives and a function takes occurring at both
-polarities and one that a function gives at the positive polarity alone.
+declaration that the theory gives a counterpart in TypeScript, and a structure with type parameters
+applied to its arguments take their types, while a declaration without a counterpart in TypeScript
+and a type of any other form, such as a sum, take none. The checks compare as well the schemas of
+Effect that the types of data take: a rational number, an option, an array, a list, and a
+structure that the theory gives a counterpart in TypeScript take their schemas, while a function
+type, a structure with type parameters, and a type of any other form take none. The checks compare
+as well the variance of the type parameters of a structure, a parameter that a field gives and a
+function takes occurring at both polarities and one that a function gives at the positive polarity
+alone.
 
 ## Main Definitions
 
-- `MarkedStructure`: the structure that the checks mark `export_typescript`.
+- `MarkedStructure`: the structure that the checks give a counterpart in TypeScript.
 - `UnmarkedStructure`: the structure that the checks leave unmarked.
 - `namedFunction`: the function whose type the checks write with a named parameter.
 - `unnamedFunction`: the function whose type leaves its parameter unnamed.
@@ -35,13 +36,16 @@ polarities and one that a function gives at the positive polarity alone.
 
 public section
 
-/-- The structure that the checks mark `export_typescript`. -/
+/-- The structure that the checks give a counterpart in TypeScript. -/
 structure MarkedStructure where
   /-- The value of the structure. -/
   value : Rat
 
-attribute [export_typescript /-- The structure that the checks mark `export_typescript`. -/
-  (value := "value" /-- The value of the structure. -/)] MarkedStructure
+attribute [counterpart
+  typescript
+    r"The structure that the checks give a counterpart in TypeScript."
+    (value
+      r"The value of the structure.")] MarkedStructure
 
 /-- The structure that the checks leave unmarked. -/
 structure UnmarkedStructure where
@@ -86,11 +90,11 @@ def genericFunction {X Y : Type} (morphism : X → Y) (value : X) : Y :=
 #eval show Lean.MetaM String from do
   (Generator.typeOf .anonymous (← Lean.getConstInfo ``namedFunction).type).run' []
 
-/-- error: `UnmarkedStructure` has no declaration in TypeScript, as the theory never marks it `export_typescript`. -/
+/-- error: `UnmarkedStructure` has no declaration in TypeScript, as the theory never gives it a counterpart in TypeScript. -/
 #guard_msgs in
 #eval (Generator.typeOf .anonymous (Lean.mkConst ``UnmarkedStructure)).run' []
 
-/-- error: `Nat` has no declaration in TypeScript, as the theory never marks it `export_typescript`. -/
+/-- error: `Nat` has no declaration in TypeScript, as the theory never gives it a counterpart in TypeScript. -/
 #guard_msgs in
 #eval (Generator.typeOf .anonymous (Lean.mkConst ``Nat)).run' []
 
@@ -132,7 +136,7 @@ def genericFunction {X Y : Type} (morphism : X → Y) (value : X) : Y :=
 #eval show Lean.Elab.TermElabM String from do
   (Generator.schemaOf .anonymous (← Lean.Elab.Term.elabType (← `(List Rat)))).run' []
 
-/-- error: `UnmarkedStructure` has no declaration in TypeScript, as the theory never marks it `export_typescript`. -/
+/-- error: `UnmarkedStructure` has no declaration in TypeScript, as the theory never gives it a counterpart in TypeScript. -/
 #guard_msgs in
 #eval (Generator.schemaOf .anonymous (Lean.mkConst ``UnmarkedStructure)).run' []
 
@@ -154,11 +158,14 @@ structure Pair (First Second : Type) where
   /-- The function that gives the second value from the first. -/
   second : (first : First) → Second
 
-attribute [export_typescript
-  /-- The structure with type parameters that the checks write, a first value and the function
-  that gives a second value from it. -/
-  (first := "first" /-- The first value of the pair. -/)
-  (second := "second" /-- The function that gives the second value from the first. -/)] Pair
+attribute [counterpart
+  typescript
+    r"The structure with type parameters that the checks write, a first value and the function that
+    gives a second value from it."
+    (first
+      r"The first value of the pair.")
+    (second
+      r"The function that gives the second value from the first.")] Pair
 
 /-- info: "Pair<Rational.Rational, ReadonlyArray<Rational.Rational>>" -/
 #guard_msgs in

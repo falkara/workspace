@@ -20,11 +20,7 @@ export interface StreamCoalgebra<
   Functor.Comp<BinaryProductFunctor.BinaryProductFunctor<Output>, Monad>,
   State
 > {
-  /**
-   * The coalgebra structure on the state space.
-   *
-   * @see https://doi.org/10.1017/CBO9781316823187 Definition 1.4.5
-   */
+  /** The coalgebra structure on the state space. */
   readonly structure: (
     state: State,
   ) => HKT.Kind<Monad, never, never, never, { readonly output: Output; readonly next: State }>;

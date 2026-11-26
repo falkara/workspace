@@ -2,7 +2,7 @@ module
 
 public import GeneratorTest.Fixture.Coordinate
 
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 
 /-!
 # Point
@@ -32,27 +32,35 @@ structure Point where
   /-- The first coordinate of the point. -/
   first : Coordinate
 
-attribute [export_typescript /-- A point by its first coordinate. -/
-  (first := "first" /-- The first coordinate of the point. -/)] Point
+attribute [counterpart
+  typescript
+    r"A point by its first coordinate."
+    (first
+      r"The first coordinate of the point.")] Point
 
 /-- Gives the point at a coordinate. -/
 def pointAt (coordinate : Coordinate) : Option Point :=
   some ⟨coordinate⟩
 
-attribute [export_typescript /-- Gives the point at a coordinate. -/] pointAt
+attribute [counterpart
+  typescript
+    r"Gives the point at a coordinate."] pointAt
 
 /-- The point at a coordinate is the point whose first coordinate it is. -/
 theorem pointAt_first (coordinate : Coordinate) : pointAt coordinate = some ⟨coordinate⟩ :=
   rfl
 
-attribute [export_typescript
-  /-- The point at a coordinate is the point whose first coordinate it is. -/] pointAt_first
+attribute [counterpart
+  typescript
+    r"The point at a coordinate is the point whose first coordinate it is."] pointAt_first
 
 /-- The points at two equal coordinates are equal. -/
 theorem pointAt_eq (first second : Coordinate) (same : first = second) :
     pointAt first = pointAt second := by
   rw [same]
 
-attribute [export_typescript /-- The points at two equal coordinates are equal. -/] pointAt_eq
+attribute [counterpart
+  typescript
+    r"The points at two equal coordinates are equal."] pointAt_eq
 
 end Geometry

@@ -18,7 +18,8 @@ import Generator.Type
 # Main
 
 The module defines the program `generator`, which writes the declarations that the theory of a
-package marks `export_typescript` into files of TypeScript, a file for every module of the theory.
+package gives a counterpart in TypeScript into files of TypeScript, a file for every module of the
+theory.
 The program takes the directory of the theory of the package, such as `Presentation` for
 `Falkara/Presentation`, and the directory of the source of the package, and writes the
 declarations of every module of the theory, such as
@@ -39,20 +40,21 @@ functions or functors ends with a contract, an interface that names every functi
 the package beside the file exports it, such as `behavior`, and the instance of the class of
 functors that every functor takes, such as `functor`, and a type that fails to compile
 where that module leaves a function out or gives it another type, as a signature of a module in ML
-requires of the module. The program writes the theorems of a module marked `export_typescript` into
-the file of tests of the same name, such as `Colorimetry/Tristimulus.theory.test.ts`, by the module
-`Theorem`. The program then checks the module of the package beside every file, such as
-`Colorimetry/Tristimulus.ts`, by the module `Export`, and fails with a reason for every declaration
-that the module leaves out of its re-exports and every implementation whose comment differs from
-the theory.
+requires of the module. The program writes the theorems of a module that the theory gives a
+counterpart in TypeScript into the file of tests of the same name, such as
+`Colorimetry/Tristimulus.theory.test.ts`, by the module `Theorem`. The program then checks the
+module of the package beside every file, such as `Colorimetry/Tristimulus.ts`, by the module
+`Export`, and fails with a reason for every declaration that the module leaves out of its
+re-exports and every implementation whose comment differs from the theory.
 
 ## Main Definitions
 
 - `runIn`: runs a computation of the generator in an environment, as a program runs it.
-- `markedDeclarationsOf`: gives the declarations marked `export_typescript` of a module of the
-  theory, its theorems or every other declaration, in the order of their lines.
-- `fileOf`: gives the file of TypeScript that holds the declarations marked `export_typescript` of
-  a module of the theory of a package, named without the namespace of the package.
+- `markedDeclarationsOf`: gives the declarations of a module of the theory that the theory gives a
+  counterpart in TypeScript, its theorems or every other declaration, in the order of their lines.
+- `fileOf`: gives the file of TypeScript that holds the declarations of a module of the theory of a
+  package that the theory gives a counterpart in TypeScript, named without the namespace of the
+  package.
 - `main`: writes a file of TypeScript for every module of the theory of a package into the
   directory of the source of the package, and checks the module of the package beside every file.
 
@@ -86,8 +88,8 @@ def runIn {α : Type} (environment : Lean.Environment) (computation : Lean.MetaM
     { fileName := "", fileMap := default } { env := environment }
   return value
 
-/-- Gives the declarations marked `export_typescript` of a module of the theory, its theorems or
-every other declaration, in the order of their lines. -/
+/-- Gives the declarations of a module of the theory that the theory gives a counterpart in
+TypeScript, its theorems or every other declaration, in the order of their lines. -/
 def markedDeclarationsOf (module : Lean.Name) (theorems : Bool) :
     Lean.MetaM (List Lean.Name) := do
   let environment ← Lean.getEnv
@@ -100,8 +102,8 @@ def markedDeclarationsOf (module : Lean.Name) (theorems : Bool) :
     return (name, ((← Lean.findDeclarationRanges? name).map (·.range.pos.line)).getD 0)
   return (lines.mergeSort fun first second ↦ first.snd ≤ second.snd).map Prod.fst
 
-/-- Gives the file of TypeScript that holds the declarations marked `export_typescript` of a module
-of the theory of a package, named without the namespace of the package. -/
+/-- Gives the file of TypeScript that holds the declarations of a module of the theory of a package
+that the theory gives a counterpart in TypeScript, named without the namespace of the package. -/
 def fileOf (theory packageNamespace module : Lean.Name) : Lean.MetaM String := do
   -- The file names the declarations of its own module alone and every other after the namespace of
   -- its module.

@@ -3,7 +3,7 @@ module
 public import Mathlib.CategoryTheory.Endofunctor.Algebra
 public import Mathlib.CategoryTheory.Limits.Types.Products
 
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 
 /-!
 # Clock
@@ -19,7 +19,7 @@ the curried functor of the chimes, the product functor of Mathlib as it stands, 
 write as a type lambda with a type parameter for the type of chimes, the curried functor of the
 dials, the coyoneda embedding of Mathlib as it stands, which maps the opposite of the types and
 which the checks write as a type lambda with a type parameter for the type of settings, named
-`Setting` by a clause of the attribute `export_typescript`, a gear, the
+`Setting` by a clause of the attribute `counterpart`, a gear, the
 functor of Mathlib as it stands, which the checks write as a type class of Effect with its action on
 types named `Motion` by a clause of the attribute, and a gear train, the composite of
 Mathlib as it stands, which the checks write as a type lambda with a type parameter for each of its
@@ -76,34 +76,50 @@ abbrev Gear := @CategoryTheory.Functor
 /-- A gear train, which moves every state by one gear and then by another. -/
 abbrev GearTrain := @Functor.comp
 
-attribute [export_typescript /-- A clock that ticks from every state to its next state. -/] Clock
+attribute [counterpart
+  typescript
+    r"A clock that ticks from every state to its next state."] Clock
 
-attribute [export_typescript
-  /-- A clock that chimes and ticks from every state to its next state. -/] ChimingClock
+attribute [counterpart
+  typescript
+    r"A clock that chimes and ticks from every state to its next state."] ChimingClock
 
-attribute [export_typescript /-- A clockwork that moves every state by a functor. -/
-  (str := "str" /-- structure morphism of the coalgebra -/)] Clockwork
+attribute [counterpart
+  typescript
+    r"A clockwork that moves every state by a functor."
+    (str
+      r"structure morphism of the coalgebra")] Clockwork
 
-attribute [export_typescript
-  /-- The functor of the chimes, which gives a chime and the next state. -/] ChimeFunctor
+attribute [counterpart
+  typescript
+    r"The functor of the chimes, which gives a chime and the next state."] ChimeFunctor
 
-attribute [export_typescript
-  /-- The curried functor of the chimes, which maps every type of chimes to the functor of the
-  chimes. -/] chimesFunctor
+attribute [counterpart
+  typescript
+    r"The curried functor of the chimes, which maps every type of chimes to the functor of the
+    chimes."] chimesFunctor
 
-attribute [export_typescript
-  /-- The curried functor of the dials, which maps every type of settings to the functor that turns
-  a setting into the next state. -/
-  (k := "Setting")] dialsFunctor
+attribute [counterpart
+  typescript
+    r"The curried functor of the dials, which maps every type of settings to the functor that turns
+    a setting into the next state."
+    (k → "Setting")] dialsFunctor
 
-attribute [export_typescript /-- A gear, a functor that a clockwork moves its states by. -/
-  (obj := "Motion")
-  (map := "map" /-- The action of a functor on morphisms. -/)
-  (map_id := "map_id" /-- A functor preserves identity morphisms. -/)
-  (map_comp := "map_comp" /-- A functor preserves composition. -/)] Gear
+attribute [counterpart
+  typescript
+    r"A gear, a functor that a clockwork moves its states by."
+    (obj → "Motion")
+    (map
+      r"The action of a functor on morphisms.")
+    (map_id
+      r"A functor preserves identity morphisms.")
+    (map_comp
+      r"A functor preserves composition.")] Gear
 
-attribute [export_typescript
-  /-- A gear train, which moves every state by one gear and then by another. -/
-  (F := "Driver") (G := "Follower")] GearTrain
+attribute [counterpart
+  typescript
+    r"A gear train, which moves every state by one gear and then by another."
+    (F → "Driver")
+    (G → "Follower")] GearTrain
 
 end Geometry

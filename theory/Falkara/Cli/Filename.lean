@@ -7,16 +7,16 @@ module
 
 public import Mathlib.Data.Nat.Notation
 
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 import Falkara.References
 
 /-!
 # Filename
 
-The module defines a filename [ieee2024portableOperatingSystemInterface] that names a file or a
+The module defines a filename [IEEE.portableOperatingSystemInterface] that names a file or a
 directory in the same way on every system as a portable filename of at most 255 bytes that starts
 with no hyphen-minus, ends with no period, and names no device that Windows reserves
-[microsoft2024namingFiles]. A relative path made of such filenames never leaves the directory it
+[Microsoft.namingFiles]. A relative path made of such filenames never leaves the directory it
 starts at, as such a filename is neither dot nor dot-dot.
 
 ## Main Definitions
@@ -91,139 +91,128 @@ namespace Falkara.Cli
 
 /-- The greatest number of bytes in a filename that every system conforming to the X/Open System
 Interfaces accepts. -/
+@[counterpart IEEE.portableOperatingSystemInterface "{_XOPEN_NAME_MAX}"]
 def maximumFilenameLength : ℕ := 255
 
-attribute [cite "{_XOPEN_NAME_MAX}" ieee2024portableOperatingSystemInterface] maximumFilenameLength
-
 /-- The names that Windows reserves for devices, alone or followed by an extension. -/
+@[counterpart Microsoft.namingFiles "naming-conventions"]
 def reservedNames : List String :=
   ["CON", "PRN", "AUX", "NUL",
     "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
     "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"]
 
-attribute [cite "naming-conventions" microsoft2024namingFiles] reservedNames
-
 /-- Tells whether a character is in the portable filename character set, a letter from `A` to `Z`
 or from `a` to `z`, a digit from `0` to `9`, `.`, `_`, or `-`. -/
+@[counterpart IEEE.portableOperatingSystemInterface "3.265"]
 def isPortableFilenameCharacter (character : Char) : Bool :=
   character.isAlphanum || character == '.' || character == '_' || character == '-'
 
-attribute [cite "3.265" ieee2024portableOperatingSystemInterface] isPortableFilenameCharacter
-
 /-- Tells whether a name is a portable filename, 1 to 255 characters of the portable filename
 character set. -/
-@[export_typescript /-- Tells whether a name is a portable filename, 1 to 255 characters of the
-    portable filename character set. -/]
+@[counterpart IEEE.portableOperatingSystemInterface "3.264"
+  typescript
+    r"Tells whether a name is a portable filename, 1 to 255 characters of the portable filename
+    character set."]
 def isPortableFilename (name : String) : Bool :=
   let characters := name.toList
   1 ≤ characters.length && characters.length ≤ maximumFilenameLength &&
     characters.all isPortableFilenameCharacter
 
-attribute [cite "3.264" ieee2024portableOperatingSystemInterface] isPortableFilename
-
 /-- Tells whether a name starts with a hyphen-minus, which a program takes as an option when the
 name is passed as an argument on the command line. -/
-@[export_typescript /-- Tells whether a name starts with a hyphen-minus, which a program takes as
-    an option when the name is passed as an argument on the command line. -/]
+@[counterpart IEEE.portableOperatingSystemInterface "3.264"
+  typescript
+    r"Tells whether a name starts with a hyphen-minus, which a program takes as an option when the
+    name is passed as an argument on the command line."]
 def hasLeadingHyphenMinus (name : String) : Bool :=
   name.toList.head? == some '-'
 
-attribute [cite "3.264" ieee2024portableOperatingSystemInterface] hasLeadingHyphenMinus
-
 /-- Tells whether a name ends with a period, which Windows drops from the name of a file or a
 directory. -/
-@[export_typescript /-- Tells whether a name ends with a period, which Windows drops from the name
-    of a file or a directory. -/]
+@[counterpart Microsoft.namingFiles "naming-conventions"
+  typescript
+    r"Tells whether a name ends with a period, which Windows drops from the name of a file or a
+    directory."]
 def hasTrailingPeriod (name : String) : Bool :=
   name.toList.getLast? == some '.'
 
-attribute [cite "naming-conventions" microsoft2024namingFiles] hasTrailingPeriod
-
 /-- Tells whether a name is one that Windows reserves for a device, alone or followed by an
 extension, in either case. -/
-@[export_typescript /-- Tells whether a name is one that Windows reserves for a device, alone or
-    followed by an extension, in either case. -/]
+@[counterpart Microsoft.namingFiles "naming-conventions"
+  typescript
+    r"Tells whether a name is one that Windows reserves for a device, alone or followed by an
+    extension, in either case."]
 def isReservedName (name : String) : Bool :=
   reservedNames.contains (String.ofList ((name.toList.takeWhile (· != '.')).map Char.toUpper))
-
-attribute [cite "naming-conventions" microsoft2024namingFiles] isReservedName
 
 /-- Tells whether a name is a filename that names a file or a directory in the same way on every
 system, a portable filename that starts with no hyphen-minus, ends with no period, and is no name
 that Windows reserves. -/
-@[export_typescript /-- Tells whether a name is a filename that names a file or a directory in the
-    same way on every system, a portable filename that starts with no hyphen-minus, ends with no
-    period, and is no name that Windows reserves. -/]
+@[counterpart IEEE.portableOperatingSystemInterface "3.146"
+  typescript
+    r"Tells whether a name is a filename that names a file or a directory in the same way on every
+    system, a portable filename that starts with no hyphen-minus, ends with no period, and is no
+    name that Windows reserves."]
 def isFilename (name : String) : Bool :=
   isPortableFilename name && !hasLeadingHyphenMinus name && !hasTrailingPeriod name &&
     !isReservedName name
 
-attribute [cite "3.146" ieee2024portableOperatingSystemInterface] isFilename
-
 /-- A filename that names a file or a directory in the same way on every system. -/
-@[export_typescript
-  /-- A filename that names a file or a directory in the same way on every system. -/]
+@[counterpart IEEE.portableOperatingSystemInterface "3.146"
+  typescript
+    r"A filename that names a file or a directory in the same way on every system."]
 abbrev Filename := { name : String // isFilename name = true }
-
-attribute [cite "3.146" ieee2024portableOperatingSystemInterface] Filename
 
 /-- A name $n$ is a filename exactly when it is a portable filename that starts with no
 hyphen-minus, ends with no period, and is no name that Windows reserves,
 $\mathrm{isFilename}(n) \iff \mathrm{isPortableFilename}(n) \land
 \neg\,\mathrm{hasLeadingHyphenMinus}(n) \land \neg\,\mathrm{hasTrailingPeriod}(n) \land
 \neg\,\mathrm{isReservedName}(n)$. -/
+@[counterpart IEEE.portableOperatingSystemInterface "3.146"]
 theorem isFilename_iff (name : String) :
     isFilename name = true ↔
       isPortableFilename name = true ∧ hasLeadingHyphenMinus name = false ∧
         hasTrailingPeriod name = false ∧ isReservedName name = false := by
   simp only [isFilename, Bool.and_eq_true, Bool.not_eq_true', and_assoc]
 
-attribute [cite "3.146" ieee2024portableOperatingSystemInterface] isFilename_iff
-
 namespace Filename
 
 /-- A filename $f$ is a portable filename, $\mathrm{isPortableFilename}(f)$. -/
+@[counterpart IEEE.portableOperatingSystemInterface "3.264"]
 theorem isPortableFilename_val (filename : Filename) : isPortableFilename filename.val = true :=
   ((isFilename_iff filename.val).mp filename.property).1
 
-attribute [cite "3.264" ieee2024portableOperatingSystemInterface] isPortableFilename_val
-
 /-- A filename $f$ never starts with a hyphen-minus, $\neg\,\mathrm{hasLeadingHyphenMinus}(f)$. -/
+@[counterpart IEEE.portableOperatingSystemInterface "3.264"]
 theorem hasLeadingHyphenMinus_val (filename : Filename) :
     hasLeadingHyphenMinus filename.val = false :=
   ((isFilename_iff filename.val).mp filename.property).2.1
 
-attribute [cite "3.264" ieee2024portableOperatingSystemInterface] hasLeadingHyphenMinus_val
-
 /-- A filename $f$ never ends with a period, $\neg\,\mathrm{hasTrailingPeriod}(f)$. -/
+@[counterpart Microsoft.namingFiles "naming-conventions"]
 theorem hasTrailingPeriod_val (filename : Filename) : hasTrailingPeriod filename.val = false :=
   ((isFilename_iff filename.val).mp filename.property).2.2.1
 
-attribute [cite "naming-conventions" microsoft2024namingFiles] hasTrailingPeriod_val
-
 /-- A filename $f$ is never a name that Windows reserves, $\neg\,\mathrm{isReservedName}(f)$. -/
+@[counterpart Microsoft.namingFiles "naming-conventions"]
 theorem isReservedName_val (filename : Filename) : isReservedName filename.val = false :=
   ((isFilename_iff filename.val).mp filename.property).2.2.2
 
-attribute [cite "naming-conventions" microsoft2024namingFiles] isReservedName_val
-
 /-- A filename $f$ is never dot, $f \neq \mathtt{.}$. -/
+@[counterpart IEEE.portableOperatingSystemInterface "3.110"]
 theorem val_ne_dot (filename : Filename) : filename.val ≠ "." := by
   intro equal
   have condition := filename.property
   rw [equal] at condition
   exact absurd condition (by decide +kernel)
 
-attribute [cite "3.110" ieee2024portableOperatingSystemInterface] val_ne_dot
-
 /-- A filename $f$ is never dot-dot, $f \neq \mathtt{..}$. -/
+@[counterpart IEEE.portableOperatingSystemInterface "3.111"]
 theorem val_ne_dotDot (filename : Filename) : filename.val ≠ ".." := by
   intro equal
   have condition := filename.property
   rw [equal] at condition
   exact absurd condition (by decide +kernel)
-
-attribute [cite "3.111" ieee2024portableOperatingSystemInterface] val_ne_dotDot
 
 end Filename
 

@@ -1,14 +1,14 @@
 module
 
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 
 /-!
 # Lamp
 
 The module defines a bundled structure, a lamp, and the lantern, which labels the lamp and which the
-checks of the generator write from another module, with the clauses of the attribute
-`export_typescript` that give the type of lights of the lamp the type parameter `Shade` and its
-light the field `beam` with a comment of its own.
+checks of the generator write from another module, with the clauses of the attribute `counterpart`
+that give the type of lights of the lamp the type parameter `Shade` and its light the field `beam`
+with a comment of its own.
 
 ## Main Definitions
 
@@ -30,8 +30,11 @@ structure Lamp where
 /-- A lantern, a lamp that shows a light. -/
 abbrev Lantern := Lamp
 
-attribute [export_typescript /-- A lantern, a lamp that shows a light. -/
-  (Light := "Shade")
-  (light := "beam" /-- The beam that the lamp casts. -/)] Lantern
+attribute [counterpart
+  typescript
+    r"A lantern, a lamp that shows a light."
+    (Light → "Shade")
+    (light → "beam"
+      r"The beam that the lamp casts.")] Lantern
 
 end Geometry

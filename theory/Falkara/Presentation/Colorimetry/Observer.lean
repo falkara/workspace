@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Rat.Init
 
-import Falkara.Citation
+import Falkara.Counterpart
 import Falkara.References
 
 set_option linter.style.header false
@@ -28,9 +28,9 @@ in steps of 1 nm.
 
 ## Implementation Notes
 
-The observer holds every row of the data table [cie2019colorMatchingFunctions] as the
+The observer holds every row of the data table [CIE.colorMatchingFunctions] as the
 color-matching coefficients at the wavelength of the row, as the vocabulary of the CIE
-[cie2020internationalLightingVocabulary] names the three values of the color-matching functions at a
+[CIE.internationalLightingVocabulary] names the three values of the color-matching functions at a
 given wavelength. Each row holds the wavelength as the whole number of nanometers that the data
 table gives and each other value as the exact rational number that the decimal digits of the value
 denote.
@@ -50,6 +50,11 @@ namespace Falkara.Presentation
 
 /-- A triple of the values of the CIE color-matching functions $\bar{x}$, $\bar{y}$, and $\bar{z}$
 at a given wavelength, with the wavelength. -/
+@[counterpart CIE.internationalLightingVocabulary "17-23-032"
+  (wavelength := CIE.colorMatchingFunctions "lambda")
+  (xBar := CIE.colorMatchingFunctions "x_bar(lambda)")
+  (yBar := CIE.colorMatchingFunctions "y_bar(lambda)")
+  (zBar := CIE.colorMatchingFunctions "z_bar(lambda)")]
 structure ColorMatchingCoefficients where
   /-- The wavelength, in nanometers. -/
   wavelength : ℕ
@@ -61,14 +66,9 @@ structure ColorMatchingCoefficients where
   zBar : ℚ
   deriving DecidableEq
 
-attribute [cite "17-23-032" cie2020internationalLightingVocabulary] ColorMatchingCoefficients
-attribute [cite "lambda" cie2019colorMatchingFunctions] ColorMatchingCoefficients.wavelength
-attribute [cite "x_bar(lambda)" cie2019colorMatchingFunctions] ColorMatchingCoefficients.xBar
-attribute [cite "y_bar(lambda)" cie2019colorMatchingFunctions] ColorMatchingCoefficients.yBar
-attribute [cite "z_bar(lambda)" cie2019colorMatchingFunctions] ColorMatchingCoefficients.zBar
-
 /-- The color-matching coefficients that define the CIE 1931 standard colorimetric observer, at
 wavelengths from 360 nm to 830 nm in steps of 1 nm. -/
+@[counterpart CIE.colorMatchingFunctions "CIE_xyz_1931_2deg.csv"]
 def observer : List ColorMatchingCoefficients := [
   ⟨360, 0.000129900000, 0.0000039170000, 0.000606100000⟩,
   ⟨361, 0.000145847000, 0.0000043935810, 0.000680879200⟩,
@@ -541,7 +541,5 @@ def observer : List ColorMatchingCoefficients := [
   ⟨828, 0.000001439440, 0.0000005198080, 0.000000000000⟩,
   ⟨829, 0.000001341977, 0.0000004846123, 0.000000000000⟩,
   ⟨830, 0.000001251141, 0.0000004518100, 0.000000000000⟩]
-
-attribute [cite "CIE_xyz_1931_2deg.csv" cie2019colorMatchingFunctions] observer
 
 end Falkara.Presentation

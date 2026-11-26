@@ -7,14 +7,14 @@ module
 
 public import Falkara.Simulation.Coalgebra.MealyMachine
 
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 import Falkara.References
 import Mathlib.Data.Stream.Init
 
 /-!
 # Deterministic Automaton
 
-The module defines the deterministic automata as Jacobs [jacobs2017introductionCoalgebra] names
+The module defines the deterministic automata as Jacobs [Jacobs.introductionToCoalgebra] names
 them, the coalgebras of the binary products of a type of outputs with the functions from a type of
 inputs, their behavior, which maps a stream of inputs to the stream of the outputs of the states
 that the inputs lead through, the automata that an automaton maps into, and the Mealy machine that
@@ -76,23 +76,25 @@ universe u
 
 /-- A deterministic automaton, which gives from every state an output and the next state upon every
 input in a monad. -/
-@[export_typescript /-- A deterministic automaton, which gives from every state an output and the
-    next state upon every input in a monad. -/
-  (m := "Monad")]
+@[counterpart Jacobs.introductionToCoalgebra "Section 2.2.3"
+  typescript
+    r"A deterministic automaton, which gives from every state an output and the next state upon
+    every input in a monad."
+    (m → "Monad")]
 abbrev DeterministicAutomaton (Input Output : Type u) (m : Type u → Type u := Id) [Monad m]
     [LawfulMonad m] :=
   CategoryTheory.Endofunctor.Coalgebra
     (Functor.comp (Functor.comp (CategoryTheory.ofTypeFunctor m)
       (exponentFunctor.obj (Opposite.op Input))) (binaryProductFunctor.obj Output))
 
-attribute [cite "Section 2.2.3" jacobs2017introductionCoalgebra] DeterministicAutomaton
-
 /-- The behavior of a deterministic automaton, which gives from every state upon a stream of inputs
 the stream of the outputs of the state and of every state that the inputs lead to one after
 another. -/
-@[export_typescript /-- The behavior of a deterministic automaton, which gives from every state
-    upon a stream of inputs the stream of the outputs of the state and of every state that the
-    inputs lead to one after another. -/]
+@[counterpart Jacobs.introductionToCoalgebra "Definition 2.3.1"
+  typescript
+    r"The behavior of a deterministic automaton, which gives from every state upon a stream of
+    inputs the stream of the outputs of the state and of every state that the inputs lead to one
+    after another."]
 def DeterministicAutomaton.behavior {Input Output : Type u}
     (automaton : DeterministicAutomaton Input Output) (state : automaton.V)
     (inputs : Stream' Input) : Stream' Output :=
@@ -102,13 +104,12 @@ def DeterministicAutomaton.behavior {Input Output : Type u}
       (step.1, step.2 rest.head, rest.tail))
     (state, inputs)
 
-attribute [cite "Definition 2.3.1" jacobs2017introductionCoalgebra]
-  DeterministicAutomaton.behavior
-
 /-- The automaton that maps every output of a deterministic automaton by a function, upon the state
 space of the automaton. -/
-@[export_typescript /-- The automaton that maps every output of a deterministic automaton by a
-    function, upon the state space of the automaton. -/]
+@[counterpart
+  typescript
+    r"The automaton that maps every output of a deterministic automaton by a function, upon the
+    state space of the automaton."]
 def DeterministicAutomaton.mapOutput {Input Output MappedOutput : Type u}
     (automaton : DeterministicAutomaton Input Output) (f : (output : Output) → MappedOutput) :
     DeterministicAutomaton Input MappedOutput where
@@ -119,8 +120,10 @@ def DeterministicAutomaton.mapOutput {Input Output MappedOutput : Type u}
 
 /-- The automaton that maps every input by a function before a deterministic automaton takes it,
 upon the state space of the automaton. -/
-@[export_typescript /-- The automaton that maps every input by a function before a deterministic
-    automaton takes it, upon the state space of the automaton. -/]
+@[counterpart
+  typescript
+    r"The automaton that maps every input by a function before a deterministic automaton takes it,
+    upon the state space of the automaton."]
 def DeterministicAutomaton.mapInput {Input MappedInput Output : Type u}
     (automaton : DeterministicAutomaton Input Output) (f : (input : MappedInput) → Input) :
     DeterministicAutomaton MappedInput Output where
@@ -132,9 +135,11 @@ def DeterministicAutomaton.mapInput {Input MappedInput Output : Type u}
 /-- The Mealy machine that a deterministic automaton runs as, which gives upon every input the
 output of the state and the state that the input leads to, upon the state space of the automaton.
 -/
-@[export_typescript /-- The Mealy machine that a deterministic automaton runs as, which gives upon
-    every input the output of the state and the state that the input leads to, upon the state
-    space of the automaton. -/]
+@[counterpart
+  typescript
+    r"The Mealy machine that a deterministic automaton runs as, which gives upon every input the
+    output of the state and the state that the input leads to, upon the state space of the
+    automaton."]
 def DeterministicAutomaton.toMealyMachine {Input Output : Type u}
     (automaton : DeterministicAutomaton Input Output) : MealyMachine Input Output where
   V := automaton.V

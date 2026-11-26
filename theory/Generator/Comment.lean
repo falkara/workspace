@@ -5,21 +5,20 @@ Authors: Filip Falcon
 -/
 module
 
-public import Falkara.Citation.Defs
+public import Falkara.Citation
 public import Lean.Meta.Basic
 
-import Falkara.ExportTypeScript.Defs
+import Falkara.ExportTypeScript
 import Lean.Meta.Reduce
 
 /-!
 # Comment
 
 The module defines the documentation comment of TypeScript that a declaration of the theory takes:
-the comment that the attribute `export_typescript` gives the declaration, with a tag `@see` for the
-item of the work that the declaration cites and for the item of the work that the terms of the
-comment come from, where the attribute `export_typescript` cites one. The tag gives the page of the
-item where the work has a page for every item, such as an entry of the vocabulary of the CIE, and
-the DOI of the work followed by the label of the item otherwise, such as
+the comment that the attribute `counterpart` gives the declaration, with a tag `@see` for the item
+of the work that the declaration cites. The tag gives the page of the item where
+the work has a page for every item, such as an entry of the vocabulary of the CIE, and the DOI of
+the work followed by the label of the item otherwise, such as
 `https://doi.org/10.1017/CBO9781316823187 Definition 1.4.5`, as the DOI leads to the work alone.
 
 ## Main Definitions
@@ -31,12 +30,11 @@ the DOI of the work followed by the label of the item otherwise, such as
 - `documentationOf`: gives the documentation comment of TypeScript of a text, with a tag `@see` for
   every item that it cites.
 - `commentOf`: gives the documentation comment of TypeScript of a declaration, the comment that the
-  attribute `export_typescript` gives, with a text that opens the comment in place of its first
-  word, where one is given, and a tag `@see` for the item that the declaration cites and for the
-  item that the comment cites.
+  attribute `counterpart` gives, with a text that opens the comment in place of its first word,
+  where one is given, and a tag `@see` for the item that the declaration cites.
 - `fieldCommentOf`: gives the documentation comment of TypeScript of a field of a structure, the
-  comment that a clause of the attribute `export_typescript` gives, with a tag `@see` for the item
-  it cites.
+  comment that a clause of the attribute `counterpart` gives, with a tag `@see` for the item it
+  cites.
 - `articledOf`: gives a name of TypeScript in backticks after the indefinite article it takes.
 - `fieldsOf`: gives the fields of a structure as a comment of TypeScript lists them.
 - `derivedCommentOf`: gives the documentation comment of TypeScript of a function that the
@@ -54,8 +52,8 @@ names.
 A comment keeps its formulas in LaTeX between `$`, as the documentation sets them as MathML Core
 from LaTeX.
 
-Every comment comes from the attribute `export_typescript` and never from the documentation comment
-of the theory, as the theory speaks of mathematics and TypeScript to the developers who use Effect.
+Every comment comes from the attribute `counterpart` and never from the documentation comment of
+the theory, as the theory speaks of mathematics and TypeScript to the developers who use Effect.
 
 A comment reads the address of an item and the DOI of a work by reducing the declaration of the
 work, as evaluating the declaration takes code that Lean marks `unsafe`.
@@ -94,31 +92,28 @@ def documentationOf (text : String) (items : List Citation.Item) : Lean.MetaM St
   return s!"/**\n * {text}\n *\n{String.join (addresses.map (s!" * @see {·}\n"))} */\n"
 
 /-- Gives the documentation comment of TypeScript of a declaration, the comment that the attribute
-`export_typescript` gives, with a text that opens the comment in place of its first word, where one
-is given, and a tag `@see` for the item that the declaration cites and for the item that the
-comment cites. -/
+`counterpart` gives, with a text that opens the comment in place of its first word, where one is
+given, and a tag `@see` for the item that the declaration cites. -/
 def commentOf (name : Lean.Name) (opening : Option String := none) : Lean.MetaM String := do
   let environment ← Lean.getEnv
   let some comment := ExportTypeScript.commentOf? environment name
-    | Lean.throwError m!"`{name}` has no documentation comment in TypeScript, as the attribute \
-        `export_typescript` marks it nowhere."
+    | Lean.throwError m!"`{name}` has no documentation comment in TypeScript, as the theory never \
+        gives it a counterpart in TypeScript."
   let text := match opening with
-    | some opening => s!"{opening} {comment.text.decapitalize}"
-    | none => comment.text
-  documentationOf text
-    ((Citation.citationOf? environment name).toList ++ comment.item.toList)
+    | some opening => s!"{opening} {comment.decapitalize}"
+    | none => comment
+  documentationOf text (Citation.citationOf? environment name).toList
 
 /-- Gives the documentation comment of TypeScript of a field of a structure, the comment that the
-clause of the attribute `export_typescript` on the declaration that labels the structure gives,
-with a tag `@see` for the item that the field cites and for the item that the comment cites. -/
+clause of the attribute `counterpart` on the declaration that labels the structure gives, with a
+tag `@see` for the item that the field cites. -/
 def fieldCommentOf (structureName field : Lean.Name) : Lean.MetaM String := do
   let environment ← Lean.getEnv
   let some comment :=
       (ExportTypeScript.fieldClauseOf? environment structureName field).bind (·.comment)
     | Lean.throwError m!"The field `{field}` of `{structureName}` has no documentation comment in \
-        TypeScript, as no clause of the attribute `export_typescript` gives it one."
-  documentationOf comment.text
-    ((Citation.citationOf? environment (structureName ++ field)).toList ++ comment.item.toList)
+        TypeScript, as no clause of the attribute `counterpart` gives it one."
+  documentationOf comment (Citation.citationOf? environment (structureName ++ field)).toList
 
 /-- Gives a name of TypeScript in backticks after the indefinite article it takes, such as
 ``an `Option` `` or ``a `Coalgebra` ``. -/
@@ -137,10 +132,8 @@ def fieldsOf (fields : List String) : String :=
 
 /-- Gives the documentation comment of TypeScript of a function that the generator derives from a
 declaration, such as its constructor, with a text that says what the function does and a tag
-`@see` for the item that the declaration cites and for the item that its comment cites. -/
+`@see` for the item that the declaration cites. -/
 def derivedCommentOf (name : Lean.Name) (text : String) : Lean.MetaM String := do
-  let environment ← Lean.getEnv
-  documentationOf text ((Citation.citationOf? environment name).toList ++
-    ((ExportTypeScript.commentOf? environment name).bind (·.item)).toList)
+  documentationOf text (Citation.citationOf? (← Lean.getEnv) name).toList
 
 end Generator

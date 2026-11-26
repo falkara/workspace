@@ -7,14 +7,14 @@ module
 
 public import Falkara.Simulation.Coalgebra.MealyMachine
 
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 import Falkara.References
 import Mathlib.Data.Stream.Init
 
 /-!
 # Stream Coalgebra
 
-The module defines the stream coalgebras as Jacobs [jacobs2017introductionCoalgebra] names them,
+The module defines the stream coalgebras as Jacobs [Jacobs.introductionToCoalgebra] names them,
 the coalgebras of the functor of binary products with a type of outputs, their behavior, the map
 into the streams of outputs, the final coalgebra of the functor, their steps, which keep the next
 state beside every output, the coalgebra that maps every output, and the Mealy machine that a
@@ -65,43 +65,44 @@ namespace Falkara.Simulation
 universe u
 
 /-- A stream coalgebra, which gives from every state an output and the next state in a monad. -/
-@[export_typescript /-- A stream coalgebra, which gives from every state an output and the next
-    state in a monad. -/
-  (m := "Monad")]
+@[counterpart Jacobs.introductionToCoalgebra "Corollary 2.3.6.1"
+  typescript
+    r"A stream coalgebra, which gives from every state an output and the next state in a monad."
+    (m → "Monad")]
 abbrev StreamCoalgebra (Output : Type u) (m : Type u → Type u := Id) [Monad m] [LawfulMonad m] :=
   CategoryTheory.Endofunctor.Coalgebra
     (Functor.comp (binaryProductFunctor.obj Output) (CategoryTheory.ofTypeFunctor m))
 
-attribute [cite "Corollary 2.3.6.1" jacobs2017introductionCoalgebra] StreamCoalgebra
-
 /-- The behavior of a stream coalgebra, which gives from every state the stream of the outputs that
 the coalgebra gives from the state on. -/
-@[export_typescript /-- The behavior of a stream coalgebra, which gives from every state the stream
-    of the outputs that the coalgebra gives from the state on. -/]
+@[counterpart Jacobs.introductionToCoalgebra "Definition 2.3.1"
+  typescript
+    r"The behavior of a stream coalgebra, which gives from every state the stream of the outputs
+    that the coalgebra gives from the state on."]
 def StreamCoalgebra.behavior {Output : Type u} (coalgebra : StreamCoalgebra Output)
     (state : coalgebra.V) : Stream' Output :=
   Stream'.corec' coalgebra.str state
 
-attribute [cite "Definition 2.3.1" jacobs2017introductionCoalgebra] StreamCoalgebra.behavior
-
 /-- The steps of a stream coalgebra, which gives from every state the stream of the steps that the
 coalgebra takes from the state on, each an output with the next state, the behavior of the
 coalgebra whose output is the whole step. -/
-@[export_typescript /-- The steps of a stream coalgebra, which gives from every state the stream of
-    the steps that the coalgebra takes from the state on, each an output with the next state, the
-    behavior of the coalgebra whose output is the whole step. -/]
+@[counterpart Jacobs.introductionToCoalgebra "Definition 2.3.1"
+  typescript
+    r"The steps of a stream coalgebra, which gives from every state the stream of the steps that the
+    coalgebra takes from the state on, each an output with the next state, the behavior of the
+    coalgebra whose output is the whole step."]
 def StreamCoalgebra.steps {Output : Type u} (coalgebra : StreamCoalgebra Output)
     (state : coalgebra.V) : Stream' ((binaryProductFunctor.obj Output).obj coalgebra.V) :=
   Stream'.corec' (fun current ↦
     let step : Output × coalgebra.V := coalgebra.str current
     (step, step.2)) state
 
-attribute [cite "Definition 2.3.1" jacobs2017introductionCoalgebra] StreamCoalgebra.steps
-
 /-- The coalgebra that maps every output of a stream coalgebra by a function, upon the state space
 of the coalgebra. -/
-@[export_typescript /-- The coalgebra that maps every output of a stream coalgebra by a function,
-    upon the state space of the coalgebra. -/]
+@[counterpart
+  typescript
+    r"The coalgebra that maps every output of a stream coalgebra by a function, upon the state space
+    of the coalgebra."]
 def StreamCoalgebra.mapOutput {Output MappedOutput : Type u} (coalgebra : StreamCoalgebra Output)
     (f : (output : Output) → MappedOutput) : StreamCoalgebra MappedOutput where
   V := coalgebra.V
@@ -111,9 +112,10 @@ def StreamCoalgebra.mapOutput {Output MappedOutput : Type u} (coalgebra : Stream
 
 /-- The Mealy machine that a stream coalgebra runs as, which takes inputs that carry nothing and
 gives upon every one of them the step of the coalgebra, upon the state space of the coalgebra. -/
-@[export_typescript /-- The Mealy machine that a stream coalgebra runs as, which takes inputs that
-    carry nothing and gives upon every one of them the step of the coalgebra, upon the state space
-    of the coalgebra. -/]
+@[counterpart
+  typescript
+    r"The Mealy machine that a stream coalgebra runs as, which takes inputs that carry nothing and
+    gives upon every one of them the step of the coalgebra, upon the state space of the coalgebra."]
 def StreamCoalgebra.toMealyMachine {Output : Type u} (coalgebra : StreamCoalgebra Output) :
     MealyMachine PUnit Output where
   V := coalgebra.V

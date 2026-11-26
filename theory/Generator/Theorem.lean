@@ -14,13 +14,14 @@ import Generator.Type
 /-!
 # Theorem
 
-The module defines the test of TypeScript that a theorem of the theory marked `export_typescript`
-takes, so that the module of the package that implements the functions of the theory is bounded by
-the theorems as well as by the types. A theorem that holds for every value of its variables takes
-a property test of `@effect/vitest`, which draws the variables from their schemas, and a theorem
-with no variable takes a test of its values. A hypothesis of the form $a = b$ or $a \neq b$ skips
-the values that break it, and the conclusion $l = r$ takes `expect(actual).toEqual(expected)` with
-`actual` the value of $l$ and `expected` that of $r$.
+The module defines the test of TypeScript that a theorem of the theory takes, where the theory
+gives it a counterpart in TypeScript, so that the module of the package that implements the
+functions of the theory is bounded by the theorems as well as by the types. A theorem that holds
+for every value of its variables takes a property test of `@effect/vitest`, which draws the
+variables from their schemas, and a theorem with no variable takes a test of its values. A
+hypothesis of the form $a = b$ or $a \neq b$ skips the values that break it, and the conclusion
+$l = r$ takes `expect(actual).toEqual(expected)` with `actual` the value of $l$ and `expected` that
+of $r$.
 
 The expressions of a theorem take the functions, the constructors, and the fields of the module of
 the package, imported under the name of its module of the theory, such as
@@ -37,9 +38,9 @@ from Effect. Every other expression has no form in TypeScript, and the generator
 - `arbitraryOf`: gives the schema from which a property test draws a variable of a type, with the
   declarations of the theory whose modules of the package it names, or fails with the reason where
   the type has none.
-- `testOf`: gives the test of TypeScript that a theorem of the theory marked `export_typescript`
-  takes, with the declarations of the theory whose modules of the package it names, or fails with
-  the reason where the theorem has none.
+- `testOf`: gives the test of TypeScript that a theorem of the theory takes, where the theory gives
+  it a counterpart in TypeScript, with the declarations of the theory whose modules of the package
+  it names, or fails with the reason where the theorem has none.
 - `testFileOf`: gives the file of tests of TypeScript that holds the tests of the theorems of a
   module of the theory of a package, which imports the modules of the package that the tests name.
 
@@ -142,9 +143,9 @@ partial def arbitraryOf (packageNamespace : Lean.Name) (type : Lean.Expr) :
     return (s!"{← moduleAliasOf name}.{← typeNameOf packageNamespace name}", [name])
   | _ => Lean.throwError m!"`{type}` has no schema that a test can draw from."
 
-/-- Gives the test of TypeScript that a theorem of the theory marked `export_typescript` takes,
-with the declarations of the theory whose modules of the package it names, or fails with the reason
-where the theorem has none. -/
+/-- Gives the test of TypeScript that a theorem of the theory takes, where the theory gives it a
+counterpart in TypeScript, with the declarations of the theory whose modules of the package it
+names, or fails with the reason where the theorem has none. -/
 def testOf (packageNamespace name : Lean.Name) : TypeScriptM (String × List Lean.Name) := do
   Lean.Meta.forallTelescope (← Lean.getConstInfo name).type fun variables conclusion ↦ do
     let mut arbitraries : List (String × String) := []

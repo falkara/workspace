@@ -10,14 +10,14 @@ public import Falkara.Simulation.Functor.BinaryProductFunctor
 public import Mathlib.CategoryTheory.Endofunctor.Algebra
 public import Mathlib.Data.Seq.Defs
 
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 import Falkara.References
 import Mathlib.Data.Seq.Basic
 
 /-!
 # Sequence Coalgebra
 
-The module defines the sequence coalgebras as Jacobs [jacobs2017introductionCoalgebra] names them,
+The module defines the sequence coalgebras as Jacobs [Jacobs.introductionToCoalgebra] names them,
 the coalgebras of the options of the binary products with a type of outputs, their behavior, the
 map into the sequences of outputs, the final coalgebra of the functor, their steps, which keep the
 next state beside every output, and the coalgebra that maps every output.
@@ -59,45 +59,47 @@ universe u
 
 /-- A sequence coalgebra, which gives from every state either nothing or an output and the next
 state in a monad. -/
-@[export_typescript /-- A sequence coalgebra, which gives from every state either nothing or an
-    output and the next state in a monad. -/
-  (m := "Monad")]
+@[counterpart Jacobs.introductionToCoalgebra "Section 2.2.1"
+  typescript
+    r"A sequence coalgebra, which gives from every state either nothing or an output and the next
+    state in a monad."
+    (m → "Monad")]
 abbrev SequenceCoalgebra (Output : Type u) (m : Type u → Type u := Id) [Monad m]
     [LawfulMonad m] :=
   CategoryTheory.Endofunctor.Coalgebra
     (Functor.comp (Functor.comp (binaryProductFunctor.obj Output)
       (CategoryTheory.ofTypeFunctor Option)) (CategoryTheory.ofTypeFunctor m))
 
-attribute [cite "Section 2.2.1" jacobs2017introductionCoalgebra] SequenceCoalgebra
-
 /-- The behavior of a sequence coalgebra, which gives from every state the sequence of the outputs
 that the coalgebra gives from the state on until it gives nothing. -/
-@[export_typescript /-- The behavior of a sequence coalgebra, which gives from every state the
-    sequence of the outputs that the coalgebra gives from the state on until it gives nothing. -/]
+@[counterpart Jacobs.introductionToCoalgebra "Definition 2.3.1"
+  typescript
+    r"The behavior of a sequence coalgebra, which gives from every state the sequence of the outputs
+    that the coalgebra gives from the state on until it gives nothing."]
 def SequenceCoalgebra.behavior {Output : Type u} (coalgebra : SequenceCoalgebra Output)
     (state : coalgebra.V) : Stream'.Seq Output :=
   Stream'.Seq.corec coalgebra.str state
 
-attribute [cite "Definition 2.3.1" jacobs2017introductionCoalgebra] SequenceCoalgebra.behavior
-
 /-- The steps of a sequence coalgebra, which gives from every state the sequence of the steps that
 the coalgebra takes from the state on until it gives nothing, each an output with the next state,
 the behavior of the coalgebra whose output is the whole step. -/
-@[export_typescript /-- The steps of a sequence coalgebra, which gives from every state the
-    sequence of the steps that the coalgebra takes from the state on until it gives nothing, each
-    an output with the next state, the behavior of the coalgebra whose output is the whole step. -/]
+@[counterpart Jacobs.introductionToCoalgebra "Definition 2.3.1"
+  typescript
+    r"The steps of a sequence coalgebra, which gives from every state the sequence of the steps that
+    the coalgebra takes from the state on until it gives nothing, each an output with the next
+    state, the behavior of the coalgebra whose output is the whole step."]
 def SequenceCoalgebra.steps {Output : Type u} (coalgebra : SequenceCoalgebra Output)
     (state : coalgebra.V) : Stream'.Seq ((binaryProductFunctor.obj Output).obj coalgebra.V) :=
   Stream'.Seq.corec (fun current ↦
     let step : Option (Output × coalgebra.V) := coalgebra.str current
     step.map fun step ↦ (step, step.2)) state
 
-attribute [cite "Definition 2.3.1" jacobs2017introductionCoalgebra] SequenceCoalgebra.steps
-
 /-- The coalgebra that maps every output of a sequence coalgebra by a function, upon the state space
 of the coalgebra. -/
-@[export_typescript /-- The coalgebra that maps every output of a sequence coalgebra by a function,
-    upon the state space of the coalgebra. -/]
+@[counterpart
+  typescript
+    r"The coalgebra that maps every output of a sequence coalgebra by a function, upon the state
+    space of the coalgebra."]
 def SequenceCoalgebra.mapOutput {Output MappedOutput : Type u}
     (coalgebra : SequenceCoalgebra Output) (f : (output : Output) → MappedOutput) :
     SequenceCoalgebra MappedOutput where

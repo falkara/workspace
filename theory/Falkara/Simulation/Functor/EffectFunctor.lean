@@ -5,7 +5,7 @@ Authors: Filip Falcon
 -/
 module
 
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 import Falkara.References
 
 /-!
@@ -14,7 +14,7 @@ import Falkara.References
 The module defines the effect functor, the monad of the computations that read requirements of a
 type `R` and either fail with a failure of a type `E` or give a value, as the monad transformer
 `ReaderT` of Lean over the monad of exceptions `Except` states it, which Mathlib
-[mathlibCommunity2020leanMathematicalLibrary] documents.
+[Mathlib.library] documents.
 
 ## Main Definitions
 
@@ -41,11 +41,11 @@ universe u
 
 /-- The effect functor, the monad of the computations that read requirements of type `R` and either
 fail with a failure of type `E` or give a value. -/
-@[export_typescript /-- An effect functor, which maps every type to the effects that need the
-    requirements and either fail with the failure or succeed with a value of the type. -/]
+@[counterpart Mathlib.library ReaderT
+  typescript
+    r"An effect functor, which maps every type to the effects that need the requirements and either
+    fail with the failure or succeed with a value of the type."]
 abbrev EffectFunctor (E R : Type u) : Type u → Type u :=
   ReaderT R (Except E)
-
-attribute [cite "ReaderT" mathlibCommunity2020leanMathematicalLibrary] EffectFunctor
 
 end Falkara.Simulation

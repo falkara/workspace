@@ -7,7 +7,7 @@ module
 
 public import Falkara.Presentation.Colorimetry.Tristimulus
 
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 import Falkara.References
 
 /-!
@@ -15,7 +15,7 @@ import Falkara.References
 
 The module defines the chromaticity of a color stimulus by the chromaticity coordinates $x$, $y$,
 and $z$, the quotients of the tristimulus values $X$, $Y$, and $Z$ and their sum $X + Y + Z$
-[cie2020internationalLightingVocabulary]. The three coordinates sum to 1, so the coordinates $x$
+[CIE.internationalLightingVocabulary]. The three coordinates sum to 1, so the coordinates $x$
 and $y$ define the chromaticity.
 
 ## Main Definitions
@@ -47,10 +47,15 @@ The chromaticity of tristimulus values that sum to 0 is `none`, as a quotient by
 namespace Falkara.Presentation
 
 /-- A property of a color stimulus that its chromaticity coordinates $x$ and $y$ define. -/
-@[export_typescript
-  /-- A property of a color stimulus that its chromaticity coordinates $x$ and $y$ define. -/
-  (x := "x" /-- The quotient of the tristimulus value $X$ and the sum $X + Y + Z$. -/)
-  (y := "y" /-- The quotient of the tristimulus value $Y$ and the sum $X + Y + Z$. -/)]
+@[counterpart CIE.internationalLightingVocabulary "17-23-052"
+  (x := "17-23-053")
+  (y := "17-23-053")
+  typescript
+    r"A property of a color stimulus that its chromaticity coordinates $x$ and $y$ define."
+    (x
+      r"The quotient of the tristimulus value $X$ and the sum $X + Y + Z$.")
+    (y
+      r"The quotient of the tristimulus value $Y$ and the sum $X + Y + Z$.")]
 structure Chromaticity where
   /-- The quotient of the tristimulus value $X$ and the sum $X + Y + Z$. -/
   x : ℚ
@@ -58,22 +63,19 @@ structure Chromaticity where
   y : ℚ
   deriving DecidableEq
 
-attribute [cite "17-23-052" cie2020internationalLightingVocabulary] Chromaticity
-attribute [cite "17-23-053" cie2020internationalLightingVocabulary] Chromaticity.x
-attribute [cite "17-23-053" cie2020internationalLightingVocabulary] Chromaticity.y
-
 /-- Gives the chromaticity coordinate $z$ of the chromaticity, $z = 1 - x - y$. -/
-@[export_typescript
-  /-- Gives the chromaticity coordinate $z$ of the chromaticity, $z = 1 - x - y$. -/]
+@[counterpart CIE.internationalLightingVocabulary "17-23-053"
+  typescript
+    r"Gives the chromaticity coordinate $z$ of the chromaticity, $z = 1 - x - y$."]
 def Chromaticity.z (chromaticity : Chromaticity) : ℚ :=
   1 - chromaticity.x - chromaticity.y
 
-attribute [cite "17-23-053" cie2020internationalLightingVocabulary] Chromaticity.z
-
 /-- Gives `none` where $X + Y + Z = 0$ and otherwise the chromaticity of the tristimulus values,
 $x = X / (X + Y + Z)$ and $y = Y / (X + Y + Z)$. -/
-@[export_typescript /-- Gives `none` where $X + Y + Z = 0$ and otherwise the chromaticity of the
-    tristimulus values, $x = X / (X + Y + Z)$ and $y = Y / (X + Y + Z)$. -/]
+@[counterpart CIE.internationalLightingVocabulary "17-23-053"
+  typescript
+    r"Gives `none` where $X + Y + Z = 0$ and otherwise the chromaticity of the tristimulus values,
+    $x = X / (X + Y + Z)$ and $y = Y / (X + Y + Z)$."]
 def Chromaticity.ofTristimulus (tristimulus : Tristimulus) : Option Chromaticity :=
   if tristimulus.X + tristimulus.Y + tristimulus.Z = 0 then
     none
@@ -81,16 +83,16 @@ def Chromaticity.ofTristimulus (tristimulus : Tristimulus) : Option Chromaticity
     some ⟨tristimulus.X / (tristimulus.X + tristimulus.Y + tristimulus.Z),
       tristimulus.Y / (tristimulus.X + tristimulus.Y + tristimulus.Z)⟩
 
-attribute [cite "17-23-053" cie2020internationalLightingVocabulary] Chromaticity.ofTristimulus
-
 namespace Chromaticity
 
 /-- The chromaticity of a factor $c \neq 0$ of units of a color stimulus is the chromaticity of the
 stimulus, as the chromaticity coordinates are quotients of the tristimulus values and their sum,
 $c\,X / (c\,X + c\,Y + c\,Z) = X / (X + Y + Z)$ and likewise for $y$. -/
-@[export_typescript /-- The chromaticity of a factor $c \neq 0$ of units of a color stimulus is the
-    chromaticity of the stimulus, as the chromaticity coordinates are quotients of the tristimulus
-    values and their sum, $c\,X / (c\,X + c\,Y + c\,Z) = X / (X + Y + Z)$ and likewise for $y$. -/]
+@[counterpart CIE.internationalLightingVocabulary "17-23-053"
+  typescript
+    r"The chromaticity of a factor $c \neq 0$ of units of a color stimulus is the chromaticity of
+    the stimulus, as the chromaticity coordinates are quotients of the tristimulus values and their
+    sum, $c\,X / (c\,X + c\,Y + c\,Z) = X / (X + Y + Z)$ and likewise for $y$."]
 theorem ofTristimulus_scale (tristimulus : Tristimulus) (factor : ℚ)
     (nonzero : factor ≠ 0) :
     Chromaticity.ofTristimulus (tristimulus.scale factor) =
@@ -103,8 +105,6 @@ theorem ofTristimulus_scale (tristimulus : Tristimulus) (factor : ℚ)
   · grind
   · simp only [Option.some.injEq, Chromaticity.mk.injEq]
     constructor <;> grind
-
-attribute [cite "17-23-053" cie2020internationalLightingVocabulary] ofTristimulus_scale
 
 end Chromaticity
 

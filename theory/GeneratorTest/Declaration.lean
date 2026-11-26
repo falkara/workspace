@@ -3,7 +3,7 @@ module
 public import GeneratorTest.Fixture.Coordinate
 
 meta import Generator.Declaration
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 
 import all GeneratorTest.Fixture.Clock
 import all GeneratorTest.Fixture.Lamp
@@ -32,11 +32,10 @@ the opposite of the types, takes a type parameter for a type of settings, which 
 contravariant, and the gear train, a composite of two functors, takes a type parameter for each of
 them, which `HKT.Kind` applies one inside the other. The lantern of the fixture `Lamp` takes its
 type of lights as the type parameter and its light as the field, with its comment, that the clauses
-of the attribute `export_typescript` on the lantern give in another module. A function value takes
-the name of its type where its
-type is a type parameter, such as `state` for `State`, and `value` otherwise. A value of
-a type with no value in TypeScript, a value of a structure of another module, and a declaration
-without the mark `export_typescript` take none.
+of the attribute `counterpart` on the lantern give in another module. A function value takes the
+name of its type where its type is a type parameter, such as `state` for `State`, and `value`
+otherwise. A value of a type with no value in TypeScript, a value of a structure of another module,
+and a declaration that the theory never gives a counterpart in TypeScript take none.
 
 ## Main Definitions
 
@@ -61,49 +60,62 @@ structure Point where
   /-- The second coordinate of the point. -/
   y : Rat
 
-attribute [export_typescript /-- The structure that the checks write. -/
-  (x := "x" /-- The first coordinate of the point. -/)
-  (y := "y" /-- The second coordinate of the point. -/)] Point
+attribute [counterpart
+  typescript
+    r"The structure that the checks write."
+    (x
+      r"The first coordinate of the point.")
+    (y
+      r"The second coordinate of the point.")] Point
 
 /-- The function that the checks write, a function of a structure. -/
 def Point.sum (point : Point) : Rat :=
   point.x + point.y
 
-attribute [export_typescript
-  /-- The function that the checks write, a function of a structure. -/] Point.sum
+attribute [counterpart
+  typescript
+    r"The function that the checks write, a function of a structure."] Point.sum
 
 /-- The function that the checks write. -/
 def pointOf (coordinate : Rat) : Option Point :=
   some ⟨coordinate, coordinate⟩
 
-attribute [export_typescript /-- The function that the checks write. -/] pointOf
+attribute [counterpart
+  typescript
+    r"The function that the checks write."] pointOf
 
 /-- The rational value that the checks write. -/
 def origin : Rat :=
   0
 
-attribute [export_typescript /-- The rational value that the checks write. -/] origin
+attribute [counterpart
+  typescript
+    r"The rational value that the checks write."] origin
 
 /-- The value of a structure that the checks write. -/
 def corner : Point :=
   ⟨1 / 2, -3⟩
 
-attribute [export_typescript /-- The value of a structure that the checks write. -/] corner
+attribute [counterpart
+  typescript
+    r"The value of a structure that the checks write."] corner
 
 /-- The value that the checks refuse, as an option has no value in TypeScript. -/
 def missingCoordinate : Option Rat :=
   none
 
-attribute [export_typescript
-  /-- The value that the checks refuse, as an option has no value in TypeScript. -/]
+attribute [counterpart
+  typescript
+    r"The value that the checks refuse, as an option has no value in TypeScript."]
   missingCoordinate
 
 /-- The value that the checks refuse, as its structure lies in another module. -/
 def unitCoordinate : Coordinate :=
   ⟨1⟩
 
-attribute [export_typescript
-  /-- The value that the checks refuse, as its structure lies in another module. -/]
+attribute [counterpart
+  typescript
+    r"The value that the checks refuse, as its structure lies in another module."]
   unitCoordinate
 
 /-- The function that the checks leave unmarked. -/
@@ -173,7 +185,7 @@ export const corner: Point = point({ x: Rational.makeUnsafe(1n, 2n), y: Rational
 #eval show Lean.MetaM Unit from do
   IO.print (← (Generator.declarationOf `Geometry ``Geometry.unitCoordinate).run' [])
 
-/-- error: `Geometry.unmarkedFunction` has no declaration in TypeScript, as the theory never marks it `export_typescript`. -/
+/-- error: `Geometry.unmarkedFunction` has no declaration in TypeScript, as the theory never gives it a counterpart in TypeScript. -/
 #guard_msgs in
 #eval show Lean.MetaM Unit from do
   IO.print (← (Generator.declarationOf `Geometry ``Geometry.unmarkedFunction).run' [])

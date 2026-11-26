@@ -1,6 +1,6 @@
 module
 
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 
 /-!
 # Coordinate
@@ -25,19 +25,26 @@ structure Coordinate where
   /-- The value of the coordinate. -/
   value : Rat
 
-attribute [export_typescript /-- A coordinate of a point. -/
-  (value := "value" /-- The value of the coordinate. -/)] Coordinate
+attribute [counterpart
+  typescript
+    r"A coordinate of a point."
+    (value
+      r"The value of the coordinate.")] Coordinate
 
 /-- The coordinate whose value is 1. -/
 def unit : Coordinate :=
   ⟨1⟩
 
-attribute [export_typescript /-- The coordinate whose value is 1. -/] unit
+attribute [counterpart
+  typescript
+    r"The coordinate whose value is 1."] unit
 
 /-- The coordinate shifted by an offset. -/
 def Coordinate.shift (coordinate : Coordinate) (offset : Rat) : Coordinate :=
   ⟨coordinate.value + offset⟩
 
-attribute [export_typescript /-- The coordinate shifted by an offset. -/] Coordinate.shift
+attribute [counterpart
+  typescript
+    r"The coordinate shifted by an offset."] Coordinate.shift
 
 end Geometry

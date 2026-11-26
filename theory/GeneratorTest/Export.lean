@@ -1,7 +1,7 @@
 module
 
 meta import Generator.Export
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 
 import all GeneratorTest.Fixture.Clock
 import all GeneratorTest.Fixture.Coordinate
@@ -37,20 +37,27 @@ structure Point where
   /-- The first coordinate of the point. -/
   x : Rat
 
-attribute [export_typescript /-- The structure that the checks re-export. -/
-  (x := "x" /-- The first coordinate of the point. -/)] Point
+attribute [counterpart
+  typescript
+    r"The structure that the checks re-export."
+    (x
+      r"The first coordinate of the point.")] Point
 
 /-- The function that the checks implement. -/
 def pointOf (coordinate : Rat) : Point :=
   ⟨coordinate⟩
 
-attribute [export_typescript /-- The function that the checks implement. -/] pointOf
+attribute [counterpart
+  typescript
+    r"The function that the checks implement."] pointOf
 
 /-- The value that the checks re-export. -/
 def origin : Point :=
   ⟨0⟩
 
-attribute [export_typescript /-- The value that the checks re-export. -/] origin
+attribute [counterpart
+  typescript
+    r"The value that the checks re-export."] origin
 
 end Geometry
 

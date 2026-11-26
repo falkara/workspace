@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Nat.Notation
 
-import Falkara.Citation
+import Falkara.Counterpart
 import Falkara.References
 
 /-!
@@ -15,7 +15,7 @@ import Falkara.References
 
 The module defines the wavelength at which the theory computes, a whole number of nanometers from
 360 nm to 830 nm, as the standard method of ISO/CIE 11664-3 sums at 1 nm from 360 nm to 830 nm
-[cie2019tristimulusValues], and every such wavelength in order.
+[CIE.tristimulusValues], and every such wavelength in order.
 
 ## Main Definitions
 
@@ -39,14 +39,12 @@ namespace Falkara.Presentation
 
 /-- A wavelength at which the theory computes, a whole number of nanometers from 360 nm to
 830 nm. -/
+@[counterpart CIE.tristimulusValues "Abstract"]
 abbrev Wavelength := { nanometers : ℕ // 360 ≤ nanometers ∧ nanometers ≤ 830 }
 
-attribute [cite "Abstract" cie2019tristimulusValues] Wavelength
-
 /-- The wavelengths at which the theory computes, from 360 nm to 830 nm in steps of 1 nm. -/
+@[counterpart CIE.tristimulusValues "Abstract"]
 def wavelengths : List Wavelength :=
   (List.finRange 471).map fun index ↦ ⟨360 + index.val, by have := index.isLt; omega⟩
-
-attribute [cite "Abstract" cie2019tristimulusValues] wavelengths
 
 end Falkara.Presentation

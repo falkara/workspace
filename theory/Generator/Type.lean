@@ -5,7 +5,7 @@ Authors: Filip Falcon
 -/
 module
 
-public import Falkara.ExportTypeScript.Defs
+public import Falkara.ExportTypeScript
 public import Generator.Import
 public import Lean.Meta.AppBuilder
 public import Lean.Meta.WHNF
@@ -24,19 +24,20 @@ the functor of binary products gives, a function type for a function type of the
 generic function type for a function type whose leading parameters are implicit types,
 `HKT.Kind<F, never, never, never, X>`
 for an object `F.obj X` of a functor `F` that is a parameter, the name of a type parameter for the
-parameter, and the name of a declaration marked
-`export_typescript` for the type that the declaration defines, with its arguments where it takes
-type parameters, such as `MachineOutcome<State, Output>`. The module defines as well the schema of
-Effect that a type of data takes: `Schema.Rational` for a rational number, `Schema.String` for a
-string, `Schema.Boolean` for a boolean, `Schema.Option` for an option, `Schema.Array` for an array
-or a list, the name of a structure marked `export_typescript` for the schema that the structure
-defines, where every field of the structure takes a schema and the structure takes no type
-parameters, and the name of a refinement marked `export_typescript` for the schema that the
-refinement defines. A refinement is a subtype of a type by a condition marked `export_typescript`
-that gives a boolean, such as `{ name : String // isSegment name = true }`. Every other type has no
-type of TypeScript, a function type and a type parameter have no schema, and the generator refuses
-both. The module defines as well the variance of every type parameter of a declaration, the
-polarities at which the parameter occurs in the fields or the value of the declaration.
+parameter, and the name of a declaration that the theory gives a counterpart in TypeScript, for the
+type that the declaration defines, with its arguments where it takes type parameters, such as
+`MachineOutcome<State, Output>`. The module defines as well the schema of Effect that a type of
+data takes: `Schema.Rational` for a rational number, `Schema.String` for a string,
+`Schema.Boolean` for a boolean, `Schema.Option` for an option, `Schema.Array` for an array or a
+list, the name of a structure that the theory gives a counterpart in TypeScript, for the schema
+that the structure defines, where every field of the structure takes a schema and the structure
+takes no type parameters, and the name of a refinement that the theory gives a counterpart in
+TypeScript, for the schema that the refinement defines. A refinement is a subtype of a type by a
+condition that the theory gives a counterpart in TypeScript and that gives a boolean, such as
+`{ name : String // isSegment name = true }`. Every other type has no type of TypeScript, a
+function type and a type parameter have no schema, and the generator refuses both. The module
+defines as well the variance of every type parameter of a declaration, the polarities at which the
+parameter occurs in the fields or the value of the declaration.
 
 ## Main Definitions
 
@@ -53,7 +54,7 @@ polarities at which the parameter occurs in the fields or the value of the decla
   the category of types, the one category of TypeScript, and with every instance of a class on a
   parameter, such as `Monad m`, left out of the parameters.
 - `identityLabelOf?`: gives the declaration that labels the identity functor of Mathlib, the functor
-  of the identity monad `Id`, where the theory marks one.
+  of the identity monad `Id`, where the theory gives one a counterpart in TypeScript.
 - `binderNameOf`: gives the name of a binder that a telescope opens as a free variable.
 - `defaultOf?`: gives the default value of a type parameter, such as `Id` for
   `(m : Type u → Type u := Id)`, where the parameter takes one.
@@ -62,9 +63,9 @@ polarities at which the parameter occurs in the fields or the value of the decla
   constructor `m` that is a parameter, where the type is one.
 - `refinementOf`: gives the type and the condition of a refinement, a type of the theory whose
   value is a subtype `{ value : T // condition value = true }` of a type `T` by a function
-  `condition` marked `export_typescript`, where the declaration is one.
+  `condition` that the theory gives a counterpart in TypeScript, where the declaration is one.
 - `fieldNameOf`: gives the name that a field of a structure takes in TypeScript, as the attribute
-  `export_typescript` names it or else as the structure names it.
+  `counterpart` names it or else as the structure names it.
 - `fieldTypesOf`: gives the type of every field of a structure, with the type parameters given in
   place of those of the structure, or fails with the reason where the type of a field depends on
   the structure.
@@ -78,9 +79,9 @@ polarities at which the parameter occurs in the fields or the value of the decla
   with its state space `V`.
 - `bundledFieldsOf`: runs a computation on the fields of a bundled structure that a type of the
   theory applies, with a type parameter in place of every field whose value is a type, named as the
-  attribute `export_typescript` names it or else as the field, and the type of every other
-  field, with every such type parameter in place of the projection of its field, as `normalizedOf`
-  reads it, or fails with the reason where the type of a field depends on another field.
+  attribute `counterpart` names it or else as the field, and the type of every other field, with
+  every such type parameter in place of the projection of its field, as `normalizedOf` reads it, or
+  fails with the reason where the type of a field depends on another field.
 - `unbundledOf`: runs a computation on a function type of the theory whose parameters include
   bundled structures, with a type parameter in place of every field whose value is a type, named
   after its parameter as well where several parameters bundle types, such as `FirstState`, and with
@@ -104,16 +105,16 @@ polarities at which the parameter occurs in the fields or the value of the decla
   the last one that differs from its default.
 - `typeConstructorOf`: gives the type lambda of Effect that a type constructor of the theory takes,
   a parameter by its name, the identity monad `Id` as the type lambda of the identity functor, the
-  options as `Option.OptionTypeLambda`, and a type constructor marked `export_typescript` by its
-  name.
+  options as `Option.OptionTypeLambda`, and a type constructor that the theory gives a counterpart
+  in TypeScript by its name.
 - `genericFunctionOf`: gives the generic function type of TypeScript that a function type of the
   theory takes whose leading parameters are implicit types, with the type parameters already
   written before the rest of the type.
 - `signatureOf`: gives the parameters and the result of TypeScript that a function type of the
   theory takes, with the parameters already written before the rest of the type.
 - `isDataType`: tells whether a type of the theory is a type of data: a rational number, a string, a
-  boolean, an option, an array, or a list of data, a structure of data marked `export_typescript`,
-  or a refinement marked `export_typescript`.
+  boolean, an option, an array, or a list of data, a structure of data that the theory gives a
+  counterpart in TypeScript, or a refinement that the theory gives a counterpart in TypeScript.
 - `isData`: tells whether a structure is a structure of data, one without type parameters whose
   every field takes a type of data.
 - `annotationOf`: gives a type parameter as TypeScript annotates it with its variance, `in` where it
@@ -132,14 +133,13 @@ polarities at which the parameter occurs in the fields or the value of the decla
   `Type u ⥤ Type u ⥤ Type u`, where the type is the type of one.
 - `curriedObjectOf`: runs a computation on the object of a curried functor at a type parameter, the
   functor on types that the curried functor gives, with the parameter named as the attribute
-  `export_typescript` of the declaration names it or else as the definition of the curried
-  functor names its object, and taken by `Opposite.op` where the curried functor maps the opposite
-  of the types, given the type of the curried functor.
+  `counterpart` of the declaration names it or else as the definition of the curried functor names
+  its object, and taken by `Opposite.op` where the curried functor maps the opposite of the types,
+  given the type of the curried functor.
 - `functorFieldsOf`: runs a computation on the fields of the type of the functors on types, with a
   local functor in place of the action of the functor on types, named as the attribute
-  `export_typescript` names the field `obj` or else as the field, the type of every other field
-  that is no proof, and the statement of every field that is an axiom, given the type of the
-  functors.
+  `counterpart` names the field `obj` or else as the field, the type of every other field that is
+  no proof, and the statement of every field that is an axiom, given the type of the functors.
 - `DeclarationKind`: a kind of declaration of the theory, which the generator writes in a form of
   its own.
 - `kindOf`: gives the kind of a declaration of the theory.
@@ -260,8 +260,8 @@ def typeParameterCount : Lean.Expr → Nat
   | _ => 0
 
 /-- Runs a computation on the type parameters of a declaration, the leading binders of its type over
-a type or over a functor on types, named as the attribute `export_typescript` names them or else
-as their binders, with the rest of its type and its value applied to the parameters, where it has a
+a type or over a functor on types, named as the attribute `counterpart` names them or else as
+their binders, with the rest of its type and its value applied to the parameters, where it has a
 value, and with every category that is a parameter, a binder over a type followed by an instance of
 `CategoryTheory.Category` on it, taken as the category of types, the one category of TypeScript, or
 fails with the reason where the category of types does not fit. -/
@@ -325,8 +325,8 @@ where
           (value.map (Lean.mkApp · parameter)) (parameters.push parameter)
     else finish
 
-/-- Gives the declaration marked `export_typescript` that labels the identity functor of Mathlib,
-`CategoryTheory.Functor.id`, the functor of the identity monad `Id`, where the theory marks one. -/
+/-- Gives the declaration that labels the identity functor of Mathlib, `CategoryTheory.Functor.id`,
+the functor of the identity monad `Id`, where the theory gives one a counterpart in TypeScript. -/
 def identityLabelOf? (environment : Lean.Environment) : Option Lean.Name :=
   (ExportTypeScript.exportsOf environment).findSome? fun declared ↦
     if ExportTypeScript.labels environment declared.declaration `CategoryTheory.Functor.id then
@@ -357,8 +357,8 @@ def parameterObjectOf (type : Lean.Expr) : Lean.MetaM (Option (Lean.Expr × Lean
   return none
 
 /-- Gives the type and the condition of a refinement, a type of the theory whose value is a subtype
-`{ value : T // condition value = true }` of a type `T` by a function `condition` marked
-`export_typescript`, where the declaration is one. -/
+`{ value : T // condition value = true }` of a type `T` by a function `condition` that the theory
+gives a counterpart in TypeScript, where the declaration is one. -/
 def refinementOf (name : Lean.Name) : Lean.MetaM (Option (Lean.Expr × Lean.Name)) := do
   let some value := (← Lean.getConstInfo name).value? | return none
   let .app (.app (.const ``Subtype _) base) (.lam _ _ body _) := value | return none
@@ -369,8 +369,8 @@ def refinementOf (name : Lean.Name) : Lean.MetaM (Option (Lean.Expr × Lean.Name
   return some (base, condition)
 
 /-- Gives the name that a field of a structure takes in TypeScript, as the clause of the attribute
-`export_typescript` on the declaration that labels the structure names it or else as the structure
-names it. -/
+`counterpart` on the declaration that labels the structure names it or else as the structure names
+it. -/
 def fieldNameOf {m : Type → Type} [Monad m] [Lean.MonadEnv m] (structureName field : Lean.Name) :
     m String := do
   return ((ExportTypeScript.fieldClauseOf? (← Lean.getEnv) structureName field).map (·.name)).getD
@@ -390,10 +390,10 @@ def fieldTypesOf (name : Lean.Name) (parameters : Array Lean.Expr) :
       return (field, fieldType)
     | _ => Lean.throwError m!"`{name ++ field}` is no field of a structure."
 
-/-- Gives the declaration marked `export_typescript` of the functor whose object a type is, through
-the functors that a curried functor gives, such as `binaryProductFunctor` for
-`(binaryProductFunctor.obj B).obj X`, or for the functor of Mathlib that the declaration labels,
-where the theory marks one. -/
+/-- Gives the declaration that the theory gives a counterpart in TypeScript of the functor whose
+object a type is, through the functors that a curried functor gives, such as `binaryProductFunctor`
+for `(binaryProductFunctor.obj B).obj X`, or for the functor of Mathlib that the declaration labels,
+where the theory gives one a counterpart in TypeScript. -/
 partial def functorDeclarationOf? (environment : Lean.Environment) (type : Lean.Expr) :
     Option Lean.Name :=
   match type.getAppFn with
@@ -432,9 +432,9 @@ partial def normalizedOf (type : Lean.Expr) : Lean.MetaM Lean.Expr := do
     | .const `Opposite.unop _, _ =>
       -- The reduction stops at an object of a functor that is a parameter, such as `G.obj X` of a
       -- composite, which a further step would take apart into the fields of the functor.
-      -- The reduction stops as well at an object of another functor that the theory marks, which
-      -- the next step reduces on its own, so that every such object meets the declaration of its
-      -- functor, such as the product of a composite.
+      -- The reduction stops as well at an object of another functor that the theory gives a
+      -- counterpart in TypeScript, which the next step reduces on its own, so that every such
+      -- object meets the declaration of its functor, such as the product of a composite.
       let environment ← Lean.getEnv
       let reduced ← Lean.Meta.whnfHeadPred type fun part ↦
         return (← parameterObjectOf part).isNone &&
@@ -469,9 +469,9 @@ def bundledOf (type : Lean.Expr) : Lean.MetaM (Option Lean.Name) := do
 
 /-- Runs a computation on the fields of a bundled structure that a type of the theory applies, with
 a type parameter in place of every field whose value is a type, named as the attribute
-`export_typescript` names it or else as the field, and the type of every other field, with every
-such type parameter in place of the projection of its field, as `normalizedOf` reads it, or fails
-with the reason where the type of a field depends on another field. -/
+`counterpart` names it or else as the field, and the type of every other field, with every such
+type parameter in place of the projection of its field, as `normalizedOf` reads it, or fails with
+the reason where the type of a field depends on another field. -/
 def bundledFieldsOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
     [MonadLiftT Lean.MetaM m] {α : Type} (type : Lean.Expr)
     (computation : List Lean.Expr → List (Lean.Name × Lean.Expr) → m α) : m α := do
@@ -510,8 +510,8 @@ where
 
 /-- Runs a computation on a function type of the theory whose parameters include bundled
 structures, with a type parameter in place of every field whose value is a type of every such
-parameter, named as the attribute `export_typescript` names the field, and the function type with
-the type of every such parameter applied to its type parameters, as TypeScript writes it, and every
+parameter, named as the attribute `counterpart` names the field, and the function type with the
+type of every such parameter applied to its type parameters, as TypeScript writes it, and every
 projection of such a field replaced by its type parameter, such as
 `(coalgebra : StreamCoalgebra Output) → (state : State) → Stream' Output` with the type parameter
 `State` for `(coalgebra : StreamCoalgebra Output) → (state : coalgebra.V) → Stream' Output`. -/
@@ -725,8 +725,8 @@ partial def typeOf (packageNamespace : Lean.Name) (type : Lean.Expr) : TypeScrip
         never, never, {← typeOf packageNamespace object}>"
     let .const name _ := type.getAppFn | Lean.throwError m!"`{type}` has no type in TypeScript."
     unless ExportTypeScript.isExported (← Lean.getEnv) name do
-      Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never marks it \
-        `export_typescript`."
+      Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never gives it a \
+        counterpart in TypeScript."
     let typeName ← referenceOf name (← typeNameOf packageNamespace name)
     let arguments ← argumentsOf packageNamespace name type.getAppArgs.toList
     if arguments.isEmpty then return typeName
@@ -771,8 +771,8 @@ where
 /-- Gives the type lambda of Effect that a type constructor of the theory takes in TypeScript: a
 type constructor that is a parameter by its name, the identity monad `Id` as the type lambda of the
 identity functor that the theory labels, the options as `Option.OptionTypeLambda` of Effect, and an
-application of a type constructor marked `export_typescript` by its name, such as
-`EffectFunctor<E, R>`, or fails with the reason where the type constructor has none. -/
+application of a type constructor that the theory gives a counterpart in TypeScript by its name,
+such as `EffectFunctor<E, R>`, or fails with the reason where the type constructor has none. -/
 partial def typeConstructorOf (packageNamespace : Lean.Name) (constructor : Lean.Expr) :
     TypeScriptM String := do
   let environment ← Lean.getEnv
@@ -789,7 +789,7 @@ partial def typeConstructorOf (packageNamespace : Lean.Name) (constructor : Lean
   | .const name _ =>
     unless ExportTypeScript.isExported environment name do
       Lean.throwError m!"`{constructor}` has no type lambda in TypeScript, as the theory never \
-        marks `{name}` `export_typescript`."
+        gives `{name}` a counterpart in TypeScript."
     let typeName ← referenceOf name (← typeNameOf packageNamespace name)
     let arguments ← argumentsOf packageNamespace name constructor.getAppArgs.toList
     if arguments.isEmpty then return typeName
@@ -837,8 +837,8 @@ end
 mutual
 
 /-- Tells whether a type of the theory is a type of data: a rational number, a string, a boolean, an
-option, an array, or a list of data, a structure of data marked `export_typescript`, or a refinement
-marked `export_typescript`. -/
+option, an array, or a list of data, a structure of data that the theory gives a counterpart in
+TypeScript, or a refinement that the theory gives a counterpart in TypeScript. -/
 partial def isDataType (type : Lean.Expr) : Lean.MetaM Bool := do
   match type with
   | .const ``Rat _ | .const ``String _ | .const ``Bool _ => return true
@@ -916,9 +916,9 @@ def curriedTargetOf? (type : Lean.Expr) : Option Lean.Expr :=
   else none
 
 /-- Runs a computation on the object of a curried functor at a type parameter, the functor on types
-that the curried functor gives, with the parameter named as the attribute `export_typescript` of
-the declaration names it or else as the definition of the curried functor names its object, and
-with the parameter taken by `Opposite.op` where the curried functor maps the opposite of the types,
+that the curried functor gives, with the parameter named as the attribute `counterpart` of the
+declaration names it or else as the definition of the curried functor names its object, and with
+the parameter taken by `Opposite.op` where the curried functor maps the opposite of the types,
 given the declaration and the type of the curried functor, or fails with the reason where the
 definition names no object. -/
 def curriedObjectOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
@@ -946,10 +946,9 @@ def curriedObjectOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
       computation parameter (Lean.mkApp object parameter)
 
 /-- Runs a computation on the fields of the type of the functors on types, with a local functor in
-place of the action of the functor on types, named as the attribute `export_typescript` names
-the field `obj` or else as the field, and the type of every other field that is no proof, as
-`normalizedOf` reads it, and the statement of every field that is an axiom, given the type of the
-functors. -/
+place of the action of the functor on types, named as the attribute `counterpart` names the field
+`obj` or else as the field, and the type of every other field that is no proof, as `normalizedOf`
+reads it, and the statement of every field that is an axiom, given the type of the functors. -/
 def functorFieldsOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
     [MonadLiftT Lean.MetaM m] {α : Type} (functorType : Lean.Expr)
     (computation : Lean.Expr → List (Lean.Name × Lean.Expr) → List (Lean.Name × Lean.Expr) →
@@ -1021,8 +1020,8 @@ def kindOf (name : Lean.Name) : Lean.MetaM DeclarationKind := do
         if isFunctorType rest then return .functor
         return if (curriedTargetOf? rest).isSome then .curriedFunctor else .value
 
-/-- Gives the declaration marked `export_typescript` that labels a structure, other than a given
-declaration, where the theory marks one, such as `Coalgebra` for
+/-- Gives the declaration that labels a structure, other than a given declaration, where the theory
+gives one a counterpart in TypeScript, such as `Coalgebra` for
 `CategoryTheory.Endofunctor.Coalgebra`. -/
 def labelOf? (name structureName : Lean.Name) : Lean.MetaM (Option Lean.Name) := do
   let environment ← Lean.getEnv
@@ -1054,11 +1053,12 @@ where
         else kept
 
 /-- Gives the type lambda of Effect that a functor on types of the theory takes in TypeScript: a
-functor that is a parameter by its name, an object of a curried functor marked `export_typescript`,
-such as `BinaryProductFunctor<Output>` for `binaryProductFunctor.obj Output`, an application of a
-functor marked `export_typescript`, such as `Functor.Comp<F, G>` for `Functor.comp F G`, and the
-functor of the options, `ofTypeFunctor Option`, as `Option.OptionTypeLambda` of Effect, or fails
-with the reason where the functor has none. -/
+functor that is a parameter by its name, an object of a curried functor that the theory gives a
+counterpart in TypeScript, such as `BinaryProductFunctor<Output>` for
+`binaryProductFunctor.obj Output`, an application of a functor that the theory gives a counterpart
+in TypeScript, such as `Functor.Comp<F, G>` for `Functor.comp F G`, and the functor of the
+options, `ofTypeFunctor Option`, as `Option.OptionTypeLambda` of Effect, or fails with the reason
+where the functor has none. -/
 partial def typeLambdaOf (packageNamespace : Lean.Name) (functor : Lean.Expr) :
     TypeScriptM String := do
   let environment ← Lean.getEnv
@@ -1069,8 +1069,8 @@ partial def typeLambdaOf (packageNamespace : Lean.Name) (functor : Lean.Expr) :
     let .const name _ := curried.getAppFn
       | Lean.throwError m!"`{functor}` has no type lambda in TypeScript."
     unless ExportTypeScript.isExported environment name do
-      Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never marks it \
-        `export_typescript`."
+      Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never gives it a \
+        counterpart in TypeScript."
     -- An object of the opposite of the types is a type that `Opposite.op` takes into the opposite.
     let object := if object.isAppOfArity `Opposite.op 2 then object.appArg! else object
     return s!"{← referenceOf name (← typeNameOf packageNamespace name)}\
@@ -1082,8 +1082,8 @@ partial def typeLambdaOf (packageNamespace : Lean.Name) (functor : Lean.Expr) :
     typeConstructorOf packageNamespace constructor
   | .const name _, arguments =>
     unless ExportTypeScript.isExported environment name do
-      Lean.throwError m!"`{functor}` has no type lambda in TypeScript, as the theory never marks \
-        `{name}` `export_typescript`."
+      Lean.throwError m!"`{functor}` has no type lambda in TypeScript, as the theory never gives \
+        `{name}` a counterpart in TypeScript."
     let written ← (← typeArgumentsOf functor.getAppFn arguments.toList).mapM fun argument ↦ do
       let argumentType ← Lean.Meta.inferType argument
       if isFunctorType argumentType then typeLambdaOf packageNamespace argument
@@ -1108,8 +1108,8 @@ partial def schemaOf (packageNamespace : Lean.Name) (type : Lean.Expr) : TypeScr
     return s!"{← effectNameOf "Schema" "Array" .value}({← schemaOf packageNamespace element})"
   | .const name _ =>
     unless ExportTypeScript.isExported (← Lean.getEnv) name do
-      Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never marks it \
-        `export_typescript`."
+      Lean.throwError m!"`{name}` has no declaration in TypeScript, as the theory never gives it a \
+        counterpart in TypeScript."
     unless ← isDataType type do
       Lean.throwError m!"`{name}` has no schema in TypeScript, as it is neither a structure whose \
         every field takes a schema nor a refinement."

@@ -8,7 +8,7 @@ module
 public import Falkara.Presentation.Colorimetry.Wavelength
 public import Mathlib.Data.Rat.Init
 
-import Falkara.Citation
+import Falkara.Counterpart
 import Falkara.References
 
 set_option linter.style.header false
@@ -37,7 +37,7 @@ table gives the column of the distribution.
 
 ## Implementation Notes
 
-The illuminant holds every row of the data table [cie2019standardIlluminantD65] as a monochromatic
+The illuminant holds every row of the data table [CIE.standardIlluminantD65] as a monochromatic
 component, with its wavelength as the whole number of nanometers that the data table gives and its
 distribution as the exact rational number that the decimal digits of the value denote.
 
@@ -63,6 +63,9 @@ namespace Falkara.Presentation
 
 /-- A monochromatic component with the value of the relative spectral distribution at its
 wavelength. -/
+@[counterpart CIE.standardIlluminantD65 "columnHeaders"
+  (wavelength := "lambda")
+  (relativeSpectralPower := "S_D65(lambda)")]
 structure MonochromaticComponent where
   /-- The wavelength, in nanometers. -/
   wavelength : ℕ
@@ -71,13 +74,9 @@ structure MonochromaticComponent where
   relativeSpectralPower : ℚ
   deriving DecidableEq
 
-attribute [cite "columnHeaders" cie2019standardIlluminantD65] MonochromaticComponent
-attribute [cite "lambda" cie2019standardIlluminantD65] MonochromaticComponent.wavelength
-attribute [cite "S_D65(lambda)" cie2019standardIlluminantD65]
-  MonochromaticComponent.relativeSpectralPower
-
 /-- The monochromatic components that define the illuminant, at wavelengths from 300 nm to 830 nm
 in steps of 1 nm. -/
+@[counterpart CIE.standardIlluminantD65 "CIE_std_illum_D65.csv"]
 def illuminant : List MonochromaticComponent := [
   ⟨300, 0.0341⟩,
   ⟨301, 0.36014⟩,
@@ -611,21 +610,17 @@ def illuminant : List MonochromaticComponent := [
   ⟨829, 60.0253⟩,
   ⟨830, 60.3125⟩]
 
-attribute [cite "CIE_std_illum_D65.csv" cie2019standardIlluminantD65] illuminant
-
 /-- The illuminant holds a row for each wavelength from 300 nm to 830 nm in steps of 1 nm,
 $(830 - 300) / 1 + 1 = 531$. -/
+@[counterpart CIE.standardIlluminantD65 "CIE_std_illum_D65.csv"]
 theorem length_illuminant : illuminant.length = 531 := by
   decide +kernel
 
-attribute [cite "CIE_std_illum_D65.csv" cie2019standardIlluminantD65] length_illuminant
-
 /-- Gives the relative spectral distribution of the illuminant at a wavelength $\lambda$,
 $S(\lambda)$. -/
+@[counterpart CIE.standardIlluminantD65 "S_D65(lambda)"]
 def relativeSpectralPowerAt (wavelength : Wavelength) : ℚ :=
   (illuminant[wavelength.val - 300]'(by
     have := wavelength.property; rw [length_illuminant]; omega)).relativeSpectralPower
-
-attribute [cite "S_D65(lambda)" cie2019standardIlluminantD65] relativeSpectralPowerAt
 
 end Falkara.Presentation

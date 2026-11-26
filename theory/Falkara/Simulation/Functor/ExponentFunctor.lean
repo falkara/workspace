@@ -7,15 +7,15 @@ module
 
 public import Mathlib.CategoryTheory.Yoneda
 
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 import Falkara.References
 
 /-!
 # Exponent Functor
 
 The module defines the exponent functor, which maps every type $k$ to the functor
-$Y \mapsto (k \to Y)$, the exponent $Y^k$ of Jacobs [jacobs2017introductionCoalgebra], as the
-coyoneda embedding of Mathlib [mathlibCommunity2020leanMathematicalLibrary] states it.
+$Y \mapsto (k \to Y)$, the exponent $Y^k$ of Jacobs [Jacobs.introductionToCoalgebra], as the
+coyoneda embedding of Mathlib [Mathlib.library] states it.
 
 ## Main Definitions
 
@@ -34,12 +34,10 @@ opens with an article and names the exponent as the type parameter does.
 namespace Falkara.Simulation
 
 /-- The exponent functor, which maps every type $k$ to the functor $Y \mapsto (k \to Y)$. -/
-@[export_typescript /-- An exponent functor, which maps every type to the functions from the
-    exponent into the type. -/
-  (k := "Exponent")]
+@[counterpart Mathlib.library CategoryTheory.coyoneda
+  typescript
+    r"An exponent functor, which maps every type to the functions from the exponent into the type."
+    (k → "Exponent")]
 abbrev exponentFunctor := @CategoryTheory.coyoneda
-
-attribute [cite "CategoryTheory.coyoneda" mathlibCommunity2020leanMathematicalLibrary]
-  exponentFunctor
 
 end Falkara.Simulation

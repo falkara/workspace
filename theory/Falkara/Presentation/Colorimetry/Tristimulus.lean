@@ -8,7 +8,7 @@ module
 public import Falkara.Presentation.Colorimetry.Illuminant
 public import Falkara.Presentation.Colorimetry.Observer
 
-import Falkara.ExportTypeScript
+import Falkara.Counterpart
 import Falkara.References
 import Mathlib.Algebra.BigOperators.Ring.List
 import Mathlib.Algebra.Ring.Rat
@@ -18,15 +18,15 @@ import Mathlib.Algebra.Ring.Rat
 
 The module defines the tristimulus values of a color stimulus as the amounts $X$, $Y$, and $Z$ that
 match the color of the stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE
-1931 standard colorimetric system [cie2020internationalLightingVocabulary]. The tristimulus values
+1931 standard colorimetric system [CIE.internationalLightingVocabulary]. The tristimulus values
 of a color stimulus function $\varphi_\lambda(\lambda)$ are the sums of the products of the function
 and the color-matching functions of the observer at wavelengths from 360 nm to 830 nm in steps of
-1 nm [cie2019tristimulusValues]. Tristimulus values add and scale by a factor as the coordinates of
+1 nm [CIE.tristimulusValues]. Tristimulus values add and scale by a factor as the coordinates of
 a vector do, as a color equation represents a color stimulus as a vector, so the tristimulus values
 of the additive mixture of two color stimulus functions are the sums of their tristimulus values,
 as Grassmann's laws state. The white is the color stimulus to which the tristimulus values of a
 color are normalized, those of CIE standard illuminant D65 scaled so that their luminance factor $Y$
-is 1, as that of an adapted white is [cie2020internationalLightingVocabulary].
+is 1, as that of an adapted white is [CIE.internationalLightingVocabulary].
 
 ## Main Definitions
 
@@ -89,7 +89,7 @@ so the theorems of addition and of scaling follow from the theorems of Mathlib o
 list, `List.sum_map_add` and `List.sum_map_mul_left`.
 
 The white follows the sums of ISO/CIE 11664-3 rather than Table 9.1 of CIE 015
-[cie2018colorimetry], which gives D65 as $X = 95.04$, $Y = 100.00$, and $Z = 108.88$ with the
+[CIE.colorimetry], which gives D65 as $X = 95.04$, $Y = 100.00$, and $Z = 108.88$ with the
 chromaticity coordinates $x = 0.312\,71$ and $y = 0.329\,03$, while the sums at 1 nm from 360 nm
 to 830 nm, rounded to the same places, give $X = 95.05$, $Z = 108.88$, $x = 0.312\,73$, and
 $y = 0.329\,02$.
@@ -101,12 +101,19 @@ namespace Falkara.Presentation
 
 /-- A triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus by the
 reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system. -/
-@[export_typescript /-- A triple of the amounts $X$, $Y$, and $Z$ that match the color of a color
-    stimulus by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard
-    colorimetric system. -/
-  (X := "X" /-- The amount of the reference color stimulus $[X]$. -/)
-  (Y := "Y" /-- The amount of the reference color stimulus $[Y]$. -/)
-  (Z := "Z" /-- The amount of the reference color stimulus $[Z]$. -/)]
+@[counterpart CIE.internationalLightingVocabulary "17-23-045"
+  (X := "17-23-038")
+  (Y := "17-23-038")
+  (Z := "17-23-038")
+  typescript
+    r"A triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus by the
+    reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric system."
+    (X
+      r"The amount of the reference color stimulus $[X]$.")
+    (Y
+      r"The amount of the reference color stimulus $[Y]$.")
+    (Z
+      r"The amount of the reference color stimulus $[Z]$.")]
 structure Tristimulus where
   /-- The amount of the reference color stimulus $[X]$. -/
   X : ℚ
@@ -116,28 +123,23 @@ structure Tristimulus where
   Z : ℚ
   deriving DecidableEq
 
-attribute [cite "17-23-045" cie2020internationalLightingVocabulary] Tristimulus
-attribute [cite "17-23-038" cie2020internationalLightingVocabulary] Tristimulus.X
-attribute [cite "17-23-038" cie2020internationalLightingVocabulary] Tristimulus.Y
-attribute [cite "17-23-038" cie2020internationalLightingVocabulary] Tristimulus.Z
-
 /-- Gives the tristimulus values of the additive mixture of two color stimuli as the sums of their
 amounts, $X_1 + X_2$, $Y_1 + Y_2$, and $Z_1 + Z_2$. -/
-@[export_typescript /-- Gives the tristimulus values of the additive mixture of two color stimuli
-    as the sums of their amounts, $X_1 + X_2$, $Y_1 + Y_2$, and $Z_1 + Z_2$. -/]
+@[counterpart CIE.internationalLightingVocabulary "17-23-040"
+  typescript
+    r"Gives the tristimulus values of the additive mixture of two color stimuli as the sums of their
+    amounts, $X_1 + X_2$, $Y_1 + Y_2$, and $Z_1 + Z_2$."]
 def Tristimulus.add (first second : Tristimulus) : Tristimulus :=
   ⟨first.X + second.X, first.Y + second.Y, first.Z + second.Z⟩
 
-attribute [cite "17-23-040" cie2020internationalLightingVocabulary] Tristimulus.add
-
 /-- Gives the tristimulus values of a factor $c$ of units of a color stimulus as the products of the
 factor and its amounts, $cX$, $cY$, and $cZ$. -/
-@[export_typescript /-- Gives the tristimulus values of a factor $c$ of units of a color stimulus
-    as the products of the factor and its amounts, $cX$, $cY$, and $cZ$. -/]
+@[counterpart CIE.internationalLightingVocabulary "17-23-040"
+  typescript
+    r"Gives the tristimulus values of a factor $c$ of units of a color stimulus as the products of
+    the factor and its amounts, $cX$, $cY$, and $cZ$."]
 def Tristimulus.scale (tristimulus : Tristimulus) (factor : ℚ) : Tristimulus :=
   ⟨factor * tristimulus.X, factor * tristimulus.Y, factor * tristimulus.Z⟩
-
-attribute [cite "17-23-040" cie2020internationalLightingVocabulary] Tristimulus.scale
 
 /-- Gives the tristimulus values of a color stimulus function $\varphi_\lambda(\lambda)$ as the sums
 over the wavelengths $\lambda$ from 360 nm to 830 nm,
@@ -145,6 +147,7 @@ $X = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{x}(\lambda)\,\Delta\lambda$,
 $Y = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{y}(\lambda)\,\Delta\lambda$, and
 $Z = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{z}(\lambda)\,\Delta\lambda$ with
 $\Delta\lambda = 1\,\mathrm{nm}$. -/
+@[counterpart CIE.tristimulusValues "Abstract"]
 def Tristimulus.ofColorStimulusFunction (colorStimulusFunction : (wavelength : Wavelength) → ℚ) :
     Tristimulus :=
   let pairs := wavelengths.zip observer
@@ -152,74 +155,69 @@ def Tristimulus.ofColorStimulusFunction (colorStimulusFunction : (wavelength : W
     (pairs.map fun pair ↦ colorStimulusFunction pair.1 * pair.2.yBar).sum,
     (pairs.map fun pair ↦ colorStimulusFunction pair.1 * pair.2.zBar).sum⟩
 
-attribute [cite "Abstract" cie2019tristimulusValues] Tristimulus.ofColorStimulusFunction
-
 /-- The tristimulus values of the white, those of CIE standard illuminant D65 scaled so that their
 luminance factor $Y$ is 1,
 $X = \sum_{\lambda} S(\lambda)\,\bar{x}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$,
 $Y = 1$, and
 $Z = \sum_{\lambda} S(\lambda)\,\bar{z}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$. -/
-@[export_typescript /-- The tristimulus values of the white, those of CIE standard illuminant D65
-    scaled so that their luminance factor $Y$ is 1,
-    $X = \sum_{\lambda} S(\lambda)\,\bar{x}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$,
-    $Y = 1$, and
-    $Z = \sum_{\lambda} S(\lambda)\,\bar{z}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$.
-    -/]
+@[counterpart CIE.internationalLightingVocabulary "17-23-081"
+  typescript
+    r"The tristimulus values of the white, those of CIE standard illuminant D65 scaled so that their
+    luminance factor $Y$ is 1, $X = \sum_{\lambda} S(\lambda)\,\bar{x}(\lambda) / \sum_{\lambda}
+    S(\lambda)\,\bar{y}(\lambda)$, $Y = 1$, and $Z = \sum_{\lambda} S(\lambda)\,\bar{z}(\lambda) /
+    \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$."]
 def Tristimulus.white : Tristimulus :=
   (Tristimulus.ofColorStimulusFunction relativeSpectralPowerAt).scale
     (Tristimulus.ofColorStimulusFunction relativeSpectralPowerAt).Y⁻¹
-
-attribute [cite "17-23-081" cie2020internationalLightingVocabulary] Tristimulus.white
 
 namespace Tristimulus
 
 /-- The additive mixture of two color stimuli is the same in either order,
 $X_1 + X_2 = X_2 + X_1$ and likewise for $Y$ and $Z$. -/
-@[export_typescript /-- The additive mixture of two color stimuli is the same in either order,
-    $X_1 + X_2 = X_2 + X_1$ and likewise for $Y$ and $Z$. -/]
+@[counterpart CIE.internationalLightingVocabulary "17-23-040"
+  typescript
+    r"The additive mixture of two color stimuli is the same in either order, $X_1 + X_2 = X_2 + X_1$
+    and likewise for $Y$ and $Z$."]
 theorem add_comm (first second : Tristimulus) : first.add second = second.add first := by
   simp only [Tristimulus.add, Tristimulus.mk.injEq]
   refine ⟨?_, ?_, ?_⟩ <;> grind
 
-attribute [cite "17-23-040" cie2020internationalLightingVocabulary] add_comm
-
 /-- The additive mixture of three color stimuli is the same in either grouping,
 $(X_1 + X_2) + X_3 = X_1 + (X_2 + X_3)$ and likewise for $Y$ and $Z$. -/
-@[export_typescript /-- The additive mixture of three color stimuli is the same in either grouping,
-    $(X_1 + X_2) + X_3 = X_1 + (X_2 + X_3)$ and likewise for $Y$ and $Z$. -/]
+@[counterpart CIE.internationalLightingVocabulary "17-23-040"
+  typescript
+    r"The additive mixture of three color stimuli is the same in either grouping, $(X_1 + X_2) + X_3
+    = X_1 + (X_2 + X_3)$ and likewise for $Y$ and $Z$."]
 theorem add_assoc (first second third : Tristimulus) :
     (first.add second).add third = first.add (second.add third) := by
   simp only [Tristimulus.add, Tristimulus.mk.injEq]
   refine ⟨?_, ?_, ?_⟩ <;> grind
 
-attribute [cite "17-23-040" cie2020internationalLightingVocabulary] add_assoc
-
 /-- A factor of units of the additive mixture of two color stimuli is the mixture of that factor of
 units of each, $c\,(X_1 + X_2) = c\,X_1 + c\,X_2$ and likewise for $Y$ and $Z$. -/
-@[export_typescript /-- A factor of units of the additive mixture of two color stimuli is the
-    mixture of that factor of units of each, $c\,(X_1 + X_2) = c\,X_1 + c\,X_2$ and likewise for
-    $Y$ and $Z$. -/]
+@[counterpart CIE.internationalLightingVocabulary "17-23-040"
+  typescript
+    r"A factor of units of the additive mixture of two color stimuli is the mixture of that factor
+    of units of each, $c\,(X_1 + X_2) = c\,X_1 + c\,X_2$ and likewise for $Y$ and $Z$."]
 theorem scale_add (first second : Tristimulus) (factor : ℚ) :
     (first.add second).scale factor = (first.scale factor).add (second.scale factor) := by
   simp only [Tristimulus.add, Tristimulus.scale, Tristimulus.mk.injEq]
   refine ⟨?_, ?_, ?_⟩ <;> grind
 
-attribute [cite "17-23-040" cie2020internationalLightingVocabulary] scale_add
-
 /-- The tristimulus values of the additive mixture of two color stimulus functions are the sums of
 their tristimulus values, $X(\varphi_1 + \varphi_2) = X(\varphi_1) + X(\varphi_2)$ and likewise for
 $Y$ and $Z$. -/
+@[counterpart CIE.internationalLightingVocabulary "17-23-033"]
 theorem ofColorStimulusFunction_add (first second : (wavelength : Wavelength) → ℚ) :
     Tristimulus.ofColorStimulusFunction (fun wavelength ↦ first wavelength + second wavelength) =
       (Tristimulus.ofColorStimulusFunction first).add
         (Tristimulus.ofColorStimulusFunction second) := by
   simp only [Tristimulus.ofColorStimulusFunction, Tristimulus.add, add_mul, List.sum_map_add]
 
-attribute [cite "17-23-033" cie2020internationalLightingVocabulary] ofColorStimulusFunction_add
-
 /-- The tristimulus values of a color stimulus function multiplied by a factor $c$ are the products
 of the factor and its tristimulus values, $X(c\,\varphi) = c\,X(\varphi)$ and likewise for $Y$ and
 $Z$. -/
+@[counterpart CIE.tristimulusValues "Abstract"]
 theorem ofColorStimulusFunction_scale
     (colorStimulusFunction : (wavelength : Wavelength) → ℚ) (factor : ℚ) :
     Tristimulus.ofColorStimulusFunction
@@ -227,8 +225,6 @@ theorem ofColorStimulusFunction_scale
       (Tristimulus.ofColorStimulusFunction colorStimulusFunction).scale factor := by
   simp only [Tristimulus.ofColorStimulusFunction, Tristimulus.scale, mul_assoc,
     List.sum_map_mul_left]
-
-attribute [cite "Abstract" cie2019tristimulusValues] ofColorStimulusFunction_scale
 
 end Tristimulus
 
