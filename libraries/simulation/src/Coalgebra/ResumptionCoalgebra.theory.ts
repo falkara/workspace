@@ -28,7 +28,7 @@ export interface ResumptionCoalgebra<
   >,
   State
 > {
-  /** The coalgebra structure on the state space. */
+  /** The function that gives the next step of the system from a state. */
   readonly structure: (
     state: State,
   ) => HKT.Kind<

@@ -24,11 +24,11 @@ namespace Falkara.Simulation
 endofunctor maps the carrier. -/
 @[counterpart Mathlib.library CategoryTheory.Endofunctor.Coalgebra
   typescript
-    r"A coalgebra, a state space together with a coalgebra structure on it."
+    r"A system that gives from every state its next step, in the shape that its endofunctor sets."
     (F → "Endofunctor")
     (V → "State")
     (str → "structure"
-      r"The coalgebra structure on the state space.")]
+      r"The function that gives the next step of the system from a state.")]
 abbrev Coalgebra := @CategoryTheory.Endofunctor.Coalgebra
 
 end Falkara.Simulation

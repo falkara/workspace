@@ -25,7 +25,7 @@ export interface DeterministicAutomaton<
   >,
   State
 > {
-  /** The coalgebra structure on the state space. */
+  /** The function that gives the next step of the system from a state. */
   readonly structure: (state: State) => {
     readonly output: Output;
     readonly next: (input: Input) => HKT.Kind<Monad, never, never, never, State>;

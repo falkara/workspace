@@ -2,12 +2,12 @@
 import type { HKT } from 'effect';
 
 /**
- * A coalgebra, a state space together with a coalgebra structure on it.
+ * A system that gives from every state its next step, in the shape that its endofunctor sets.
  *
  * @see https://leanprover-community.github.io/mathlib4_docs/find/#doc/CategoryTheory.Endofunctor.Coalgebra
  */
 export interface Coalgebra<out Endofunctor extends HKT.TypeLambda, in out State> {
-  /** The coalgebra structure on the state space. */
+  /** The function that gives the next step of the system from a state. */
   readonly structure: (state: State) => HKT.Kind<Endofunctor, never, never, never, State>;
 }
 
