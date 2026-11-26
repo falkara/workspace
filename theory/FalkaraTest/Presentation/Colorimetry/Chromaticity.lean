@@ -14,14 +14,6 @@ tristimulus value $Z$ and the sum $X + Y + Z$. The second compares the chromatic
 the white, rounded as Table 9.1 of CIE 015 rounds them, with the values that the theory sets beside
 those of the table.
 
-## Main Statements
-
-- `Chromaticity.z_eq_of_ofTristimulus_eq_some`: the coordinate $z$ of the chromaticity of
-  tristimulus values is the quotient of $Z$ and the sum of the values, $z = Z / (X + Y + Z)$.
-- `Chromaticity.ofTristimulus_white_rounded`: the chromaticity coordinates of the white round to
-  $x = 0.312\,73$ and $y = 0.329\,02$ at five decimal places, where Table 9.1 of CIE 015 gives
-  $x = 0.312\,71$ and $y = 0.329\,03$.
-
 ## Implementation Notes
 
 The check of the white is proved by `decide +kernel`, as `native_decide` proves every statement by

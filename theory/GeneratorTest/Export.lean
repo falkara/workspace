@@ -20,12 +20,6 @@ module that re-exports every name, even in a statement that breaks over lines, a
 function with the comment of the theory, even beside a name that merely opens with the name of a
 function, and a reason for a name that the module re-exports from another module alone, an
 implementation whose comment differs, one with no comment, and one that is missing.
-
-## Main Definitions
-
-- `Point`: the structure that the checks re-export.
-- `pointOf`: the function that the checks implement.
-- `origin`: the value that the checks re-export.
 -/
 
 public section

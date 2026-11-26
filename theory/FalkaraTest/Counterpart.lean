@@ -24,31 +24,6 @@ declaration that labels it, and refuses a name that is neither a binder nor a fi
 declaration, a clause in TypeScript with neither a name nor a comment, two clauses of one field,
 and a second counterpart in TypeScript. The checks cite works of their own, so they hold for the
 works of every theory.
-
-## Main Definitions
-
-- `Checks.work`: the work that the checks cite.
-- `Checks.table`: the table that the checks cite beside the work.
-- `citedDeclaration`: the declaration that the checks cite an item of a work for.
-- `declarationCitingAName`: the declaration that the checks cite by the name of a declaration of
-  Lean.
-- `declarationCitingAnUnknownWork`: the declaration that the checks cite a work for that the theory
-  never declares.
-- `Checks.number`: the declaration among the works that is no work.
-- `declarationCitingANumber`: the declaration that the checks cite a declaration for that is no
-  work.
-- `Pair`: the structure whose fields the checks cite, the first of the work of the structure and the
-  second of the table.
-- `Single`: the structure whose clauses the checks refuse.
-- `Named`: the structure whose field the checks cite by the name of a declaration of Lean, of the
-  work of the structure.
-- `markedDeclaration`: the declaration that the checks give a counterpart in TypeScript.
-- `unmarkedDeclaration`: the declaration that the checks leave unmarked.
-- `Shelf`: the structure whose field of items the checks name and comment.
-- `Cabinet`: the declaration that labels the shelf and names its field of labels.
-- `Rack`: the structure whose binder of the type of its slots the checks name.
-- `Crate`: the structure whose field keeps its name in TypeScript.
-- `Point`: the structure that the checks cite and give a counterpart in TypeScript at once.
 -/
 
 public section

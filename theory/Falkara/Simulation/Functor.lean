@@ -16,13 +16,6 @@ import Falkara.References
 The module defines the functors, the identity functor, the composition of functors, and the curried
 functor of constant functors.
 
-## Main Definitions
-
-- `Functor`: a functor between categories.
-- `Functor.id`: the identity functor.
-- `Functor.comp`: the composite of two functors.
-- `Functor.const`: the curried functor of constant functors.
-
 ## Implementation Notes
 
 The action of a functor on objects takes the type parameter `Endofunctor` in TypeScript, as a

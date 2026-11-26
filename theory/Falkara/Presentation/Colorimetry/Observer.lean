@@ -19,13 +19,6 @@ The module defines the observer as the CIE 1931 standard colorimetric observer b
 color-matching functions $\bar{x}$, $\bar{y}$, and $\bar{z}$ at wavelengths from 360 nm to 830 nm
 in steps of 1 nm.
 
-## Main Definitions
-
-- `ColorMatchingCoefficients`: a triple of the values of the CIE color-matching functions $\bar{x}$,
-  $\bar{y}$, and $\bar{z}$ at a given wavelength, with the wavelength.
-- `observer`: the color-matching coefficients that define the CIE 1931 standard colorimetric
-  observer, at wavelengths from 360 nm to 830 nm in steps of 1 nm.
-
 ## Implementation Notes
 
 The observer holds every row of the data table as the color-matching coefficients at the wavelength

@@ -27,43 +27,6 @@ functions are the sums of their tristimulus values, as Grassmann's laws state. T
 color stimulus to which the tristimulus values of a color are normalized, those of CIE standard
 illuminant D65 scaled so that their luminance factor $Y$ is 1, as that of an adapted white is.
 
-## Main Definitions
-
-- `Tristimulus`: a triple of the amounts $X$, $Y$, and $Z$ that match the color of a color stimulus
-  by the reference color stimuli $[X]$, $[Y]$, and $[Z]$ of the CIE 1931 standard colorimetric
-  system.
-- `Tristimulus.add`: gives the tristimulus values of the additive mixture of two color stimuli as
-  the sums of their amounts, $X_1 + X_2$, $Y_1 + Y_2$, and $Z_1 + Z_2$.
-- `Tristimulus.scale`: gives the tristimulus values of a factor $c$ of units of a color stimulus as
-  the products of the factor and its amounts, $cX$, $cY$, and $cZ$.
-- `Tristimulus.ofColorStimulusFunction`: gives the tristimulus values of a color stimulus function
-  $\varphi_\lambda(\lambda)$ as the sums over the wavelengths $\lambda$ from 360 nm to 830 nm,
-  $X = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{x}(\lambda)\,\Delta\lambda$,
-  $Y = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{y}(\lambda)\,\Delta\lambda$, and
-  $Z = \sum_{\lambda} \varphi_\lambda(\lambda)\,\bar{z}(\lambda)\,\Delta\lambda$ with
-  $\Delta\lambda = 1\,\mathrm{nm}$.
-- `Tristimulus.white`: the tristimulus values of the white, those of CIE standard illuminant D65
-  scaled so that their luminance factor $Y$ is 1,
-  $X = \sum_{\lambda} S(\lambda)\,\bar{x}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$,
-  $Y = 1$, and
-  $Z = \sum_{\lambda} S(\lambda)\,\bar{z}(\lambda) / \sum_{\lambda} S(\lambda)\,\bar{y}(\lambda)$.
-
-## Main Statements
-
-- `Tristimulus.add_comm`: the additive mixture of two color stimuli is the same in either order,
-  $X_1 + X_2 = X_2 + X_1$ and likewise for $Y$ and $Z$.
-- `Tristimulus.add_assoc`: the additive mixture of three color stimuli is the same in either
-  grouping, $(X_1 + X_2) + X_3 = X_1 + (X_2 + X_3)$ and likewise for $Y$ and $Z$.
-- `Tristimulus.scale_add`: a factor of units of the additive mixture of two color stimuli is the
-  mixture of that factor of units of each, $c\,(X_1 + X_2) = c\,X_1 + c\,X_2$ and likewise for $Y$
-  and $Z$.
-- `Tristimulus.ofColorStimulusFunction_add`: the tristimulus values of the additive mixture of two
-  color stimulus functions are the sums of their tristimulus values,
-  $X(\varphi_1 + \varphi_2) = X(\varphi_1) + X(\varphi_2)$ and likewise for $Y$ and $Z$.
-- `Tristimulus.ofColorStimulusFunction_scale`: the tristimulus values of a color stimulus function
-  multiplied by a factor $c$ are the products of the factor and its tristimulus values,
-  $X(c\,\varphi) = c\,X(\varphi)$ and likewise for $Y$ and $Z$.
-
 ## Implementation Notes
 
 The tristimulus values are rational numbers of either sign, as a color equation writes a reference

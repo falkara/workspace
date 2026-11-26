@@ -19,19 +19,6 @@ results with the binary products of a type of outputs, which give from every sta
 or an output and the next state, the sequence coalgebra that a resumption coalgebra runs as once it
 leaves its result out, and their behavior and their steps, which the sequence coalgebra gives.
 
-## Main Definitions
-
-- `ResumptionCoalgebra`: a resumption coalgebra.
-- `ResumptionCoalgebra.toSequenceCoalgebra`: the sequence coalgebra that a resumption coalgebra
-  runs as without its result.
-- `ResumptionCoalgebra.behavior`: the behavior of a resumption coalgebra.
-- `ResumptionCoalgebra.steps`: the steps of a resumption coalgebra.
-
-## Main Statements
-
-- `ResumptionCoalgebra.behavior_eq_map_steps`: the behavior at a state is the sequence of the
-  outputs of the steps.
-
 ## Implementation Notes
 
 Jacobs gives the functor no name. The coalgebra cites the section of the sequence coalgebras, whose

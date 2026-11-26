@@ -39,120 +39,6 @@ function type and a type parameter have no schema, and the generator refuses bot
 defines as well the variance of every type parameter of a declaration, the polarities at which the
 parameter occurs in the fields or the value of the declaration.
 
-## Main Definitions
-
-- `isFunctorType`: tells whether a type of the theory is the type of a functor on types, such as
-  `Type u ⥤ Type u`.
-- `isTypeConstructorType`: tells whether a type of the theory is the type of a type constructor, a
-  function from types to types, such as `Type u → Type u` of a monad.
-- `isParameterType`: tells whether a binder of the theory is a type parameter in TypeScript, a
-  binder over a type, over a functor on types, or over a type constructor.
-- `typeParameterCount`: gives the number of type parameters of a declaration, the leading binders
-  of its type over a type, over a functor on types, or over a type constructor.
-- `parametersOf`: runs a computation on the type parameters of a declaration, with the rest of its
-  type and its value applied to the parameters, with every category that is a parameter taken as
-  the category of types, the one category of TypeScript, and with every instance of a class on a
-  parameter, such as `Monad m`, left out of the parameters.
-- `identityLabelOf?`: gives the declaration that labels the identity functor of Mathlib, the functor
-  of the identity monad `Id`, where the theory gives one a counterpart in TypeScript.
-- `binderNameOf`: gives the name of a binder that a telescope opens as a free variable.
-- `defaultOf?`: gives the default value of a type parameter, such as `Id` for
-  `(m : Type u → Type u := Id)`, where the parameter takes one.
-- `parameterObjectOf`: gives the functor and the object of an object `F.obj X` of a functor `F`
-  that is a parameter, which no reduction resolves, or of an application `m X` of a type
-  constructor `m` that is a parameter, where the type is one.
-- `refinementOf`: gives the type and the condition of a refinement, a type of the theory whose
-  value is a subtype `{ value : T // condition value = true }` of a type `T` by a function
-  `condition` that the theory gives a counterpart in TypeScript, where the declaration is one.
-- `fieldNameOf`: gives the name that a field of a structure takes in TypeScript, as the attribute
-  `counterpart` names it or else as the structure names it.
-- `fieldTypesOf`: gives the type of every field of a structure, with the type parameters given in
-  place of those of the structure, or fails with the reason where the type of a field depends on
-  the structure.
-- `normalizedOf`: gives a type of the theory as TypeScript reads it: a morphism `X ⟶ Y` of the
-  category of types as the function type `(value : X) → Y`, an object `F.obj X` of a functor `F`
-  and a type taken out of the opposite of the types as the type it reduces to, such as `X` for the
-  identity functor, and an object of a functor that is a parameter as it stands, with its object as
-  TypeScript reads it.
-- `bundledOf`: gives the structure that a type of the theory applies, where the type is a bundled
-  structure, one with a field whose value is a type, such as `Endofunctor.Coalgebra (𝟭 (Type u))`
-  with its state space `V`.
-- `bundledFieldsOf`: runs a computation on the fields of a bundled structure that a type of the
-  theory applies, with a type parameter in place of every field whose value is a type, named as the
-  attribute `counterpart` names it or else as the field, and the type of every other field, with
-  every such type parameter in place of the projection of its field, as `normalizedOf` reads it, or
-  fails with the reason where the type of a field depends on another field.
-- `unbundledOf`: runs a computation on a function type of the theory whose parameters include
-  bundled structures, with a type parameter in place of every field whose value is a type, named
-  after its parameter as well where several parameters bundle types, such as `FirstState`, and with
-  a result that is a bundled structure applied to the types that the definition gives its fields.
-- `moduleOf`: gives the module of the theory that declares a declaration.
-- `typeNameOf`, `valueNameOf`, `constructorNameOf`, `axiomsNameOf`: give the name that a declaration
-  of the theory takes in TypeScript as a type, as a value, as the constructor of a structure, and as
-  the axioms of a class of functors, after the name of its module, such as `make` for the
-  constructor of `StreamCoalgebra` in the module `StreamCoalgebra`.
-- `displayNameOf`: gives the name of a declaration of the theory as a comment names it, such as
-  `Functor.Comp` for `Functor.comp`.
-- `referenceOf`: gives the name under which a file of TypeScript refers to a declaration of the
-  theory, after the namespace of its module where the declaration lies in another module, such as
-  `Functor.Functor` in the module `ExponentFunctor`.
-- `typeOf`: gives the type of TypeScript that a type of the theory takes, with every declaration
-  named without the namespace of its package and the value of a morphism named after its type where
-  its type is a type parameter, or fails with the reason where the type has none.
-- `argumentsOf`: gives the type arguments of TypeScript that an application of a declaration takes,
-  without the instances of classes, every argument without a default value first, then the
-  arguments past the binders of the declaration, and then the arguments with a default value up to
-  the last one that differs from its default.
-- `typeConstructorOf`: gives the type lambda of Effect that a type constructor of the theory takes,
-  a parameter by its name, the identity monad `Id` as the type lambda of the identity functor, the
-  options as `Option.OptionTypeLambda`, and a type constructor that the theory gives a counterpart
-  in TypeScript by its name.
-- `genericFunctionOf`: gives the generic function type of TypeScript that a function type of the
-  theory takes whose leading parameters are implicit types, with the type parameters already
-  written before the rest of the type.
-- `signatureOf`: gives the parameters and the result of TypeScript that a function type of the
-  theory takes, with the parameters already written before the rest of the type.
-- `isDataType`: tells whether a type of the theory is a type of data: a rational number, a string, a
-  boolean, an option, an array, or a list of data, a structure of data that the theory gives a
-  counterpart in TypeScript, or a refinement that the theory gives a counterpart in TypeScript.
-- `isData`: tells whether a structure is a structure of data, one without type parameters whose
-  every field takes a type of data.
-- `annotationOf`: gives a type parameter as TypeScript annotates it with its variance, `in` where it
-  occurs negatively, `out` where it occurs positively, both where it occurs at both polarities, and
-  neither where it does not occur.
-- `genericOf`: gives a type parameter as TypeScript declares it, constrained to a type lambda of
-  Effect, `HKT.TypeLambda`, where the parameter is a functor on types or a type constructor, so that
-  `HKT.Kind` applies it, and with its default value where it takes one.
-- `orderedOf`: gives the type parameters of a declaration in the order TypeScript takes them, every
-  parameter with a default value after every other one.
-- `lambdaObjectOf`: runs a computation on the object of a functor on types at the object of a type
-  lambda of Effect, `this['Target']`, as `normalizedOf` reads the object, given the type of the
-  functor.
-- `curriedTargetOf?`: gives the type of the functors on types that a curried functor gives, a
-  functor from types or from their opposite into the functors on types, such as
-  `Type u ⥤ Type u ⥤ Type u`, where the type is the type of one.
-- `curriedObjectOf`: runs a computation on the object of a curried functor at a type parameter, the
-  functor on types that the curried functor gives, with the parameter named as the attribute
-  `counterpart` of the declaration names it or else as the definition of the curried functor names
-  its object, and taken by `Opposite.op` where the curried functor maps the opposite of the types,
-  given the type of the curried functor.
-- `functorFieldsOf`: runs a computation on the fields of the type of the functors on types, with a
-  local functor in place of the action of the functor on types, named as the attribute
-  `counterpart` names the field `obj` or else as the field, the type of every other field that is
-  no proof, and the statement of every field that is an axiom, given the type of the functors.
-- `DeclarationKind`: a kind of declaration of the theory, which the generator writes in a form of
-  its own.
-- `kindOf`: gives the kind of a declaration of the theory.
-- `schemaOf`: gives the schema of Effect that a type of data of the theory takes, with every
-  structure named without the namespace of its package, or fails with the reason where the type
-  has none.
-- `polaritiesOf`: gives the polarities at which a type parameter occurs in a type, `true` for a
-  positive occurrence and `false` for a negative one, given the polarity of the type.
-- `variancesOf`: gives the polarities at which every type parameter of a declaration occurs in the
-  fields of the declaration where it is a structure, in the fields of the bundled structure that
-  its value applies where its value is one, in the object of its type lambda where it is a functor,
-  and in its value otherwise.
-
 ## Implementation Notes
 
 The types and the schemas of TypeScript name the modules `Rational`, `Option`, and `Schema` of
@@ -260,11 +146,13 @@ def typeParameterCount : Lean.Expr → Nat
   | _ => 0
 
 /-- Runs a computation on the type parameters of a declaration, the leading binders of its type over
-a type or over a functor on types, named as the attribute `counterpart` names them or else as
-their binders, with the rest of its type and its value applied to the parameters, where it has a
-value, and with every category that is a parameter, a binder over a type followed by an instance of
-`CategoryTheory.Category` on it, taken as the category of types, the one category of TypeScript, or
-fails with the reason where the category of types does not fit. -/
+a type, over a functor on types, or over a type constructor, named as the attribute `counterpart`
+names them or else as their binders, leaving out every instance of a class on a parameter, such as
+`Monad m`, which constrains the parameter and is no parameter of its own, with the rest of its type
+and its value applied to the parameters, where it has a value, and with every category that is a
+parameter, a binder over a type followed by an instance of `CategoryTheory.Category` on it, taken
+as the category of types, the one category of TypeScript, or fails with the reason where the
+category of types does not fit. -/
 def parametersOf {m : Type → Type} [Monad m] [MonadControlT Lean.MetaM m]
     [MonadLiftT Lean.MetaM m] {α : Type} (information : Lean.ConstantInfo)
     (computation : Array Lean.Expr → Lean.Expr → Option Lean.Expr → m α) : m α := do
@@ -510,7 +398,8 @@ where
 
 /-- Runs a computation on a function type of the theory whose parameters include bundled
 structures, with a type parameter in place of every field whose value is a type of every such
-parameter, named as the attribute `counterpart` names the field, and the function type with the
+parameter, named as the attribute `counterpart` names the field, and after its binder as well
+where several parameters bundle types, such as `FirstState`, and the function type with the
 type of every such parameter applied to its type parameters, as TypeScript writes it, and every
 projection of such a field replaced by its type parameter, such as
 `(coalgebra : StreamCoalgebra Output) → (state : State) → Stream' Output` with the type parameter

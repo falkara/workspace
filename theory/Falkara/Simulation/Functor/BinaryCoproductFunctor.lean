@@ -17,10 +17,6 @@ import Falkara.References
 The module defines the functor of binary coproducts with a summand, which maps every type $Y$ to the
 binary coproduct $B + Y$, as the functor of the type constructor `Sum B` gives it.
 
-## Main Definitions
-
-- `binaryCoproductFunctor`: the functor of binary coproducts with a summand.
-
 ## Implementation Notes
 
 Mathlib states the binary coproducts of types as colimits and gives no functor of them on types, so

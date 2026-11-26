@@ -17,15 +17,6 @@ checks write as a type lambda of an effect of Effect, a function of a carillon a
 monad, whose stream holds objects of the functor of the chimes, a function of two carillons into a
 carillon whose state space its definition gives, and a function whose stream holds coproducts of
 the type with one value and the chimes.
-
-## Main Definitions
-
-- `restingFunctor`: the resting functor, which moves no state.
-- `Belfry`: a belfry, the monad of the peals that read a rope and either fail with a crack or ring.
-- `Carillon`: a carillon that rings a chime and moves to its next state in a monad.
-- `Carillon.rounds`: the rounds of a carillon, every chime that it rings with the next state.
-- `Carillon.pair`: the carillon that rings two carillons side by side.
-- `Carillon.tolls`: the tolls of a carillon, a pause before every chime.
 -/
 
 @[expose] public section

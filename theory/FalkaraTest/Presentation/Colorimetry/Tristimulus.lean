@@ -16,16 +16,6 @@ $\bar{z}$ among the validation values of the data table. The checks of the white
 luminance factor with 1, and its tristimulus values rounded as Table 9.1 of CIE 015 rounds them with
 the values that the theory sets beside those of the table.
 
-## Main Statements
-
-- `Tristimulus.ofColorStimulusFunction_one`: the tristimulus values of the color stimulus function
-  that is 1 at every wavelength equal the sums of the values of the color-matching functions,
-  $(X, Y, Z) = (106.865\,469\,489\,595, 106.856\,917\,101\,171\,9, 106.892\,251\,278\,636)$.
-- `Tristimulus.white_Y`: the luminance factor of the white is 1, $Y = 1$.
-- `Tristimulus.white_rounded`: the tristimulus values of the white scaled so that $Y = 100$ round
-  to $X = 95.05$ and $Z = 108.88$ at two decimal places, where Table 9.1 of CIE 015 gives
-  $X = 95.04$ and $Z = 108.88$.
-
 ## Implementation Notes
 
 The checks are proved by `decide +kernel`, as `decide` reaches the maximum recursion depth of the

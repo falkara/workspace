@@ -17,22 +17,6 @@ and the step that the data table gives. A last check finds that pairing the wave
 with the rows of the observer, as `Tristimulus.ofColorStimulusFunction` pairs them, pairs each
 wavelength with the row at that wavelength.
 
-## Main Statements
-
-- `observer_sumOfColumns`: the sum of the wavelengths and the sum of the values of each
-  color-matching function equal the validation values of the data table,
-  $\sum \lambda = 280\,245\,\mathrm{nm}$, $\sum \bar{x}(\lambda) = 106.865\,469\,489\,595$,
-  $\sum \bar{y}(\lambda) = 106.856\,917\,101\,171\,9$, and
-  $\sum \bar{z}(\lambda) = 106.892\,251\,278\,636$.
-- `observer_sampleRow`: the values at the sample wavelength equal the validation values of the
-  data table,
-  $(\bar{x}, \bar{y}, \bar{z})(479\,\mathrm{nm}) = (0.104\,297\,9, 0.133\,452\,8, 0.856\,619\,3)$.
-- `observer_wavelengths`: the wavelengths of the observer run from 360 nm to 830 nm in steps of
-  1 nm, $\lambda_i = (360 + i)\,\mathrm{nm}$ for $i = 0, \ldots, 470$.
-- `wavelengths_zip_observer`: the wavelengths $w_i$ from 360 nm to 830 nm and the rows of the
-  observer are equal in number, and pairing the wavelengths in order with the rows pairs each
-  wavelength with the row at that wavelength, $w_i = \lambda_i$ for $i = 0, \ldots, 470$.
-
 ## Implementation Notes
 
 The checks are proved by `decide +kernel`, as `decide` reaches the maximum recursion depth of the

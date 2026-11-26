@@ -15,10 +15,6 @@ The module defines the effect functor, the monad of the computations that read r
 type `R` and either fail with a failure of a type `E` or give a value, as the monad transformer
 `ReaderT` of Lean over the monad of exceptions `Except` states it.
 
-## Main Definitions
-
-- `EffectFunctor`: the effect functor.
-
 ## Implementation Notes
 
 The effect functor takes in TypeScript the type lambda whose type is `Effect.Effect` of Effect,

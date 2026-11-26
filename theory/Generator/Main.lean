@@ -47,17 +47,6 @@ module of the package beside every file, such as `Colorimetry/Tristimulus.ts`, b
 `Export`, and fails with a reason for every declaration that the module leaves out of its
 re-exports and every implementation whose comment differs from the theory.
 
-## Main Definitions
-
-- `runIn`: runs a computation of the generator in an environment, as a program runs it.
-- `markedDeclarationsOf`: gives the declarations of a module of the theory that the theory gives a
-  counterpart in TypeScript, its theorems or every other declaration, in the order of their lines.
-- `fileOf`: gives the file of TypeScript that holds the declarations of a module of the theory of a
-  package that the theory gives a counterpart in TypeScript, named without the namespace of the
-  package.
-- `main`: writes a file of TypeScript for every module of the theory of a package into the
-  directory of the source of the package, and checks the module of the package beside every file.
-
 ## Implementation Notes
 
 The program writes a file for every module of the theory rather than for every module of the

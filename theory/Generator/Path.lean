@@ -15,11 +15,6 @@ words of the name of the module after the namespace of the theory, joined by sla
 `Colorimetry/Tristimulus` for `Falkara.Presentation.Colorimetry.Tristimulus` in the theory
 `Falkara.Presentation`.
 
-## Main Definitions
-
-- `pathOf`: gives the path of TypeScript of a module of the theory of a package, the words of its
-  name after the namespace of the theory, joined by slashes.
-
 ## Implementation Notes
 
 The path leaves out the namespace of the theory rather than the first word of the name, as every

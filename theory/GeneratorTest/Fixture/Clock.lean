@@ -24,19 +24,6 @@ functor of Mathlib as it stands, which the checks write as a type class of Effec
 types named `Motion` by a clause of the attribute, and a gear train, the composite of
 Mathlib as it stands, which the checks write as a type lambda with a type parameter for each of its
 functors, named `Driver` and `Follower` by the attribute.
-
-## Main Definitions
-
-- `Clock`: a clock that ticks from every state to its next state.
-- `ChimingClock`: a clock that chimes and ticks from every state to its next state.
-- `Clockwork`: a clockwork that moves every state by a functor.
-- `ChimeFunctor`: the functor of the chimes, which gives a chime and the next state.
-- `chimesFunctor`: the curried functor of the chimes, which maps every type of chimes to the
-  functor of the chimes.
-- `dialsFunctor`: the curried functor of the dials, which maps every type of settings to the
-  functor that turns a setting into the next state.
-- `Gear`: a gear, a functor that a clockwork moves its states by.
-- `GearTrain`: a gear train, which moves every state by one gear and then by another.
 -/
 
 @[expose] public section

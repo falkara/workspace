@@ -21,26 +21,6 @@ the work has a page for every item, such as an entry of the vocabulary of the CI
 the work followed by the label of the item otherwise, such as
 `https://doi.org/10.1017/CBO9781316823187 Definition 1.4.5`, as the DOI leads to the work alone.
 
-## Main Definitions
-
-- `textOf`: gives the text of a string field of a work, such as its DOI, where the field holds
-  some text.
-- `addressOf`: gives the address that a tag `@see` names for an item of a work, the page of the
-  item or the DOI of the work followed by the label of the item.
-- `documentationOf`: gives the documentation comment of TypeScript of a text, with a tag `@see` for
-  every item that it cites.
-- `commentOf`: gives the documentation comment of TypeScript of a declaration, the comment that the
-  attribute `counterpart` gives, with a text that opens the comment in place of its first word,
-  where one is given, and a tag `@see` for the item that the declaration cites.
-- `fieldCommentOf`: gives the documentation comment of TypeScript of a field of a structure, the
-  comment that a clause of the attribute `counterpart` gives, with a tag `@see` for the item it
-  cites.
-- `articledOf`: gives a name of TypeScript in backticks after the indefinite article it takes.
-- `fieldsOf`: gives the fields of a structure as a comment of TypeScript lists them.
-- `derivedCommentOf`: gives the documentation comment of TypeScript of a function that the
-  generator derives from a declaration, such as its constructor, with the citations of the
-  declaration.
-
 ## Implementation Notes
 
 A function that the generator derives from a declaration, such as a constructor, a brand, the

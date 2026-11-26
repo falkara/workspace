@@ -13,30 +13,6 @@ public import Falkara.Citation
 The module defines every work that the theory cites, each as a declaration that the attribute
 `counterpart` and the comments of the modules name.
 
-## Main Definitions
-
-- `CIE.colorimetry`: the technical report of the CIE that gives its recommendations on
-  colorimetry, with the colorimetric data of the CIE illuminants.
-- `CIE.colorMatchingFunctions`: the data table of the color-matching functions of the CIE 1931
-  standard colorimetric observer.
-- `CIE.standardIlluminantD65`: the data table of the relative spectral distribution of CIE
-  standard illuminant D65.
-- `CIE.tristimulusValues`: the standard of the CIE and ISO that defines the calculation of
-  tristimulus values from a spectral distribution.
-- `CIE.internationalLightingVocabulary`: the vocabulary of the CIE, which defines the terms of
-  colorimetry, each under a number of its own.
-- `IEEE.portableOperatingSystemInterface`: the standard of the IEEE and The Open Group that
-  defines the interface of a portable operating system, with its filenames and pathnames.
-- `Jacobs.introductionToCoalgebra`: the textbook of Jacobs on coalgebras, which names the kinds of
-  state-based systems by the functors whose coalgebras they are.
-- `Mathlib.library`: the library of mathematics of Lean, Mathlib, which the theory builds on, with a
-  page of documentation for every declaration.
-- `Microsoft.namingFiles`: the page of the documentation of Windows that gives the rules for the
-  names of files, paths, and namespaces.
-- `Pirog.coinductiveResumptionMonad`: the paper of Piróg and Gibbons on the coinductive resumption
-  monad, whose resumptions are the final coalgebras of the functors that either end with a result
-  or go on in a functor.
-
 ## Implementation Notes
 
 Every work lies in the namespace of its author, in upper camel case with an acronym as a group,

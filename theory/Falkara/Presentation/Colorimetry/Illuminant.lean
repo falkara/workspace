@@ -21,20 +21,6 @@ distribution at wavelengths from 300 nm to 830 nm in steps of 1 nm, and the dist
 function of the wavelength from 360 nm to 830 nm, the wavelengths that the metadata of the data
 table gives the column of the distribution.
 
-## Main Definitions
-
-- `MonochromaticComponent`: a monochromatic component with the value of the relative spectral
-  distribution at its wavelength.
-- `illuminant`: the monochromatic components that define the illuminant, at wavelengths from 300 nm
-  to 830 nm in steps of 1 nm.
-- `relativeSpectralPowerAt`: gives the relative spectral distribution of the illuminant at a
-  wavelength $\lambda$, $S(\lambda)$.
-
-## Main Statements
-
-- `length_illuminant`: the illuminant holds a row for each wavelength from 300 nm to 830 nm in
-  steps of 1 nm, $(830 - 300) / 1 + 1 = 531$.
-
 ## Implementation Notes
 
 The illuminant holds every row of the data table as a monochromatic component, with its wavelength

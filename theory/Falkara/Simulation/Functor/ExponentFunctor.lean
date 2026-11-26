@@ -16,10 +16,6 @@ import Falkara.References
 The module defines the exponent functor, which maps every type $k$ to the functor
 $Y \mapsto (k \to Y)$, the exponent $Y^k$.
 
-## Main Definitions
-
-- `exponentFunctor`: the exponent functor.
-
 ## Implementation Notes
 
 The type that the exponent functor maps takes the type parameter `Exponent` in TypeScript, as the

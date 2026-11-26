@@ -22,16 +22,6 @@ type, a structure with type parameters, and a type of any other form take none. 
 as well the variance of the type parameters of a structure, a parameter that a field gives and a
 function takes occurring at both polarities and one that a function gives at the positive polarity
 alone.
-
-## Main Definitions
-
-- `MarkedStructure`: the structure that the checks give a counterpart in TypeScript.
-- `UnmarkedStructure`: the structure that the checks leave unmarked.
-- `namedFunction`: the function whose type the checks write with a named parameter.
-- `unnamedFunction`: the function whose type leaves its parameter unnamed.
-- `genericFunction`: the function whose type takes implicit type parameters.
-- `Pair`: the structure with type parameters that the checks write, a first value and the function
-  that gives a second value from it.
 -/
 
 public section

@@ -17,21 +17,6 @@ The module defines the chromaticity of a color stimulus by the chromaticity coor
 and $z$, the quotients of the tristimulus values $X$, $Y$, and $Z$ and their sum $X + Y + Z$. The
 three coordinates sum to 1, so the coordinates $x$ and $y$ define the chromaticity.
 
-## Main Definitions
-
-- `Chromaticity`: a property of a color stimulus that its chromaticity coordinates $x$ and $y$
-  define.
-- `Chromaticity.z`: gives the chromaticity coordinate $z$ of the chromaticity, $z = 1 - x - y$.
-- `Chromaticity.ofTristimulus`: gives `none` where $X + Y + Z = 0$ and otherwise the chromaticity
-  of the tristimulus values, $x = X / (X + Y + Z)$ and $y = Y / (X + Y + Z)$.
-
-## Main Statements
-
-- `Chromaticity.ofTristimulus_scale`: the chromaticity of a factor $c \neq 0$ of units of a color
-  stimulus is the chromaticity of the stimulus, as the chromaticity coordinates are quotients of the
-  tristimulus values and their sum, $c\,X / (c\,X + c\,Y + c\,Z) = X / (X + Y + Z)$ and likewise
-  for $y$.
-
 ## Implementation Notes
 
 The chromaticity holds the coordinates $x$ and $y$ alone and gives $z$ as $1 - x - y$, so every

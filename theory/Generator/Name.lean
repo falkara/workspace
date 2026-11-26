@@ -18,16 +18,6 @@ name after the namespace of its package and the name of its module, such as `beh
 schema and in camel case for a value, a function, or a constructor, as a module of TypeScript is
 imported as a namespace, as Effect imports `Option` and calls `Option.some`.
 
-## Main Definitions
-
-- `wordsOf`: gives the words of the name of a declaration after the namespace of its package.
-- `localWordsOf`: gives the words of the name of a declaration after the namespace of its package
-  and the name of its module.
-- `reservedWords`: the reserved words of JavaScript, which no binding takes as its name.
-- `pascalCaseOf`: gives the words joined in Pascal case, each capitalized.
-- `camelCaseOf`: gives the words joined in camel case, the first opening with a lowercase letter
-  and every other capitalized.
-
 ## Implementation Notes
 
 The words of a name are told apart from the theory alone, and the case joins them by the

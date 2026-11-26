@@ -8,12 +8,6 @@ import Falkara.Counterpart
 The module defines the structure that the checks of the generator name from another module of the
 theory, a coordinate of a point, a value of the structure, the unit coordinate, and an operation
 on coordinates.
-
-## Main Definitions
-
-- `Coordinate`: a coordinate of a point.
-- `unit`: the coordinate whose value is 1.
-- `Coordinate.shift`: the coordinate shifted by an offset.
 -/
 
 @[expose] public section

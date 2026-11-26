@@ -15,15 +15,6 @@ The module defines a work that the theory cites, a file of a data set, an item o
 record of the item that every declaration of the theory states, which the attribute `counterpart`
 of `Falkara.Counterpart` fills while a module compiles and the generator reads when it runs.
 
-## Main Definitions
-
-- `File`: a file of a data set, with the address the file is published at and the SHA-256 of the
-  file.
-- `Work`: a work that the theory cites, with the fields a bibliography gives it.
-- `Item`: an item of a work, such as a section, an equation, or a column of a data table.
-- `citationExtension`: the record of the item of a work that every declaration states.
-- `citationOf?`: gives the item of a work that a declaration states, where the theory cites one.
-
 ## Implementation Notes
 
 The record lies apart from the attribute, as the generator reads it when it runs and the attribute

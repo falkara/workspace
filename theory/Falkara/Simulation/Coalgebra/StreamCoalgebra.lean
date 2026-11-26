@@ -19,25 +19,6 @@ type of outputs, their behavior, the map into the streams of outputs, the final 
 functor, their steps, which keep the next state beside every output, the coalgebra that maps every
 output, and the Mealy machine that a coalgebra runs as, which takes inputs that carry nothing.
 
-## Main Definitions
-
-- `StreamCoalgebra`: a stream coalgebra.
-- `StreamCoalgebra.behavior`: the behavior of a stream coalgebra.
-- `StreamCoalgebra.steps`: the steps of a stream coalgebra.
-- `StreamCoalgebra.mapOutput`: the coalgebra that maps every output of a coalgebra.
-- `StreamCoalgebra.toMealyMachine`: the Mealy machine that a coalgebra runs as.
-
-## Main Statements
-
-- `StreamCoalgebra.behavior_eq`: the behavior at a state opens with the output of the state and
-  goes on with the behavior at the next state.
-- `StreamCoalgebra.behavior_eq_map_steps`: the behavior at a state is the stream of the outputs of
-  the steps.
-- `StreamCoalgebra.behavior_mapOutput`: the behavior of a mapped coalgebra maps the outputs of the
-  behavior.
-- `StreamCoalgebra.behavior_toMealyMachine`: the Mealy machine of a coalgebra behaves as the
-  coalgebra upon any inputs.
-
 ## Implementation Notes
 
 The product takes the output before the state, as `binaryProductFunctor` of Mathlib and the head

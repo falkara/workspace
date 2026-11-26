@@ -17,13 +17,6 @@ The module defines the wavelength at which the theory computes, a whole number o
 360 nm to 830 nm, as the standard method sums at 1 nm from 360 nm to 830 nm, and every such
 wavelength in order.
 
-## Main Definitions
-
-- `Wavelength`: a wavelength at which the theory computes, a whole number of nanometers from 360 nm
-  to 830 nm.
-- `wavelengths`: the wavelengths at which the theory computes, from 360 nm to 830 nm in steps of
-  1 nm.
-
 ## Implementation Notes
 
 The wavelength bounds the functions of the theory alone, while the data tables hold the wavelength

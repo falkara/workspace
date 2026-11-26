@@ -32,16 +32,6 @@ implementation under the name followed by `_`, which the module exports under th
 every name that the module leaves out of its re-exports and for every implementation that is missing
 or takes another comment.
 
-## Main Definitions
-
-- `reexportsOf`: gives the names that a module of a package re-exports of a declaration of the
-  theory from the generated module.
-- `implementationsOf`: gives the name that binds every implementation of a declaration of the
-  theory, with the documentation comment it takes.
-- `mismatchesOf`: gives a reason for every name that a module of TypeScript leaves out of its
-  re-exports and for every implementation that it leaves out or whose documentation comment differs
-  from the one it takes.
-
 ## Implementation Notes
 
 The check finds the re-exported names between the `{` and the `} from` of every statement that
@@ -86,8 +76,8 @@ def reexportsOf (moduleNamespace name : Lean.Name) : Lean.MetaM (List String) :=
   | .value => return [← valueNameOf moduleNamespace name]
   | .function => return []
 
-/-- Gives the text that opens the line of every implementation of a declaration of the theory, with
-the documentation comment it takes. -/
+/-- Gives the name that binds every implementation of a declaration of the theory, with the
+documentation comment it takes, the name followed by `_` where JavaScript reserves it. -/
 def implementationsOf (moduleNamespace name : Lean.Name) :
     Lean.MetaM (List (String × String)) := do
   -- A name that JavaScript reserves, such as `const`, takes `_` after it as the name of its

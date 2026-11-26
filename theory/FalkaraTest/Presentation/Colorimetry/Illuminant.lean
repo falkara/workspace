@@ -16,20 +16,6 @@ check compares the value of the distribution at 560 nm with 100, as the data tab
 last theorem proves that the distribution as a function of the wavelength gives at every wavelength
 from 360 nm to 830 nm the row of the data table at that wavelength.
 
-## Main Statements
-
-- `illuminant_sumOfColumns`: the sum of the wavelengths and the sum of the values of the relative
-  spectral distribution equal the validation values of the data table, $\sum \lambda = 300\,015$
-  and $\sum S(\lambda) = 40\,852.204$.
-- `illuminant_sampleRow`: the value at the sample wavelength equals the validation value of the
-  data table, $S(419\,\mathrm{nm}) = 93.237\,2$.
-- `illuminant_wavelengths`: the wavelengths of the illuminant run from 300 nm to 830 nm in steps of
-  1 nm, $\lambda_i = (300 + i)\,\mathrm{nm}$ for $i = 0, \ldots, 530$.
-- `illuminant_normalization`: the relative spectral distribution of the illuminant is 100 at
-  560 nm, $S(560\,\mathrm{nm}) = 100$.
-- `relativeSpectralPowerAt_row`: the distribution as a function of the wavelength gives the row of
-  the data table at every wavelength from 360 nm to 830 nm, $S(\lambda)$.
-
 ## Implementation Notes
 
 The distribution at every wavelength is proved from the wavelengths of the rows for a wavelength

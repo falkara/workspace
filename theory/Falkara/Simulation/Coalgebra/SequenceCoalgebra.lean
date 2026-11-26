@@ -22,23 +22,6 @@ with a type of outputs, their behavior, the map into the sequences of outputs, t
 of the functor, their steps, which keep the next state beside every output, and the coalgebra that
 maps every output.
 
-## Main Definitions
-
-- `SequenceCoalgebra`: a sequence coalgebra.
-- `SequenceCoalgebra.behavior`: the behavior of a sequence coalgebra.
-- `SequenceCoalgebra.steps`: the steps of a sequence coalgebra.
-- `SequenceCoalgebra.mapOutput`: the coalgebra that maps every output of a coalgebra.
-
-## Main Statements
-
-- `SequenceCoalgebra.behavior_destruct`: the behavior at a state ends where the coalgebra gives
-  nothing from the state, and otherwise opens with the output of the state and goes on with the
-  behavior at the next state.
-- `SequenceCoalgebra.behavior_eq_map_steps`: the behavior at a state is the sequence of the outputs
-  of the steps.
-- `SequenceCoalgebra.behavior_mapOutput`: the behavior of a mapped coalgebra maps the outputs of
-  the behavior.
-
 ## Implementation Notes
 
 The behavior takes its name from the behavior map of Jacobs, as that of a stream coalgebra does,

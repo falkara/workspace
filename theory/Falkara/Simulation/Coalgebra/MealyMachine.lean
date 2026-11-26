@@ -23,29 +23,6 @@ the binary products with a type of outputs, their behavior, which maps a stream 
 stream of the outputs, their steps, which keep the next state beside every output, and the machines
 that a machine maps into or that two machines compose into.
 
-## Main Definitions
-
-- `MealyMachine`: a Mealy machine.
-- `MealyMachine.behavior`: the behavior of a Mealy machine.
-- `MealyMachine.steps`: the steps of a Mealy machine.
-- `MealyMachine.mapOutput`: the machine that maps every output of a machine.
-- `MealyMachine.mapInput`: the machine that maps every input before a machine takes it.
-- `MealyMachine.series`: the machine that feeds every output of a machine into another.
-- `MealyMachine.parallel`: the machine that runs two machines side by side.
-
-## Main Statements
-
-- `MealyMachine.behavior_eq`: the behavior at a state upon a stream of inputs opens with the output
-  of the state upon the first input and goes on with the behavior at the next state upon the rest.
-- `MealyMachine.behavior_eq_map_steps`: the behavior at a state upon a stream of inputs is the
-  stream of the outputs of the steps.
-- `MealyMachine.behavior_mapOutput`, `MealyMachine.behavior_mapInput`: the behavior of a mapped
-  machine maps the outputs or the inputs of the behavior.
-- `MealyMachine.behavior_series`: the behavior of two machines in series is the behavior of the
-  second upon the behavior of the first.
-- `MealyMachine.behavior_parallel`: the behavior of two machines side by side pairs their
-  behaviors upon the parts of the inputs.
-
 ## Implementation Notes
 
 The product takes the output before the state, as `StreamCoalgebra` does, whereas the exercise that

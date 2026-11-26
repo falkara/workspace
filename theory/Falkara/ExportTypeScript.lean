@@ -15,24 +15,6 @@ comment and the clauses that it takes there, and the record of every such declar
 attribute `counterpart` of `Falkara.Counterpart` fills while a module compiles and the generator
 reads when it runs.
 
-## Main Definitions
-
-- `Clause`: a binder or a field of a declaration with the name and the documentation comment that
-  it takes in TypeScript.
-- `Export`: a declaration that the generator writes as TypeScript, with its comment and its
-  clauses.
-- `exportExtension`: the record of the declarations that the generator writes as TypeScript.
-- `labels`: tells whether a declaration labels a structure.
-- `exportsOf`: gives every declaration that the generator writes as TypeScript.
-- `isExported`: tells whether the generator writes a declaration as TypeScript.
-- `commentOf?`: gives the documentation comment that a declaration takes in TypeScript, where the
-  generator writes the declaration.
-- `clauseOf?`: gives the clause of a binder of a declaration, where the theory gives one.
-- `nameOf?`: gives the name that a binder of a declaration takes in TypeScript, where the theory
-  names one.
-- `fieldClauseOf?`: gives the clause of a field of a structure, given by the declaration that labels
-  the structure, where the theory gives one.
-
 ## Implementation Notes
 
 The record lies apart from the attribute, as the generator reads it when it runs and the attribute

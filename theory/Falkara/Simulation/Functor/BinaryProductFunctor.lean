@@ -15,10 +15,6 @@ import Falkara.References
 
 The module defines the curried functor of binary products.
 
-## Main Definitions
-
-- `binaryProductFunctor`: the curried functor of binary products.
-
 ## Implementation Notes
 
 The type that the curried functor maps takes the type parameter `Factor` in TypeScript, as Jacobs

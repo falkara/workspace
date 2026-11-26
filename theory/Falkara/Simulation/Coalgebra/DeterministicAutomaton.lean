@@ -19,25 +19,6 @@ outputs with the functions from a type of inputs, their behavior, which maps a s
 the stream of the outputs of the states that the inputs lead through, the automata that an automaton
 maps into, and the Mealy machine that an automaton runs as.
 
-## Main Definitions
-
-- `DeterministicAutomaton`: a deterministic automaton.
-- `DeterministicAutomaton.behavior`: the behavior of a deterministic automaton.
-- `DeterministicAutomaton.mapOutput`: the automaton that maps every output of an automaton.
-- `DeterministicAutomaton.mapInput`: the automaton that maps every input before an automaton takes
-  it.
-- `DeterministicAutomaton.toMealyMachine`: the Mealy machine that an automaton runs as.
-
-## Main Statements
-
-- `DeterministicAutomaton.behavior_eq`: the behavior at a state upon a stream of inputs opens with
-  the output of the state and goes on with the behavior at the state that the first input leads to
-  upon the rest.
-- `DeterministicAutomaton.behavior_mapOutput`, `DeterministicAutomaton.behavior_mapInput`: the
-  behavior of a mapped automaton maps the outputs or the inputs of the behavior.
-- `DeterministicAutomaton.behavior_toMealyMachine`: the Mealy machine of an automaton behaves as the
-  automaton.
-
 ## Implementation Notes
 
 The product takes the output before the transition, as `StreamCoalgebra` does, whereas the section

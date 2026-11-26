@@ -9,11 +9,6 @@ The module defines a bundled structure, a lamp, and the lantern, which labels th
 checks of the generator write from another module, with the clauses of the attribute `counterpart`
 that give the type of lights of the lamp the type parameter `Shade` and its light the field `beam`
 with a comment of its own.
-
-## Main Definitions
-
-- `Lamp`: a lamp that shows a light of its type of lights.
-- `Lantern`: a lantern, a lamp that shows a light.
 -/
 
 @[expose] public section

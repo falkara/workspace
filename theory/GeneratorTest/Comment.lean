@@ -16,17 +16,6 @@ gives a counterpart in TypeScript takes none, and a text given to open the comme
 of the first word. A field that cites an item of a work takes the DOI of the work in its comment.
 The checks cite works of their own, so they hold for the works of every
 theory, and take the DOI prefix 10.5555, which Crossref reserves for examples.
-
-## Main Definitions
-
-- `Checks.vocabulary`: the vocabulary that the checks cite, a work with a page for every
-  entry.
-- `Checks.table`: the table that the checks cite, a work with a DOI.
-- `entryDeclaration`: the declaration that cites an entry of the vocabulary.
-- `tableDeclaration`: the declaration that cites a data table.
-- `uncitedDeclaration`: the declaration that cites no work.
-- `unmarkedDeclaration`: the declaration that the theory never gives a counterpart in TypeScript.
-- `Shelf`: the structure whose field cites the table.
 -/
 
 public section

@@ -18,44 +18,6 @@ portable filename of at most 255 bytes that starts with no hyphen-minus, ends wi
 names no device that Windows reserves. A relative path made of such filenames never leaves the
 directory it starts at, as such a filename is neither dot nor dot-dot.
 
-## Main Definitions
-
-- `maximumFilenameLength`: the greatest number of bytes in a filename that every system conforming
-  to the X/Open System Interfaces accepts.
-- `reservedNames`: the names that Windows reserves for devices, alone or followed by an extension.
-- `isPortableFilenameCharacter`: tells whether a character is in the portable filename character
-  set, a letter from `A` to `Z` or from `a` to `z`, a digit from `0` to `9`, `.`, `_`, or `-`.
-- `isPortableFilename`: tells whether a name is a portable filename, 1 to 255 characters of the
-  portable filename character set.
-- `hasLeadingHyphenMinus`: tells whether a name starts with a hyphen-minus, which a program takes
-  as an option when the name is passed as an argument on the command line.
-- `hasTrailingPeriod`: tells whether a name ends with a period, which Windows drops from the name
-  of a file or a directory.
-- `isReservedName`: tells whether a name is one that Windows reserves for a device, alone or
-  followed by an extension, in either case.
-- `isFilename`: tells whether a name is a filename that names a file or a directory in the same way
-  on every system, a portable filename that starts with no hyphen-minus, ends with no period, and
-  is no name that Windows reserves.
-- `Filename`: a filename that names a file or a directory in the same way on every system.
-
-## Main Statements
-
-- `isFilename_iff`: a name $n$ is a filename exactly when it is a portable filename that starts
-  with no hyphen-minus, ends with no period, and is no name that Windows reserves,
-  $\mathrm{isFilename}(n) \iff \mathrm{isPortableFilename}(n) \land
-  \neg\,\mathrm{hasLeadingHyphenMinus}(n) \land \neg\,\mathrm{hasTrailingPeriod}(n) \land
-  \neg\,\mathrm{isReservedName}(n)$.
-- `Filename.isPortableFilename_val`: a filename $f$ is a portable filename,
-  $\mathrm{isPortableFilename}(f)$.
-- `Filename.hasLeadingHyphenMinus_val`: a filename $f$ never starts with a hyphen-minus,
-  $\neg\,\mathrm{hasLeadingHyphenMinus}(f)$.
-- `Filename.hasTrailingPeriod_val`: a filename $f$ never ends with a period,
-  $\neg\,\mathrm{hasTrailingPeriod}(f)$.
-- `Filename.isReservedName_val`: a filename $f$ is never a name that Windows reserves,
-  $\neg\,\mathrm{isReservedName}(f)$.
-- `Filename.val_ne_dot`: a filename $f$ is never dot, $f \neq \mathtt{.}$.
-- `Filename.val_ne_dotDot`: a filename $f$ is never dot-dot, $f \neq \mathtt{..}$.
-
 ## Implementation Notes
 
 A filename is a subtype of a string by a condition that gives a boolean, as the kernel of Lean

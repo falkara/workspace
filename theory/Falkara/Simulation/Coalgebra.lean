@@ -14,10 +14,6 @@ import Falkara.References
 # Coalgebra
 
 The module defines the coalgebras of an endofunctor.
-
-## Main Definitions
-
-- `Coalgebra`: a coalgebra of an endofunctor.
 -/
 
 public section

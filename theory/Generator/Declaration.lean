@@ -93,39 +93,6 @@ the parameters of the field or else from the type arguments.``,
 ``Gives the `Functor` instance of a `BinaryProductFunctor`.``. Every other declaration has no
 declaration of TypeScript, and the generator refuses it.
 
-## Main Definitions
-
-- `naturalOf`: gives the natural number that the kernel of Lean reduces an expression to, or fails
-  with the reason where it reduces to none.
-- `integerOf`: gives the integer that the kernel of Lean reduces an expression to, or fails with
-  the reason where it reduces to none.
-- `Value`: a value of the theory as the kernel of Lean reduces it.
-- `valueOf`: gives the value of an expression of a type of the theory, as the kernel of Lean
-  reduces it, for a declaration of the theory, or fails with the reason where the type has no
-  value.
-- `initializerOf`: gives the expression of TypeScript that writes a value for a declaration of a
-  module of the theory, or fails with the reason where the value takes a structure of another
-  module.
-- `morphismOf`: gives the expression of TypeScript that a morphism of an axiom of a functor takes,
-  an identity as `Function.identity`, a composite as `Function.flow`, and the action of the functor
-  on a morphism as `instance.map`.
-- `axiomOf`: gives the predicate of TypeScript that an axiom of a functor takes, an equality of two
-  morphisms, as a function of the variables of the axiom and of a value of the source of the
-  morphisms that tells by `equivalence` whether the two morphisms give one value.
-- `functorClassOf`: gives the class of functors, where the theory gives one a counterpart in
-  TypeScript.
-- `instanceCommentOf`: gives the documentation comment of TypeScript of the instance of the class of
-  functors that a functor or a curried functor of the theory takes.
-- `instanceNameOf`: gives the name of the instance of the class of functors that a functor or a
-  curried functor of the theory takes, such as `functor` for `BinaryProductFunctor` and `comp` for
-  `Functor.comp`.
-- `instanceTypeOf`: gives the type of TypeScript of the instance of the class of functors that a
-  functor or a curried functor of the theory takes, a function of the type parameters of the
-  functor and of an instance of every functor among them that gives the instance.
-- `declarationOf`: gives the declaration of TypeScript that a declaration of the theory takes,
-  where the theory gives it a counterpart in TypeScript, named without the namespace of its module,
-  or fails with the reason where the declaration has none.
-
 ## Implementation Notes
 
 A structure takes a schema in place of a type alone, so a value from outside the package takes the

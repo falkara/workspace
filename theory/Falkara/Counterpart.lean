@@ -44,22 +44,6 @@ binder or field with the name that it takes there, as `(V → "State")`, where i
 its own, and its documentation comment. A declaration that the theory alone needs
 takes the item alone, as `@[counterpart Jacobs.introductionToCoalgebra "(2.22)"]`.
 
-## Main Definitions
-
-- `itemOf`: gives the item of a work by its label and the name of the work in the module
-  `Falkara.References`, or fails with the reason where the name is no declaration of a work.
-- `objectFieldsOf`: gives the structure that a functor gives at every object and its fields, where
-  it gives one.
-- `bindersOf`: gives the names that a declaration binds, the binders of its type, its fields and
-  those of the structure that it labels, the object that its definition names where its type is a
-  functor, and the structure that the functor gives at every object with its fields.
-- `rawStringAhead`: the parser that passes where a raw string literal follows, reading nothing.
-- `counterpartLabel`, `fieldItem`, `citationClause`, `typeScriptComment`, `typeScriptClause`,
-  `typeScriptBlock`, `counterpart`: the syntax of the label of an item, of the item of a field, of
-  a clause of a field with its item, of a comment in TypeScript, of a clause in TypeScript, of the
-  counterpart in TypeScript, and of the attribute `counterpart`.
-- `textOf`: gives the text of a documentation comment in TypeScript.
-
 ## Implementation Notes
 
 The attribute looks a work up in the module `Falkara.References`, which holds every work, so a

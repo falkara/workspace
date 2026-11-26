@@ -36,17 +36,6 @@ of the attribute `counterpart` on the lantern give in another module. A function
 name of its type where its type is a type parameter, such as `state` for `State`, and `value`
 otherwise. A value of a type with no value in TypeScript, a value of a structure of another module,
 and a declaration that the theory never gives a counterpart in TypeScript take none.
-
-## Main Definitions
-
-- `Point`: the structure that the checks write.
-- `Point.sum`: the function that the checks write, a function of a structure.
-- `pointOf`: the function that the checks write.
-- `origin`: the rational value that the checks write.
-- `corner`: the value of a structure that the checks write.
-- `missingCoordinate`: the value that the checks refuse, as an option has no value in TypeScript.
-- `unitCoordinate`: the value that the checks refuse, as its structure lies in another module.
-- `unmarkedFunction`: the function that the checks leave unmarked.
 -/
 
 public section

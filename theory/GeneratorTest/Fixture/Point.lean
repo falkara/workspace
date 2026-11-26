@@ -11,16 +11,6 @@ The module defines the structure and the function that the checks of the generat
 by its first coordinate and the point at a coordinate, both of which name the coordinate of another
 module of the theory, and the theorems that the checks write as tests, one with a constructor and
 an option and one with a hypothesis.
-
-## Main Definitions
-
-- `Point`: a point by its first coordinate.
-- `pointAt`: gives the point at a coordinate.
-
-## Main Statements
-
-- `pointAt_first`: the point at a coordinate is the point whose first coordinate it is.
-- `pointAt_eq`: the points at two equal coordinates are equal.
 -/
 
 @[expose] public section

@@ -16,16 +16,6 @@ for `Rational.fromBigInt(1n)`, or as a type alone, such as `Rational` for `Ratio
 the file imports every module that its functions record, as a value where one of them names the
 module as a value.
 
-## Main Definitions
-
-- `Usage`: a way that a file of TypeScript names a module of Effect.
-- `TypeScriptM`: a computation that writes TypeScript and records the modules of Effect whose names
-  it writes.
-- `effectNameOf`: gives the name of a member of a module of Effect, such as `Rational.fromBigInt`,
-  and records the module with the way the name uses it.
-- `effectImportsOf`: gives the modules of Effect that a file imports from what its computations
-  record, sorted by name, each as a value where one of them names the module as a value.
-
 ## Implementation Notes
 
 A module of Effect is recorded where the generator writes its name rather than found in the

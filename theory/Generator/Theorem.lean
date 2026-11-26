@@ -28,22 +28,6 @@ the package, imported under the name of its module of the theory, such as
 `Tristimulus.add(first, second)`, and rational literals, $+$, $-$, $\cdot$, and options
 from Effect. Every other expression has no form in TypeScript, and the generator refuses it.
 
-## Main Definitions
-
-- `moduleAliasOf`: gives the name under which a test imports the module of the package that holds
-  a declaration, the last word of the name of its module of the theory.
-- `expressionOf`: gives the expression of TypeScript that an expression of a theorem takes, with
-  the declarations of the theory whose modules of the package it names, or fails with the reason
-  where the expression has none.
-- `arbitraryOf`: gives the schema from which a property test draws a variable of a type, with the
-  declarations of the theory whose modules of the package it names, or fails with the reason where
-  the type has none.
-- `testOf`: gives the test of TypeScript that a theorem of the theory takes, where the theory gives
-  it a counterpart in TypeScript, with the declarations of the theory whose modules of the package
-  it names, or fails with the reason where the theorem has none.
-- `testFileOf`: gives the file of tests of TypeScript that holds the tests of the theorems of a
-  module of the theory of a package, which imports the modules of the package that the tests name.
-
 ## Implementation Notes
 
 A test calls the module of the package rather than the generated module, so that the test bounds
