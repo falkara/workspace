@@ -1,5 +1,5 @@
 /-- <The comment states in one sentence what the work is, such as "The data table of the color-matching functions of the CIE 1931 standard colorimetric observer."> -/
-def <The name joins the author, the year of the work, and the words of its title that tell the work apart, as a citation key of a bibliography does, such as cie2019colorMatchingFunctions or cie2020internationalLightingVocabulary> : Citation.Work where
+def <The name is the namespace of the author, in upper camel case with an acronym as a group and the first author where the work has several, followed by the words of the title that tell the work apart, in lower camel case as a value of Lean is, with no year, such as CIE.colorMatchingFunctions or Jacobs.introductionToCoalgebra> : Citation.Work where
   author := "<The author as the work names it, such as CIE>"
   title := "<The title as the work writes it, in its own spelling, such as Colour-matching functions of CIE 1931 standard colorimetric observer>"
   year := <The year in which the work was published, such as 2019>

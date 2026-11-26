@@ -1,7 +1,7 @@
 /-!
 # <The title names what the module defines, as the name of the module names it, and a module of the tests takes the title of the module its checks concern, such as Observer for both `Observer.lean` and the tests of the module.>
 
-<The summary opens with "The module defines" and names in one or two sentences what the module defines, leaving to the comments of the declarations what each of them is, such as "The module defines the observer as the CIE 1931 standard colorimetric observer by its color-matching functions $\bar{x}$, $\bar{y}$, and $\bar{z}$.", or for a module of the tests "The module defines the checks of the observer against the data table [cie2019colorMatchingFunctions].">
+<The summary opens with "The module defines" and names in one or two sentences what the module defines, leaving to the comments of the declarations what each of them is, such as "The module defines the observer as the CIE 1931 standard colorimetric observer by its color-matching functions $\bar{x}$, $\bar{y}$, and $\bar{z}$.", or for a module of the tests "The module defines the checks of the observer against the data table [CIE.colorMatchingFunctions].">
 
 ## Main Definitions
 

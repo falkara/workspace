@@ -5,7 +5,7 @@ Authors: <The authors, separated by commas, with neither "and" nor a period at t
 -/
 module
 
-<The imports in groups by visibility, the imports marked `public` first, then those with no mark, then those marked `all`, with a blank line between two groups, and within a group the imports marked `meta` first, each run in alphabetical order, with no blank line between the imports marked `meta` and the others of the group, as `#norm_imports` writes them, each import with no comment except `-- shake: keep` beside an import that the module needs and `lake shake` sees no use of, such as "public import Mathlib.CategoryTheory.Endofunctor.Algebra", a blank line, "import Falkara.ExportTypeScript", and "import Falkara.References".>
+<The imports in groups by visibility, the imports marked `public` first, then those with no mark, then those marked `all`, with a blank line between two groups, and within a group the imports marked `meta` first, each run in alphabetical order, with no blank line between the imports marked `meta` and the others of the group, as `#norm_imports` writes them, each import with no comment except `-- shake: keep` beside an import that the module needs and `lake shake` sees no use of, such as "public import Mathlib.CategoryTheory.Endofunctor.Algebra", a blank line, "import Falkara.Counterpart", and "import Falkara.References".>
 
 <The option that turns the header linter off, `set_option linter.style.header false`, in a file whose license differs from the one that `linter.style.header.license` names, and nothing in any other file.>
 
