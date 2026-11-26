@@ -171,6 +171,10 @@ namespace MealyMachine
 /-- The behavior of a Mealy machine at a state upon a stream of inputs opens with the output that
 the machine gives upon the first input and goes on with the behavior at the next state upon the rest
 of the inputs. -/
+@[counterpart
+  typescript
+    r"Running a Mealy machine upon inputs gives first its output upon the first input and then what
+    running it from the next state gives upon the rest of the inputs."]
 theorem behavior_eq {Input Output : Type u} (machine : MealyMachine Input Output)
     (state : machine.V) (inputs : Stream' Input) :
     let step : Input ⟶ Output × machine.V := machine.str state
@@ -180,6 +184,9 @@ theorem behavior_eq {Input Output : Type u} (machine : MealyMachine Input Output
 
 /-- The behavior of a Mealy machine at a state upon a stream of inputs is the stream of the outputs
 of its steps. -/
+@[counterpart
+  typescript
+    r"Running a Mealy machine gives the outputs of its steps."]
 theorem behavior_eq_map_steps {Input Output : Type u}
     (machine : MealyMachine Input Output) (state : machine.V) (inputs : Stream' Input) :
     machine.behavior state inputs = (machine.steps state inputs).map Prod.fst := by
@@ -188,6 +195,9 @@ theorem behavior_eq_map_steps {Input Output : Type u}
 
 /-- The behavior of the machine that maps every output of a Mealy machine maps every output of the
 behavior of the machine. -/
+@[counterpart
+  typescript
+    r"Running a Mealy machine with mapped outputs gives the outputs of running it, mapped."]
 theorem behavior_mapOutput {Input Output MappedOutput : Type u}
     (machine : MealyMachine Input Output) (f : (output : Output) → MappedOutput)
     (state : machine.V) (inputs : Stream' Input) :
@@ -203,6 +213,10 @@ theorem behavior_mapOutput {Input Output MappedOutput : Type u}
 
 /-- The behavior of the machine that maps every input before a Mealy machine takes it is the
 behavior of the machine upon the mapped inputs. -/
+@[counterpart
+  typescript
+    r"Running a Mealy machine with mapped inputs gives what running it upon the mapped inputs
+    gives."]
 theorem behavior_mapInput {Input MappedInput Output : Type u}
     (machine : MealyMachine Input Output) (f : (input : MappedInput) → Input)
     (state : machine.V) (inputs : Stream' MappedInput) :
@@ -218,6 +232,10 @@ theorem behavior_mapInput {Input MappedInput Output : Type u}
 
 /-- The behavior of two Mealy machines in series is the behavior of the second upon the behavior of
 the first. -/
+@[counterpart
+  typescript
+    r"Running two Mealy machines in series gives what running the second upon the outputs of the
+    first gives."]
 theorem behavior_series {Input Middle Output : Type u}
     (first : MealyMachine Input Middle) (second : MealyMachine Middle Output)
     (firstState : first.V) (secondState : second.V) (inputs : Stream' Input) :
@@ -237,6 +255,10 @@ theorem behavior_series {Input Middle Output : Type u}
 
 /-- The behavior of two Mealy machines side by side pairs the behavior of the first upon the first
 parts of the inputs with the behavior of the second upon the second parts. -/
+@[counterpart
+  typescript
+    r"Running two Mealy machines side by side gives the pairs of what each gives upon its part of
+    the inputs."]
 theorem behavior_parallel {FirstInput FirstOutput SecondInput SecondOutput : Type u}
     (first : MealyMachine FirstInput FirstOutput) (second : MealyMachine SecondInput SecondOutput)
     (firstState : first.V) (secondState : second.V)

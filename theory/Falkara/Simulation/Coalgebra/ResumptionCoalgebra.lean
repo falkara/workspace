@@ -103,6 +103,9 @@ namespace ResumptionCoalgebra
 
 /-- The behavior of a resumption coalgebra at a state is the sequence of the outputs of its steps.
 -/
+@[counterpart
+  typescript
+    r"Running a resumption coalgebra gives the outputs of its steps."]
 theorem behavior_eq_map_steps {Output Done : Type u}
     (coalgebra : ResumptionCoalgebra Output Done) (state : coalgebra.V) :
     coalgebra.behavior state = (coalgebra.steps state).map Prod.fst :=

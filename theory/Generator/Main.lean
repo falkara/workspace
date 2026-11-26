@@ -42,7 +42,9 @@ functors that every functor takes, such as `functor`, and a type that fails to c
 where that module leaves a function out or gives it another type, as a signature of a module in ML
 requires of the module. The program writes the theorems of a module that the theory gives a
 counterpart in TypeScript into the file of tests of the same name, such as
-`Colorimetry/Tristimulus.theory.test.ts`, by the module `Theorem`. Before it writes a file, the
+`Colorimetry/Tristimulus.theory.test.ts`, by the module `Theorem`, which draws a system that a
+theorem is about as the table of its structure and compares the streams of a theorem by a prefix
+of each, and fails with a reason at a theorem that has no test. Before it writes a file, the
 program fails with a reason for every comment that the attribute `counterpart` gives a declaration
 under a role whose function the generator never derives from it, such as `constructor` on a
 function, and it fails at a declaration that lacks the comment of a function the generator derives

@@ -135,6 +135,11 @@ namespace DeterministicAutomaton
 /-- The behavior of a deterministic automaton at a state upon a stream of inputs opens with the
 output of the state and goes on with the behavior at the state that the first input leads to upon
 the rest of the inputs. -/
+@[counterpart
+  typescript
+    r"Running a deterministic automaton upon inputs gives first the output of its state and then
+    what running it from the state that the first input leads to gives upon the rest of the
+    inputs."]
 theorem behavior_eq {Input Output : Type u}
     (automaton : DeterministicAutomaton Input Output) (state : automaton.V)
     (inputs : Stream' Input) :
@@ -145,6 +150,10 @@ theorem behavior_eq {Input Output : Type u}
 
 /-- The behavior of the automaton that maps every output of a deterministic automaton maps every
 output of the behavior of the automaton. -/
+@[counterpart
+  typescript
+    r"Running a deterministic automaton with mapped outputs gives the outputs of running it,
+    mapped."]
 theorem behavior_mapOutput {Input Output MappedOutput : Type u}
     (automaton : DeterministicAutomaton Input Output) (f : (output : Output) → MappedOutput)
     (state : automaton.V) (inputs : Stream' Input) :
@@ -161,6 +170,10 @@ theorem behavior_mapOutput {Input Output MappedOutput : Type u}
 
 /-- The behavior of the automaton that maps every input before a deterministic automaton takes it
 is the behavior of the automaton upon the mapped inputs. -/
+@[counterpart
+  typescript
+    r"Running a deterministic automaton with mapped inputs gives what running it upon the mapped
+    inputs gives."]
 theorem behavior_mapInput {Input MappedInput Output : Type u}
     (automaton : DeterministicAutomaton Input Output) (f : (input : MappedInput) → Input)
     (state : automaton.V) (inputs : Stream' MappedInput) :
@@ -177,6 +190,10 @@ theorem behavior_mapInput {Input MappedInput Output : Type u}
 
 /-- The Mealy machine of a deterministic automaton behaves upon every stream of inputs as the
 automaton. -/
+@[counterpart
+  typescript
+    r"Running the Mealy machine of a deterministic automaton gives what running the automaton
+    gives."]
 theorem behavior_toMealyMachine {Input Output : Type u}
     (automaton : DeterministicAutomaton Input Output) (state : automaton.V)
     (inputs : Stream' Input) :

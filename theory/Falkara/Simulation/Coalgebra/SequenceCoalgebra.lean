@@ -131,6 +131,9 @@ theorem behavior_destruct {Output : Type u}
   Stream'.Seq.corec_eq _ _
 
 /-- The behavior of a sequence coalgebra at a state is the sequence of the outputs of its steps. -/
+@[counterpart
+  typescript
+    r"Running a sequence coalgebra gives the outputs of its steps."]
 theorem behavior_eq_map_steps {Output : Type u}
     (coalgebra : SequenceCoalgebra Output) (state : coalgebra.V) :
     coalgebra.behavior state = (coalgebra.steps state).map Prod.fst := by
@@ -158,6 +161,9 @@ theorem behavior_eq_map_steps {Output : Type u}
 
 /-- The behavior of the coalgebra that maps every output of a sequence coalgebra maps every output
 of the behavior of the coalgebra. -/
+@[counterpart
+  typescript
+    r"Running a sequence coalgebra with mapped outputs gives the outputs of running it, mapped."]
 theorem behavior_mapOutput {Output MappedOutput : Type u}
     (coalgebra : SequenceCoalgebra Output) (f : (output : Output) → MappedOutput)
     (state : coalgebra.V) :

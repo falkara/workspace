@@ -110,6 +110,10 @@ namespace StreamCoalgebra
 
 /-- The behavior of a stream coalgebra at a state opens with the output that the coalgebra gives
 from the state and goes on with the behavior at the next state. -/
+@[counterpart
+  typescript
+    r"Running a stream coalgebra from a state gives first the output of the state and then what
+    running it from the next state gives."]
 theorem behavior_eq {Output : Type u} (coalgebra : StreamCoalgebra Output)
     (state : coalgebra.V) :
     coalgebra.behavior state =
@@ -117,6 +121,9 @@ theorem behavior_eq {Output : Type u} (coalgebra : StreamCoalgebra Output)
   Stream'.corec'_eq _ _
 
 /-- The behavior of a stream coalgebra at a state is the stream of the outputs of its steps. -/
+@[counterpart
+  typescript
+    r"Running a stream coalgebra gives the outputs of its steps."]
 theorem behavior_eq_map_steps {Output : Type u}
     (coalgebra : StreamCoalgebra Output) (state : coalgebra.V) :
     coalgebra.behavior state = (coalgebra.steps state).map Prod.fst := by
@@ -125,6 +132,9 @@ theorem behavior_eq_map_steps {Output : Type u}
 
 /-- The behavior of the coalgebra that maps every output of a stream coalgebra maps every output of
 the behavior of the coalgebra. -/
+@[counterpart
+  typescript
+    r"Running a stream coalgebra with mapped outputs gives the outputs of running it, mapped."]
 theorem behavior_mapOutput {Output MappedOutput : Type u}
     (coalgebra : StreamCoalgebra Output) (f : (output : Output) → MappedOutput)
     (state : coalgebra.V) :
@@ -139,6 +149,10 @@ theorem behavior_mapOutput {Output MappedOutput : Type u}
   rfl
 
 /-- The Mealy machine of a stream coalgebra behaves upon any inputs as the coalgebra. -/
+@[counterpart
+  typescript
+    r"Running the Mealy machine of a stream coalgebra upon any inputs gives what running the
+    coalgebra gives."]
 theorem behavior_toMealyMachine {Output : Type u}
     (coalgebra : StreamCoalgebra Output) (state : coalgebra.V) (inputs : Stream' PUnit) :
     coalgebra.toMealyMachine.behavior state inputs = coalgebra.behavior state := by
