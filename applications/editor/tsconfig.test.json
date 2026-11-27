@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["es2024", "dom"], // Built-in API checked against Node.js 22 and the DOM of the source under test.
+    "module": "preserve", // Imports resolved by Vitest instead.
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        // The modules Effect still marks unstable that the tests of the editor rest on by choice: the rational numbers the values of the design language are worked out in, the clipboard of the browser the design file is copied to, the key-value store the chosen color scheme is kept in, and the test runner and test services every test is written with.
+        "allowedUnstableApis": [
+          "effect/Rational",
+          "@effect/platform-browser",
+          "effect/persistence",
+          "@effect/vitest",
+          "effect/testing"
+        ],
+        // The packages marked experimental that the tests of the editor rest on by choice: Effect UI, its kit and their test harnesses, every API of which is experimental.
+        "allowedExperimentalApis": ["@effect/ui", "@effect/ui-kit"]
+      }
+    ] // Effect rules checked by the Effect language service on top of TypeScript.
+  },
+  "include": ["src/**/*.test.ts", "src/**/*.d.ts"]
+}

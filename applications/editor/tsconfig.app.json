@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["es2022", "dom"], // Built-in API checked against the default build target of Vite and the DOM.
+    "module": "preserve", // Imports resolved by Rolldown instead.
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        // The modules Effect still marks unstable that the editor builds on by choice: the rational numbers the values of the design language are worked out in, the HTTP router and response the prerendered document is answered with, the clipboard of the browser the design file is copied to, and the key-value store the chosen color scheme is kept in.
+        "allowedUnstableApis": [
+          "effect/Rational",
+          "effect/http",
+          "@effect/platform-browser",
+          "effect/persistence"
+        ],
+        // The packages marked experimental that the editor builds on by choice: Effect UI and its kit, every API of which is experimental.
+        "allowedExperimentalApis": ["@effect/ui", "@effect/ui-kit"]
+      }
+    ], // Effect rules checked by the Effect language service on top of TypeScript.
+    "types": ["@effect/ui/html/HtmlServerViteDocument"] // Host API checked against the document module of the Vite plugin of Effect UI.
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"]
+}

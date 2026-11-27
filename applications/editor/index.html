@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      // The color scheme the person chose, which the browser keeps under the key `schemeKey` of src/Scheme.ts, set on the root before the document is first drawn, so that the prerendered editor never shows the other scheme first. Nothing else is read, and a browser that keeps no choice or refuses its storage leaves the scheme of the system; the editor reads the same key once it runs.
+      try {
+        const scheme = localStorage.getItem('falkara-editor/scheme');
+        if (scheme === 'light' || scheme === 'dark')
+          document.documentElement.dataset.scheme = scheme;
+      } catch {}
+    </script>
+    <link href="/src/Styles.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"><!--app-html--></div>
+    <script type="module" src="/src/Entrypoint.ts"></script>
+  </body>
+</html>

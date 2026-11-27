@@ -1,0 +1,27 @@
+{
+  "name": "@falkara/editor",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The editor of Falkara Workspace, where an application is built from boxes of the theory wired on a canvas.",
+  "license": "MIT",
+  "author": "Filip Falcon",
+  "type": "module",
+  "imports": {
+    "#src/*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@effect/platform-browser": "4.1.6",
+    "@effect/ui": "https://pkg.pr.new/Effect-TS/ui/@effect/ui@e0b7cec",
+    "@effect/ui-kit": "https://pkg.pr.new/Effect-TS/ui/@effect/ui-kit@e0b7cec",
+    "@falkara/presentation": "*",
+    "@stylexjs/stylex": "0.19.2",
+    "effect": "4.1.6"
+  },
+  "devDependencies": {
+    "@effect/platform-node": "4.1.6",
+    "@effect/ui-devtools": "https://pkg.pr.new/Effect-TS/ui/@effect/ui-devtools@e0b7cec",
+    "@effect/vitest": "4.1.6",
+    "@stylexjs/unplugin": "0.19.2",
+    "happy-dom": "21.0.4"
+  }
+}

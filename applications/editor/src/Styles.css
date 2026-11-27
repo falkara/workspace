@@ -1,0 +1,20 @@
+/* The document itself, which StyleX cannot reach: the editor fills the window. Everything the editor draws is styled with StyleX beside its view, and StyleX appends its rules to this sheet when it builds. */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+/* The color scheme of the document, which every color of the editor follows, each written as the light-dark() of its two schemes: the one the system prefers, unless the person chose light or dark. The choice is the data-scheme attribute of the root, which the inline script of index.html sets from the choice the browser remembers before the document is first drawn, and the editor keeps as the person changes it. */
+:root {
+  color-scheme: light dark;
+}
+
+:root[data-scheme='light'] {
+  color-scheme: light;
+}
+
+:root[data-scheme='dark'] {
+  color-scheme: dark;
+}

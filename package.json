@@ -17,21 +17,26 @@
     "test": "vp test"
   },
   "devDependencies": {
+    "@alchemy.run/cloudflare": "2.0.0-beta.87",
     "@changesets/changelog-github": "1.0.1",
     "@changesets/cli": "3.0.3",
     "@commitlint/cli": "21.2.3",
-    "@effect/platform-node": "4.1.5",
+    "@effect/platform-node": "4.1.6",
     "@effect/tsgo": "0.73.2",
-    "@effect/vitest": "4.1.5",
+    "@effect/vitest": "4.1.6",
     "@types/node": "22.20.5",
     "ajv": "8.20.0",
-    "effect": "4.1.5",
+    "alchemy": "2.0.0-beta.87",
+    "effect": "4.1.6",
     "typescript": "7.0.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",
     "vite-plus": "1.7.0",
     "vitest": "5.1.0"
   },
   "overrides": {
+    "@effect/platform-node": "4.1.6",
+    "@effect/vitest": "4.1.6",
+    "effect": "4.1.6",
     "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",
     "vitest": "5.1.0"
   },

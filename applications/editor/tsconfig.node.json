@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["es2024"], // Built-in API checked against Node.js 22.
+    "module": "preserve", // Imports resolved by Rolldown instead.
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        // The module Effect still marks unstable that the build of the editor rests on by choice: the rational numbers the values of the design language are worked out in.
+        "allowedUnstableApis": ["effect/Rational"],
+        // The packages marked experimental that the build of the editor rests on by choice: the Vite plugin of Effect UI and its devtools, every API of which is experimental.
+        "allowedExperimentalApis": ["@effect/ui", "@effect/ui-devtools"]
+      }
+    ], // Effect rules checked by the Effect language service on top of TypeScript.
+    "types": ["node"] // Host API checked against Node.js 22.
+  },
+  "include": ["*.ts"]
+}

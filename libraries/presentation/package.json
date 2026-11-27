@@ -87,8 +87,8 @@
     "prepack": "vp pack"
   },
   "devDependencies": {
-    "@effect/vitest": "4.1.5",
-    "effect": "4.1.5"
+    "@effect/vitest": "4.1.6",
+    "effect": "4.1.6"
   },
   "peerDependencies": {
     "effect": "^4.1.5"
