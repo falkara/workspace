@@ -49,7 +49,19 @@ its own, and its documentation comment, then, for every function that the transl
 the declaration, the word of its role, `schema`, `constructor`, `axioms`, or `instance`, in that
 order, and the documentation comment that the function takes in TypeScript. A declaration that the
 theory alone needs takes the item alone, as
-`@[counterpart Jacobs.introductionToCoalgebra "(2.22)"]`.
+`@[counterpart Jacobs.introductionToCoalgebra "(2.22)"]`. In short, the attribute takes the form
+
+```
+counterpart [<work> <label>]
+  (<field> := [<work>] <label>)*
+  [typescript <comment>
+    (<binder> [→ <name>] [<comment>])*
+    (<role> <comment>)*]
+```
+
+with brackets around what a declaration may leave out and `*` after what it may repeat, `<comment>`
+a raw string literal, `<name>` a string, and `<role>` one of `schema`, `constructor`, `axioms`, and
+`instance`, in that order.
 
 ## Implementation Notes
 
