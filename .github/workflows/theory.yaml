@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build and test the theory
         # Installs Lean at the version that lean-toolchain pins, downloads the built files of Mathlib, builds the default targets of the theory, which checks every proof and the style, builds its checks with lake test, and runs the linters of the environment with lake lint.
-        uses: leanprover/lean-action@fe408643ea7367d8c0404a8be3975bb145f5fb64 # v1.7.0
+        uses: leanprover/lean-action@ba3fdfe5c4476c925da13bf11a005ddb47e47aee # v1.7.1
         with:
           lake-package-directory: theory
           # Fails the build and the checks on every warning that remains, as the builds of Mathlib do.
