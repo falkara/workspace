@@ -1,4 +1,4 @@
-// Written by the generator of the theory from `Falkara.Simulation.Functor`, so every change by hand is lost when the generator runs.
+// Written by the translator from `Falkara.Simulation.Functor`, so every change by hand is lost when the translator runs.
 import { Function, type HKT } from 'effect';
 
 import type * as Module from '#src/Functor';

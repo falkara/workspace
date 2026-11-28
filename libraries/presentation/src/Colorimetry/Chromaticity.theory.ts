@@ -1,4 +1,4 @@
-// Written by the generator of the theory from `Falkara.Presentation.Colorimetry.Chromaticity`, so every change by hand is lost when the generator runs.
+// Written by the translator from `Falkara.Presentation.Colorimetry.Chromaticity`, so every change by hand is lost when the translator runs.
 import { Brand, type Option, type Rational, Schema } from 'effect';
 
 import type * as Module from '#src/Colorimetry/Chromaticity';

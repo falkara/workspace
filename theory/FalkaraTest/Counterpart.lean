@@ -23,7 +23,7 @@ the name of a field whose clause names none, gives the fields of a structure thr
 declaration that labels it, and refuses a name that is neither a binder nor a field of the
 declaration, a clause in TypeScript with neither a name nor a comment, two clauses of one field,
 and a second counterpart in TypeScript. The attribute records the comment that a function the
-generator derives from the declaration takes under each of the roles `schema`, `constructor`,
+translator derives from the declaration takes under each of the roles `schema`, `constructor`,
 `axioms`, and `instance`, and none where the attribute gives none, still takes a clause for a field
 named as a role, and refuses a second comment of one role and a comment out of the order of the
 roles. The checks cite works of their own, so they hold for the works of every theory.

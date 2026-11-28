@@ -18,7 +18,7 @@ import Lean.Structure
 
 The module defines the attribute `counterpart`, which gives a declaration of the theory its
 counterparts outside Lean: the item of a work that the declaration states, and the declaration that
-the generator writes as TypeScript. A declaration takes the attribute above it, as
+the translator writes as TypeScript. A declaration takes the attribute above it, as
 
 ```
 @[counterpart CIE.internationalLightingVocabulary "17-23-052"
@@ -42,10 +42,10 @@ the place in it, `<work>` the name of the work in the module `Falkara.References
 label of the item as the work writes it, a string, or the name of the declaration where the item is
 one, such as an item of Mathlib, then a clause `(<field> := <label>)` for every field with the
 item that it states, of the work of the declaration unless the clause names another before the
-label, then, where the generator writes the declaration, `typescript` with the documentation
+label, then, where the translator writes the declaration, `typescript` with the documentation
 comment that the declaration takes in TypeScript as a raw string literal and a clause for every
 binder or field with the name that it takes there, as `(V → "State")`, where it is another than
-its own, and its documentation comment, then, for every function that the generator derives from
+its own, and its documentation comment, then, for every function that the translator derives from
 the declaration, the word of its role, `schema`, `constructor`, `axioms`, or `instance`, in that
 order, and the documentation comment that the function takes in TypeScript. A declaration that the
 theory alone needs takes the item alone, as
@@ -75,19 +75,19 @@ Every declaration and every field that TypeScript writes takes its comment from 
 which requires the comment of the declaration, and never from the documentation comment of the
 theory, as the theory speaks of mathematics and TypeScript to the developers who use Effect, even
 where the two comments say the same. A comment in TypeScript is a raw string literal rather than a
-documentation comment of Lean, so it reads as the text that the generator writes into another
+documentation comment of Lean, so it reads as the text that the translator writes into another
 language rather than as the documentation of the declaration below it, and keeps every backslash of
 a formula unescaped; the syntax refuses an ordinary string literal there, which would escape them.
 A comment in TypeScript cites no work of its own, as it speaks
 in the terms of a developer rather than of a work, and the item that the declaration states gives
 the developer the source of the declaration.
 
-A function that the generator derives from a declaration, such as the constructor of a structure,
+A function that the translator derives from a declaration, such as the constructor of a structure,
 takes its comment from the attribute as the declaration does, under the word of its role, as a
-person tells a developer what the function does and a sentence that the generator composes from the
+person tells a developer what the function does and a sentence that the translator composes from the
 names of the declaration tells only what its type already names. A role takes one comment alone,
-and the comments take the order that the generator writes their functions in, so every declaration
-lists them alike. The attribute records a comment under any role, and the generator, which alone
+and the comments take the order that the translator writes their functions in, so every declaration
+lists them alike. The attribute records a comment under any role, and the translator, which alone
 knows the functions it derives from a declaration, refuses a declaration that lacks the comment of
 one of them or gives a comment that no function takes. The words `schema`, `constructor`, and
 `axioms` are no keywords, so a binder or a field of such a name still takes a clause, and a comment
@@ -95,11 +95,11 @@ of a role stands after the last clause without parentheses.
 
 The clauses of a structure of Mathlib lie on the declaration of the theory that labels it, such as
 `Coalgebra` for `CategoryTheory.Endofunctor.Coalgebra`, as the label is what the theory writes as
-TypeScript, so the generator finds the clauses of a field by the label of its structure.
+TypeScript, so the translator finds the clauses of a field by the label of its structure.
 
 The items that a declaration and its fields state lie at the top of the attribute, and its
 counterpart in TypeScript in a block of its own under the keyword `typescript`, so the mathematics
-reads the same whether the generator writes the declaration or not, and a counterpart in another
+reads the same whether the translator writes the declaration or not, and a counterpart in another
 language would take a block of its own. A field that the declaration cites and TypeScript writes
 takes a clause in each. A clause of a field with its item takes `:=` and a clause in TypeScript
 takes `→` for its name, as Mathlib gives a value and a new name, so a clause on the wrong side of
@@ -228,7 +228,7 @@ def rawStringAhead.formatter : Lean.PrettyPrinter.Formatter := pure ()
 def rawStringAhead.parenthesizer : Lean.PrettyPrinter.Parenthesizer := pure ()
 
 /-- The syntax of a documentation comment in TypeScript, a raw string literal, which reads as the
-text that the generator writes into TypeScript rather than as the documentation of Lean code, and
+text that the translator writes into TypeScript rather than as the documentation of Lean code, and
 keeps every backslash of its formulas as written. -/
 syntax typeScriptComment := rawStringAhead str
 
@@ -236,17 +236,17 @@ syntax typeScriptComment := rawStringAhead str
 where it is another than its own, and its documentation comment. -/
 syntax typeScriptClause := "(" ident (" → " str)? (ppSpace typeScriptComment)? ")"
 
-/-- The syntax of the word that names the role of a function that the generator derives from a
+/-- The syntax of the word that names the role of a function that the translator derives from a
 declaration, such as its constructor. -/
 syntax derivedRole := &"schema" <|> &"constructor" <|> &"axioms" <|> "instance"
 
-/-- The syntax of the documentation comment in TypeScript of a function that the generator derives
+/-- The syntax of the documentation comment in TypeScript of a function that the translator derives
 from a declaration, after the word of its role. -/
 syntax derivedComment := derivedRole ppSpace typeScriptComment
 
 /-- The syntax of the counterpart of a declaration in TypeScript, with the documentation comment
 that the declaration takes there, the clauses of its binders and fields, and the comments of the
-functions that the generator derives from it. -/
+functions that the translator derives from it. -/
 syntax typeScriptBlock := " typescript " typeScriptComment (ppSpace typeScriptClause)*
   (ppSpace derivedComment)*
 
@@ -257,7 +257,7 @@ def textOf (comment : Lean.TSyntax ``typeScriptComment) : String :=
 
 /-- The syntax of the attribute that gives a declaration its counterparts outside Lean: the item of
 a work that it states, the items that its fields state, and its counterpart in TypeScript, where
-the generator writes it. -/
+the translator writes it. -/
 syntax (name := counterpart) "counterpart" (ppSpace ident ppSpace counterpartLabel)?
   (ppSpace citationClause)* (typeScriptBlock)? : attr
 
@@ -316,7 +316,7 @@ initialize Lean.registerBuiltinAttribute {
           $derivedComments:derivedComment*) := block
         | Lean.throwErrorAt block "A counterpart in TypeScript takes the comment of the \
             declaration, a clause for every binder or field that it names or comments, and a \
-            comment for every function that the generator derives from it."
+            comment for every function that the translator derives from it."
       if ExportTypeScript.isExported environment declaration then
         Lean.throwErrorAt block m!"`{declaration}` has a counterpart in TypeScript already."
       let clauses ← clauses.toList.mapM fun (clause : Lean.TSyntax ``typeScriptClause) ↦ do
@@ -336,7 +336,7 @@ initialize Lean.registerBuiltinAttribute {
       let derived ← derivedComments.toList.mapM
         fun (derivedComment : Lean.TSyntax ``derivedComment) ↦ do
           let `(derivedComment| $word:derivedRole $text:typeScriptComment) := derivedComment
-            | Lean.throwErrorAt derivedComment "A comment of a function that the generator \
+            | Lean.throwErrorAt derivedComment "A comment of a function that the translator \
                 derives takes the word of its role and its text."
           -- The syntax of a role holds its word in a node of the word alone.
           let some role :=
@@ -344,7 +344,7 @@ initialize Lean.registerBuiltinAttribute {
             | Lean.throwErrorAt word "A role is one of `schema`, `constructor`, `axioms`, and \
                 `instance`."
           return (word, role, textOf text)
-      -- The comments take the order that the generator writes their functions in, so every
+      -- The comments take the order that the translator writes their functions in, so every
       -- declaration lists them alike.
       derived.zipIdx.forM fun ((word, role, _), index) ↦ do
         let earlier := (derived.take index).map (·.2.1)

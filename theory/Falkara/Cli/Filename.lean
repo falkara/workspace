@@ -21,7 +21,7 @@ directory it starts at, as such a filename is neither dot nor dot-dot.
 ## Implementation Notes
 
 A filename is a subtype of a string by a condition that gives a boolean, as the kernel of Lean
-computes the condition and the generator writes the condition as the filter of the schema of the
+computes the condition and the translator writes the condition as the filter of the schema of the
 filename. The condition joins four conditions, each of which states the item of a single work, so a
 theorem of a filename rests on the condition it needs alone.
 

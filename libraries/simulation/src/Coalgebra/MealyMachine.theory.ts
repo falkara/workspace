@@ -1,4 +1,4 @@
-// Written by the generator of the theory from `Falkara.Simulation.Coalgebra.MealyMachine`, so every change by hand is lost when the generator runs.
+// Written by the translator from `Falkara.Simulation.Coalgebra.MealyMachine`, so every change by hand is lost when the translator runs.
 import type { HKT, Stream } from 'effect';
 
 import type * as Coalgebra from '#src/Coalgebra.theory';

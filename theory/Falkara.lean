@@ -21,3 +21,7 @@ public import Falkara.Simulation.Functor.BinaryCoproductFunctor
 public import Falkara.Simulation.Functor.BinaryProductFunctor
 public import Falkara.Simulation.Functor.EffectFunctor
 public import Falkara.Simulation.Functor.ExponentFunctor
+public import Falkara.Translation
+public import Falkara.Translation.Rules
+public import Falkara.Translation.Vectors
+public import Falkara.TranslationRule

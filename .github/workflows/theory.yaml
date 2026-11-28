@@ -27,37 +27,37 @@ jobs:
           # Fails the build and the checks on every warning that remains, as the builds of Mathlib do.
           build-args: --wfail
           test-args: --wfail
-      - name: Build the generator
-        # The generator lies outside the default targets, as the tools of Mathlib do, and the steps below read its built modules.
+      - name: Build the translator
+        # The translator lies outside the default targets, as the tools of Mathlib do, and the steps below read its built modules.
         working-directory: theory
-        run: lake build --wfail Generator generator
-      - name: Check the generator
-        # The checks and the lint of the generator lie outside the test driver and the lint driver, as those of the cache of Mathlib do.
+        run: lake build --wfail Translator translator
+      - name: Check the translator
+        # The checks and the lint of the translator lie outside the test driver and the lint driver, as those of the cache of Mathlib do.
         working-directory: theory
         run: |
-          lake build --wfail GeneratorTest
-          lake exe runLinter Generator
+          lake build --wfail TranslatorTest
+          lake exe runLinter Translator
       - name: Lint the checks
         # The checks have no root module, so the step names every module of their libraries, which the lint driver never lints. Each module is linted in a process of its own, as the environments that one process imports add up past the memory of the runner.
         working-directory: theory
-        run: find FalkaraTest GeneratorTest -name '*.lean' | sed 's/\.lean$//; s|/|.|g' | sort | xargs -n 1 lake exe runLinter
+        run: find FalkaraTest TranslatorTest -name '*.lean' | sed 's/\.lean$//; s|/|.|g' | sort | xargs -n 1 lake exe runLinter
       - name: Check that the root modules import every module
         # The checks declare the same names in several modules, so their library has no root module, as the tests of Mathlib have none.
         working-directory: theory
         run: |
           lake exe mk_all --check --lib Falkara
-          lake exe mk_all --check --lib Generator
+          lake exe mk_all --check --lib Translator
       - name: Check that every module imports what it needs alone
         # Fails where a module imports a module it never uses or one that another import implies, as `lake shake` finds them.
         working-directory: theory
-        # The generator lies outside the default targets, so the step names it beside the theory.
-        run: lake shake Falkara Generator
-      - name: Generate the TypeScript of the theory
+        # The translator lies outside the default targets, so the step names it beside the theory.
+        run: lake shake Falkara Translator
+      - name: Translate the theory into TypeScript
         # Fails where a module of the library leaves a declaration of the theory out of its re-exports or gives an implementation another comment.
         working-directory: theory
         run: |
-          lake exe generator Presentation ../libraries/presentation/src
-          lake exe generator Simulation ../libraries/simulation/src
+          lake exe translator Presentation ../libraries/presentation/src
+          lake exe translator Simulation ../libraries/simulation/src
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -71,10 +71,10 @@ jobs:
       - name: Install the dependencies
         run: npm ci
       - name: Format the generated files
-        # The generator writes the files unformatted and leaves their layout to oxfmt, as the repository formats every other file.
-        run: find libraries/presentation/src libraries/simulation/src -name '*.theory.ts' -o -name '*.theory.test.ts' | xargs npx vp fmt
+        # The translator writes the files unformatted and leaves their layout to oxfmt, as the repository formats every other file.
+        run: find libraries/presentation/src libraries/simulation/src -name '*.theory.ts' -o -name '*.theory.test.ts' -o -name 'Translation.test.ts' | xargs npx vp fmt
       - name: Check that the generated files match the theory
-        # A file that the generator changes or writes anew means the theory changed without its files.
+        # A file that the translator changes or writes anew means the theory changed without its files.
         run: |
           git status --porcelain -- libraries/presentation/src libraries/simulation/src
           git diff --exit-code -- libraries/presentation/src libraries/simulation/src

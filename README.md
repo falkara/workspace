@@ -17,13 +17,13 @@ Every module of the theory is one of two kinds, and only the second has somethin
 
 ### What the Bridge Checks
 
-Lean proves the mathematics in its own model, such as the identity monad and infinite streams, not in the runtime of Effect. The generator of the theory therefore binds the package to the theory in three ways:
+Lean proves the mathematics in its own model, such as the identity monad and infinite streams, not in the runtime of Effect. The translator of the theory therefore binds the package to the theory in three ways:
 
 1. Values, such as the white of Falkara Presentation, are computed by Lean and written as they are.
 2. Functions written by hand must have the types that the theory gives them, or the package does not compile.
 3. Theorems become property tests of the functions written by hand, which compare streams on finite prefixes.
 
-The generator writes the form of the mathematics, its names, types, and comments, and never its meaning, so a change to the meaning of the mathematics starts in the theory.
+The translator writes the form of the mathematics, its names, types, and comments, and never its meaning, so a change to the meaning of the mathematics starts in the theory.
 
 ## License
 

@@ -27,12 +27,12 @@ name = "FalkaraTest"
 globs = ["FalkaraTest.+"]
 
 [[lean_lib]]
-name = "Generator"
+name = "Translator"
 
 [[lean_lib]]
-name = "GeneratorTest"
-globs = ["GeneratorTest.+"]
+name = "TranslatorTest"
+globs = ["TranslatorTest.+"]
 
 [[lean_exe]]
-name = "generator"
-root = "Generator.Main"
+name = "translator"
+root = "Translator.Main"

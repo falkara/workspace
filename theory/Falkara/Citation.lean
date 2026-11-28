@@ -13,11 +13,11 @@ public import Mathlib.Data.Nat.Notation
 
 The module defines a work that the theory cites, a file of a data set, an item of a work, and the
 record of the item that every declaration of the theory states, which the attribute `counterpart`
-of `Falkara.Counterpart` fills while a module compiles and the generator reads when it runs.
+of `Falkara.Counterpart` fills while a module compiles and the translator reads when it runs.
 
 ## Implementation Notes
 
-The record lies apart from the attribute, as the generator reads it when it runs and the attribute
+The record lies apart from the attribute, as the translator reads it when it runs and the attribute
 fills it while a module compiles, so the record is ordinary code and the attribute a metaprogram,
 which imports this module at both phases.
 -/
