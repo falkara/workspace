@@ -86,13 +86,13 @@ const pannedView = (
   };
 };
 
-/** What placing a box of a primitive at a place of the canvas changes, after a count of boxes placed before it: the design gains the box, numbered after every box placed before it so that no id is given twice, on the grid nearest the place and within the canvas, with every parameter of the primitive empty; and the box is selected, so that the inspector shows it at once. */
+/** What placing a box of a primitive at a place of the canvas changes, after a count of boxes placed before it: the design gains the box, numbered after every box placed before it so that no id is given twice, on the grid nearest the place, with every parameter of the primitive empty; and the box is selected, so that the inspector shows it at once. */
 const withBox = (placed: number, primitive: Palette.Primitive, place: Design.Position) =>
   ({
     design: Design.add({
       id: `box-${placed + 1}`,
       primitive: primitive.name,
-      position: Geometry.snap(Geometry.within(place)),
+      position: Geometry.snap(place),
       parameters: Object.fromEntries(primitive.parameters.map((name) => [name, ''])),
     }),
     placed: placed + 1,
@@ -189,7 +189,7 @@ export const EditorNoDeps = EditorDef.make({
       }),
     ClickedBox: ($, { id }) => $.evolve({ selected: { _tag: 'Box', id } }),
     FocusedBox: ($, { id }) => $.evolve({ selected: { _tag: 'Box', id } }),
-    // The box moves by a step of the grid in the direction of the key, lands on the grid, and stays within the canvas.
+    // The box moves by a step of the grid in the direction of the key and lands on the grid, as far as the keys take it, as the canvas has no edge.
     PressedBoxArrow: ($, { id, key }) =>
       Option.match(
         Array.findFirst($.model.design.boxes, (box) => box.id === id),
@@ -199,24 +199,22 @@ export const EditorNoDeps = EditorDef.make({
             $.evolve({
               design: Design.move(
                 id,
-                Geometry.snap(
-                  Geometry.within({
-                    x:
-                      box.position.x +
-                      (key === 'ArrowLeft'
-                        ? -Geometry.gridStep
-                        : key === 'ArrowRight'
-                          ? Geometry.gridStep
-                          : 0),
-                    y:
-                      box.position.y +
-                      (key === 'ArrowUp'
-                        ? -Geometry.gridStep
-                        : key === 'ArrowDown'
-                          ? Geometry.gridStep
-                          : 0),
-                  }),
-                ),
+                Geometry.snap({
+                  x:
+                    box.position.x +
+                    (key === 'ArrowLeft'
+                      ? -Geometry.gridStep
+                      : key === 'ArrowRight'
+                        ? Geometry.gridStep
+                        : 0),
+                  y:
+                    box.position.y +
+                    (key === 'ArrowUp'
+                      ? -Geometry.gridStep
+                      : key === 'ArrowDown'
+                        ? Geometry.gridStep
+                        : 0),
+                }),
               ),
             }),
         },
@@ -239,23 +237,17 @@ export const EditorNoDeps = EditorDef.make({
             }),
         },
       ),
-    // The box goes as far from where it lay as the pointer went from where it pressed, over the zoom, as the pointer moves in the viewport and the box on the canvas; to the nearest place on the grid, and within the canvas.
+    // The box goes as far from where it lay as the pointer went from where it pressed, over the zoom, as the pointer moves in the viewport and the box on the canvas, to the nearest place on the grid.
     MovedPointer: ($, { x, y }) =>
       $.model.dragging === null
         ? $.model
         : $.evolve({
             design: Design.move(
               $.model.dragging.box,
-              Geometry.snap(
-                Geometry.within({
-                  x:
-                    $.model.dragging.origin.x +
-                    (x - $.model.dragging.pointer.x) / $.model.view.zoom,
-                  y:
-                    $.model.dragging.origin.y +
-                    (y - $.model.dragging.pointer.y) / $.model.view.zoom,
-                }),
-              ),
+              Geometry.snap({
+                x: $.model.dragging.origin.x + (x - $.model.dragging.pointer.x) / $.model.view.zoom,
+                y: $.model.dragging.origin.y + (y - $.model.dragging.pointer.y) / $.model.view.zoom,
+              }),
             ),
           }),
     ReleasedPointer: ($) => $.evolve({ dragging: null }),

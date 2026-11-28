@@ -109,11 +109,11 @@ const styles = stylex.create({
     },
     color: stylex.env.color.danger,
   },
-  // The canvas panel is the view the canvas is panned and zoomed in, which the editor draws itself rather than scroll: what lies beyond its edges is cut off, and a press on it pans the view, a touch too, rather than scroll the page. It shows the ground, the lowest level, under the panels on either side, and a ring of the accent inside its edge while it has the keyboard's focus.
+  // The canvas panel is the view the canvas is panned and zoomed in, which the editor draws itself rather than scroll: what lies beyond its edges is clipped, and a press on it pans the view, a touch too, rather than scroll the page. Clipped rather than hidden, as a box that overflows a hidden panel still lets the browser scroll it, as it did when focus moved within it, which shifted the bars over the canvas and every point a pointer gives against the view. It shows the ground, the lowest level, under the panels on either side, and a ring of the accent inside its edge while it has the keyboard's focus.
   stage: {
     position: 'relative',
     minWidth: 0,
-    overflow: 'hidden',
+    overflow: 'clip',
     backgroundColor: stylex.env.color.ground,
     cursor: 'grab',
     touchAction: 'none',
@@ -164,23 +164,29 @@ const styles = stylex.create({
   square: {
     borderRadius: 0,
   },
-  // The canvas lies in its panel as the view says: moved from the top left corner of the panel and drawn larger or smaller from that corner. It shows the square grid boxes are placed on as a dot where every two lines of the grid cross, the corners a box is placed at and the points its wires end at: a dot is quiet beside a line across the whole canvas, while its color keeps the contrast of a graphic, so that the grid shows in either scheme.
-  canvas: (width: number, height: number, step: number, x: number, y: number, zoom: number) => ({
+  // The square grid boxes are placed on, drawn as the background of the panel itself, so that it runs across the whole panel at every pan and zoom and has no edge, as the canvas has none. A dot marks where two lines of the grid cross, the corners a box is placed at and the points its wires end at: a dot is quiet beside a line across the panel, while its color keeps the contrast of a graphic, so that the grid shows in either scheme. Each dot is the middle of a tile as large as the spacing of the dots on the screen, the tiles laid from half a tile before the origin of the canvas, so that the dots fall on the origin and on every line the spacing takes. A dot keeps its size on the screen at every zoom.
+  grid: (spacing: number, x: number, y: number) => ({
+    backgroundImage: `radial-gradient(circle, ${stylex.env.color.grid} 1px, transparent 1.5px)`,
+    backgroundPosition: `${x - spacing / 2}px ${y - spacing / 2}px`,
+    backgroundSize: `${spacing}px ${spacing}px`,
+  }),
+  // The canvas lies in its panel as the view says: its origin moved from the top left corner of the panel and the canvas drawn larger or smaller from there. It is a point with no size of its own, everything on it overflowing it, so that a box lies at any position, negative ones too, and nothing clips it but the edges of the panel.
+  canvas: (x: number, y: number, zoom: number) => ({
     position: 'absolute',
     insetBlockStart: 0,
     insetInlineStart: 0,
-    width,
-    height,
+    width: 0,
+    height: 0,
+    overflow: 'visible',
     transformOrigin: '0 0',
     transform: `translate(${x}px, ${y}px) scale(${zoom})`,
-    backgroundImage: `radial-gradient(circle, ${stylex.env.color.grid} 1px, transparent 1.5px)`,
-    backgroundPosition: `${step / -2}px ${step / -2}px`,
-    backgroundSize: `${step}px ${step}px`,
   }),
+  // The drawing of the wires: a pixel at the origin of the canvas whose paths overflow it to wherever their boxes lie, as SVG draws and hit-tests what overflows when overflow is visible, so that no wire is clipped however far its boxes lie and the drawing need not be sized from them. The pointer reaches only the paths that ask for it.
   wires: {
     position: 'absolute',
     insetBlockStart: 0,
     insetInlineStart: 0,
+    overflow: 'visible',
     pointerEvents: 'none',
   },
   wire: {
@@ -517,10 +523,20 @@ const stage = EditorDef.fragment((h, model: EditorModel) => {
       () => pointerOf(model),
     ),
   );
+  // How far apart the dots of the grid lie on the screen: a step of the grid at the zoom of the view, times the fewest doublings, none at most zooms, that keep them at the closest spacing or farther, so that every dot drawn lies where lines of the grid cross.
+  const spacing =
+    Geometry.gridStep *
+    model.view.zoom *
+    2 **
+      Math.max(
+        Math.ceil(Math.log2(Geometry.minimumDotSpacing / (Geometry.gridStep * model.view.zoom))),
+        0,
+      );
   // The panel takes focus, so that the arrow keys pan the view, and holds the pointer that presses it where no box lies, so that the pan follows the pointer wherever it goes. The moves and the end of a press send a message only while a press lasts. A primitive dragged from the palette is dropped anywhere on the panel, boxes included, and placed where the pointer lets it go, which the drop gives from the corner of the panel.
   return styled(
     h.section.ref(canvas).attrs({ 'aria-label': 'Canvas', tabindex: '0' }),
     styles.stage,
+    styles.grid(spacing, model.view.x, model.view.y),
     model.panning !== null && styles.panning,
   )
     .on('click', EditorMessage.ClickedCanvas())
@@ -594,23 +610,12 @@ const stage = EditorDef.fragment((h, model: EditorModel) => {
             styles.square,
           ).children('+'),
         ),
-      styled(
-        h.div,
-        styles.canvas(
-          Geometry.canvasWidth,
-          Geometry.canvasHeight,
-          Geometry.gridStep,
-          model.view.x,
-          model.view.y,
-          model.view.zoom,
-        ),
-      ).children(
-        // The wires are drawn for the eye and the pointer alone: the ports and the inspector say the same in words, and the inspector selects a wire by the keyboard.
+      styled(h.div, styles.canvas(model.view.x, model.view.y, model.view.zoom)).children(
+        // The wires are drawn for the eye and the pointer alone: the ports and the inspector say the same in words, and the inspector selects a wire by the keyboard. The drawing is a pixel at the origin, in CSS pixels of the canvas, its paths overflowing it.
         styled(
           h.svg.attrs({
-            width: String(Geometry.canvasWidth),
-            height: String(Geometry.canvasHeight),
-            viewBox: `0 0 ${Geometry.canvasWidth} ${Geometry.canvasHeight}`,
+            width: '1',
+            height: '1',
             'aria-hidden': 'true',
           }),
           styles.wires,

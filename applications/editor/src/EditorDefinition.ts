@@ -6,11 +6,11 @@ import { Design, Port, Position } from '#src/Design';
 import * as Geometry from '#src/Geometry';
 import * as Palette from '#src/Palette';
 
-/** A schema of how the canvas is shown in its panel: where the top left corner of the canvas lies in the panel, in CSS pixels of the panel, and the factor the canvas is drawn larger or smaller by. A point of the canvas lies in the panel at the point times the zoom, plus the corner. */
+/** A schema of how the canvas is shown in its panel: where the origin of the canvas lies in the panel, in CSS pixels of the panel, and the factor the canvas is drawn larger or smaller by. A point of the canvas lies in the panel at the point times the zoom, plus the origin. The canvas has no edge, so the view pans without limit. */
 export const View = Schema.Struct({
-  /** How far the corner of the canvas lies right of the left edge of the panel. */
+  /** How far the origin of the canvas lies right of the left edge of the panel, negative to its left. */
   x: Schema.Finite,
-  /** How far the corner of the canvas lies below the top edge of the panel. */
+  /** How far the origin of the canvas lies below the top edge of the panel, negative above it. */
   y: Schema.Finite,
   /** The factor the canvas is drawn by, one at its own size. */
   zoom: Schema.Finite,
@@ -116,7 +116,7 @@ export type EditorModel = typeof EditorModel.Type;
 export const sourceOf = (model: EditorModel): Port | null =>
   model.connecting ?? (model.drawing !== null && model.dragged ? model.drawing.from : null);
 
-/** Where the pointer that drags a wire is on the canvas, once the canvas panel is measured and the press is a drag: its place in the panel, less the corner of the canvas, over the zoom, so that it holds at every zoom and pan. */
+/** Where the pointer that drags a wire is on the canvas, once the canvas panel is measured and the press is a drag: its place in the panel, less the origin of the canvas, over the zoom, so that it holds at every zoom and pan. */
 export const pointerOf = (model: EditorModel): Option.Option<Position> =>
   model.drawing === null || model.drawing.origin === null || !model.dragged
     ? Option.none()

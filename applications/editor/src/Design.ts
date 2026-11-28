@@ -1,14 +1,14 @@
 import { Schema } from 'effect';
 
-/** A schema of a place on the canvas, from its top left corner. Measured in CSS pixels. */
+/** A schema of a place on the canvas, from its origin, which has no edge: a place left of or above the origin is negative. Measured in CSS pixels. */
 export const Position = Schema.Struct({
-  /** The distance from the left edge of the canvas. */
+  /** The distance right of the origin, negative to its left. */
   x: Schema.Finite,
-  /** The distance from the top edge of the canvas. */
+  /** The distance below the origin, negative above it. */
   y: Schema.Finite,
 });
 
-/** A place on the canvas, from its top left corner. */
+/** A place on the canvas, from its origin. */
 export type Position = typeof Position.Type;
 
 /** A schema of a port of a box: the box by its id, and the port by the name the primitive of the box gives it. */

@@ -3,7 +3,7 @@ import { Rational } from 'effect';
 
 import type { Position } from '#src/Design';
 
-// The geometry of the canvas, in CSS pixels of the canvas, as the design file measures positions. The view sizes every box from these values and the wires are drawn from them, so that a wire meets its ports without any element being measured. Every length of a box is a whole count of steps of the grid, so that a box placed on the grid has its edges and the ends of its wires on lines of the grid too.
+// The geometry of the canvas, in CSS pixels of the canvas, as the design file measures positions. The canvas has no edge: a box lies anywhere, at negative positions too, and the grid runs on without end. The view sizes every box from these values and the wires are drawn from them, so that a wire meets its ports without any element being measured. Every length of a box is a whole count of steps of the grid, so that a box placed on the grid has its edges and the ends of its wires on lines of the grid too.
 
 /** The step of the square grid every box is placed on: the step of the space scale of Falkara Presentation whose factor of body text is one, the spacing unit over the share of body text it is, as the editor keeps body text at the default font size. A cell of the grid is then one em of the text in a box, and every length of the canvas is a count of the unit the panels are spaced by. */
 export const gridStep = Rational.toNumberUnsafe(
@@ -11,11 +11,8 @@ export const gridStep = Rational.toNumberUnsafe(
   Rational.divideUnsafe(Space.spacingUnit, Space.spacingUnitFactor),
 );
 
-/** The width of the canvas, a hundred and fifty steps of the grid, wide enough for a design of a few dozen boxes. */
-export const canvasWidth = gridStep * 150;
-
-/** The height of the canvas, a hundred steps of the grid. */
-export const canvasHeight = gridStep * 100;
+/** The closest the dots of the grid are drawn to one another on the screen: the spacing unit of Falkara Presentation, half a step of the grid. Zoomed out further, the view draws the dot of every second line of the grid, or of every fourth and so on, so that the grid stays a grid rather than a haze, every dot still where lines of the grid cross. */
+export const minimumDotSpacing = Rational.toNumberUnsafe(Space.spacingUnit);
 
 /** The width of a box, thirteen steps of the grid, which fits the longest title of the palette and a port name on either side. */
 export const boxWidth = gridStep * 13;
@@ -29,7 +26,7 @@ export const portHeight = gridStep * 2;
 /** The diameter of the handle of a port, the dot on the edge of a box where the wires of the port end: large enough to read as a place to press, while the whole row of the port is the target. */
 export const handleSize = 14;
 
-/** Where the first box is placed, two steps of the grid clear of the edges. */
+/** Where the first box is placed from the top left corner of the view, two steps of the grid clear of its edges. */
 export const firstBoxOffset = gridStep * 2;
 
 /** How far each new box is placed from the one before, down and to the right: the height of a header, so that the header of the box before stays in view. */
@@ -38,16 +35,10 @@ export const nextBoxOffset = headerHeight;
 /** How many new boxes are placed down and to the right before the next starts over at the first place, so that new boxes stay in view. */
 export const nextBoxCount = 8;
 
-/** The position nearest to a position at which a box lies whole within the canvas by its width and its header, so that no box is moved out of reach. The bounds are whole steps of the grid, so a position on the grid stays on it. */
-export const within = (position: Position): Position => ({
-  x: Math.min(Math.max(position.x, 0), canvasWidth - boxWidth),
-  y: Math.min(Math.max(position.y, 0), canvasHeight - headerHeight),
-});
-
-/** The position on the grid nearest to a position, where every box is placed, dropped, dragged and moved to. */
+/** The position on the grid nearest to a position, where every box is placed, dropped, dragged and moved to, on either side of the origin. Adding zero turns the negative zero that rounding gives just left of or above the origin into zero, so that the design file reads 0 and two positions at the origin are equal. */
 export const snap = (position: Position): Position => ({
-  x: Math.round(position.x / gridStep) * gridStep,
-  y: Math.round(position.y / gridStep) * gridStep,
+  x: Math.round(position.x / gridStep) * gridStep + 0,
+  y: Math.round(position.y / gridStep) * gridStep + 0,
 });
 
 /** Where a wire enters the input port at an index, from the top, of a box at a position: the middle of the row of the port, on the left edge of the box. */

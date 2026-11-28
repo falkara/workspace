@@ -26,18 +26,20 @@ describe('gridStep', () => {
     );
   });
 
-  it('measures every length of the canvas and of a box in whole steps', () => {
+  it('measures every length of a box and of placing one in whole steps', () => {
     expect(
       [
-        Geometry.canvasWidth,
-        Geometry.canvasHeight,
         Geometry.boxWidth,
         Geometry.headerHeight,
         Geometry.portHeight,
         Geometry.firstBoxOffset,
         Geometry.nextBoxOffset,
       ].map((length) => length % Geometry.gridStep),
-    ).toStrictEqual([0, 0, 0, 0, 0, 0, 0]);
+    ).toStrictEqual([0, 0, 0, 0, 0]);
+  });
+
+  it('is twice the closest spacing of the dots, so that every dot drawn lies on the grid', () => {
+    expect(Geometry.gridStep / Geometry.minimumDotSpacing).toBe(2);
   });
 
   it('puts both ends of every wire on lines of the grid for a box on the grid', () => {
@@ -66,6 +68,13 @@ describe('snap', () => {
       y: 0,
     });
   });
+
+  it('brings a position left of or above the origin to the grid too, as the canvas has no edge', () => {
+    expect(
+      Geometry.snap({ x: Geometry.gridStep * -40.4, y: Geometry.gridStep * -0.2 }),
+    ).toStrictEqual({ x: Geometry.gridStep * -40, y: 0 });
+    expect(Object.is(Geometry.snap({ x: -1, y: -1 }).x, 0)).toBe(true);
+  });
 });
 
 describe('zoomLevels', () => {
@@ -78,20 +87,6 @@ describe('zoomLevels', () => {
         (level, index) => index === 0 || level > (Geometry.zoomLevels[index - 1] ?? 0),
       ),
     ).toBe(true);
-  });
-});
-
-describe('within', () => {
-  it('keeps a position that lies within the canvas', () => {
-    expect(Geometry.within({ x: 40, y: 56 })).toStrictEqual({ x: 40, y: 56 });
-  });
-
-  it('brings a position back from beyond each edge of the canvas', () => {
-    expect(Geometry.within({ x: -8, y: -8 })).toStrictEqual({ x: 0, y: 0 });
-    expect(Geometry.within({ x: Geometry.canvasWidth, y: Geometry.canvasHeight })).toStrictEqual({
-      x: Geometry.canvasWidth - Geometry.boxWidth,
-      y: Geometry.canvasHeight - Geometry.headerHeight,
-    });
   });
 });
 

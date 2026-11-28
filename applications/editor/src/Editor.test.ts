@@ -15,16 +15,16 @@ const canvasStatus = Locator.inside(
   Locator.attr('role', 'status'),
 );
 
-/** The box of the canvas as a measurement gives it, with its top left corner at a place in the viewport. */
+/** The canvas panel as a measurement gives it, 960 by 640 CSS pixels, with its top left corner at a place in the viewport. */
 const canvasAt = (x: number, y: number) => ({
   x,
   y,
-  width: Geometry.canvasWidth,
-  height: Geometry.canvasHeight,
+  width: 960,
+  height: 640,
   top: y,
   left: x,
-  right: x + Geometry.canvasWidth,
-  bottom: y + Geometry.canvasHeight,
+  right: x + 960,
+  bottom: y + 640,
 });
 
 describe('update', () => {
@@ -146,7 +146,7 @@ describe('update', () => {
   );
 
   it.effect(
-    'moves a box by a step of the grid for an arrow key, and keeps it within the canvas',
+    'moves a box by a step of the grid for an arrow key, past the origin too, as the canvas has no edge',
     () =>
       Effect.gen(function* () {
         const story = yield* Story.make(Editor, {});
@@ -165,7 +165,10 @@ describe('update', () => {
             .send(EditorMessage.PressedBoxArrow({ id: 'box-1', key: 'ArrowLeft' }))
             .send(EditorMessage.PressedBoxArrow({ id: 'box-1', key: 'ArrowUp' }));
         });
-        expect(story.model.design.boxes[0]?.position).toStrictEqual({ x: 0, y: 0 });
+        expect(story.model.design.boxes[0]?.position).toStrictEqual({
+          x: Geometry.firstBoxOffset - 7 * Geometry.gridStep,
+          y: Geometry.firstBoxOffset - 7 * Geometry.gridStep,
+        });
       }),
   );
 
@@ -377,12 +380,8 @@ describe('update', () => {
           .resolve(HtmlCommand.Measure, Option.some(canvasAt(300, 100)));
         expect(story.model.view.zoom).toBe(1.1);
         // The centre of the panel, half its size from its corner, lies over the same point of the canvas.
-        expect((Geometry.canvasWidth / 2 - story.model.view.x) / story.model.view.zoom).toBeCloseTo(
-          Geometry.canvasWidth / 2,
-        );
-        expect(
-          (Geometry.canvasHeight / 2 - story.model.view.y) / story.model.view.zoom,
-        ).toBeCloseTo(Geometry.canvasHeight / 2);
+        expect((960 / 2 - story.model.view.x) / story.model.view.zoom).toBeCloseTo(960 / 2);
+        expect((640 / 2 - story.model.view.y) / story.model.view.zoom).toBeCloseTo(640 / 2);
 
         story
           .send(EditorMessage.PressedZoom({ direction: 'out' }))
@@ -397,6 +396,77 @@ describe('update', () => {
         expect(story.model.view.zoom).toBe(1);
         expect(story.model.view.x).toBeCloseTo(0);
         expect(story.model.view.y).toBeCloseTo(0);
+      }),
+  );
+
+  it.effect(
+    'places, drops, drags and wires boxes left of and above the origin, at the smallest and the largest zoom',
+    () =>
+      Effect.gen(function* () {
+        const story = yield* Story.make(Editor, {});
+        // Zoomed out as far as the levels go, about the corner of the panel, which has the origin in it.
+        Geometry.zoomLevels.forEach(() => {
+          story
+            .send(EditorMessage.ClickedZoom({ direction: 'out' }))
+            .resolve(HtmlCommand.Measure, Option.none());
+        });
+        expect(story.model.view).toStrictEqual({ x: 0, y: 0, zoom: Geometry.minimumZoom });
+
+        // Dropped at the corner of the panel, the first box lies left of and above the origin.
+        story
+          .send(EditorMessage.DroppedPrimitive({ primitive: 'MealyMachine.make', x: 0, y: 0 }))
+          .send(
+            EditorMessage.DroppedPrimitive({ primitive: 'MealyMachine.mapOutput', x: 100, y: 50 }),
+          );
+        expect(story.model.design.boxes.map((box) => box.position)).toStrictEqual([
+          Geometry.snap({ x: -Geometry.boxWidth / 2, y: -Geometry.headerHeight / 2 }),
+          Geometry.snap({
+            x: 100 / Geometry.minimumZoom - Geometry.boxWidth / 2,
+            y: 50 / Geometry.minimumZoom - Geometry.headerHeight / 2,
+          }),
+        ]);
+        expect(story.model.design.boxes[0]?.position.x).toBeLessThan(0);
+
+        // The point of the canvas at 320, 230 lies over the input port of box-2, at 80, 57.5 in a panel at 300, 100.
+        story
+          .send(EditorMessage.PressedOutput({ box: 'box-1', port: 'machine', x: 700, y: 400 }))
+          .send(EditorMessage.MovedWire({ x: 380, y: 157.5 }))
+          .resolve(HtmlCommand.Measure, Option.some(canvasAt(300, 100)));
+        expect(pointerOf(story.model)).toStrictEqual(Option.some({ x: 320, y: 230 }));
+        expect(aimedOf(story.model)).toStrictEqual(Option.some({ box: 'box-2', port: 'machine' }));
+        story.send(EditorMessage.CancelledWire());
+
+        // Zoomed in as far as the levels go, the same point lies at 1600, 1150 in the panel.
+        Geometry.zoomLevels.forEach(() => {
+          story
+            .send(EditorMessage.ClickedZoom({ direction: 'in' }))
+            .resolve(HtmlCommand.Measure, Option.none());
+        });
+        expect(story.model.view).toStrictEqual({ x: 0, y: 0, zoom: Geometry.maximumZoom });
+        story
+          .send(EditorMessage.PressedOutput({ box: 'box-1', port: 'machine', x: 700, y: 400 }))
+          .send(EditorMessage.MovedWire({ x: 1900, y: 1250 }))
+          .resolve(HtmlCommand.Measure, Option.some(canvasAt(300, 100)))
+          .send(EditorMessage.ReleasedWire({ x: 1900, y: 1250 }));
+        expect(story.model.design.wires).toStrictEqual([
+          { from: { box: 'box-1', port: 'machine' }, to: { box: 'box-2', port: 'machine' } },
+        ]);
+
+        // Three steps of the grid on the canvas are fifteen on the screen; the box goes past the origin.
+        const before = story.model.design.boxes[0]?.position ?? { x: 0, y: 0 };
+        story
+          .send(EditorMessage.PressedHeader({ id: 'box-1', x: 500, y: 300 }))
+          .send(
+            EditorMessage.MovedPointer({
+              x: 500 - Geometry.gridStep * 3 * Geometry.maximumZoom,
+              y: 300 - Geometry.gridStep * Geometry.maximumZoom,
+            }),
+          )
+          .send(EditorMessage.ReleasedPointer());
+        expect(story.model.design.boxes[0]?.position).toStrictEqual({
+          x: before.x - Geometry.gridStep * 3,
+          y: before.y - Geometry.gridStep,
+        });
       }),
   );
 
@@ -948,6 +1018,34 @@ describe('view', () => {
           .toExist()
           .fireDocument('keydown', { key: '-', editable: true })
           .expectIgnored();
+      }),
+  );
+
+  it.effect(
+    'draws the grid as the background of the whole panel, from the origin of the view, its dots no closer than the closest spacing',
+    () =>
+      Effect.gen(function* () {
+        const scene = yield* HtmlScene.make(Editor, {});
+        const region = HtmlLocator.role('region', { name: 'Canvas' });
+
+        scene
+          .expect(region)
+          .toHaveAttribute('style', /--x-backgroundSize:16px 16px/)
+          .expect(region)
+          .toHaveAttribute('style', /--x-backgroundPosition:-8px -8px/)
+          .fire(region, 'pointerdown', { button: 0, pointerId: 1, x: 100, y: 100 })
+          .fire(region, 'pointermove', { pointerId: 1, x: -2900, y: 3100 })
+          .fire(region, 'pointerup', { pointerId: 1 })
+          .expect(region)
+          .toHaveAttribute('style', /--x-backgroundPosition:-3008px 2992px/);
+        // Seven levels lie below the size of the canvas itself.
+        Array.from({ length: 7 }).forEach(() => {
+          scene
+            .click(HtmlLocator.role('button', { name: 'Zoom out' }))
+            .resolve(HtmlCommand.Measure, Option.none());
+        });
+        // At a quarter, a step of the grid is 4 pixels on the screen, so the dot of every second line is drawn, 8 pixels apart.
+        scene.expect(region).toHaveAttribute('style', /--x-backgroundSize:8px 8px/);
       }),
   );
 
