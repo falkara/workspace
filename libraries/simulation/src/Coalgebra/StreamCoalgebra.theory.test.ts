@@ -6,15 +6,17 @@ import * as MealyMachine from '#src/Coalgebra/MealyMachine';
 import * as StreamCoalgebra from '#src/Coalgebra/StreamCoalgebra';
 
 describe('Coalgebra/StreamCoalgebra', () => {
+  /** A schema of the table of a function from three values, its value at each of them. */
+  const tableOf = <Value extends Schema.Constraint>(value: Value) =>
+    Schema.Tuple([value, value, value]);
+
   /** Running a stream coalgebra from a state gives first the output of the state and then what running it from the next state gives. */
   it.prop(
     'StreamCoalgebra.behavior_eq',
     {
-      coalgebraTable: Schema.Tuple([
+      coalgebraTable: tableOf(
         Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-      ]),
+      ),
       state: Schema.Literals([0, 1, 2]),
     },
     ({ coalgebraTable, state }) => {
@@ -43,11 +45,9 @@ describe('Coalgebra/StreamCoalgebra', () => {
   it.prop(
     'StreamCoalgebra.behavior_eq_map_steps',
     {
-      coalgebraTable: Schema.Tuple([
+      coalgebraTable: tableOf(
         Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-      ]),
+      ),
       state: Schema.Literals([0, 1, 2]),
     },
     ({ coalgebraTable, state }) => {
@@ -74,16 +74,10 @@ describe('Coalgebra/StreamCoalgebra', () => {
   it.prop(
     'StreamCoalgebra.behavior_mapOutput',
     {
-      coalgebraTable: Schema.Tuple([
+      coalgebraTable: tableOf(
         Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-      ]),
-      f: Schema.Tuple([
-        Schema.Literals([0, 1, 2]),
-        Schema.Literals([0, 1, 2]),
-        Schema.Literals([0, 1, 2]),
-      ]),
+      ),
+      f: tableOf(Schema.Literals([0, 1, 2])),
       state: Schema.Literals([0, 1, 2]),
     },
     ({ coalgebraTable, f, state }) => {
@@ -121,11 +115,9 @@ describe('Coalgebra/StreamCoalgebra', () => {
   it.prop(
     'StreamCoalgebra.behavior_toMealyMachine',
     {
-      coalgebraTable: Schema.Tuple([
+      coalgebraTable: tableOf(
         Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-      ]),
+      ),
       state: Schema.Literals([0, 1, 2]),
       inputs: Schema.Array(Schema.Void),
     },

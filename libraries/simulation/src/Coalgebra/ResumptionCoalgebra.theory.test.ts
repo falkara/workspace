@@ -5,24 +5,20 @@ import { Effect, Schema, Stream } from 'effect';
 import * as ResumptionCoalgebra from '#src/Coalgebra/ResumptionCoalgebra';
 
 describe('Coalgebra/ResumptionCoalgebra', () => {
+  /** A schema of the table of a function from three values, its value at each of them. */
+  const tableOf = <Value extends Schema.Constraint>(value: Value) =>
+    Schema.Tuple([value, value, value]);
+
   /** Running a resumption coalgebra gives the outputs of its steps. */
   it.prop(
     'ResumptionCoalgebra.behavior_eq_map_steps',
     {
-      coalgebraTable: Schema.Tuple([
+      coalgebraTable: tableOf(
         Schema.Result(
           Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
           Schema.Literals([0, 1, 2]),
         ),
-        Schema.Result(
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Literals([0, 1, 2]),
-        ),
-        Schema.Result(
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Literals([0, 1, 2]),
-        ),
-      ]),
+      ),
       state: Schema.Literals([0, 1, 2]),
     },
     ({ coalgebraTable, state }) => {

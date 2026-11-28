@@ -29,7 +29,10 @@ a component of a pair the type of the component.
 
 A pair, a component of a pair, and the map of a stream take the names of the fields of the pair from
 the type that the reading gives it, the pair itself, the pair taken apart, and an element of the
-stream mapped, as the form of a pair follows from its type, which a later phase no longer knows.
+stream mapped, as the form of a pair follows from its type, which a later phase no longer knows. A
+pair takes first the type that its place expects of it: the type of an equation for its sides, and
+the binder of the function for an argument. Lean infers a pair as the product of its components,
+which names no fields, while the type that its place expects keeps the functor that names them.
 
 A constant of which a rule of the translator tells is read with no lookup in the environment beyond
 its arguments, as the rule alone gives its meaning.
@@ -128,12 +131,23 @@ def headOf (packageNamespace name : Lean.Name) (arguments : List Lean.Expr) :
       return .function (← declarationReferenceOf packageNamespace name)
   return .plain
 
-/-- Gives the tree of a term of a theorem, or refuses with the reason where the type of a pair that
-it takes apart or of a stream that it maps has no reading, or the fuel runs out. -/
+/-- Gives the type that an application expects of every argument, the binder of the type of its
+function at the argument, and none from the first argument where the type shows no binder. -/
+def domainsOf : List Lean.Expr → Lean.Expr → Lean.MetaM (List (Option Lean.Expr))
+  | [], _ => return []
+  | argument :: rest, type => do
+    match ← Lean.Meta.whnf type with
+    | .forallE _ domain body _ =>
+      return some domain :: (← domainsOf rest (body.instantiate1 argument))
+    | _ => return none :: rest.map fun _ ↦ none
+
+/-- Gives the tree of a term of a theorem at the type that its place expects of it, where the place
+expects one, or refuses with the reason where the type of a pair that it takes apart or of a stream
+that it maps has no reading, or the fuel runs out. -/
 def reifyTerm (rules : List Translation.Rule) (packageNamespace : Lean.Name) :
-    Nat → Lean.Expr → Lean.MetaM TermTree
-  | 0, expression => Lean.throwError (Refusal.render (.fuel expression))
-  | fuel + 1, expression => do
+    Nat → Option Lean.Expr → Lean.Expr → Lean.MetaM TermTree
+  | 0, _, expression => Lean.throwError (Refusal.render (.fuel expression))
+  | fuel + 1, expected, expression => do
     match expression with
     | .fvar binder => return .bound (← binder.getUserName).toString expression
     | .lit (.natVal value) => return .literal value expression
@@ -141,7 +155,9 @@ def reifyTerm (rules : List Translation.Rule) (packageNamespace : Lean.Name) :
       let .const name _ := expression.getAppFn | return .other expression
       let arguments := expression.getAppArgs.toList
       let information ← Lean.Meta.getFunInfoNArgs expression.getAppFn arguments.length
-      let trees ← arguments.mapM (reifyTerm rules packageNamespace fuel)
+      let domains ← domainsOf arguments (← Lean.Meta.inferType expression.getAppFn)
+      let trees ← (arguments.zip domains).mapM fun (argument, domain) ↦
+        reifyTerm rules packageNamespace fuel domain argument
       let typed := trees.zipIdx.map fun (tree, index) ↦
         TermArgument.mk tree ((information.paramInfo[index]?.map (·.isExplicit)).getD true)
       let domain := match arguments with
@@ -150,7 +166,15 @@ def reifyTerm (rules : List Translation.Rule) (packageNamespace : Lean.Name) :
       match Translation.ruleOf? rules name arguments.length domain with
       | some rule =>
         let fields ← match rule.action, arguments with
-          | .structural .pair, _ => recordFieldsOf? rules (← shapeOf rules fuel expression)
+          | .structural .pair, _ => do
+            -- A pair takes the fields that the type its place expects names, and those of its own
+            -- type otherwise, as Lean infers a pair as the product of its components alone.
+            let expectedFields ← match expected with
+              | some type => recordFieldsOf? rules (← normalizedOf rules type)
+              | none => pure none
+            match expectedFields with
+            | some fields => pure (some fields)
+            | none => recordFieldsOf? rules (← shapeOf rules fuel expression)
           | .structural .first, [_, _, pair] | .structural .second, [_, _, pair] =>
             recordFieldsOf? rules (← shapeOf rules fuel pair)
           | .primitive .streamMap, [_, _, _, stream] | .primitive .sequenceMap, [_, _, _, stream] =>

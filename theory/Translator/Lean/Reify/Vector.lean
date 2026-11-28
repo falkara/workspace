@@ -39,7 +39,7 @@ def reifyVector (vector : Falkara.Translation.Vector) :
   let information ← Lean.getConstInfo vector.declaration
   let some value := information.value?
     | Lean.throwError (Refusal.render (.noValue vector.declaration information.type))
-  let tree ← reifyTerm rules .anonymous (fuelOf value) value
+  let tree ← reifyTerm rules .anonymous (fuelOf value) (some information.type) value
   let expression := Lean.mkConst vector.declaration
   let expected ← match information.type with
     | .app (.const former _) _ =>

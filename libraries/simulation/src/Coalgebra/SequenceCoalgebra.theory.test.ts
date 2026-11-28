@@ -5,21 +5,19 @@ import { Effect, Schema, Stream } from 'effect';
 import * as SequenceCoalgebra from '#src/Coalgebra/SequenceCoalgebra';
 
 describe('Coalgebra/SequenceCoalgebra', () => {
+  /** A schema of the table of a function from three values, its value at each of them. */
+  const tableOf = <Value extends Schema.Constraint>(value: Value) =>
+    Schema.Tuple([value, value, value]);
+
   /** Running a sequence coalgebra gives the outputs of its steps. */
   it.prop(
     'SequenceCoalgebra.behavior_eq_map_steps',
     {
-      coalgebraTable: Schema.Tuple([
+      coalgebraTable: tableOf(
         Schema.Option(
           Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
         ),
-        Schema.Option(
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ),
-        Schema.Option(
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ),
-      ]),
+      ),
       state: Schema.Literals([0, 1, 2]),
     },
     ({ coalgebraTable, state }) => {
@@ -45,22 +43,12 @@ describe('Coalgebra/SequenceCoalgebra', () => {
   it.prop(
     'SequenceCoalgebra.behavior_mapOutput',
     {
-      coalgebraTable: Schema.Tuple([
+      coalgebraTable: tableOf(
         Schema.Option(
           Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
         ),
-        Schema.Option(
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ),
-        Schema.Option(
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ),
-      ]),
-      f: Schema.Tuple([
-        Schema.Literals([0, 1, 2]),
-        Schema.Literals([0, 1, 2]),
-        Schema.Literals([0, 1, 2]),
-      ]),
+      ),
+      f: tableOf(Schema.Literals([0, 1, 2])),
       state: Schema.Literals([0, 1, 2]),
     },
     ({ coalgebraTable, f, state }) => {

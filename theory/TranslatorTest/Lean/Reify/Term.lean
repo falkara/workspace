@@ -33,7 +33,7 @@ info: [("Option.some", "plain", ["Geometry.Point.mk"]),
   let rules ← rulesOf
   Lean.Meta.forallTelescope (← Lean.getConstInfo ``Geometry.pointAt_first).type
     fun _ conclusion ↦ do
-      let .app (.app _ left) right := conclusion | return []
+      let .app (.app (.app _ sides) left) right := conclusion | return []
       let summary := fun (tree : TermTree) ↦ match tree with
         | .apply constant head arguments _ _ =>
           let written := match head with
@@ -48,8 +48,8 @@ info: [("Option.some", "plain", ["Geometry.Point.mk"]),
             | _ => none
           [(constant.toString, written, explicit)]
         | _ => []
-      let right ← reifyTerm rules `Geometry (fuelOf right) right
-      let left ← reifyTerm rules `Geometry (fuelOf left) left
+      let right ← reifyTerm rules `Geometry (fuelOf right) (some sides) right
+      let left ← reifyTerm rules `Geometry (fuelOf left) (some sides) left
       let inner := match right with
         | .apply _ _ [_, .mk inner _] _ _ => summary inner
         | _ => []

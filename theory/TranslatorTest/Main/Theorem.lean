@@ -21,7 +21,9 @@ its structure, a state and every other type variable at three values, a function
 stream as a prefix, which has a first element where the theorem takes the first element of the
 stream, and that compares two streams by a prefix of each, as long as the stream it draws or of 6
 elements where it draws none. A product takes a record where the functor of the system names its
-fields and a tuple otherwise, and a `have` takes a statement of its own. The module defines as well
+fields and a tuple otherwise, a pair takes the record that the type of its equation names although
+Lean infers it as a product, and a `have` takes a statement of its own. A table of a test is a
+`tableOf` of the schema of its value, which the file declares once. The module defines as well
 a check of every theorem that the translator refuses, with the reason.
 -/
 
@@ -68,8 +70,11 @@ import * as Bell from '#src/Fixture/Bell';
 import * as Organ from '#src/Fixture/Organ';
 
 describe('Fixture/Organ', () => {
+/** A schema of the table of a function from three values, its value at each of them. */
+const tableOf = <Value extends Schema.Constraint>(value: Value) => Schema.Tuple([value, value, value]);
+
 /** The tones of an organ open with the tone upon the first key and go on with the tones at the next state upon the rest of the keys. */
-it.prop('Organ.play_eq', { organTable: Schema.Tuple([Schema.Tuple([Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) })]), Schema.Tuple([Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) })]), Schema.Tuple([Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) })])]), state: Schema.Literals([0, 1, 2]), keys: Schema.NonEmptyArray(Schema.Literals([0, 1, 2])) }, ({ organTable, state, keys }) => {
+it.prop('Organ.play_eq', { organTable: tableOf(tableOf(Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }))), state: Schema.Literals([0, 1, 2]), keys: Schema.NonEmptyArray(Schema.Literals([0, 1, 2])) }, ({ organTable, state, keys }) => {
 const organ = Organ.make({ str: (v: 0 | 1 | 2) => (key: 0 | 1 | 2) => organTable[v][key] });
 const step = organ.str(state);
 const actual = Effect.runSync(Stream.runCollect(Stream.take(Organ.play(organ, state, Stream.fromIterable(keys)), keys.length)));
@@ -79,7 +84,7 @@ expect(actual).toEqual(expected);
 });
 
 /** The tones of an organ are the tones of its sounds. */
-it.prop('Organ.play_eq_map_sounds', { organTable: Schema.Tuple([Schema.Tuple([Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) })]), Schema.Tuple([Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) })]), Schema.Tuple([Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) })])]), state: Schema.Literals([0, 1, 2]), keys: Schema.Array(Schema.Literals([0, 1, 2])) }, ({ organTable, state, keys }) => {
+it.prop('Organ.play_eq_map_sounds', { organTable: tableOf(tableOf(Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }))), state: Schema.Literals([0, 1, 2]), keys: Schema.Array(Schema.Literals([0, 1, 2])) }, ({ organTable, state, keys }) => {
 const organ = Organ.make({ str: (v: 0 | 1 | 2) => (key: 0 | 1 | 2) => organTable[v][key] });
 const actual = Effect.runSync(Stream.runCollect(Stream.take(Organ.play(organ, state, Stream.fromIterable(keys)), keys.length)));
 const expected = Effect.runSync(Stream.runCollect(Stream.take(Stream.map(Organ.sounds(organ, state, Stream.fromIterable(keys)), (value) => value.tone), keys.length)));
@@ -88,7 +93,7 @@ expect(actual).toEqual(expected);
 });
 
 /** The tones of the organ that transposes every tone of an organ are the transposed tones of the organ. */
-it.prop('Organ.play_transpose', { organTable: Schema.Tuple([Schema.Tuple([Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) })]), Schema.Tuple([Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) })]), Schema.Tuple([Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) })])]), interval: Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])]), state: Schema.Literals([0, 1, 2]), keys: Schema.Array(Schema.Literals([0, 1, 2])) }, ({ organTable, interval, state, keys }) => {
+it.prop('Organ.play_transpose', { organTable: tableOf(tableOf(Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }))), interval: tableOf(Schema.Literals([0, 1, 2])), state: Schema.Literals([0, 1, 2]), keys: Schema.Array(Schema.Literals([0, 1, 2])) }, ({ organTable, interval, state, keys }) => {
 const organ = Organ.make({ str: (v: 0 | 1 | 2) => (key: 0 | 1 | 2) => organTable[v][key] });
 const actual = Effect.runSync(Stream.runCollect(Stream.take(Organ.play(Organ.transpose(organ, (tone: 0 | 1 | 2) => interval[tone]), state, Stream.fromIterable(keys)), keys.length)));
 const expected = Effect.runSync(Stream.runCollect(Stream.take(Stream.map(Organ.play(organ, state, Stream.fromIterable(keys)), (tone: 0 | 1 | 2) => interval[tone]), keys.length)));
@@ -96,8 +101,17 @@ expect(actual).toHaveLength(keys.length);
 expect(actual).toEqual(expected);
 });
 
+/** The sound of an organ upon a key is its tone beside its next state. */
+it.prop('Organ.sound_eq', { organTable: tableOf(tableOf(Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }))), state: Schema.Literals([0, 1, 2]), key: Schema.Literals([0, 1, 2]) }, ({ organTable, state, key }) => {
+const organ = Organ.make({ str: (v: 0 | 1 | 2) => (key: 0 | 1 | 2) => organTable[v][key] });
+const step = organ.str(state);
+const actual = step(key);
+const expected = { tone: step(key).tone, next: step(key).next };
+expect(actual).toEqual(expected);
+});
+
 /** The peal of a bell opens with the chime that the bell rings and goes on with the peal at the next state. */
-it.prop('Bell.peal_eq', { bellTable: Schema.Tuple([Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])]), Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])]), Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])])]), state: Schema.Literals([0, 1, 2]) }, ({ bellTable, state }) => {
+it.prop('Bell.peal_eq', { bellTable: tableOf(Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])])), state: Schema.Literals([0, 1, 2]) }, ({ bellTable, state }) => {
 const bell = Bell.make({ str: (v: 0 | 1 | 2) => bellTable[v] });
 const actual = Effect.runSync(Stream.runCollect(Stream.take(Bell.peal(bell, state), 6)));
 const expected = Effect.runSync(Stream.runCollect(Stream.take(Stream.prepend(Bell.peal(bell, bell.str(state)[1]), [bell.str(state)[0]]), 6)));
@@ -106,7 +120,7 @@ expect(actual).toEqual(expected);
 });
 
 /** The answer of a bell pairs every chime it hears with a chime of its peal. */
-it.prop('Bell.answer_eq', { bellTable: Schema.Tuple([Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])]), Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])]), Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])])]), state: Schema.Literals([0, 1, 2]), heard: Schema.Array(Schema.Literals([0, 1, 2])) }, ({ bellTable, state, heard }) => {
+it.prop('Bell.answer_eq', { bellTable: tableOf(Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])])), state: Schema.Literals([0, 1, 2]), heard: Schema.Array(Schema.Literals([0, 1, 2])) }, ({ bellTable, state, heard }) => {
 const bell = Bell.make({ str: (v: 0 | 1 | 2) => bellTable[v] });
 const actual = Effect.runSync(Stream.runCollect(Stream.take(Bell.answer(bell, state, Stream.fromIterable(heard)), heard.length)));
 const expected = Effect.runSync(Stream.runCollect(Stream.take(Stream.zip(Stream.fromIterable(heard), Bell.peal(bell, state)), heard.length)));
@@ -115,7 +129,7 @@ expect(actual).toEqual(expected);
 });
 
 /** The first chimes of the answer of a bell are the chimes that the bell hears. */
-it.prop('Bell.map_fst_answer', { bellTable: Schema.Tuple([Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])]), Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])]), Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])])]), state: Schema.Literals([0, 1, 2]), heard: Schema.Array(Schema.Literals([0, 1, 2])) }, ({ bellTable, state, heard }) => {
+it.prop('Bell.map_fst_answer', { bellTable: tableOf(Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])])), state: Schema.Literals([0, 1, 2]), heard: Schema.Array(Schema.Literals([0, 1, 2])) }, ({ bellTable, state, heard }) => {
 const bell = Bell.make({ str: (v: 0 | 1 | 2) => bellTable[v] });
 const actual = Effect.runSync(Stream.runCollect(Stream.take(Stream.map(Bell.answer(bell, state, Stream.fromIterable(heard)), (value) => value[0]), heard.length)));
 const expected = Effect.runSync(Stream.runCollect(Stream.take(Stream.fromIterable(heard), heard.length)));
@@ -124,7 +138,7 @@ expect(actual).toEqual(expected);
 });
 
 /** The state that a key leads a music box to is the state that its transition gives upon the key. */
-it.prop('MusicBox.snd_str_apply', { boxTable: Schema.Tuple([Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])]) })]), state: Schema.Literals([0, 1, 2]), key: Schema.Literals([0, 1, 2]) }, ({ boxTable, state, key }) => {
+it.prop('MusicBox.snd_str_apply', { boxTable: tableOf(Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: tableOf(Schema.Literals([0, 1, 2])) })), state: Schema.Literals([0, 1, 2]), key: Schema.Literals([0, 1, 2]) }, ({ boxTable, state, key }) => {
 const box = Organ.musicBox({ str: (v: 0 | 1 | 2) => ({ tone: boxTable[v].tone, next: (key: 0 | 1 | 2) => boxTable[v].next[key] }) });
 const step = box.str(state);
 const actual = [step.tone, step.next(key)][1];
@@ -152,7 +166,8 @@ expect(actual).toEqual(expected);
 #eval show Lean.MetaM Unit from do
   IO.print (← testFileOf `TranslatorTest `TranslatorTest.Fixture.Organ `Geometry
     [``Geometry.Organ.play_eq, ``Geometry.Organ.play_eq_map_sounds,
-      ``Geometry.Organ.play_transpose, ``Geometry.Bell.peal_eq, ``Geometry.Bell.answer_eq,
+      ``Geometry.Organ.play_transpose, ``Geometry.Organ.sound_eq, ``Geometry.Bell.peal_eq,
+      ``Geometry.Bell.answer_eq,
       ``Geometry.Bell.map_fst_answer, ``Geometry.MusicBox.snd_str_apply,
       ``Geometry.mk_fst_snd_pause_toll, ``Geometry.cons_head_tail_rests])
 

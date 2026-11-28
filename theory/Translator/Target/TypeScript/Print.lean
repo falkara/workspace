@@ -35,13 +35,15 @@ def Documentation.print (documentation : Documentation) : String :=
     {String.join (documentation.addresses.map (s!" * @see {·}\n"))} */\n"
 
 /-- Gives the text of a symbol: the name of its member after the namespace of its module, the name
-of a condition alone, and the namespace `Module` of the module of a package. -/
+of a condition and of a declaration of the file alone, and the namespace `Module` of the module of a
+package. -/
 def Symbol.print : Symbol → String
   | .effect qualifier member => s!"{qualifier}.{member}"
   | .theory qualifier _ member => s!"{qualifier}.{member}"
   | .check _ member => member
   | .module _ => "Module"
   | .package qualifier _ member => s!"{qualifier}.{member}"
+  | .declared member => member
 
 /-- Gives the text of a literal. -/
 def Literal.print : Literal → String

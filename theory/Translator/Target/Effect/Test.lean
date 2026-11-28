@@ -18,7 +18,7 @@ of the tests of a module. A specification with variables takes a property test, 
 variable from a schema: the three values `0`, `1`, and `2` by `Schema.Literals`, the type of one
 value by `Schema.Void`, a rational number by `Schema.Rational`, a structure of data by its schema,
 an option, a tuple, a result, and a record of the schemas of their parts, the table of a function
-as a tuple of the schemas of its three values, a stream as an array of the schemas of its elements,
+by `tableOf` of the schema of its value, a stream as an array of the schemas of its elements,
 which is not empty where the theorem takes its first element, and a system as the table of its
 structure.
 A specification without variables takes a test of its values. The test opens with a statement for
@@ -35,6 +35,10 @@ reads its value from the data: a function as `(output: 0 | 1 | 2) => table[outpu
 A file of tests imports every module of the package that its tests name in the order of the modules
 of the theory, as they import each other, and every module of Effect by name, as a value, as a test
 calls every one.
+
+A file of tests whose tests draw a table opens its `describe` with `tableOf`, the tuple of the
+schema of a value at each of the three values, so a table of tables, such as the table of a system
+whose structure gives a function, names the schema of its value once rather than nine times.
 -/
 
 public section
@@ -60,9 +64,7 @@ def schemaOf (theory : Lean.Name) : Core.Draw → TypeScript.Expression
     .call (.symbol (.effect "Schema" "Result")) [schemaOf theory right, schemaOf theory left]
   | .record fields =>
     .call (.symbol (.effect "Schema" "Struct")) [.object (fieldSchemasOf theory fields)]
-  | .table _ result =>
-    let schema := schemaOf theory result
-    .call (.symbol (.effect "Schema" "Tuple")) [.array [schema, schema, schema]]
+  | .table _ result => .call (.symbol (.declared "tableOf")) [schemaOf theory result]
 
 /-- Gives the properties of the schema of a record that the schemas of its fields take. -/
 def fieldSchemasOf (theory : Lean.Name) : List (String × Core.Draw) → List TypeScript.Property
@@ -164,14 +166,29 @@ def lowerSpecification (theory : Lean.Name) (specification : Core.Specification)
           .arrow [] [.mk (.object (arbitraries.map Prod.fst)) none] .inline none body]
   return .expression (some (documentationOf specification.documentation)) test
 
+/-- The schema of the table of a function from three values, a tuple of the schema of its value at
+each of them, which the `describe` of a file of tests opens with where one of its tests draws a
+table. -/
+def tableSchema : TypeScript.Statement :=
+  let value := TypeScript.Expression.identifier "value"
+  .constant
+    (some ⟨"A schema of the table of a function from three values, its value at each of them.", []⟩)
+    false "tableOf" none
+    (.arrow [.mk .inferred "Value" (some (.reference (.symbol (.effect "Schema" "Constraint")) []))
+        none]
+      [.mk (.identifier "value") (some (.reference (.identifier "Value") []))] .inline none
+      (.expression (.call (.symbol (.effect "Schema" "Tuple")) [.array [value, value, value]])))
+
 /-- Gives the file of the tests of a module of the theory, with its header, the imports that its
-tests name, the modules of the package in the order that a rank gives their paths, and a
-`describe` of the path of the module. -/
+tests name, the modules of the package in the order that a rank gives their paths, and a `describe`
+of the path of the module, which opens with the schema of a table where a test draws one. -/
 def testModuleOf (header path : String) (rank : String → Nat)
     (tests : List TypeScript.Statement) : TypeScript.Module :=
+  let tables := tests.any fun test ↦ test.symbols.any (·.1 == .declared "tableOf")
   let statements := [TypeScript.Statement.expression none
     (.call (.identifier "describe")
-      [.literal (.string path), .arrow [] [] .inline none (.block tests)])]
+      [.literal (.string path),
+        .arrow [] [] .inline none (.block (if tables then tableSchema :: tests else tests))])]
   { header, imports := TypeScript.testImportsOf rank (statements.flatMap (·.symbols)), statements }
 
 end Translator.Effect

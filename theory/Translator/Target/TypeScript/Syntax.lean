@@ -48,7 +48,7 @@ structure Documentation where
   addresses : List String
   deriving Repr, DecidableEq
 
-/-- A name that a file takes from a module it imports. -/
+/-- A name that a file takes from a module it imports, or that it declares itself. -/
 inductive Symbol where
   /-- A member of a module of Effect, such as `fromBigInt` of `Rational`, which the package
   `effect` exports by the name of the module. -/
@@ -64,6 +64,9 @@ inductive Symbol where
   /-- A member of a module of the package, such as `make` of `Point`, which a file of tests imports
   as a namespace from the module of its path. -/
   | package (qualifier path member : String)
+  /-- A declaration that a file of tests makes itself, such as `tableOf`, which it imports from no
+  module. -/
+  | declared (member : String)
   deriving Repr, DecidableEq
 
 /-- A literal of a value, which a type names as well. -/

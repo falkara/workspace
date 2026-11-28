@@ -6,36 +6,20 @@ import * as DeterministicAutomaton from '#src/Coalgebra/DeterministicAutomaton';
 import * as MealyMachine from '#src/Coalgebra/MealyMachine';
 
 describe('Coalgebra/DeterministicAutomaton', () => {
+  /** A schema of the table of a function from three values, its value at each of them. */
+  const tableOf = <Value extends Schema.Constraint>(value: Value) =>
+    Schema.Tuple([value, value, value]);
+
   /** Running a deterministic automaton upon inputs gives first the output of its state and then what running it from the state that the first input leads to gives upon the rest of the inputs. */
   it.prop(
     'DeterministicAutomaton.behavior_eq',
     {
-      automatonTable: Schema.Tuple([
+      automatonTable: tableOf(
         Schema.Struct({
           output: Schema.Literals([0, 1, 2]),
-          next: Schema.Tuple([
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-          ]),
+          next: tableOf(Schema.Literals([0, 1, 2])),
         }),
-        Schema.Struct({
-          output: Schema.Literals([0, 1, 2]),
-          next: Schema.Tuple([
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-          ]),
-        }),
-        Schema.Struct({
-          output: Schema.Literals([0, 1, 2]),
-          next: Schema.Tuple([
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-          ]),
-        }),
-      ]),
+      ),
       state: Schema.Literals([0, 1, 2]),
       inputs: Schema.NonEmptyArray(Schema.Literals([0, 1, 2])),
     },
@@ -79,37 +63,13 @@ describe('Coalgebra/DeterministicAutomaton', () => {
   it.prop(
     'DeterministicAutomaton.behavior_mapOutput',
     {
-      automatonTable: Schema.Tuple([
+      automatonTable: tableOf(
         Schema.Struct({
           output: Schema.Literals([0, 1, 2]),
-          next: Schema.Tuple([
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-          ]),
+          next: tableOf(Schema.Literals([0, 1, 2])),
         }),
-        Schema.Struct({
-          output: Schema.Literals([0, 1, 2]),
-          next: Schema.Tuple([
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-          ]),
-        }),
-        Schema.Struct({
-          output: Schema.Literals([0, 1, 2]),
-          next: Schema.Tuple([
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-          ]),
-        }),
-      ]),
-      f: Schema.Tuple([
-        Schema.Literals([0, 1, 2]),
-        Schema.Literals([0, 1, 2]),
-        Schema.Literals([0, 1, 2]),
-      ]),
+      ),
+      f: tableOf(Schema.Literals([0, 1, 2])),
       state: Schema.Literals([0, 1, 2]),
       inputs: Schema.Array(Schema.Literals([0, 1, 2])),
     },
@@ -152,37 +112,13 @@ describe('Coalgebra/DeterministicAutomaton', () => {
   it.prop(
     'DeterministicAutomaton.behavior_mapInput',
     {
-      automatonTable: Schema.Tuple([
+      automatonTable: tableOf(
         Schema.Struct({
           output: Schema.Literals([0, 1, 2]),
-          next: Schema.Tuple([
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-          ]),
+          next: tableOf(Schema.Literals([0, 1, 2])),
         }),
-        Schema.Struct({
-          output: Schema.Literals([0, 1, 2]),
-          next: Schema.Tuple([
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-          ]),
-        }),
-        Schema.Struct({
-          output: Schema.Literals([0, 1, 2]),
-          next: Schema.Tuple([
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-          ]),
-        }),
-      ]),
-      f: Schema.Tuple([
-        Schema.Literals([0, 1, 2]),
-        Schema.Literals([0, 1, 2]),
-        Schema.Literals([0, 1, 2]),
-      ]),
+      ),
+      f: tableOf(Schema.Literals([0, 1, 2])),
       state: Schema.Literals([0, 1, 2]),
       inputs: Schema.Array(Schema.Literals([0, 1, 2])),
     },
@@ -226,32 +162,12 @@ describe('Coalgebra/DeterministicAutomaton', () => {
   it.prop(
     'DeterministicAutomaton.behavior_toMealyMachine',
     {
-      automatonTable: Schema.Tuple([
+      automatonTable: tableOf(
         Schema.Struct({
           output: Schema.Literals([0, 1, 2]),
-          next: Schema.Tuple([
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-          ]),
+          next: tableOf(Schema.Literals([0, 1, 2])),
         }),
-        Schema.Struct({
-          output: Schema.Literals([0, 1, 2]),
-          next: Schema.Tuple([
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-          ]),
-        }),
-        Schema.Struct({
-          output: Schema.Literals([0, 1, 2]),
-          next: Schema.Tuple([
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-            Schema.Literals([0, 1, 2]),
-          ]),
-        }),
-      ]),
+      ),
       state: Schema.Literals([0, 1, 2]),
       inputs: Schema.Array(Schema.Literals([0, 1, 2])),
     },

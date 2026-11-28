@@ -5,27 +5,19 @@ import { Effect, Schema, Stream } from 'effect';
 import * as MealyMachine from '#src/Coalgebra/MealyMachine';
 
 describe('Coalgebra/MealyMachine', () => {
+  /** A schema of the table of a function from three values, its value at each of them. */
+  const tableOf = <Value extends Schema.Constraint>(value: Value) =>
+    Schema.Tuple([value, value, value]);
+
   /** Running a Mealy machine upon inputs gives first its output upon the first input and then what running it from the next state gives upon the rest of the inputs. */
   it.prop(
     'MealyMachine.behavior_eq',
     {
-      machineTable: Schema.Tuple([
-        Schema.Tuple([
+      machineTable: tableOf(
+        tableOf(
           Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-      ]),
+        ),
+      ),
       state: Schema.Literals([0, 1, 2]),
       inputs: Schema.NonEmptyArray(Schema.Literals([0, 1, 2])),
     },
@@ -66,23 +58,11 @@ describe('Coalgebra/MealyMachine', () => {
   it.prop(
     'MealyMachine.behavior_eq_map_steps',
     {
-      machineTable: Schema.Tuple([
-        Schema.Tuple([
+      machineTable: tableOf(
+        tableOf(
           Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-      ]),
+        ),
+      ),
       state: Schema.Literals([0, 1, 2]),
       inputs: Schema.Array(Schema.Literals([0, 1, 2])),
     },
@@ -118,28 +98,12 @@ describe('Coalgebra/MealyMachine', () => {
   it.prop(
     'MealyMachine.behavior_mapOutput',
     {
-      machineTable: Schema.Tuple([
-        Schema.Tuple([
+      machineTable: tableOf(
+        tableOf(
           Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-      ]),
-      f: Schema.Tuple([
-        Schema.Literals([0, 1, 2]),
-        Schema.Literals([0, 1, 2]),
-        Schema.Literals([0, 1, 2]),
-      ]),
+        ),
+      ),
+      f: tableOf(Schema.Literals([0, 1, 2])),
       state: Schema.Literals([0, 1, 2]),
       inputs: Schema.Array(Schema.Literals([0, 1, 2])),
     },
@@ -179,28 +143,12 @@ describe('Coalgebra/MealyMachine', () => {
   it.prop(
     'MealyMachine.behavior_mapInput',
     {
-      machineTable: Schema.Tuple([
-        Schema.Tuple([
+      machineTable: tableOf(
+        tableOf(
           Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-      ]),
-      f: Schema.Tuple([
-        Schema.Literals([0, 1, 2]),
-        Schema.Literals([0, 1, 2]),
-        Schema.Literals([0, 1, 2]),
-      ]),
+        ),
+      ),
+      f: tableOf(Schema.Literals([0, 1, 2])),
       state: Schema.Literals([0, 1, 2]),
       inputs: Schema.Array(Schema.Literals([0, 1, 2])),
     },
@@ -241,40 +189,16 @@ describe('Coalgebra/MealyMachine', () => {
   it.prop(
     'MealyMachine.behavior_series',
     {
-      firstTable: Schema.Tuple([
-        Schema.Tuple([
+      firstTable: tableOf(
+        tableOf(
           Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
+        ),
+      ),
+      secondTable: tableOf(
+        tableOf(
           Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-      ]),
-      secondTable: Schema.Tuple([
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-      ]),
+        ),
+      ),
       firstState: Schema.Literals([0, 1, 2]),
       secondState: Schema.Literals([0, 1, 2]),
       inputs: Schema.Array(Schema.Literals([0, 1, 2])),
@@ -319,40 +243,16 @@ describe('Coalgebra/MealyMachine', () => {
   it.prop(
     'MealyMachine.behavior_parallel',
     {
-      firstTable: Schema.Tuple([
-        Schema.Tuple([
+      firstTable: tableOf(
+        tableOf(
           Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
+        ),
+      ),
+      secondTable: tableOf(
+        tableOf(
           Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-      ]),
-      secondTable: Schema.Tuple([
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-        Schema.Tuple([
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-          Schema.Struct({ output: Schema.Literals([0, 1, 2]), next: Schema.Literals([0, 1, 2]) }),
-        ]),
-      ]),
+        ),
+      ),
       firstState: Schema.Literals([0, 1, 2]),
       secondState: Schema.Literals([0, 1, 2]),
       inputs: Schema.Array(Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])])),

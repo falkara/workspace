@@ -132,12 +132,13 @@ def variableOf (rules : List Translation.Rule) (packageNamespace name : Lean.Nam
   if isParameterType rules type || (← Lean.Meta.isClass? type).isSome then
     return (none, none)
   if ← Lean.Meta.isProp type then
-    let hypothesis := fun (equal : Bool) (left right : Lean.Expr) ↦ do
-      return (none, some (equal, ← reifyTerm rules packageNamespace (fuelOf left) left,
-        ← reifyTerm rules packageNamespace (fuelOf right) right))
+    let hypothesis := fun (equal : Bool) (sides left right : Lean.Expr) ↦ do
+      return (none, some (equal,
+        ← reifyTerm rules packageNamespace (fuelOf left) (some sides) left,
+        ← reifyTerm rules packageNamespace (fuelOf right) (some sides) right))
     return ← match type.getAppFn, type.getAppArgs.toList with
-      | .const ``Ne _, [_, left, right] => hypothesis false left right
-      | .const ``Eq _, [_, left, right] => hypothesis true left right
+      | .const ``Ne _, [sides, left, right] => hypothesis false sides left right
+      | .const ``Eq _, [sides, left, right] => hypothesis true sides left right
       | _, _ => Lean.throwError (Refusal.render (.noHypothesis type))
   let binderName ← binderNameOf binder
   if ["actual", "expected"].contains binderName then
@@ -200,7 +201,7 @@ where
     match fuel, conclusion with
     | 0, .letE .. => Lean.throwError (Refusal.render (.fuel conclusion))
     | fuel + 1, .letE haveName type value body _ =>
-      let tree ← reifyTerm rules packageNamespace (fuelOf value) value
+      let tree ← reifyTerm rules packageNamespace (fuelOf value) (some type) value
       Lean.Meta.withLetDecl haveName type value fun binder ↦
         underHaves rules streams testName documentation variables hypotheses
           (haves ++ [(haveName.toString, tree)]) fuel (body.instantiate1 binder)
@@ -233,8 +234,8 @@ where
         variables
         hypotheses
         haves
-        left := ← reifyTerm rules packageNamespace (fuelOf left) left
-        right := ← reifyTerm rules packageNamespace (fuelOf right) right
+        left := ← reifyTerm rules packageNamespace (fuelOf left) (some type) left
+        right := ← reifyTerm rules packageNamespace (fuelOf right) (some type) right
         comparison }
       match computation tree with
       | .ok value => return value

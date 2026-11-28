@@ -157,6 +157,17 @@ attribute [counterpart
     r"The tones of the organ that transposes every tone of an organ are the transposed tones of the
     organ."] play_transpose
 
+/-- The sound of an organ upon a key is the pair of its tone and its next state, as the functor of
+the tones names them. -/
+theorem sound_eq {Key Tone : Type} (organ : Organ Key Tone) (state : organ.V) (key : Key) :
+    let step : Key ⟶ Tone × organ.V := organ.str state
+    @Eq ((tonesFunctor.obj Tone).obj organ.V) (step key) ((step key).1, (step key).2) :=
+  rfl
+
+attribute [counterpart
+  typescript
+    r"The sound of an organ upon a key is its tone beside its next state."] sound_eq
+
 end Organ
 
 namespace Bell

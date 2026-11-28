@@ -31,8 +31,11 @@ import * as Bell from '#src/Bell';
 import * as Organ from '#src/Organ';
 
 describe('Fixture/Organ', () => {
+/** A schema of the table of a function from three values, its value at each of them. */
+const tableOf = <Value extends Schema.Constraint>(value: Value) => Schema.Tuple([value, value, value]);
+
 /** The tones of an organ. */
-it.prop('play_eq', { organTable: Schema.Tuple([Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])]) }), Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: Schema.Tuple([Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2]), Schema.Literals([0, 1, 2])]) })]), state: Schema.Literals([0, 1, 2]), keys: Schema.NonEmptyArray(Schema.Literals([0, 1, 2])) }, ({ organTable, state, keys }) => {
+it.prop('play_eq', { organTable: tableOf(Schema.Struct({ tone: Schema.Literals([0, 1, 2]), next: tableOf(Schema.Literals([0, 1, 2])) })), state: Schema.Literals([0, 1, 2]), keys: Schema.NonEmptyArray(Schema.Literals([0, 1, 2])) }, ({ organTable, state, keys }) => {
 const organ = Organ.make({ str: (v: 0 | 1 | 2) => ({ tone: organTable[v].tone, next: (key: 0 | 1 | 2) => organTable[v].next[key] }) });
 if (Equal.equals(state, keys[0])) {
 return;
